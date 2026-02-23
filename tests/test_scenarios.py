@@ -175,21 +175,41 @@ class TestMapsHandler(unittest.TestCase):
     def setUpClass(cls):
         cls.maps = MapsHandler()
 
-    def test_eta_calculation(self):
-        """ETA calculation should return valid result."""
-        result = self.maps.calculate_eta(48.80, 9.20)
+    def test_find_nearest_hospitals(self):
+        """Should find 3 nearest hospitals with ETA."""
+        hospitals = self.maps.find_nearest_hospitals(48.80, 9.20, count=3)
+        self.assertIsInstance(hospitals, list)
+        self.assertEqual(len(hospitals), 3)
+        for h in hospitals:
+            self.assertIn("name", h)
+            self.assertIn("lat", h)
+            self.assertIn("lon", h)
+            self.assertIn("eta_minutes", h)
+            self.assertIn("distance_km", h)
+            self.assertGreater(h["eta_minutes"], 0)
+
+    def test_hospitals_sorted_by_eta(self):
+        """Returned hospitals should be sorted fastest-first."""
+        hospitals = self.maps.find_nearest_hospitals(48.78, 9.18, count=3)
+        etas = [h["eta_minutes"] for h in hospitals]
+        self.assertEqual(etas, sorted(etas))
+
+    def test_eta_to_specific_hospital(self):
+        """ETA calculation to a specific hospital should return valid result."""
+        result = self.maps.calculate_eta_to_hospital(48.80, 9.20, 48.78, 9.17)
         self.assertIn("eta_minutes", result)
         self.assertIn("distance_km", result)
-        self.assertIn("hospital_name", result)
         self.assertGreater(result["eta_minutes"], 0)
         self.assertGreater(result["distance_km"], 0)
 
-    def test_eta_same_location(self):
-        """ETA at hospital location should be minimal."""
-        hospital_lat = float(self.maps.hospital_lat)
-        hospital_lon = float(self.maps.hospital_lon)
-        result = self.maps.calculate_eta(hospital_lat, hospital_lon)
-        self.assertLessEqual(result["eta_minutes"], 5)
+    def test_different_cities_get_different_hospitals(self):
+        """Patient in Istanbul should get Istanbul hospitals, not Stuttgart."""
+        istanbul_hospitals = self.maps.find_nearest_hospitals(41.01, 28.98, count=3)
+        stuttgart_hospitals = self.maps.find_nearest_hospitals(48.78, 9.18, count=3)
+        istanbul_names = {h["name"] for h in istanbul_hospitals}
+        stuttgart_names = {h["name"] for h in stuttgart_hospitals}
+        # They should be different sets of hospitals
+        self.assertNotEqual(istanbul_names, stuttgart_names)
 
     def test_haversine_distance(self):
         """Haversine distance calculation should be accurate."""

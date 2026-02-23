@@ -81,6 +81,7 @@ class HospitalQueue:
                     location_lat REAL,
                     location_lon REAL,
                     language TEXT DEFAULT 'en-US',
+                    destination_hospital TEXT DEFAULT '',
                     status TEXT DEFAULT 'incoming',
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -116,8 +117,8 @@ class HospitalQueue:
                     red_flags, assessment, suspected_conditions, risk_score,
                     recommended_action, time_sensitivity, source_guidelines,
                     eta_minutes, arrival_time, location_lat, location_lon,
-                    language, status, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incoming', ?)
+                    language, destination_hospital, status, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incoming', ?)
                 """,
                 (
                     record.get("patient_id", ""),
@@ -136,6 +137,7 @@ class HospitalQueue:
                     location.get("lat"),
                     location.get("lon"),
                     record.get("language", "en-US"),
+                    record.get("destination_hospital", ""),
                     datetime.now(timezone.utc).isoformat(),
                 ),
             )
