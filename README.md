@@ -245,4 +245,4 @@ Every Azure service has a fallback mode. The system remains functional (with red
 
 ## License
 
-Educational project — AI-102 exam preparation and portfolio demonstration.
+Educational project
