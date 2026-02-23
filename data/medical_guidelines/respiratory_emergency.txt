@@ -1,0 +1,84 @@
+RESPIRATORY EMERGENCY - TRIAGE PROTOCOL
+=========================================
+Version: 1.3 | Last Updated: 2025-10-01
+Source: Adapted from BTS/ERS Guidelines 2024
+
+1. OVERVIEW
+-----------
+Respiratory emergencies include acute asthma exacerbation, COPD exacerbation,
+pneumonia with respiratory failure, anaphylaxis with airway compromise, and
+pulmonary embolism. Rapid assessment of respiratory status is critical as
+hypoxia can lead to cardiac arrest within minutes.
+
+2. RED FLAGS (Immediate Emergency Triage)
+------------------------------------------
+  - Inability to speak in full sentences (severe breathlessness)
+  - Respiratory rate >30 or <8 breaths per minute
+  - Use of accessory muscles (neck and shoulder muscles for breathing)
+  - Cyanosis (blue lips or fingertips)
+  - Oxygen saturation <90% (if known)
+  - Stridor (high-pitched breathing sound on inspiration)
+  - Sudden onset after exposure to allergen (anaphylaxis)
+  - Chest pain with sudden dyspnea (pulmonary embolism)
+  - Altered consciousness with breathing difficulty
+  - History of intubation for asthma or COPD
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Any 2+ red flags, OR inability to speak, OR cyanosis,
+            OR stridor, OR suspected anaphylaxis
+  Action: High-flow oxygen, nebulized bronchodilators, epinephrine if
+          anaphylaxis, prepare for intubation
+  Timeframe: Immediate assessment
+  Suspected: Severe Asthma, Respiratory Failure, Anaphylaxis, PE
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Moderate breathlessness (can speak in short sentences),
+            SpO2 90-94%, wheezing, 1 red flag present
+  Action: Supplemental oxygen, bronchodilators, chest X-ray, ABG
+  Timeframe: Assessment within 30 minutes
+  Suspected: Moderate Asthma, COPD Exacerbation, Pneumonia
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Mild breathlessness on exertion only, no red flags,
+            SpO2 >94%, can speak in full sentences, stable vitals
+  Action: Peak flow measurement, chest X-ray if indicated, medication review
+  Timeframe: Assessment within 2 hours
+  Suspected: Mild Asthma, Upper Respiratory Infection, Anxiety
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: Can you complete a full sentence without stopping to breathe?
+  Q2: When did the breathing difficulty start? Was it sudden or gradual?
+  Q3: Do you have asthma, COPD, or any lung disease?
+  Q4: Were you exposed to anything before this started (allergens, smoke)?
+  Q5: Do you have chest pain along with the breathing difficulty?
+  Q6: Are your lips or fingers turning blue?
+  Q7: Do you use an inhaler? When did you last use it?
+
+5. RECOMMENDED TESTS BY TRIAGE LEVEL
+--------------------------------------
+  Emergency: ABG, CXR (portable), SpO2 monitoring, Peak Flow, CBC,
+             BMP, Troponin (if PE suspected), CT-PA (if PE suspected)
+  Urgent: SpO2, Peak Flow, CXR, CBC, BMP, Sputum Culture (if infection)
+  Routine: Peak Flow, SpO2, CXR if indicated
+
+6. TIME-SENSITIVE ACTIONS
+--------------------------
+  Severe Asthma:
+  - Continuous nebulized salbutamol + ipratropium
+  - IV magnesium sulfate 2g over 20 minutes
+  - IV hydrocortisone 200mg or oral prednisolone 40-50mg
+  - Consider IV aminophylline if no response
+
+  Anaphylaxis:
+  - IM Epinephrine 0.5mg (1:1000) into lateral thigh IMMEDIATELY
+  - Repeat every 5-15 minutes if needed
+  - High-flow oxygen, IV fluids for hypotension
+
+  Pulmonary Embolism:
+  - Anticoagulation (heparin) once confirmed
+  - Thrombolysis for massive PE with hemodynamic instability
+  - Consider catheter-directed therapy

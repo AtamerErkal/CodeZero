@@ -1,0 +1,90 @@
+ABDOMINAL PAIN - EMERGENCY TRIAGE PROTOCOL
+=============================================
+Version: 1.4 | Last Updated: 2025-09-15
+Source: Adapted from ACG/ACS Clinical Guidelines 2024
+
+1. OVERVIEW
+-----------
+Abdominal pain is one of the most frequent emergency department complaints,
+accounting for approximately 8% of all ED visits. The differential diagnosis
+is broad, ranging from benign conditions (gastritis, constipation) to
+life-threatening emergencies (ruptured aortic aneurysm, bowel perforation).
+Rapid triage is critical to identify surgical emergencies.
+
+2. RED FLAGS (Immediate Emergency Triage)
+------------------------------------------
+  - Rigid or board-like abdomen (peritonitis)
+  - Severe pain with hemodynamic instability (tachycardia, hypotension)
+  - Signs of internal bleeding (pallor, dizziness, fainting)
+  - Pulsatile abdominal mass (ruptured aortic aneurysm)
+  - Fever >38.5°C with severe abdominal pain
+  - Vomiting blood (hematemesis) or bloody/black stool (melena)
+  - Severe pain in pregnant patient (ectopic pregnancy)
+  - Sudden onset of severe pain ("10/10")
+  - Abdominal pain following trauma
+  - Known history of abdominal aortic aneurysm
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Any 2+ red flags, OR rigid abdomen, OR hemodynamic instability,
+            OR suspected ruptured AAA, OR hematemesis with unstable vitals
+  Action: IV access x2, STAT labs, cross-match blood, surgical consult
+  Timeframe: Immediate assessment
+  Suspected: Ruptured AAA, Bowel Perforation, Ectopic Pregnancy, GI Hemorrhage
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: 1 red flag present, OR moderate-severe pain with fever,
+            OR suspected appendicitis, OR RUQ pain with jaundice
+  Action: Labs, imaging (CT abdomen or ultrasound), IV fluids, pain management
+  Timeframe: Assessment within 30 minutes
+  Suspected: Appendicitis, Cholecystitis, Diverticulitis, Pancreatitis,
+             Bowel Obstruction, Kidney Stone
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: No red flags, mild-moderate pain, stable vitals, eating/drinking
+  Action: History, examination, basic labs if indicated
+  Timeframe: Assessment within 2 hours
+  Suspected: Gastritis, Gastroenteritis, Constipation, IBS, UTI
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: Where exactly is the pain? (Right upper, left upper, right lower,
+      left lower, central, diffuse)
+  Q2: When did it start? Was the onset sudden or gradual?
+  Q3: How would you describe the pain? (Sharp, crampy, burning, dull)
+  Q4: Rate the pain on a scale of 1-10
+  Q5: Does the pain move or radiate anywhere?
+  Q6: Do you have fever, nausea, vomiting, or diarrhea?
+  Q7: Have you noticed any blood in vomit or stool?
+  Q8: Could you be pregnant? (if applicable)
+  Q9: Have you had any recent abdominal surgery?
+
+5. PAIN LOCATION GUIDE
+------------------------
+  Right Upper Quadrant (RUQ): Gallbladder, liver, bile duct
+  Left Upper Quadrant (LUQ): Spleen, stomach, pancreas tail
+  Right Lower Quadrant (RLQ): Appendix, right ovary, right ureter
+  Left Lower Quadrant (LLQ): Sigmoid colon, left ovary, left ureter
+  Epigastric (central upper): Stomach, pancreas, heart (referred)
+  Periumbilical (around navel): Small bowel, early appendicitis, AAA
+  Suprapubic (lower central): Bladder, uterus, prostate
+  Diffuse: Peritonitis, bowel obstruction, mesenteric ischemia
+
+6. RECOMMENDED TESTS BY TRIAGE LEVEL
+--------------------------------------
+  Emergency: CBC, BMP, Lipase, Lactate, Type & Cross, Coagulation,
+             Pregnancy test, CT Abdomen/Pelvis with contrast STAT
+  Urgent: CBC, BMP, Lipase, Liver function tests, Urinalysis,
+          Pregnancy test, CT or Ultrasound as appropriate
+  Routine: CBC, BMP, Urinalysis, Pregnancy test if applicable
+
+7. TIME-SENSITIVE ACTIONS
+--------------------------
+  Ruptured AAA: Emergent vascular surgery, massive transfusion protocol
+  Bowel Perforation: IV antibiotics, emergent surgical consult
+  Ectopic Pregnancy: IV access, OB/GYN consult, possible emergent surgery
+  GI Hemorrhage: IV PPI, GI consult, transfuse if Hb <7 g/dL
+  Appendicitis: Surgical consult within 12 hours of diagnosis
+  Bowel Obstruction: NPO, NG tube, surgical consult if complete obstruction

@@ -1,0 +1,94 @@
+DIABETIC EMERGENCY - TRIAGE PROTOCOL
+======================================
+Version: 1.5 | Last Updated: 2025-09-20
+Source: Adapted from ADA Standards of Care 2024
+
+1. OVERVIEW
+-----------
+Diabetic emergencies include Diabetic Ketoacidosis (DKA), Hyperosmolar
+Hyperglycemic State (HHS), and Severe Hypoglycemia. These conditions can be
+rapidly fatal without prompt treatment. DKA mortality is 1-5% when treated
+appropriately but rises to >50% if untreated.
+
+2. RED FLAGS (Immediate Emergency Triage)
+------------------------------------------
+  DKA Indicators:
+  - Known diabetes + nausea/vomiting + abdominal pain
+  - Rapid deep breathing (Kussmaul respiration)
+  - Fruity breath odor
+  - Altered mental status with known diabetes
+  - Blood glucose >250 mg/dL (if known) + symptoms
+
+  HHS Indicators:
+  - Elderly patient with type 2 diabetes
+  - Severe dehydration signs (dry mucous membranes, poor skin turgor)
+  - Blood glucose >600 mg/dL (if known)
+  - Altered consciousness or seizures
+
+  Severe Hypoglycemia Indicators:
+  - Blood glucose <54 mg/dL (if known)
+  - Confusion, seizures, or loss of consciousness in diabetic patient
+  - Inability to self-treat (cannot eat or drink)
+  - Unresponsiveness in known diabetic
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Altered mental status + diabetes, OR suspected DKA/HHS,
+            OR hypoglycemia with loss of consciousness or seizures
+  Action: IV access, stat glucose, ABG, BMP, fluid resuscitation
+  Timeframe: Immediate assessment and treatment
+  Suspected: DKA, HHS, Severe Hypoglycemia
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Known diabetes with persistent vomiting, moderate dehydration,
+            blood glucose >300 mg/dL with mild symptoms, or hypoglycemia
+            not responding to oral glucose
+  Action: IV fluids, glucose monitoring q1h, BMP, ketone check
+  Timeframe: Assessment within 30 minutes
+  Suspected: Moderate DKA, Hyperglycemic Crisis
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Known diabetes with mildly elevated glucose but alert and stable,
+            hypoglycemia that responds to oral treatment, routine diabetes
+            management questions
+  Action: Glucose check, medication review, diabetes education
+  Timeframe: Assessment within 2 hours
+  Suspected: Uncontrolled Diabetes, Medication Adjustment Needed
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: Do you have diabetes? Type 1 or Type 2?
+  Q2: What is your current blood sugar if known?
+  Q3: When did you last eat? When was your last insulin or medication?
+  Q4: Do you have nausea, vomiting, or abdominal pain?
+  Q5: Are you feeling confused or drowsy?
+  Q6: Have you been drinking enough fluids? Are you urinating more than usual?
+  Q7: Have you had any recent illness, infection, or surgery?
+
+5. RECOMMENDED TESTS BY TRIAGE LEVEL
+--------------------------------------
+  Emergency: Stat Glucose, ABG, BMP (Na, K, Cl, CO2, BUN, Cr), Ketones
+             (serum + urine), CBC, Lactate, Serum Osmolality, Urinalysis
+  Urgent: Glucose, BMP, Ketones, Urinalysis, HbA1c
+  Routine: Glucose, HbA1c, BMP, Urinalysis
+
+6. TIME-SENSITIVE ACTIONS
+--------------------------
+  DKA:
+  - IV Normal Saline bolus 1-1.5 L in first hour
+  - Insulin infusion after potassium confirmed ≥3.3 mEq/L
+  - Potassium replacement as needed
+  - Monitor glucose hourly, BMP every 2-4 hours
+
+  HHS:
+  - Aggressive fluid resuscitation (may need 6-9L total)
+  - Gradual glucose reduction (avoid rapid correction)
+  - Monitor serum osmolality
+
+  Severe Hypoglycemia:
+  - IV Dextrose 50% (D50) 25-50 mL immediately
+  - Glucagon 1 mg IM if no IV access
+  - Recheck glucose every 15 minutes
+  - Identify and address underlying cause

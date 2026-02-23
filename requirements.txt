@@ -1,0 +1,23 @@
+# Core
+python-dotenv==1.0.1
+streamlit==1.39.0
+
+# Azure AI Services
+openai==1.54.5
+azure-ai-formrecognizer==3.3.3
+azure-search-documents==11.4.0
+azure-cognitiveservices-speech==1.40.0
+azure-ai-translation-text==1.0.0
+azure-core==1.30.2
+
+# Azure Maps
+azure-maps-route==1.0.0b2
+
+# Content Safety (optional)
+azure-ai-contentsafety==1.0.0
+
+# Utilities
+requests==2.32.3
+pydantic==2.9.2
+plotly==5.24.1
+pandas==2.2.3

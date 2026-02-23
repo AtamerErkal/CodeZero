@@ -1,0 +1,81 @@
+STROKE - EMERGENCY TRIAGE PROTOCOL
+====================================
+Version: 2.0 | Last Updated: 2025-10-15
+Source: Adapted from AHA/ASA Stroke Guidelines 2024
+
+1. OVERVIEW
+-----------
+Stroke is a medical emergency where rapid assessment and treatment are critical.
+The therapeutic window for IV thrombolysis (tPA) is 4.5 hours from symptom onset.
+Mechanical thrombectomy may be performed up to 24 hours in select patients.
+"Time is brain" — approximately 1.9 million neurons die every minute during a stroke.
+
+2. FAST ASSESSMENT (Primary Screening Tool)
+---------------------------------------------
+  F - FACE: Ask the person to smile. Does one side droop?
+  A - ARMS: Ask the person to raise both arms. Does one drift downward?
+  S - SPEECH: Ask the person to repeat a simple phrase. Is speech slurred?
+  T - TIME: Record the exact time symptoms were first noticed.
+
+  ANY positive finding on FAST → Suspected Stroke → EMERGENCY
+
+3. RED FLAGS (Immediate Emergency Triage)
+------------------------------------------
+  - Sudden onset of any neurological deficit
+  - Facial asymmetry (unilateral drooping)
+  - Unilateral arm or leg weakness
+  - Slurred speech or inability to speak
+  - Sudden severe headache ("worst headache of my life")
+  - Sudden vision loss or double vision
+  - Sudden confusion or altered consciousness
+  - Loss of balance or coordination
+  - Known time of onset within 4.5 hours (thrombolysis candidate)
+
+4. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Any positive FAST finding, OR sudden severe headache with
+            neurological symptoms, OR known onset <4.5 hours
+  Action: Stroke code activation, CT head STAT, neurology consult
+  Timeframe: Door-to-CT <25 minutes, Door-to-needle <60 minutes
+  Suspected: Ischemic Stroke, Hemorrhagic Stroke, TIA
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Transient symptoms that have resolved, OR onset >4.5 hours,
+            OR uncertain time of onset
+  Action: CT head within 1 hour, MRI if available, neurology assessment
+  Timeframe: Assessment within 30 minutes
+  Suspected: TIA (Transient Ischemic Attack), Completed Stroke
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Chronic stable neurological symptoms, history of prior stroke
+            with no new deficits, headache without neurological signs
+  Action: Outpatient neurology referral, risk factor assessment
+  Timeframe: Assessment within 2 hours
+  Suspected: Migraine, Chronic Neurological Condition
+
+5. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: When did the symptoms start? What time exactly?
+  Q2: Can you smile? Is your face symmetrical?
+  Q3: Can you raise both arms and hold them up for 10 seconds?
+  Q4: Can you say "The sky is blue" clearly?
+  Q5: Do you have a sudden severe headache?
+  Q6: Do you have vision problems (blurry, double, or lost vision)?
+  Q7: Are you on blood thinners or have you had a recent stroke?
+
+6. RECOMMENDED TESTS BY TRIAGE LEVEL
+--------------------------------------
+  Emergency: CT Head (non-contrast STAT), CT Angiography, CBC, BMP,
+             Coagulation (INR/PT/PTT), Blood Glucose, Type & Screen
+  Urgent: CT Head, MRI Brain, Carotid Doppler, Echo
+  Routine: Outpatient MRI, Risk factor labs (lipids, HbA1c)
+
+7. TIME-SENSITIVE ACTIONS
+--------------------------
+  - IV tPA: Administer within 4.5 hours of symptom onset
+  - Mechanical Thrombectomy: Within 24 hours for large vessel occlusion
+  - Blood Pressure: Maintain <185/110 before tPA
+  - Blood Glucose: Correct hypoglycemia immediately
+  - Hemorrhagic Stroke: Reverse anticoagulation, neurosurgery consult

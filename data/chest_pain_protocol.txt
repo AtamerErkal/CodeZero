@@ -1,0 +1,68 @@
+CHEST PAIN - EMERGENCY TRIAGE PROTOCOL
+========================================
+Version: 2.1 | Last Updated: 2025-11-01
+Source: Adapted from AHA/ACC Guidelines 2023
+
+1. OVERVIEW
+-----------
+Chest pain is one of the most common emergency presentations. Rapid triage is
+critical because acute coronary syndrome (ACS) requires time-sensitive treatment.
+The door-to-balloon target for STEMI is <90 minutes.
+
+2. RED FLAGS (Requires Immediate Emergency Triage)
+---------------------------------------------------
+The following findings indicate possible acute coronary syndrome or other
+life-threatening cause:
+  - Pain radiating to left arm, jaw, neck, or back
+  - Diaphoresis (profuse sweating unrelated to exertion)
+  - Dyspnea (shortness of breath)
+  - Nausea or vomiting accompanying chest pain
+  - Pain described as "pressure", "squeezing", or "crushing"
+  - Pain severity ≥7/10
+  - History of cardiac disease or multiple cardiac risk factors
+  - Syncope or near-syncope with chest pain
+  - Hemodynamic instability (hypotension, tachycardia)
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Any 2+ red flags present, OR pain with hemodynamic instability
+  Action: Activate cardiac catheterization lab, 12-lead ECG within 10 minutes
+  Timeframe: Immediate assessment, target door-to-ECG <10 min
+  Suspected: STEMI, Unstable Angina, Aortic Dissection, Pulmonary Embolism
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: 1 red flag present, OR atypical chest pain with cardiac history
+  Action: ECG within 30 minutes, serial troponins, continuous monitoring
+  Timeframe: Assessment within 30 minutes
+  Suspected: NSTEMI, Stable Angina, Pericarditis
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: No red flags, reproducible on palpation, pleuritic, positional
+  Action: Standard workup, chest X-ray if indicated
+  Timeframe: Assessment within 2 hours
+  Suspected: Musculoskeletal, GERD, Costochondritis, Anxiety
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: Where exactly is the pain? Does it radiate anywhere?
+  Q2: When did it start? What were you doing?
+  Q3: How would you describe the pain? (sharp, dull, pressure, burning)
+  Q4: Rate severity on 1-10 scale
+  Q5: Do you have sweating, nausea, or shortness of breath?
+  Q6: Have you had heart problems before?
+  Q7: Do you take any heart medications?
+
+5. RECOMMENDED TESTS BY TRIAGE LEVEL
+--------------------------------------
+  Emergency: 12-lead ECG, Troponin (stat), CBC, BMP, Coagulation, CXR
+  Urgent: ECG, Serial Troponins (0h and 3h), CBC, BMP
+  Routine: ECG (if not done), CXR if indicated
+
+6. TIME-SENSITIVE ACTIONS
+--------------------------
+  - STEMI: Door-to-balloon <90 min (PCI) or door-to-needle <30 min (thrombolytics)
+  - NSTEMI: Risk stratification within 24 hours
+  - Aortic Dissection: CT angiography STAT, surgical consult
+  - Pulmonary Embolism: CT pulmonary angiography, anticoagulation

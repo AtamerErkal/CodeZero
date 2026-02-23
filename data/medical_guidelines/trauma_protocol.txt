@@ -1,0 +1,91 @@
+TRAUMA - EMERGENCY TRIAGE PROTOCOL
+====================================
+Version: 1.8 | Last Updated: 2025-08-10
+Source: Adapted from ATLS (Advanced Trauma Life Support) 10th Edition
+
+1. OVERVIEW
+-----------
+Trauma is the leading cause of death in persons aged 1-44 years. The "golden hour"
+concept emphasizes that definitive treatment within the first 60 minutes of injury
+significantly improves survival. Pre-hospital triage identifies patients who need
+trauma center care versus those who can be treated at community hospitals.
+
+2. RED FLAGS (Immediate Emergency Triage)
+------------------------------------------
+  Mechanism of Injury (High Energy):
+  - Motor vehicle crash >30 mph or with ejection
+  - Pedestrian or cyclist struck by vehicle
+  - Fall from >3 meters (10 feet)
+  - Penetrating injury to head, neck, torso, or proximal extremities
+  - Blast injury or explosion
+  - Crush injury
+
+  Physiological Signs:
+  - GCS (Glasgow Coma Scale) ≤13
+  - Systolic blood pressure <90 mmHg
+  - Respiratory rate <10 or >29 breaths/min
+  - Uncontrolled external hemorrhage
+  - Penetrating wound to chest or abdomen
+  - Flail chest or multiple rib fractures
+  - Pelvic instability
+  - Bilateral femur fractures
+  - Amputation proximal to wrist or ankle
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: High-energy mechanism + any physiological red flag, OR penetrating
+            injury to torso, OR GCS ≤13, OR hemodynamic instability
+  Action: Trauma team activation, ABCDE assessment, massive transfusion
+          protocol on standby, CT trauma series
+  Timeframe: Immediate
+  Suspected: Major Trauma, Internal Hemorrhage, Traumatic Brain Injury
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Moderate mechanism (fall <3m, low-speed MVC) with isolated injury,
+            OR significant pain with stable vitals, OR extremity deformity
+  Action: Focused assessment, X-rays of affected area, pain management
+  Timeframe: Assessment within 30 minutes
+  Suspected: Fractures, Dislocations, Moderate Soft Tissue Injury
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Low mechanism (ground-level fall, minor blunt trauma), no red flags,
+            stable vitals, alert and oriented, isolated minor injury
+  Action: Physical exam, X-ray if indicated, wound care
+  Timeframe: Assessment within 2 hours
+  Suspected: Sprains, Strains, Contusions, Minor Lacerations
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: What happened? How were you injured? (Mechanism of injury)
+  Q2: Where does it hurt? Can you point to the area?
+  Q3: Can you move all your arms and legs normally?
+  Q4: Did you lose consciousness at any point?
+  Q5: Are you having difficulty breathing?
+  Q6: Is there any bleeding that you cannot stop?
+  Q7: Are you taking blood thinners or have any bleeding disorders?
+
+5. ABCDE PRIMARY SURVEY (Pre-Hospital Assessment)
+---------------------------------------------------
+  A - Airway: Is the airway clear? Can the patient speak?
+  B - Breathing: Is breathing normal? Any chest injuries?
+  C - Circulation: Is there major bleeding? Pulse present?
+  D - Disability: What is the GCS? Pupil response?
+  E - Exposure: Any other injuries? Temperature (hypothermia risk)?
+
+6. RECOMMENDED TESTS BY TRIAGE LEVEL
+--------------------------------------
+  Emergency: FAST ultrasound, CT Head/C-Spine/Chest/Abdomen/Pelvis,
+             CBC, Type & Crossmatch, BMP, Coagulation, Lactate, Blood Gas
+  Urgent: X-rays of affected areas, CBC, BMP, Urinalysis
+  Routine: X-rays if indicated, wound assessment
+
+7. TIME-SENSITIVE ACTIONS
+--------------------------
+  - Hemorrhage Control: Direct pressure, tourniquet for extremity
+  - Tension Pneumothorax: Needle decompression followed by chest tube
+  - Massive Transfusion: Activate protocol for hemodynamic instability
+  - TBI: Maintain MAP >80, avoid hypoxia and hypotension
+  - Spinal Precautions: Maintain until cleared by imaging
+  - Hypothermia Prevention: Warm fluids, remove wet clothing
