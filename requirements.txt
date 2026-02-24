@@ -1,6 +1,11 @@
+# ============================================================
+# CodeZero — Medical Triage AI
+# Requirements
+# ============================================================
+
 # Core
 python-dotenv==1.0.1
-streamlit==1.40.0
+streamlit==1.41.0          # FIX: bumped from 1.40.0 — st.audio_input requires >= 1.41
 
 # Azure AI Services
 openai==1.54.5
@@ -10,10 +15,10 @@ azure-cognitiveservices-speech==1.40.0
 azure-ai-translation-text==1.0.0
 azure-core==1.30.2
 
-# Azure Maps
-azure-maps-route==1.0.0b2
+# Azure Maps (REST via requests — azure-maps-route SDK is still beta)
+# azure-maps-route==1.0.0b2   # kept optional; REST calls used directly
 
-# Content Safety (optional)
+# Content Safety (optional — gracefully skipped if credentials absent)
 azure-ai-contentsafety==1.0.0
 
 # Utilities
@@ -21,3 +26,7 @@ requests==2.32.3
 pydantic==2.9.2
 plotly==5.24.1
 pandas==2.2.3
+
+# Testing
+pytest==8.3.3
+pytest-cov==5.0.0

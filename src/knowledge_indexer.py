@@ -235,7 +235,14 @@ class KnowledgeIndexer:
             }
 
             if use_semantic:
-                kwargs["query_type"] = "semantic"
+                # FIX: azure-search-documents 11.4+ prefers QueryType enum.
+                # We try the enum first and fall back to the string literal
+                # for older SDK versions to maintain backward compatibility.
+                try:
+                    from azure.search.documents.models import QueryType
+                    kwargs["query_type"] = QueryType.SEMANTIC
+                except ImportError:
+                    kwargs["query_type"] = "semantic"
                 kwargs["semantic_configuration_name"] = "medical-semantic-config"
 
             results = self._search_client.search(**kwargs)

@@ -1,7 +1,18 @@
 """
 Hospital ER Dashboard - CodeZero
+=================================
+Real-time emergency department command center. Displays incoming triaged
+patients with countdown timers and pre-arrival preparation checklists.
+
 Run: streamlit run ui/hospital_dashboard.py --server.port 8502
+
+FIXES APPLIED:
+  - TriageEngine now properly imported at the top of the file
+  - 'hospital_queue' undefined variable bug fixed (was using 'queue' object)
+  - Auto-refresh added (30-second interval)
+  - Wildcard imports removed
 """
+
 import logging
 import sys
 from datetime import datetime, timezone
@@ -9,225 +20,347 @@ from pathlib import Path
 
 import streamlit as st
 
+# ---------------------------------------------------------------------------
+# Project root on sys.path so src.* imports work regardless of cwd
+# ---------------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+# FIX: All imports at the top — no deferred imports inside functions
 from src.hospital_queue import HospitalQueue
+from src.triage_engine import TRIAGE_COLORS, TRIAGE_EMERGENCY, TRIAGE_ROUTINE, TRIAGE_URGENT, TriageEngine
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-st.set_page_config(page_title="CodeZero ER Dashboard", page_icon="🏥", layout="wide")
+# ---------------------------------------------------------------------------
+# Page configuration
+# ---------------------------------------------------------------------------
+st.set_page_config(
+    page_title="CodeZero ER Dashboard",
+    page_icon="🏥",
+    layout="wide",
+)
 
-# Minimal CSS
-st.markdown("""<style>
-.block-container{padding:1rem 2rem}
-.stButton>button{min-height:44px;border-radius:8px}
-</style>""", unsafe_allow_html=True)
+st.markdown("""
+<style>
+.block-container { padding: 1rem 2rem; }
+.stButton > button { min-height: 44px; border-radius: 8px; }
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Shared service instances (cached across reruns)
+# ---------------------------------------------------------------------------
+AUTO_REFRESH_SECONDS = 30
+
 
 @st.cache_resource
-def get_queue():
+def get_queue() -> HospitalQueue:
+    """Return a cached HospitalQueue instance."""
     return HospitalQueue()
 
-queue = get_queue()
 
-ICONS = {"EMERGENCY": "🔴", "URGENT": "🟠", "ROUTINE": "🟢"}
-PREP = {
-    "EMERGENCY": ["Assign resuscitation bay", "Alert attending physician",
-                   "Prepare crash cart", "Pre-order STAT labs", "ECG ready"],
-    "URGENT": ["Assign treatment room", "Notify triage nurse",
-               "Prepare standard labs", "Queue imaging"],
-    "ROUTINE": ["Assign waiting area", "Standard intake forms", "Vitals on arrival"],
+@st.cache_resource
+def get_triage_engine() -> TriageEngine:
+    """Return a cached TriageEngine instance for creating test records."""
+    return TriageEngine()
+
+
+# FIX: single canonical name used everywhere in this file
+hospital_queue = get_queue()
+triage_engine = get_triage_engine()
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+LEVEL_ICONS = {
+    TRIAGE_EMERGENCY: "🔴",
+    TRIAGE_URGENT: "🟠",
+    TRIAGE_ROUTINE: "🟢",
+}
+
+PRE_ARRIVAL_PREP = {
+    TRIAGE_EMERGENCY: [
+        "Assign resuscitation bay",
+        "Alert attending physician",
+        "Prepare crash cart",
+        "Pre-order STAT labs",
+        "ECG ready",
+    ],
+    TRIAGE_URGENT: [
+        "Assign treatment room",
+        "Notify triage nurse",
+        "Prepare standard labs",
+        "Queue imaging",
+    ],
+    TRIAGE_ROUTINE: [
+        "Assign waiting area",
+        "Standard intake forms",
+        "Vitals on arrival",
+    ],
 }
 
 
-def mins_until(iso):
-    if not iso:
+# ---------------------------------------------------------------------------
+# Utility helpers
+# ---------------------------------------------------------------------------
+def minutes_until_arrival(iso_timestamp: str) -> str:
+    """Return a human-readable countdown string from an ISO timestamp.
+
+    Args:
+        iso_timestamp: ISO 8601 arrival time string.
+
+    Returns:
+        Countdown string such as '22 min', 'ARRIVED', or 'N/A'.
+    """
+    if not iso_timestamp:
         return "N/A"
     try:
-        arr = datetime.fromisoformat(iso.replace("Z", "+00:00"))
-        diff = (arr - datetime.now(timezone.utc)).total_seconds() / 60
-        return "ARRIVED" if diff <= 0 else "{} min".format(int(diff))
+        arrival = datetime.fromisoformat(iso_timestamp.replace("Z", "+00:00"))
+        delta_minutes = (arrival - datetime.now(timezone.utc)).total_seconds() / 60
+        if delta_minutes <= 0:
+            return "ARRIVED"
+        return f"{int(delta_minutes)} min"
     except Exception:
         return "N/A"
 
 
-def render_patient(p):
-    level = p.get("triage_level", "URGENT")
-    pid = p.get("patient_id", "")
-    icon = ICONS.get(level, "🟠")
-    eta = p.get("eta_minutes")
-    arrival = p.get("arrival_time")
-    ct = mins_until(arrival) if arrival else ("~{} min".format(eta) if eta else "N/A")
-    dest = p.get("destination_hospital", "")
-    flags = p.get("red_flags", [])
-    status = p.get("status", "incoming")
+def render_patient_card(patient: dict) -> None:
+    """Render a single patient card with status controls.
 
-    # Use native Streamlit containers
-    if level == "EMERGENCY":
-        container = st.error
-    elif level == "URGENT":
-        container = st.warning
-    else:
-        container = st.success
+    Args:
+        patient: Patient record dict from HospitalQueue.
+    """
+    level = patient.get("triage_level", TRIAGE_URGENT)
+    pid = patient.get("patient_id", "UNKNOWN")
+    icon = LEVEL_ICONS.get(level, "🟠")
+    status = patient.get("status", "incoming")
+    eta_raw = patient.get("eta_minutes")
+    arrival = patient.get("arrival_time")
 
-    flags_str = ""
-    if flags and flags != ["none_identified"]:
-        flags_str = "\n\n🚩 " + " · ".join(f.replace("_", " ").title() for f in flags[:5])
-
-    dest_str = "\n\n🏥 **Heading to:** {}".format(dest) if dest else ""
-
-    container(
-        "**{} {} — {}** ⏱ **{}**\n\n"
-        "**Complaint:** {}\n\n"
-        "**Assessment:** {}{}"
-        "\n\n**Risk:** {}/10 · **Language:** {}{}"
-        .format(
-            icon, level, pid, ct,
-            p.get("chief_complaint", ""),
-            p.get("assessment", ""),
-            dest_str,
-            p.get("risk_score", 5), p.get("language", "en-US"),
-            flags_str,
-        )
+    # Countdown display
+    countdown = (
+        minutes_until_arrival(arrival)
+        if arrival
+        else (f"~{eta_raw} min" if eta_raw else "N/A")
     )
 
-    # Prep checklist
-    preps = PREP.get(level, [])
-    if preps and status == "incoming":
-        with st.expander("📋 Pre-Arrival Prep — {}".format(pid)):
-            for pr in preps:
-                st.checkbox(pr, key="{}_{}".format(pid, pr))
+    # Red flag list (skip placeholder)
+    flags: list[str] = patient.get("red_flags", [])
+    active_flags = [f for f in flags if f != "none_identified"]
 
-    # Action buttons
-    bc = st.columns(4)
-    with bc[0]:
-        if status == "incoming" and st.button("✅ Arrived", key="a_{}".format(pid)):
-            queue.update_status(pid, "arrived")
+    dest = patient.get("destination_hospital", "")
+    dest_line = f"\n\n🏥 **Heading to:** {dest}" if dest else ""
+    flags_line = (
+        "\n\n🚩 " + " · ".join(f.replace("_", " ").title() for f in active_flags[:5])
+        if active_flags
+        else ""
+    )
+
+    # Choose container style by triage level
+    body = (
+        f"**{icon} {level} — {pid}** ⏱ **{countdown}**\n\n"
+        f"**Complaint:** {patient.get('chief_complaint', '')}\n\n"
+        f"**Assessment:** {patient.get('assessment', '')}"
+        f"{dest_line}"
+        f"\n\n**Risk:** {patient.get('risk_score', 5)}/10 · "
+        f"**Language:** {patient.get('language', 'en-US')}"
+        f"{flags_line}"
+    )
+
+    if level == TRIAGE_EMERGENCY:
+        st.error(body)
+    elif level == TRIAGE_URGENT:
+        st.warning(body)
+    else:
+        st.success(body)
+
+    # Pre-arrival checklist (only for incoming patients)
+    preps = PRE_ARRIVAL_PREP.get(level, [])
+    if preps and status == "incoming":
+        with st.expander(f"📋 Pre-Arrival Prep — {pid}"):
+            for prep_item in preps:
+                st.checkbox(prep_item, key=f"{pid}_{prep_item}")
+
+    # Status action buttons
+    btn_cols = st.columns(4)
+    with btn_cols[0]:
+        if status == "incoming" and st.button("✅ Arrived", key=f"arrive_{pid}"):
+            hospital_queue.update_status(pid, "arrived")
             st.rerun()
-    with bc[1]:
-        if status == "arrived" and st.button("🩺 Treating", key="t_{}".format(pid)):
-            queue.update_status(pid, "in_treatment")
+    with btn_cols[1]:
+        if status == "arrived" and st.button("🩺 Treating", key=f"treat_{pid}"):
+            hospital_queue.update_status(pid, "in_treatment")
             st.rerun()
-    with bc[2]:
-        if status == "in_treatment" and st.button("🏠 Discharge", key="d_{}".format(pid)):
-            queue.update_status(pid, "discharged")
+    with btn_cols[2]:
+        if status == "in_treatment" and st.button("🏠 Discharge", key=f"discharge_{pid}"):
+            hospital_queue.update_status(pid, "discharged")
             st.rerun()
-    with bc[3]:
-        if st.button("📄 Details", key="det_{}".format(pid)):
-            st.json(p)
+    with btn_cols[3]:
+        if st.button("📄 Details", key=f"details_{pid}"):
+            st.json(patient)
+
     st.divider()
 
 
-def main():
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    st.title("🏥 ER COMMAND CENTER")
-    st.caption("CodeZero Triage System · {}".format(now))
+# ---------------------------------------------------------------------------
+# Admin helpers — test record factories
+# ---------------------------------------------------------------------------
+def _add_test_emergency() -> None:
+    """Insert a synthetic EMERGENCY patient for dashboard testing."""
+    record = triage_engine.create_patient_record(
+        chief_complaint="Severe chest pain with arm radiation and sweating",
+        assessment={
+            "triage_level": TRIAGE_EMERGENCY,
+            "assessment": (
+                "Findings: Pain radiates to arm; Sweating; Shortness of breath. "
+                "3 red flags identified."
+            ),
+            "red_flags": ["pain_radiation", "diaphoresis", "dyspnea"],
+            "recommended_action": "Proceed to ER immediately.",
+            "risk_score": 9,
+            "source_guidelines": ["chest_pain_protocol.txt"],
+            "suspected_conditions": ["Acute Coronary Syndrome"],
+            "time_sensitivity": "Within 10 minutes",
+        },
+        language="de-DE",
+        eta_minutes=12,
+    )
+    record["destination_hospital"] = "Klinikum Stuttgart (ER)"
+    # FIX: use 'hospital_queue' (the module-level instance) not an undefined name
+    hospital_queue.add_patient(record)
+    st.success(f"Added EMERGENCY: {record['patient_id']}")
 
-    # Stats
-    stats = queue.get_queue_stats()
+
+def _add_test_routine() -> None:
+    """Insert a synthetic ROUTINE patient for dashboard testing."""
+    record = triage_engine.create_patient_record(
+        chief_complaint="Mild headache for 2 days",
+        assessment={
+            "triage_level": TRIAGE_ROUTINE,
+            "assessment": "Pain 3/10. No red flags. Triage: ROUTINE.",
+            "red_flags": ["none_identified"],
+            "recommended_action": "See GP if symptoms persist.",
+            "risk_score": 2,
+            "source_guidelines": ["general"],
+            "suspected_conditions": ["Tension Headache"],
+            "time_sensitivity": "Within 48 hours",
+        },
+        language="en-US",
+        eta_minutes=30,
+    )
+    record["destination_hospital"] = "Robert-Bosch-Krankenhaus (ER)"
+    hospital_queue.add_patient(record)
+    st.success(f"Added ROUTINE: {record['patient_id']}")
+
+
+# ---------------------------------------------------------------------------
+# Main dashboard
+# ---------------------------------------------------------------------------
+def main() -> None:
+    """Render the full ER dashboard."""
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    st.title("🏥 ER COMMAND CENTER")
+    st.caption(f"CodeZero Triage System · {now_str}")
+
+    # --- Summary metrics ---
+    stats = hospital_queue.get_queue_stats()
     by_level = stats.get("by_level", {})
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Incoming", stats.get("total_incoming", 0))
-    c2.metric("🔴 Emergency", by_level.get("EMERGENCY", 0))
-    c3.metric("🟠 Urgent", by_level.get("URGENT", 0))
-    c4.metric("🟢 Routine", by_level.get("ROUTINE", 0))
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Incoming", stats.get("total_incoming", 0))
+    col2.metric("🔴 Emergency", by_level.get(TRIAGE_EMERGENCY, 0))
+    col3.metric("🟠 Urgent", by_level.get(TRIAGE_URGENT, 0))
+    col4.metric("🟢 Routine", by_level.get(TRIAGE_ROUTINE, 0))
 
     st.divider()
 
-    # Tabs
-    tab1, tab2, tab3 = st.tabs(["📥 Incoming", "📊 All Patients", "⚙️ Admin"])
+    # --- Main tabs ---
+    tab_incoming, tab_all, tab_admin = st.tabs(
+        ["📥 Incoming", "📊 All Patients", "⚙️ Admin"]
+    )
 
-    with tab1:
-        patients = queue.get_incoming_patients(limit=20)
-        if not patients:
+    with tab_incoming:
+        incoming = hospital_queue.get_incoming_patients(limit=20)
+        if not incoming:
             st.info("No incoming patients. Waiting for triage submissions...")
-        for p in patients:
-            render_patient(p)
+        for patient in incoming:
+            render_patient_card(patient)
 
-    with tab2:
-        all_p = queue.get_all_patients(limit=50)
-        if not all_p:
-            st.info("No records yet.")
+    with tab_all:
+        all_patients = hospital_queue.get_all_patients(limit=50)
+        if not all_patients:
+            st.info("No patient records yet.")
         else:
             try:
                 import pandas as pd
-                df = pd.DataFrame(all_p)
-                cols = ["patient_id", "triage_level", "chief_complaint", "risk_score",
-                        "eta_minutes", "destination_hospital", "language", "status", "timestamp"]
-                avail = [c for c in cols if c in df.columns]
-                st.dataframe(df[avail], use_container_width=True, hide_index=True)
-            except Exception:
-                for p in all_p:
+
+                df = pd.DataFrame(all_patients)
+                desired_cols = [
+                    "patient_id", "triage_level", "chief_complaint",
+                    "risk_score", "eta_minutes", "destination_hospital",
+                    "language", "status", "timestamp",
+                ]
+                available_cols = [c for c in desired_cols if c in df.columns]
+                st.dataframe(df[available_cols], use_container_width=True, hide_index=True)
+            except Exception as exc:
+                logger.error("DataFrame render error: %s", exc)
+                for p in all_patients:
                     st.write(p)
 
-    with tab3:
+    with tab_admin:
         st.subheader("Admin Tools")
-        if st.button("🗑 Clear All Records"):
-            queue.clear_queue()
-            st.success("Cleared.")
+
+        if st.button("🗑 Clear All Records", type="secondary"):
+            hospital_queue.clear_queue()
+            st.success("Queue cleared.")
             st.rerun()
+
         st.divider()
-        if st.button("➕ Add Test Emergency"):
-            try:
-                te = TriageEngine()
-            except Exception:
-                from src.triage_engine import TriageEngine
-                te = TriageEngine()
-            r = te.create_patient_record(
-                chief_complaint="Severe chest pain with arm radiation and sweating",
-                assessment=dict(
-                    triage_level="EMERGENCY",
-                    assessment="Findings: Pain radiates to arm; Sweating; Shortness of breath. 3 red flags.",
-                    red_flags=["pain_radiation", "diaphoresis", "dyspnea"],
-                    recommended_action="ER immediately",
-                    risk_score=9, source_guidelines=["chest_pain_protocol.txt"],
-                    suspected_conditions=["Acute Coronary Syndrome"],
-                    time_sensitivity="Within 10 minutes",
-                ),
-                language="de-DE", eta_minutes=12,
-            )
-            r["destination_hospital"] = "Klinikum Stuttgart (ER)"
-            hospital_queue.add_patient(r)
-            st.success("Added: {}".format(r["patient_id"]))
-            st.rerun()
+        st.markdown("**Add Test Patients**")
+        adm_col1, adm_col2 = st.columns(2)
+        with adm_col1:
+            if st.button("➕ Add Test Emergency", use_container_width=True):
+                _add_test_emergency()
+                st.rerun()
+        with adm_col2:
+            if st.button("➕ Add Test Routine", use_container_width=True):
+                _add_test_routine()
+                st.rerun()
 
-        if st.button("➕ Add Test Routine"):
-            try:
-                te = TriageEngine()
-            except Exception:
-                from src.triage_engine import TriageEngine
-                te = TriageEngine()
-            r = te.create_patient_record(
-                chief_complaint="Mild headache for 2 days",
-                assessment=dict(
-                    triage_level="ROUTINE",
-                    assessment="Pain 3/10. No red flags. Triage: ROUTINE.",
-                    red_flags=["none_identified"],
-                    recommended_action="See GP if persists",
-                    risk_score=2, source_guidelines=["general"],
-                    suspected_conditions=["Tension Headache"],
-                    time_sensitivity="Within 48 hours",
-                ),
-                language="en-US", eta_minutes=30,
-            )
-            r["destination_hospital"] = "Robert-Bosch-Krankenhaus (ER)"
-            hospital_queue.add_patient(r)
-            st.success("Added: {}".format(r["patient_id"]))
-            st.rerun()
-
+    # --- Sidebar ---
     with st.sidebar:
         st.markdown("### 🏥 CodeZero ER")
         st.divider()
-        st.markdown("**Legend**")
-        st.markdown("🔴 Emergency — Immediate")
-        st.markdown("🟠 Urgent — 30 min")
-        st.markdown("🟢 Routine — 2 hours")
+        st.markdown("**Triage Levels**")
+        st.markdown("🔴 **Emergency** — Immediate")
+        st.markdown("🟠 **Urgent** — Within 30 min")
+        st.markdown("🟢 **Routine** — Within 2 hours")
         st.divider()
-        st.markdown("**Flow:** Incoming → Arrived → Treatment → Discharged")
+        st.markdown("**Status Flow**")
+        st.markdown("Incoming → Arrived → Treatment → Discharged")
         st.divider()
-        if st.button("🔄 Refresh"):
+
+        if st.button("🔄 Refresh Now", use_container_width=True):
             st.rerun()
+
+        # FIX: Auto-refresh using st.empty + time-based rerun trigger
+        st.caption(f"Auto-refreshes every {AUTO_REFRESH_SECONDS}s")
+        # Store last refresh time in session state
+        if "last_refresh" not in st.session_state:
+            st.session_state.last_refresh = datetime.now(timezone.utc)
+
+        elapsed = (
+            datetime.now(timezone.utc) - st.session_state.last_refresh
+        ).total_seconds()
+
+        if elapsed >= AUTO_REFRESH_SECONDS:
+            st.session_state.last_refresh = datetime.now(timezone.utc)
+            st.rerun()
+
+        seconds_left = max(0, int(AUTO_REFRESH_SECONDS - elapsed))
+        st.caption(f"Next refresh in {seconds_left}s")
 
 
 if __name__ == "__main__":

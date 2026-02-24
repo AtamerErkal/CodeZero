@@ -253,6 +253,17 @@ OUTPUT FORMAT (strict JSON):
 
             result = json.loads(response.choices[0].message.content)
             questions = result.get("questions", [])
+
+            # Grup B: Token usage tracking for cost monitoring (Instruction requirement)
+            usage = getattr(response, "usage", None)
+            if usage:
+                logger.info(
+                    "generate_questions — tokens used: prompt=%d completion=%d total=%d",
+                    usage.prompt_tokens,
+                    usage.completion_tokens,
+                    usage.total_tokens,
+                )
+
             logger.info(
                 "Generated %d questions for: %s", len(questions), chief_complaint[:50]
             )
@@ -341,6 +352,16 @@ OUTPUT FORMAT (strict JSON):
             )
 
             assessment = json.loads(response.choices[0].message.content)
+
+            # Grup B: Token usage tracking for cost monitoring (Instruction requirement)
+            usage = getattr(response, "usage", None)
+            if usage:
+                logger.info(
+                    "assess_triage — tokens used: prompt=%d completion=%d total=%d",
+                    usage.prompt_tokens,
+                    usage.completion_tokens,
+                    usage.total_tokens,
+                )
 
             # Validate triage level
             if assessment.get("triage_level") not in (
@@ -614,7 +635,14 @@ OUTPUT FORMAT (strict JSON):
                     severity_score += 1
 
             # Analyze yes/no answers
-            if answer in ("yes", "ja", "evet"):
+            # Multilingual affirmative/negative detection:
+            # EN: yes/no  DE: ja/nein  TR: evet/hayır  FR: oui/non
+            # ES: sí/no   IT: sì/no    PT: sim/não     RU: да/нет
+            # AR: نعم/لا  ZH: 是/否
+            _AFFIRMATIVE = {"yes", "ja", "evet", "oui", "sí", "si", "sì", "sim", "да", "نعم", "是"}
+            _NEGATIVE = {"no", "nein", "hayır", "non", "não", "нет", "لا", "否"}
+
+            if answer in _AFFIRMATIVE:
                 if any(w in question for w in ["radiat", "arm", "jaw", "back"]):
                     red_flags.append("pain_radiation")
                     positive_findings.append("Pain radiates to arm/jaw/back")
@@ -644,7 +672,7 @@ OUTPUT FORMAT (strict JSON):
                     positive_findings.append("Confusion or drowsiness reported")
                 severity_score += 1
 
-            elif answer in ("no", "nein", "hayır"):
+            elif answer in _NEGATIVE:
                 if any(w in question for w in ["slur", "speech"]):
                     negative_findings.append("Speech is NOT slurred")
                 if any(w in question for w in ["smile", "face"]):
@@ -662,23 +690,24 @@ OUTPUT FORMAT (strict JSON):
                     negative_findings.append("No chronic conditions reported")
 
             # Analyze multi-choice symptoms
-            if "sweating" in answer or "schwitzen" in answer:
+            # Keywords cover: EN / DE / TR / FR / ES / IT / PT / RU / AR
+            if any(w in answer for w in ["sweating", "schwitzen", "terleme", "transpiration", "sudoración", "sudorazione", "suor", "потоотделение", "تعرق"]):
                 red_flags.append("diaphoresis")
                 positive_findings.append("Sweating")
-            if "shortness" in answer or "breath" in answer or "atemnot" in answer:
+            if any(w in answer for w in ["shortness", "breath", "atemnot", "nefes", "essoufflement", "dificultad respirar", "mancanza di fiato", "falta de ar", "одышка", "ضيق التنفس"]):
                 red_flags.append("dyspnea")
                 positive_findings.append("Shortness of breath")
-            if "nausea" in answer or "übelkeit" in answer:
+            if any(w in answer for w in ["nausea", "übelkeit", "bulantı", "nausée", "náuseas", "nausea", "náusea", "тошнота", "غثيان"]):
                 positive_findings.append("Nausea")
-            if "dizz" in answer or "schwindel" in answer:
+            if any(w in answer for w in ["dizz", "schwindel", "baş dönmesi", "vertige", "mareo", "vertigine", "tontura", "головокружение", "دوار"]):
                 red_flags.append("dizziness")
                 positive_findings.append("Dizziness")
-            if "vomit" in answer or "erbrechen" in answer:
+            if any(w in answer for w in ["vomit", "erbrechen", "kusma", "vomissement", "vómito", "vomito", "vômito", "рвота", "قيء"]):
                 positive_findings.append("Vomiting")
-            if "fever" in answer or "fieber" in answer:
+            if any(w in answer for w in ["fever", "fieber", "ateş", "fièvre", "fiebre", "febbre", "febre", "лихорадка", "حمى"]):
                 red_flags.append("fever")
                 positive_findings.append("Fever")
-            if "blood" in answer or "blut" in answer:
+            if any(w in answer for w in ["blood", "blut", "kan", "sang", "sangre", "sangue", "кровь", "دم"]):
                 red_flags.append("bleeding_sign")
                 positive_findings.append("Blood reported")
 

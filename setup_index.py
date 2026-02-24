@@ -55,14 +55,21 @@ def main() -> None:
 
     # Step 2: Create the search index
     logger.info("Creating / updating Azure AI Search index...")
-    if indexer.create_index():
+    index_ready = indexer.create_index()
+    if index_ready:
         logger.info("✅ Index created/updated successfully.")
     else:
         logger.warning(
             "⚠️  Could not create Azure AI Search index. "
-            "If credentials are not configured, the system will use "
-            "local fallback search at runtime."
+            "Skipping upload step. The system will use local fallback search at runtime."
         )
+        # FIX: Do not attempt to upload when index creation failed — it will
+        # always fail and produce misleading error messages.
+        logger.info("=" * 60)
+        logger.info("  INDEXING SKIPPED (no Azure AI Search credentials)")
+        logger.info("  Local keyword-based fallback will be used at runtime.")
+        logger.info("=" * 60)
+        sys.exit(0)
 
     # Step 3: Process all guideline documents
     logger.info("Processing medical guidelines from: %s", GUIDELINES_DIR)

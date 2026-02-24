@@ -219,15 +219,21 @@ class TestMapsHandler(unittest.TestCase):
 
 
 class TestHospitalQueue(unittest.TestCase):
-    """Test the hospital queue operations."""
+    """Test the hospital queue operations.
 
-    @classmethod
-    def setUpClass(cls):
-        # Use a temporary test database
-        cls.queue = HospitalQueue(db_path="/tmp/test_triage_queue.db")
-        cls.queue.clear_queue()
+    FIX: Each test now runs against a freshly cleared database via setUp().
+    Previously, setUpClass() only cleared once — tests shared state and
+    could fail depending on execution order.
+    """
+
+    def setUp(self):
+        """Create a fresh test queue before every test method."""
+        # Use an isolated temp database — never touches the real patient_queue.db
+        self.queue = HospitalQueue(db_path="/tmp/test_triage_queue.db")
+        self.queue.clear_queue()
 
     def tearDown(self):
+        """Ensure the test database is clean after every test method."""
         self.queue.clear_queue()
 
     def test_add_and_retrieve_patient(self):

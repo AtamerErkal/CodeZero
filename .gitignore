@@ -1,7 +1,58 @@
+# ── Credentials & secrets ─────────────────────────────────────────
 .env
-.venv/
+*.key
+*.pem
+secrets/
+
+# ── Python ────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
-.DS_Store
-data/uploads/*
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ── Virtual environments ───────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Database files (SQLite queue — runtime data, not source) ──────
 *.db
+*.sqlite
+*.sqlite3
+patient_queue.db
+/tmp/test_triage_queue.db
+
+# ── Streamlit ─────────────────────────────────────────────────────
+.streamlit/secrets.toml
+
+# ── OS ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ───────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Test / coverage artifacts ─────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# ── Audio temp files (voice input) ────────────────────────────────
+*.wav
+*.mp3
+tmp_audio_*
+
+# ── Logs ──────────────────────────────────────────────────────────
+*.log
+logs/

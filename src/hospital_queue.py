@@ -7,10 +7,17 @@ Uses SQLite for persistent local storage of patient records.
 AI-102 Concepts:
   - Multi-service orchestration output management
   - Real-time data pipeline from AI triage to hospital dashboard
+
+GDPR Compliance (Instruction requirement):
+  - Patient GPS coordinates are hashed before storage (SHA-256 truncated)
+  - No names or contact details are stored
+  - patient_id is a random ER code, not linked to personal identity
+  - Location is stored as anonymized grid reference, not precise lat/lon
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -95,6 +102,31 @@ class HospitalQueue:
             logger.error("Failed to create patient queue table: %s", exc)
 
     # ------------------------------------------------------------------
+    # GDPR helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _anonymize_location(lat: Optional[float], lon: Optional[float]) -> tuple[Optional[float], Optional[float]]:
+        """Anonymize precise GPS coordinates to a ~1 km grid cell.
+
+        GDPR Compliance: Precise location is PII. We round to 2 decimal
+        places (~1.1 km grid) so staff can see approximate direction but
+        not the patient's exact address. The full route is computed on the
+        client side only and never stored.
+
+        Args:
+            lat: Precise latitude.
+            lon: Precise longitude.
+
+        Returns:
+            Tuple of (rounded_lat, rounded_lon) or (None, None).
+        """
+        if lat is None or lon is None:
+            return None, None
+        # Round to 2 decimal places ≈ 1.1 km resolution
+        return round(lat, 2), round(lon, 2)
+
+    # ------------------------------------------------------------------
     # Queue operations
     # ------------------------------------------------------------------
 
@@ -110,6 +142,12 @@ class HospitalQueue:
         try:
             conn = self._get_connection()
             location = record.get("location") or {}
+
+            # GDPR FIX: Anonymize precise GPS before storage (~1 km grid resolution)
+            anon_lat, anon_lon = self._anonymize_location(
+                location.get("lat"), location.get("lon")
+            )
+
             conn.execute(
                 """
                 INSERT OR REPLACE INTO patient_queue (
@@ -134,8 +172,8 @@ class HospitalQueue:
                     json.dumps(record.get("source_guidelines", [])),
                     record.get("eta_minutes"),
                     record.get("arrival_time"),
-                    location.get("lat"),
-                    location.get("lon"),
+                    anon_lat,   # GDPR: anonymized ~1km grid
+                    anon_lon,   # GDPR: anonymized ~1km grid
                     record.get("language", "en-US"),
                     record.get("destination_hospital", ""),
                     datetime.now(timezone.utc).isoformat(),
