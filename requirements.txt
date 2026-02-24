@@ -1,6 +1,6 @@
 # Core
 python-dotenv==1.0.1
-streamlit==1.39.0
+streamlit==1.40.0
 
 # Azure AI Services
 openai==1.54.5
