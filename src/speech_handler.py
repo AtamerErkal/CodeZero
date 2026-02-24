@@ -23,9 +23,23 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # Supported languages for auto-detection
-# AI-102: Azure Speech can auto-detect from a candidate list of up to 10
-# languages. The service uses acoustic and language models to determine
-# the most likely language.
+# AI-102: Azure Speech AutoDetectSourceLanguageConfig supports up to 10 languages
+# in Continuous recognition mode, but only UP TO 4 in DetectAudioAtStart mode
+# (which is used with recognize_once()).
+#
+# We define two lists:
+#   AUTO_DETECT_LANGUAGES  — max 4, used with recognize_once() / DetectAudioAtStart
+#   SUPPORTED_LANGUAGES    — full list, used for display / translator fallback
+#
+# The 4 most common languages for emergency triage are chosen for detection:
+AUTO_DETECT_LANGUAGES = [
+    "en-US",  # English  — global default
+    "de-DE",  # German   — project primary region (Stuttgart)
+    "tr-TR",  # Turkish  — project secondary region
+    "ar-SA",  # Arabic   — RTL test + Middle East coverage
+]
+
+# Full list kept for UI display names and translator coverage
 SUPPORTED_LANGUAGES = [
     "en-US",  # English (US)
     "de-DE",  # German
@@ -130,9 +144,10 @@ class SpeechHandler:
             import azure.cognitiveservices.speech as speechsdk
 
             # AI-102: Configure auto-detection from candidate languages
+            # FIX: DetectAudioAtStart (recognize_once) supports max 4 languages
             auto_detect_config = (
                 speechsdk.languageconfig.AutoDetectSourceLanguageConfig(
-                    languages=SUPPORTED_LANGUAGES
+                    languages=AUTO_DETECT_LANGUAGES
                 )
             )
 
@@ -157,6 +172,72 @@ class SpeechHandler:
             logger.error("Speech recognition error: %s", exc)
             return None
 
+    def convert_browser_audio_to_wav(self, raw_bytes: bytes, source_suffix: str = ".webm") -> Optional[str]:
+        """Convert browser audio bytes (WebM/Opus) to a WAV temp file.
+
+        ``st.audio_input`` returns raw WebM/Opus bytes from the browser.
+        Azure Speech SDK's ``AudioConfig(filename=...)`` only accepts real
+        WAV files with proper RIFF headers. This method uses ffmpeg (if
+        available) or pydub to convert the browser audio before recognition.
+
+        Args:
+            raw_bytes: Raw audio bytes from ``st.audio_input``.
+            source_suffix: File extension hint for the input format
+                           (e.g. '.webm', '.ogg', '.mp4').
+
+        Returns:
+            Path to a temporary WAV file, or ``None`` if conversion failed.
+        """
+        import subprocess
+        import tempfile
+
+        # Write raw browser audio to a temp file
+        try:
+            with tempfile.NamedTemporaryFile(suffix=source_suffix, delete=False) as src_file:
+                src_file.write(raw_bytes)
+                src_path = src_file.name
+
+            wav_path = src_path.replace(source_suffix, ".wav")
+
+            # Strategy 1: ffmpeg (most reliable, handles all browser formats)
+            try:
+                subprocess.run(
+                    [
+                        "ffmpeg", "-y", "-i", src_path,
+                        "-ar", "16000",          # 16 kHz — Azure Speech requirement
+                        "-ac", "1",              # mono
+                        "-sample_fmt", "s16",    # 16-bit PCM
+                        wav_path,
+                    ],
+                    check=True,
+                    capture_output=True,
+                    timeout=30,
+                )
+                os.unlink(src_path)
+                logger.info("ffmpeg converted browser audio to WAV: %s", wav_path)
+                return wav_path
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as ffmpeg_err:
+                logger.warning("ffmpeg not available or failed (%s), trying pydub.", ffmpeg_err)
+
+            # Strategy 2: pydub (requires ffmpeg internally but may be on PATH differently)
+            try:
+                from pydub import AudioSegment
+                audio = AudioSegment.from_file(src_path)
+                audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+                audio.export(wav_path, format="wav")
+                os.unlink(src_path)
+                logger.info("pydub converted browser audio to WAV: %s", wav_path)
+                return wav_path
+            except Exception as pydub_err:
+                logger.warning("pydub conversion failed: %s", pydub_err)
+
+            os.unlink(src_path)
+            return None
+
+        except Exception as exc:
+            logger.error("Audio conversion error: %s", exc)
+            return None
+
     def recognize_from_audio_file(self, audio_path: str) -> Optional[dict]:
         """Recognize speech from an audio file (WAV format).
 
@@ -173,9 +254,10 @@ class SpeechHandler:
         try:
             import azure.cognitiveservices.speech as speechsdk
 
+            # FIX: DetectAudioAtStart (used with recognize_once) supports max 4 languages
             auto_detect_config = (
                 speechsdk.languageconfig.AutoDetectSourceLanguageConfig(
-                    languages=SUPPORTED_LANGUAGES
+                    languages=AUTO_DETECT_LANGUAGES
                 )
             )
 
@@ -270,11 +352,34 @@ class SpeechHandler:
 
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation = result.cancellation_details
+
+            # FIX: error_code attribute changed across SDK versions (int vs enum vs absent)
+            # Use getattr with safe int conversion to avoid AttributeError
+            raw_code = getattr(cancellation, "error_code", None)
+            raw_details = getattr(cancellation, "error_details", "") or ""
+            try:
+                error_code_int = int(raw_code) if raw_code is not None else -1
+            except (TypeError, ValueError):
+                error_code_int = -1
+
             logger.error(
-                "Speech recognition canceled: %s (code=%s)",
+                "Speech recognition canceled — reason=%s code=%s details=%s",
                 cancellation.reason,
-                cancellation.error_code,
+                error_code_int,
+                raw_details,
             )
+
+            # Provide actionable error messages for common failure codes
+            if error_code_int == 4 or "authentication" in raw_details.lower():
+                logger.error(
+                    "Azure Speech authentication failed. "
+                    "Check SPEECH_KEY and SPEECH_REGION in your .env file."
+                )
+            elif error_code_int == 7 or "connection" in raw_details.lower():
+                logger.error(
+                    "Azure Speech connection failed. "
+                    "Check SPEECH_REGION in your .env file (e.g. westeurope)."
+                )
             return None
 
         return None

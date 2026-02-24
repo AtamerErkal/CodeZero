@@ -610,12 +610,47 @@ OUTPUT FORMAT (strict JSON):
     def _mock_assessment(self, chief_complaint: str, answers: list[dict]) -> dict:
         """Generate mock assessment when Azure OpenAI is unavailable.
 
-        IMPORTANT: This method actually analyzes the patient's answers
-        to build a personalized assessment, not just echo the complaint.
+        Each answer is evaluated against the clinical intent of its OWN
+        question only. Context flags (is_cardiac, is_stroke, etc.) are set
+        once from the chief complaint so that keyword checks in the answer
+        loop never fire for the wrong clinical protocol.
+
+        ROOT BUG FIXED: "arm" was in the cardiac radiation keyword list,
+        causing FAST stroke questions like "Can you raise both arms equally?"
+        to falsely trigger pain_radiation when the answer was "Yes".
+        Now cardiac radiation requires the question itself to mention
+        "radiat", "jaw" or "back" — not just the word "arm".
         """
         complaint_lower = chief_complaint.lower()
 
-        # --- Step 1: Analyze all answers for red flags and findings ---
+        # ── Detect clinical context from chief complaint (set ONCE) ──────
+        is_cardiac = any(kw in complaint_lower for kw in [
+            "chest", "heart", "cardiac", "palpitat",
+        ])
+        is_stroke = any(kw in complaint_lower for kw in [
+            "stroke", "slurred", "speech", "face droop", "arm weakness",
+            "can't move", "sudden weakness", "facial",
+        ])
+        is_respiratory = any(kw in complaint_lower for kw in [
+            "breath", "asthma", "wheez", "cough", "lung", "inhaler",
+        ])
+        is_abdominal = any(kw in complaint_lower for kw in [
+            "stomach", "abdom", "belly", "vomit", "nausea", "appendix",
+        ])
+        is_diabetic = any(kw in complaint_lower for kw in [
+            "diabet", "sugar", "insulin", "glucose", "hypoglycemi",
+        ])
+
+        # ── Multilingual affirmative / negative sets ──────────────────────
+        # EN / DE / TR / FR / ES / IT / PT / RU / AR / ZH
+        AFFIRMATIVE = {
+            "yes", "ja", "evet", "oui", "sí", "si", "sì", "sim", "да", "نعم", "是",
+        }
+        NEGATIVE = {
+            "no", "nein", "hayır", "non", "não", "нет", "لا", "否",
+        }
+
+        # ── Accumulators ─────────────────────────────────────────────────
         red_flags: list[str] = []
         positive_findings: list[str] = []
         negative_findings: list[str] = []
@@ -623,9 +658,9 @@ OUTPUT FORMAT (strict JSON):
 
         for ans in answers:
             question = ans.get("question", "").lower()
-            answer = str(ans.get("answer", "")).lower()
+            answer   = str(ans.get("answer", "")).lower().strip()
 
-            # Score severity from scale answers
+            # ── 1. Pain scale (1-10) ─────────────────────────────────────
             if answer.isdigit():
                 val = int(answer)
                 if val >= 7:
@@ -634,142 +669,206 @@ OUTPUT FORMAT (strict JSON):
                 elif val >= 4:
                     severity_score += 1
 
-            # Analyze yes/no answers
-            # Multilingual affirmative/negative detection:
-            # EN: yes/no  DE: ja/nein  TR: evet/hayır  FR: oui/non
-            # ES: sí/no   IT: sì/no    PT: sim/não     RU: да/нет
-            # AR: نعم/لا  ZH: 是/否
-            _AFFIRMATIVE = {"yes", "ja", "evet", "oui", "sí", "si", "sì", "sim", "да", "نعم", "是"}
-            _NEGATIVE = {"no", "nein", "hayır", "non", "não", "нет", "لا", "否"}
+            # ── 2. Yes/No answers — matched ONLY to their own question ───
+            is_affirmative = answer in AFFIRMATIVE
+            is_negative    = answer in NEGATIVE
 
-            if answer in _AFFIRMATIVE:
-                if any(w in question for w in ["radiat", "arm", "jaw", "back"]):
-                    red_flags.append("pain_radiation")
-                    positive_findings.append("Pain radiates to arm/jaw/back")
-                if any(w in question for w in ["sudden", "plötzlich"]):
-                    red_flags.append("sudden_onset")
-                    positive_findings.append("Sudden onset of symptoms")
-                if any(w in question for w in ["heart disease", "cardiac"]):
-                    red_flags.append("cardiac_history")
-                    positive_findings.append("History of heart disease")
-                if any(w in question for w in ["slur", "speech"]):
-                    red_flags.append("speech_impairment")
-                    positive_findings.append("Speech is slurred")
-                if any(w in question for w in ["smile", "face"]):
-                    positive_findings.append("Facial symmetry normal")
-                if any(w in question for w in ["raise", "arm"]):
-                    positive_findings.append("Can raise arms normally")
-                if any(w in question for w in ["fever", "fieber"]):
-                    red_flags.append("fever")
-                    positive_findings.append("Has fever")
-                if any(w in question for w in ["blood", "blut"]):
-                    red_flags.append("bleeding")
-                    positive_findings.append("Blood present")
-                if any(w in question for w in ["chronic", "condition"]):
-                    positive_findings.append("Has chronic medical conditions")
-                if any(w in question for w in ["confused", "drowsy"]):
-                    red_flags.append("altered_mental_status")
-                    positive_findings.append("Confusion or drowsiness reported")
+            if is_affirmative:
                 severity_score += 1
 
-            elif answer in _NEGATIVE:
-                if any(w in question for w in ["slur", "speech"]):
-                    negative_findings.append("Speech is NOT slurred")
-                if any(w in question for w in ["smile", "face"]):
+                # CARDIAC: radiation only when the question explicitly asks
+                # about radiation/jaw/back — NOT when it mentions "arm raise"
+                if is_cardiac and any(w in question for w in ["radiat", "jaw", "back"]):
+                    red_flags.append("pain_radiation")
+                    positive_findings.append("Pain radiates to arm/jaw/back")
+
+                # CARDIAC: history
+                if any(w in question for w in ["heart disease", "cardiac history", "prior heart"]):
+                    red_flags.append("cardiac_history")
+                    positive_findings.append("History of heart disease")
+
+                # STROKE / FAST — sudden onset (affirmative = bad)
+                if any(w in question for w in ["sudden", "suddenly", "plötzlich", "aniden"]):
+                    red_flags.append("sudden_onset")
+                    positive_findings.append("Sudden onset of symptoms")
+
+                # STROKE / FAST — speech slurred (affirmative = bad)
+                if any(w in question for w in ["slur", "slurred", "unclear speech"]):
+                    red_flags.append("speech_impairment")
+                    positive_findings.append("Speech is slurred")
+
+                # STROKE / FAST — face symmetry (affirmative = GOOD, no red flag)
+                if any(w in question for w in ["smile", "face", "symmetr", "both sides"]):
+                    positive_findings.append("Facial symmetry intact")
+
+                # STROKE / FAST — arm raise (affirmative = GOOD, no red flag)
+                # FIX: "arm" alone no longer triggers cardiac pain_radiation
+                if any(w in question for w in ["raise", "lift both", "arms equally"]):
+                    positive_findings.append("Can raise both arms equally")
+
+                # GENERAL
+                if any(w in question for w in ["fever", "fieber", "ateş", "temperature"]):
+                    red_flags.append("fever")
+                    positive_findings.append("Has fever")
+                if any(w in question for w in ["blood", "blut", "bleeding", "bleed"]):
+                    red_flags.append("bleeding")
+                    positive_findings.append("Blood present")
+                if any(w in question for w in ["chronic", "condition", "medical condition"]):
+                    positive_findings.append("Has chronic medical conditions")
+                if any(w in question for w in ["confused", "drowsy", "unconscious", "altered"]):
+                    red_flags.append("altered_mental_status")
+                    positive_findings.append("Confusion or drowsiness reported")
+
+            elif is_negative:
+                # STROKE / FAST — face symmetry (negative = RED FLAG)
+                if any(w in question for w in ["smile", "face", "symmetr", "both sides"]):
                     red_flags.append("facial_asymmetry")
                     positive_findings.append("Cannot smile symmetrically (facial droop)")
-                if any(w in question for w in ["raise", "arm"]):
+
+                # STROKE / FAST — arm raise (negative = RED FLAG)
+                if any(w in question for w in ["raise", "lift both", "arms equally"]):
                     red_flags.append("arm_weakness")
                     positive_findings.append("Cannot raise both arms equally")
-                if any(w in question for w in ["sentence", "breathe"]):
+
+                # STROKE / FAST — speech slurred (negative = GOOD)
+                if any(w in question for w in ["slur", "slurred", "unclear speech"]):
+                    negative_findings.append("Speech is NOT slurred")
+
+                # RESPIRATORY
+                if any(w in question for w in ["sentence", "complete a", "breathe without"]):
                     red_flags.append("severe_dyspnea")
-                    positive_findings.append("Cannot complete a sentence (severe breathing difficulty)")
-                if any(w in question for w in ["heart disease", "cardiac"]):
+                    positive_findings.append("Cannot complete a sentence (severe dyspnea)")
+
+                # CARDIAC history negative
+                if any(w in question for w in ["heart disease", "cardiac history"]):
                     negative_findings.append("No history of heart disease")
                 if any(w in question for w in ["chronic", "condition"]):
                     negative_findings.append("No chronic conditions reported")
 
-            # Analyze multi-choice symptoms
-            # Keywords cover: EN / DE / TR / FR / ES / IT / PT / RU / AR
-            if any(w in answer for w in ["sweating", "schwitzen", "terleme", "transpiration", "sudoración", "sudorazione", "suor", "потоотделение", "تعرق"]):
+            # ── 3. Multi-choice symptom keywords (language-aware) ────────
+            if any(w in answer for w in [
+                "sweating", "schwitzen", "terleme", "transpiration",
+                "sudoración", "sudorazione", "suor", "потоотделение", "تعرق",
+            ]):
                 red_flags.append("diaphoresis")
                 positive_findings.append("Sweating")
-            if any(w in answer for w in ["shortness", "breath", "atemnot", "nefes", "essoufflement", "dificultad respirar", "mancanza di fiato", "falta de ar", "одышка", "ضيق التنفس"]):
+
+            if any(w in answer for w in [
+                "shortness", "breath", "atemnot", "nefes", "essoufflement",
+                "dificultad respirar", "mancanza di fiato", "falta de ar",
+                "одышка", "ضيق التنفس",
+            ]):
                 red_flags.append("dyspnea")
                 positive_findings.append("Shortness of breath")
-            if any(w in answer for w in ["nausea", "übelkeit", "bulantı", "nausée", "náuseas", "nausea", "náusea", "тошнота", "غثيان"]):
+
+            if any(w in answer for w in [
+                "nausea", "übelkeit", "bulantı", "nausée", "náuseas",
+                "náusea", "тошнота", "غثيان",
+            ]):
                 positive_findings.append("Nausea")
-            if any(w in answer for w in ["dizz", "schwindel", "baş dönmesi", "vertige", "mareo", "vertigine", "tontura", "головокружение", "دوار"]):
+
+            if any(w in answer for w in [
+                "dizz", "schwindel", "baş dönmesi", "vertige", "mareo",
+                "vertigine", "tontura", "головокружение", "دوار",
+            ]):
                 red_flags.append("dizziness")
                 positive_findings.append("Dizziness")
-            if any(w in answer for w in ["vomit", "erbrechen", "kusma", "vomissement", "vómito", "vomito", "vômito", "рвота", "قيء"]):
+
+            if any(w in answer for w in [
+                "vomit", "erbrechen", "kusma", "vomissement", "vómito",
+                "vomito", "vômito", "рвота", "قيء",
+            ]):
                 positive_findings.append("Vomiting")
-            if any(w in answer for w in ["fever", "fieber", "ateş", "fièvre", "fiebre", "febbre", "febre", "лихорадка", "حمى"]):
+
+            if any(w in answer for w in [
+                "fever", "fieber", "ateş", "fièvre", "fiebre", "febbre",
+                "febre", "лихорадка", "حمى",
+            ]):
                 red_flags.append("fever")
                 positive_findings.append("Fever")
-            if any(w in answer for w in ["blood", "blut", "kan", "sang", "sangre", "sangue", "кровь", "دم"]):
+
+            if any(w in answer for w in [
+                "blood", "blut", "kan", "sang", "sangre", "sangue",
+                "кровь", "دم",
+            ]):
                 red_flags.append("bleeding_sign")
                 positive_findings.append("Blood reported")
 
-            # Location-based analysis
             if "lower right" in answer:
                 positive_findings.append("Lower right quadrant pain (possible appendicitis)")
             if "all over" in answer or "diffuse" in answer:
                 red_flags.append("diffuse_pain")
                 positive_findings.append("Diffuse abdominal pain")
 
-        # --- Step 2: Determine triage level based on findings ---
-        emergency_keywords = [
-            "chest pain", "heart", "stroke", "unconscious", "bleeding",
-            "can't breathe", "seizure", "severe", "arm weakness",
-            "face droop", "can't move",
-        ]
-        urgent_keywords = [
-            "pain", "fever", "vomiting", "broken", "injury", "fall",
-            "cough", "stomach",
-        ]
-
-        # Deduplicate red flags
+        # ── Deduplicate while preserving order ────────────────────────────
         red_flags = list(dict.fromkeys(red_flags))
 
-        if len(red_flags) >= 3 or any(kw in complaint_lower for kw in emergency_keywords):
+        # ── FAST stroke logic: facial_asymmetry OR arm_weakness = EMERGENCY ─
+        fast_positive = "facial_asymmetry" in red_flags or "arm_weakness" in red_flags
+        # Stroke with sudden onset also = EMERGENCY even if FAST negative
+        stroke_emergency = is_stroke and ("sudden_onset" in red_flags or fast_positive)
+
+        # ── Triage level ──────────────────────────────────────────────────
+        emergency_complaint_kw = [
+            "chest pain", "heart attack", "stroke", "unconscious",
+            "can't breathe", "seizure", "arm weakness", "face droop",
+            "can't move", "slurred",
+        ]
+        urgent_complaint_kw = [
+            "pain", "fever", "vomiting", "broken", "injury",
+            "fall", "cough", "stomach",
+        ]
+
+        if (
+            fast_positive
+            or stroke_emergency
+            or len(red_flags) >= 3
+            or any(kw in complaint_lower for kw in emergency_complaint_kw)
+        ):
             level = TRIAGE_EMERGENCY
             risk_score = min(10, 7 + len(red_flags))
-        elif len(red_flags) >= 1 or severity_score >= 3 or any(kw in complaint_lower for kw in urgent_keywords):
+        elif (
+            len(red_flags) >= 1
+            or severity_score >= 3
+            or any(kw in complaint_lower for kw in urgent_complaint_kw)
+        ):
             level = TRIAGE_URGENT
             risk_score = min(8, 4 + len(red_flags))
         else:
             level = TRIAGE_ROUTINE
             risk_score = max(1, min(4, severity_score))
 
-        # --- Step 3: Build human-readable assessment from findings ---
-        assessment_parts = []
+        # ── Human-readable summary ────────────────────────────────────────
+        parts: list[str] = []
         if positive_findings:
-            assessment_parts.append("Findings: " + "; ".join(positive_findings[:5]) + ".")
+            parts.append("Findings: " + "; ".join(positive_findings[:5]) + ".")
         if negative_findings:
-            assessment_parts.append("Negative: " + "; ".join(negative_findings[:3]) + ".")
+            parts.append("Negative: " + "; ".join(negative_findings[:3]) + ".")
         if red_flags and red_flags != ["none_identified"]:
-            assessment_parts.append(f"{len(red_flags)} red flag(s) identified.")
-
-        assessment_text = " ".join(assessment_parts) if assessment_parts else "Assessment based on reported symptoms."
+            parts.append(f"{len(red_flags)} red flag(s) identified.")
+        assessment_text = (" ".join(parts) if parts else "Assessment based on reported symptoms.")
         assessment_text += f" Triage level: {level}."
 
-        # Suspected conditions based on keyword + findings
+        # ── Suspected conditions ──────────────────────────────────────────
         suspected: list[str] = []
-        if any(kw in complaint_lower for kw in ["chest", "heart"]):
+        if is_cardiac:
             if "pain_radiation" in red_flags or "diaphoresis" in red_flags:
                 suspected.append("Acute Coronary Syndrome")
             else:
                 suspected.append("Chest Pain — requires evaluation")
-        if any(kw in complaint_lower for kw in ["stroke", "face", "arm", "speech", "move"]):
-            if "facial_asymmetry" in red_flags or "arm_weakness" in red_flags:
+        if is_stroke:
+            if fast_positive:
                 suspected.append("Possible Stroke (FAST positive)")
+            elif "sudden_onset" in red_flags:
+                suspected.append("Possible TIA / Stroke — sudden neurological onset")
             else:
                 suspected.append("Neurological symptoms — requires evaluation")
-        if any(kw in complaint_lower for kw in ["stomach", "abdom", "belly"]):
+        if is_abdominal:
             suspected.append("Abdominal Pain — requires evaluation")
-        if any(kw in complaint_lower for kw in ["breath", "asthma", "wheez"]):
+        if is_respiratory:
             suspected.append("Respiratory Distress")
+        if is_diabetic:
+            suspected.append("Diabetic Emergency — requires evaluation")
         if not suspected:
             suspected.append("Requires clinical evaluation")
 

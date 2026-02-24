@@ -301,28 +301,92 @@ def do_process(text: str) -> None:
 
 
 def try_transcribe(audio) -> str | None:
-    """Attempt Azure Speech transcription of an uploaded audio buffer.
+    """Attempt Azure Speech transcription of a Streamlit audio_input recording.
+
+    ``st.audio_input`` returns raw browser audio bytes, typically in WebM/Opus
+    format. Azure Speech SDK only accepts proper WAV (RIFF/PCM) files.
+    This function detects the format, converts to WAV when needed, then
+    calls recognition.
 
     Args:
-        audio: Streamlit audio upload object with a .getvalue() method.
+        audio: Streamlit audio upload object with a ``.getvalue()`` method.
 
     Returns:
-        Transcribed text string, or None if transcription failed.
+        Transcribed text string, or ``None`` if transcription failed.
     """
     if not speech_handler or not getattr(speech_handler, "_initialized", False):
         return None
+
+    raw_bytes = audio.getvalue()
+    if not raw_bytes:
+        return None
+
     try:
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-            tmp.write(audio.getvalue())
-            tmp_path = tmp.name
-        result = speech_handler.recognize_from_audio_file(tmp_path)
-        os.unlink(tmp_path)
+        # Detect audio format by magic bytes
+        # WebM starts with 0x1A 0x45 0xDF 0xA3 (EBML header)
+        # WAV  starts with "RIFF"
+        # OGG  starts with "OggS"
+        is_wav = raw_bytes[:4] == b"RIFF"
+        is_ogg = raw_bytes[:4] == b"OggS"
+        is_webm = raw_bytes[:4] == b"\x1a\x45\xdf\xa3"
+
+        if is_wav:
+            # Already WAV — write directly and recognize
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                tmp.write(raw_bytes)
+                wav_path = tmp.name
+            logger.info("Audio is already WAV format.")
+        else:
+            # Browser format (WebM/Opus, OGG, MP4…) — must convert to WAV
+            src_suffix = ".ogg" if is_ogg else ".webm"
+            logger.info(
+                "Browser audio detected (is_webm=%s, is_ogg=%s). "
+                "Converting to WAV via speech_handler...",
+                is_webm, is_ogg,
+            )
+            wav_path = speech_handler.convert_browser_audio_to_wav(
+                raw_bytes, source_suffix=src_suffix
+            )
+            if not wav_path:
+                st.warning(
+                    "⚠️ Could not convert audio to WAV format. "
+                    "Please install **ffmpeg** on the server, or type your symptoms instead.\n\n"
+                    "Install: `sudo apt-get install ffmpeg` (Linux) or "
+                    "`brew install ffmpeg` (macOS)"
+                )
+                return None
+
+        result = speech_handler.recognize_from_audio_file(wav_path)
+
+        # Clean up temp WAV file
+        try:
+            os.unlink(wav_path)
+        except OSError:
+            pass
+
         if result and result.get("text"):
             detected_lang = result.get("language", "en-US")
             st.session_state.detected_language = detected_lang
+            logger.info(
+                "Transcribed: '%s' (language: %s)", result["text"][:60], detected_lang
+            )
             return result["text"]
+
+        # Recognition returned None — check logs for specific error code
+        logger.warning("Azure Speech returned no text. Result: %s", result)
+        st.warning(
+            "⚠️ Azure Speech could not transcribe the audio.\n\n"
+            "**Check the terminal for the exact error.** Common causes:\n"
+            "- `SPEECH_KEY` is missing or wrong in `.env`\n"
+            "- `SPEECH_REGION` does not match your Azure resource (e.g. `westeurope`)\n"
+            "- Audio was too short or silent\n\n"
+            "You can type your symptoms in the text box below."
+        )
+
     except Exception as exc:
         logger.error("Transcription error: %s", exc)
+        st.warning(f"⚠️ Transcription error: {exc}\n\nPlease type your symptoms below.")
+
     return None
 
 
@@ -339,10 +403,25 @@ def page_input() -> None:
     # Voice input
     st.subheader("🎤 Voice Input")
     if hasattr(st, "audio_input"):
+        # Check ffmpeg availability once per session
+        if "ffmpeg_available" not in st.session_state:
+            import shutil
+            st.session_state.ffmpeg_available = shutil.which("ffmpeg") is not None
+
+        if not st.session_state.ffmpeg_available:
+            st.warning(
+                "⚠️ **ffmpeg not found** — voice recording requires ffmpeg to convert "
+                "browser audio to WAV format.\n\n"
+                "Install: `sudo apt-get install ffmpeg` (Linux) · "
+                "`brew install ffmpeg` (macOS)\n\n"
+                "You can still type your symptoms below."
+            )
+
         audio = st.audio_input("Tap the microphone and describe your symptoms")
         if audio is not None:
             st.audio(audio)
-            transcribed = try_transcribe(audio)
+            with st.spinner("🔄 Converting and transcribing audio..."):
+                transcribed = try_transcribe(audio)
             if transcribed:
                 st.success(f"**Transcribed:** {transcribed}")
                 if st.button(
@@ -354,8 +433,9 @@ def page_input() -> None:
                     do_process(transcribed)
             else:
                 st.warning(
-                    "Could not transcribe. Azure Speech may not be configured. "
-                    "Please type your symptoms below."
+                    "Could not transcribe. Check that Azure Speech credentials "
+                    "are set in `.env` and ffmpeg is installed. "
+                    "You can type your symptoms below."
                 )
     else:
         st.info("Voice input requires Streamlit ≥ 1.41. Please type below.")
