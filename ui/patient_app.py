@@ -205,6 +205,17 @@ if _TC not in st.session_state:
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _find_hospitals(mh, lat: float, lon: float, country: str = "DE") -> list[dict]:
+    """Backward-compatible wrapper — passes 'country' only if the installed
+    maps_handler supports it (older installs may not have the parameter yet)."""
+    import inspect
+    sig = inspect.signature(mh.find_nearest_hospitals)
+    if "country" in sig.parameters:
+        return mh.find_nearest_hospitals(lat, lon, count=3, country=country)
+    return mh.find_nearest_hospitals(lat, lon, count=3)
+
+
 def t(text: str) -> str:
     lang = st.session_state.detected_language
     if not translator or lang.startswith("en"):
@@ -779,7 +790,7 @@ def page_triage() -> None:
     if not st.session_state.nearby_hospitals:
         if lat and lon and maps_handler:
             with st.spinner("Finding nearest hospitals..."):
-                hospitals = maps_handler.find_nearest_hospitals(lat, lon, count=3, country=country)
+                hospitals = _find_hospitals(maps_handler, lat, lon, country)
                 st.session_state.nearby_hospitals = hospitals
             st.rerun()
         elif not lat:
@@ -792,7 +803,7 @@ def page_triage() -> None:
                 lon = st.number_input("Longitude", value=9.18, format="%.4f", key="manual_lon")
             if st.button("Find Hospitals", type="primary", use_container_width=True, key="find_manual"):
                 if maps_handler:
-                    hospitals = maps_handler.find_nearest_hospitals(lat, lon, count=3, country=country)
+                    hospitals = _find_hospitals(maps_handler, lat, lon, country)
                     st.session_state.nearby_hospitals = hospitals
                     st.session_state.patient_lat = lat
                     st.session_state.patient_lon = lon

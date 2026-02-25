@@ -529,11 +529,14 @@ def render_patient_card(p: dict, show_tracking: bool = False) -> None:
                 render_health_record_panel(hn)
             else:
                 st.info("No health number provided by this patient.")
-                # Demo lookup
-                with st.expander("🔍 Look up by health number"):
-                    hn_input = st.text_input("Enter health number", key=_hkey("hn_lookup", pid), placeholder="e.g. DE-1985-447291")
-                    if hn_input:
-                        render_health_record_panel(hn_input)
+                # Cannot nest expanders — use text_input directly
+                hn_input = st.text_input(
+                    "🔍 Look up by health number",
+                    key=_hkey("hn_lookup", pid),
+                    placeholder="e.g. DE-1985-447291 · UK-1990-334872 · TR-1972-881043",
+                )
+                if hn_input and len(hn_input) > 5:
+                    render_health_record_panel(hn_input)
 
     # ── Pre-arrival prep ────────────────────────────────────────────────────
     if stat == "incoming":
