@@ -244,6 +244,8 @@ _DEFAULTS: dict = dict(
     q_idx=0,
     demographics={},           # age_range + sex collected before AI questions
     demo_idx=0,                # index into DEMOGRAPHIC_QUESTIONS
+    patient_photo=None,        # optional camera photo of wound/rash/swelling
+    gps_fetched=False,         # GPS already fetched this session
     assessment=None,
     patient_record=None,
     eta_info=None,
@@ -474,66 +476,51 @@ def page_input() -> None:
 </div>
 """, unsafe_allow_html=True)
 
-    # ── GPS auto-detect ───────────────────────────────────────────────────
-    # Inject JavaScript that calls browser Geolocation API and writes
-    # lat/lon into hidden Streamlit text inputs via postMessage.
-    gps_component = """
+    # ── GPS: read coords written by JS into query params ─────────────────
+    # Pure browser approach — no external package required.
+    # On first page load the iframe script asks for location permission
+    # and rewrites the URL with ?cz_lat=...&cz_lon=...
+    # Streamlit picks up the new params on the next rerun.
+    if not st.session_state.get("gps_fetched"):
+        try:
+            params = st.query_params
+            if "cz_lat" in params and "cz_lon" in params:
+                st.session_state.patient_lat = float(params["cz_lat"])
+                st.session_state.patient_lon = float(params["cz_lon"])
+                st.session_state.gps_fetched = True
+        except Exception:
+            pass
+
+    if not st.session_state.get("gps_fetched"):
+        st.components.v1.html("""
 <script>
 (function() {
   if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(
-    function(pos) {
-      const lat = pos.coords.latitude.toFixed(6);
-      const lon = pos.coords.longitude.toFixed(6);
-      // Store in sessionStorage so Streamlit can read on next interaction
-      sessionStorage.setItem("cz_lat", lat);
-      sessionStorage.setItem("cz_lon", lon);
-      // Show a small success indicator
-      const el = document.getElementById("gps-status");
-      if (el) el.innerHTML = "📍 Location detected";
-    },
-    function() {
-      const el = document.getElementById("gps-status");
-      if (el) el.innerHTML = "📍 Location unavailable — will ask manually";
-    },
-    { timeout: 8000 }
-  );
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    try {
+      var url = new URL(window.parent.location.href);
+      url.searchParams.set("cz_lat", pos.coords.latitude.toFixed(6));
+      url.searchParams.set("cz_lon", pos.coords.longitude.toFixed(6));
+      window.parent.location.replace(url.toString());
+    } catch(e) {}
+  }, function() {}, {timeout: 7000, enableHighAccuracy: false});
 })();
 </script>
-<p id="gps-status" style="text-align:center; font-size:0.95rem; color:#64748b;
-   margin:0.3rem 0 1rem 0;">📍 Detecting your location...</p>
-"""
-    st.markdown(gps_component, unsafe_allow_html=True)
+""", height=0)
 
-    # Read GPS values stored in sessionStorage via a hidden JS bridge
-    # (written by a previous run of the GPS script above)
-    js_read_gps = """
-<script>
-(function() {
-  const lat = sessionStorage.getItem("cz_lat");
-  const lon = sessionStorage.getItem("cz_lon");
-  if (lat && lon) {
-    // Inject into Streamlit query params so Python can read them
-    const url = new URL(window.location.href);
-    url.searchParams.set("cz_lat", lat);
-    url.searchParams.set("cz_lon", lon);
-    if (window.location.href !== url.toString()) {
-      window.history.replaceState({}, "", url.toString());
-    }
-  }
-})();
-</script>
-"""
-    st.markdown(js_read_gps, unsafe_allow_html=True)
-
-    # Try to read GPS from query params (set by JS bridge above)
-    try:
-        params = st.query_params
-        if "cz_lat" in params and "cz_lon" in params:
-            st.session_state.patient_lat = float(params["cz_lat"])
-            st.session_state.patient_lon = float(params["cz_lon"])
-    except Exception:
-        pass
+    # GPS status line
+    if st.session_state.get("patient_lat"):
+        st.markdown(
+            '<p style="text-align:center;font-size:0.9rem;color:#16a34a;margin:0.1rem 0 0.5rem 0;">'
+            '📍 Location detected</p>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<p style="text-align:center;font-size:0.9rem;color:#94a3b8;margin:0.1rem 0 0.5rem 0;">'
+            '📍 Allow location when prompted</p>',
+            unsafe_allow_html=True,
+        )
 
     # ── Primary: voice input ──────────────────────────────────────────────
     if hasattr(st, "audio_input"):
@@ -575,6 +562,28 @@ def page_input() -> None:
                 st.warning("⚠️ Could not understand the audio. Please try again or type below.")
     else:
         st.info("Voice input requires Streamlit ≥ 1.41.0. Please type below.")
+
+    # ── Optional: photo of wound / affected area ─────────────────────────
+    # camera_input is guarded with try/except — some browsers block it
+    # silently and cause a blank screen without the guard.
+    try:
+        if hasattr(st, "camera_input"):
+            with st.expander("📷 Add a photo (optional)"):
+                if not st.session_state.get("patient_photo"):
+                    photo = st.camera_input(
+                        "Take a photo of the affected area",
+                        label_visibility="collapsed",
+                    )
+                    if photo is not None:
+                        st.session_state.patient_photo = photo
+                        st.success("✅ Photo saved.")
+                else:
+                    st.success("✅ Photo already captured.")
+                    if st.button("Retake photo", key="retake_photo"):
+                        st.session_state.patient_photo = None
+                        st.rerun()
+    except Exception:
+        pass
 
     # ── Divider with "or" ─────────────────────────────────────────────────
     st.markdown("""
@@ -922,6 +931,7 @@ def _do_notify(
             language=st.session_state.detected_language,
             eta_minutes=eta_minutes,
             location=location,
+            demographics=st.session_state.get("demographics"),
         )
     else:
         record = {
@@ -933,6 +943,11 @@ def _do_notify(
 
     if hospital_name:
         record["destination_hospital"] = hospital_name
+
+    # Attach photo flag (actual bytes not JSON-serializable but flag alerts staff)
+    if st.session_state.get("patient_photo") is not None:
+        record["has_photo"] = True
+        record["photo_note"] = "Patient submitted a wound/symptom photo — review in app"
 
     if hospital_queue:
         hospital_queue.add_patient(record)
