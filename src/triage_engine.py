@@ -44,6 +44,28 @@ TRIAGE_DESCRIPTIONS = {
     TRIAGE_ROUTINE: "Non-urgent, can wait or self-care",
 }
 
+# ---------------------------------------------------------------------------
+# Demographic intake questions — always asked first before AI clinical questions.
+# Answers are injected into the GPT-4 prompt so the model can adapt questions
+# to the patient's risk profile (e.g. cardiac risk is higher for males over 45).
+# ---------------------------------------------------------------------------
+DEMOGRAPHIC_QUESTIONS: list[dict] = [
+    {
+        "question": "What is your age range?",
+        "type": "multiple_choice",
+        "options": ["Under 12", "12-17", "18-29", "30-44", "45-59", "60-74", "75+"],
+        "clinical_rationale": "Age significantly affects risk stratification for most conditions",
+        "is_demographic": True,
+    },
+    {
+        "question": "What is your biological sex?",
+        "type": "multiple_choice",
+        "options": ["Male", "Female", "Prefer not to say"],
+        "clinical_rationale": "Biological sex affects symptom presentation and risk profiles",
+        "is_demographic": True,
+    },
+]
+
 
 class TriageEngine:
     """AI-powered medical triage engine with RAG grounding.
@@ -127,26 +149,31 @@ class TriageEngine:
     # RAG: Retrieve context from knowledge base
     # ------------------------------------------------------------------
 
-    def _retrieve_context(self, query: str) -> str:
+    def _retrieve_context(self, query: str) -> tuple[str, bool]:
         """Search the medical knowledge base for relevant guidelines.
 
         AI-102: This is the "Retrieval" step of RAG. The search query
         is derived from the patient's complaint. Results are concatenated
         and injected into the system prompt as grounding context.
 
+        Returns a tuple (context_text, rag_found) so callers can adapt
+        their prompts when the knowledge base has no relevant content.
+
         Args:
             query: Search query (usually the patient's chief complaint).
 
         Returns:
-            Concatenated guideline text for GPT context.
+            Tuple of (guideline text, rag_found flag).
+            rag_found is True only when at least one result was retrieved.
         """
         if self.knowledge_indexer is None:
-            return ""
+            return "", False
 
         try:
             results = self.knowledge_indexer.search(query, top=3)
             if not results:
-                return ""
+                logger.info("RAG: no results for query '%s' — AI will use general knowledge.", query[:60])
+                return "", False
 
             context_parts = []
             for r in results:
@@ -154,11 +181,13 @@ class TriageEngine:
                     f"--- Source: {r.get('source', 'Unknown')} ---\n"
                     f"{r.get('content', '')}\n"
                 )
-            return "\n".join(context_parts)
+            context_text = "\n".join(context_parts)
+            logger.info("RAG: found %d result(s) for query '%s'.", len(results), query[:60])
+            return context_text, True
 
         except Exception as exc:
             logger.error("RAG retrieval error: %s", exc)
-            return ""
+            return "", False
 
     # ------------------------------------------------------------------
     # Dynamic question generation (Agentic AI)
@@ -168,24 +197,37 @@ class TriageEngine:
         self,
         chief_complaint: str,
         previous_answers: Optional[list[dict]] = None,
+        demographics: Optional[dict] = None,
     ) -> list[dict]:
         """Generate follow-up triage questions based on the complaint.
 
         AI-102 (Agentic AI): The AI dynamically decides what to ask next
         based on (a) the initial complaint, (b) retrieved medical
-        guidelines, and (c) any previous answers. This multi-step
-        reasoning is a hallmark of agentic AI systems.
+        guidelines, (c) patient demographics, and (d) any previous answers.
+
+        Demographics (age range, biological sex) are injected into the prompt
+        so the model can adapt questions to the patient profile — e.g. cardiac
+        risk questions are prioritised for males over 45.
 
         Args:
             chief_complaint: Patient's initial complaint in English.
             previous_answers: List of dicts with question/answer pairs.
+            demographics: Dict with 'age_range' and 'sex' keys (from intake).
 
         Returns:
             List of question dicts with keys: question, type, options.
             Types: 'yes_no', 'scale', 'multiple_choice', 'free_text'.
         """
         # Retrieve relevant medical guidelines (RAG)
-        context = self._retrieve_context(chief_complaint)
+        context, rag_found = self._retrieve_context(chief_complaint)
+
+        # Build demographic context string
+        demo_context = ""
+        if demographics:
+            age   = demographics.get("age_range", "unknown")
+            sex   = demographics.get("sex", "unknown")
+            demo_context = f"\nPATIENT DEMOGRAPHICS: Age range: {age} | Biological sex: {sex}"
+            logger.info("Generating questions with demographics: age=%s sex=%s", age, sex)
 
         # Build previous answers context
         answers_context = ""
@@ -194,20 +236,42 @@ class TriageEngine:
             for ans in previous_answers:
                 answers_context += f"- Q: {ans.get('question', '')} → A: {ans.get('answer', '')}\n"
 
-        # AI-102: System prompt engineering - structure, persona, constraints
-        system_prompt = f"""You are an emergency medical triage AI assistant. Your role is to
-ask focused follow-up questions to assess the severity of a patient's condition.
+        # AI-102: Adapt system prompt based on RAG availability
+        if rag_found:
+            knowledge_section = f"""MEDICAL GUIDELINES (base your questions on these):
+{context}
 
-MEDICAL GUIDELINES (use ONLY these for clinical reasoning):
-{context if context else "No specific guidelines available. Use general medical knowledge."}
+Base all questions on the guidelines above."""
+        else:
+            knowledge_section = """KNOWLEDGE SOURCE: General medical knowledge (no specific protocol found in knowledge base).
+Use evidence-based clinical assessment principles for this complaint."""
+
+        system_prompt = f"""You are an emergency medical triage AI assistant. Your role is to
+ask focused, condition-specific follow-up questions to assess the severity of a patient's condition.
+
+{knowledge_section}
 
 RULES:
-1. Generate 3-5 focused follow-up questions based on the chief complaint.
-2. Questions must help determine triage level: EMERGENCY, URGENT, or ROUTINE.
-3. Prioritize RED FLAG assessment questions first.
-4. Keep questions simple - the patient may be in distress.
-5. Each question should have a clear answer type.
-6. Do NOT ask for information already provided.
+1. Generate 3-5 focused follow-up questions SPECIFIC to this exact complaint.
+2. Use the patient demographics to adapt questions to their risk profile.
+   - Males 45+: prioritise cardiac red flags
+   - Females 18-44: consider gynaecological causes for abdominal pain
+   - Under 18: consider paediatric presentations and doses
+   - 75+: consider falls, polypharmacy, atypical presentations
+3. Questions must help determine triage level: EMERGENCY, URGENT, or ROUTINE.
+4. Prioritise RED FLAG assessment questions first.
+5. Keep questions simple — the patient may be in distress.
+6. Do NOT ask age or sex (already collected). Do NOT repeat previous answers.
+7. Questions must be SPECIFIC to the complaint — not generic.
+
+CRITICAL OUTPUT RULES — MUST FOLLOW:
+- NEVER use type "free_text". The patient cannot type — they are in distress.
+- Every single question MUST have a non-empty "options" list with 2-6 clickable choices.
+- For time questions use options like: ["Just now", "Less than 1 hour", "1-6 hours", "6-24 hours", "More than 1 day"]
+- For onset questions use: ["Suddenly", "Gradually over minutes", "Gradually over hours", "Gradually over days"]
+- For location questions use specific anatomical options.
+- For severity always use scale type with options ["1","2","3","4","5","6","7","8","9","10"].
+- Allowed types: "yes_no", "scale", "multiple_choice" ONLY.
 
 OUTPUT FORMAT (strict JSON):
 {{
@@ -225,6 +289,12 @@ OUTPUT FORMAT (strict JSON):
       "clinical_rationale": "Pain severity assessment"
     }},
     {{
+      "question": "When did the pain start?",
+      "type": "multiple_choice",
+      "options": ["Just now", "Less than 1 hour ago", "1-6 hours ago", "6-24 hours ago", "More than 1 day ago"],
+      "clinical_rationale": "Onset timing for urgency assessment"
+    }},
+    {{
       "question": "Do you have any of these symptoms?",
       "type": "multiple_choice",
       "options": ["Sweating", "Shortness of breath", "Nausea", "Dizziness", "None"],
@@ -234,7 +304,12 @@ OUTPUT FORMAT (strict JSON):
 }}
 """
 
-        user_message = f"Chief complaint: {chief_complaint}{answers_context}\n\nGenerate triage assessment questions."
+        user_message = (
+            f"Chief complaint: {chief_complaint}"
+            f"{demo_context}"
+            f"{answers_context}"
+            f"\n\nGenerate condition-specific triage assessment questions."
+        )
 
         if not self._initialized:
             return self._mock_questions(chief_complaint)
@@ -247,8 +322,7 @@ OUTPUT FORMAT (strict JSON):
                     {"role": "user", "content": user_message},
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.3,
-                max_tokens=1000,
+                max_completion_tokens=1000,
             )
 
             result = json.loads(response.choices[0].message.content)
@@ -296,26 +370,34 @@ OUTPUT FORMAT (strict JSON):
             Assessment dict with triage_level, assessment, red_flags,
             recommended_action, risk_score, and source_guidelines.
         """
-        context = self._retrieve_context(chief_complaint)
+        context, rag_found = self._retrieve_context(chief_complaint)
 
         answers_text = "\n".join(
             f"Q: {a.get('question', '')} → A: {a.get('answer', '')}"
             for a in answers
         )
 
+        # AI-102: RAG-aware prompt — cite sources when available,
+        # fall back to general knowledge transparently when not.
+        if rag_found:
+            knowledge_section = f"""MEDICAL GUIDELINES (base your assessment on these):
+{context}
+
+You MUST cite the guideline sources used in source_guidelines."""
+        else:
+            knowledge_section = """KNOWLEDGE SOURCE: General medical knowledge (no specific protocol found in knowledge base).
+Use evidence-based clinical principles. Set source_guidelines to an empty list []."""
+
         system_prompt = f"""You are an emergency medical triage AI. Analyze the patient's
 symptoms and answers to determine the appropriate triage level.
 
-MEDICAL GUIDELINES (use ONLY these for your assessment):
-{context if context else "No specific guidelines available. Use general medical knowledge."}
+{knowledge_section}
 
 ASSESSMENT RULES:
-1. Base your assessment strictly on the guidelines provided.
-2. Identify ALL red flags present.
-3. Classify into: EMERGENCY, URGENT, or ROUTINE.
-4. Provide a clear assessment summary.
-5. Recommend specific actions.
-6. Cite which guideline sections informed your decision.
+1. Identify ALL red flags present.
+2. Classify into: EMERGENCY, URGENT, or ROUTINE.
+3. Provide a clear assessment summary.
+4. Recommend specific actions.
 
 OUTPUT FORMAT (strict JSON):
 {{
@@ -324,7 +406,7 @@ OUTPUT FORMAT (strict JSON):
   "red_flags": ["list", "of", "identified", "red", "flags"],
   "recommended_action": "What the patient should do",
   "risk_score": 8,
-  "source_guidelines": ["guideline sources used"],
+  "source_guidelines": ["guideline sources used, or empty list if none"],
   "suspected_conditions": ["possible conditions"],
   "time_sensitivity": "How urgent (e.g., 'Seek ER within 10 minutes')"
 }}
@@ -347,8 +429,7 @@ OUTPUT FORMAT (strict JSON):
                     {"role": "user", "content": user_message},
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.1,  # Low temperature for consistent medical assessment
-                max_tokens=1000,
+                max_completion_tokens=1000,
             )
 
             assessment = json.loads(response.choices[0].message.content)
@@ -386,6 +467,427 @@ OUTPUT FORMAT (strict JSON):
     # ------------------------------------------------------------------
     # Patient record creation
     # ------------------------------------------------------------------
+
+    def generate_pre_arrival_advice(
+        self,
+        chief_complaint: str,
+        assessment: dict,
+        language: str = "en-US",
+    ) -> dict:
+        """Generate DO / DON'T advice for the patient before arriving at hospital.
+
+        AI-102 (Generative AI + RAG hybrid): Uses the triage assessment and
+        a RAG context lookup to produce personalised pre-arrival guidance.
+        When RAG has no relevant protocol, falls back to GPT-4 general
+        medical knowledge. Results are translated into the patient's language.
+
+        Args:
+            chief_complaint: Patient's complaint in English.
+            assessment: Full triage assessment dict from assess_triage().
+            language: BCP-47 locale for translation (e.g. "de-DE").
+
+        Returns:
+            Dict with keys:
+                do_list   — list[str]: actions the patient SHOULD take
+                dont_list — list[str]: actions the patient MUST AVOID
+                rag_sourced — bool: True if advice is grounded in guidelines
+        """
+        triage_level = assessment.get("triage_level", TRIAGE_URGENT)
+        red_flags    = assessment.get("red_flags", [])
+        suspected    = assessment.get("suspected_conditions", [])
+
+        # ── Step 1: Try RAG for condition-specific protocol ───────────────
+        context, rag_found = self._retrieve_context(chief_complaint)
+
+        if rag_found:
+            knowledge_section = f"""Use the following medical guidelines to generate advice:
+{context}"""
+        else:
+            knowledge_section = "Use general evidence-based medical knowledge to generate advice."
+
+        # ── Step 2: Build GPT-4 prompt ────────────────────────────────────
+        system_prompt = f"""You are an emergency medical triage AI providing pre-arrival
+instructions to a patient who is about to travel to hospital.
+
+{knowledge_section}
+
+PATIENT CONTEXT:
+- Triage level: {triage_level}
+- Chief complaint: {chief_complaint}
+- Red flags identified: {", ".join(red_flags) if red_flags else "none"}
+- Suspected conditions: {", ".join(suspected) if suspected else "unknown"}
+
+TASK: Generate practical DO and DON'T instructions for the patient to follow
+RIGHT NOW, before they arrive at the hospital.
+
+RULES:
+1. DO list: 3-5 concrete actions the patient or bystander should take immediately.
+2. DON'T list: 3-5 things the patient must NOT do before arrival.
+3. Keep each item to ONE short sentence — the patient may be in distress.
+4. Be specific to the condition (e.g. aspirin for cardiac, no food for surgical).
+5. Include a caregiver action if EMERGENCY level.
+6. Do NOT include "call emergency services" — that is already shown separately.
+
+OUTPUT FORMAT (strict JSON, no extra text):
+{{
+  "do_list": [
+    "Sit upright and rest — do not walk around",
+    "Take 300mg aspirin now if not allergic and no prior dose taken",
+    "Loosen any tight clothing around chest and neck",
+    "Have someone stay with you at all times"
+  ],
+  "dont_list": [
+    "Do not eat or drink anything",
+    "Do not take any other medications without medical advice",
+    "Do not drive yourself to hospital"
+  ]
+}}"""
+
+        user_message = f"Generate pre-arrival advice for: {chief_complaint}"
+
+        # ── Step 3: Call GPT-4 or use mock ───────────────────────────────
+        if not self._initialized:
+            advice = self._mock_pre_arrival_advice(chief_complaint, triage_level)
+        else:
+            try:
+                response = self.openai_client.chat.completions.create(
+                    model=self.deployment,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user",   "content": user_message},
+                    ],
+                    response_format={"type": "json_object"},
+                    max_completion_tokens=600,
+                )
+                usage = getattr(response, "usage", None)
+                if usage:
+                    logger.info(
+                        "generate_pre_arrival_advice — tokens: prompt=%d completion=%d total=%d",
+                        usage.prompt_tokens, usage.completion_tokens, usage.total_tokens,
+                    )
+                advice = json.loads(response.choices[0].message.content)
+            except Exception as exc:
+                logger.error("Pre-arrival advice generation failed: %s", exc)
+                advice = self._mock_pre_arrival_advice(chief_complaint, triage_level)
+
+        do_list   = advice.get("do_list",   [])
+        dont_list = advice.get("dont_list", [])
+
+        # ── Step 4: Translate into patient's language ─────────────────────
+        if self.translator and not language.startswith("en"):
+            try:
+                translated_do   = [self.translator.translate_from_english(item, language) for item in do_list]
+                translated_dont = [self.translator.translate_from_english(item, language) for item in dont_list]
+                do_list   = translated_do
+                dont_list = translated_dont
+                logger.info("Pre-arrival advice translated to %s.", language)
+            except Exception as exc:
+                logger.warning("Advice translation failed (%s) — returning English.", exc)
+
+        logger.info(
+            "Pre-arrival advice generated: %d DO items, %d DON'T items (rag=%s, lang=%s).",
+            len(do_list), len(dont_list), rag_found, language,
+        )
+
+        return {
+            "do_list":     do_list,
+            "dont_list":   dont_list,
+            "rag_sourced": rag_found,
+        }
+
+    def _mock_pre_arrival_advice(self, chief_complaint: str, triage_level: str) -> dict:
+        """Fallback pre-arrival advice when Azure OpenAI is unavailable.
+
+        Covers the most common emergency presentations with evidence-based
+        DO / DON'T lists based on standard first-aid protocols.
+        """
+        complaint_lower = chief_complaint.lower()
+
+        # ── Cardiac / chest pain ──────────────────────────────────────────
+        if any(kw in complaint_lower for kw in ["chest", "heart", "cardiac", "palpitat"]):
+            return {
+                "do_list": [
+                    "Sit upright and rest — do not walk around",
+                    "Take 300mg aspirin now if you are not allergic and have not already taken one",
+                    "Loosen any tight clothing around chest and neck",
+                    "Have someone stay with you at all times",
+                    "Unlock the front door so paramedics can enter quickly",
+                ],
+                "dont_list": [
+                    "Do not eat or drink anything",
+                    "Do not take any other heart medications without medical advice",
+                    "Do not drive yourself to hospital",
+                    "Do not lie flat — stay seated upright",
+                ],
+            }
+
+        # ── Stroke / neurological ─────────────────────────────────────────
+        if any(kw in complaint_lower for kw in ["stroke", "face", "slur", "speech", "arm weakness", "sudden weakness"]):
+            return {
+                "do_list": [
+                    "Lie the patient down with head and shoulders slightly raised",
+                    "Stay calm and reassure the patient — stress worsens stroke",
+                    "Note the exact time symptoms started — doctors need this",
+                    "Keep the patient warm and comfortable",
+                    "Unlock the front door so paramedics can enter quickly",
+                ],
+                "dont_list": [
+                    "Do not give the patient food, water, or any medications",
+                    "Do not leave the patient alone",
+                    "Do not let the patient drive or walk unassisted",
+                    "Do not give aspirin — it can be harmful for certain stroke types",
+                ],
+            }
+
+        # ── Breathing difficulty ──────────────────────────────────────────
+        if any(kw in complaint_lower for kw in ["breath", "asthma", "wheez", "inhaler", "lung"]):
+            return {
+                "do_list": [
+                    "Sit upright — leaning slightly forward helps breathing",
+                    "Use your rescue inhaler (e.g. salbutamol) if prescribed",
+                    "Loosen any tight clothing around chest and neck",
+                    "Open a window for fresh air if possible",
+                ],
+                "dont_list": [
+                    "Do not lie down — this makes breathing harder",
+                    "Do not smoke or stay near smoky environments",
+                    "Do not exert yourself or walk quickly",
+                    "Do not take extra doses of inhaler beyond what is prescribed",
+                ],
+            }
+
+        # ── Diabetic emergency ────────────────────────────────────────────
+        if any(kw in complaint_lower for kw in ["diabet", "sugar", "insulin", "glucose", "hypoglycemi"]):
+            return {
+                "do_list": [
+                    "Check blood glucose immediately if a meter is available",
+                    "If conscious and able to swallow, give 15g fast-acting sugar (juice, glucose tablets)",
+                    "Sit or lie down in a safe position",
+                    "Recheck blood sugar after 15 minutes",
+                ],
+                "dont_list": [
+                    "Do not give food or drink if the patient is unconscious or confused",
+                    "Do not inject more insulin — low blood sugar is most likely",
+                    "Do not leave the patient alone",
+                ],
+            }
+
+        # ── Abdominal pain ────────────────────────────────────────────────
+        if any(kw in complaint_lower for kw in ["stomach", "abdom", "belly", "vomit", "nausea", "appendix"]):
+            return {
+                "do_list": [
+                    "Lie in a comfortable position — knees slightly bent often helps",
+                    "Keep a bowl nearby in case of vomiting",
+                    "Note when symptoms started and whether they are getting worse",
+                ],
+                "dont_list": [
+                    "Do not eat or drink anything — surgery may be needed",
+                    "Do not take painkillers — they can mask important symptoms",
+                    "Do not apply heat to the abdomen",
+                ],
+            }
+
+        # ── Trauma / injury / fall ────────────────────────────────────────
+        if any(kw in complaint_lower for kw in ["broken", "fracture", "fall", "trauma", "injury", "wound", "bleed"]):
+            return {
+                "do_list": [
+                    "Keep the injured area still and supported",
+                    "Apply gentle pressure to any bleeding wound with a clean cloth",
+                    "Elevate the injured limb above heart level if possible",
+                    "Apply ice wrapped in a cloth to reduce swelling",
+                ],
+                "dont_list": [
+                    "Do not try to straighten or move a suspected broken bone",
+                    "Do not remove an embedded object from a wound",
+                    "Do not eat or drink if surgery may be needed",
+                ],
+            }
+
+        # ── Generic fallback ──────────────────────────────────────────────
+        if triage_level == TRIAGE_EMERGENCY:
+            return {
+                "do_list": [
+                    "Stay as calm as possible and rest",
+                    "Have someone stay with you at all times",
+                    "Unlock the front door so paramedics can enter",
+                    "Gather any medications you take regularly to show the doctor",
+                ],
+                "dont_list": [
+                    "Do not eat or drink anything until assessed by a doctor",
+                    "Do not drive yourself to hospital",
+                    "Do not take new medications without medical advice",
+                ],
+            }
+
+        return {
+            "do_list": [
+                "Rest and avoid strenuous activity",
+                "Gather your medications and medical history documents",
+                "Have someone accompany you to hospital if possible",
+            ],
+            "dont_list": [
+                "Do not ignore worsening symptoms — return here immediately",
+                "Do not self-medicate beyond what is already prescribed",
+            ],
+        }
+
+    def generate_hospital_prep(
+        self,
+        chief_complaint: str,
+        assessment: dict,
+    ) -> list[str]:
+        """Generate a dynamic hospital pre-arrival preparation checklist.
+
+        AI-102 (Generative AI + RAG): Uses patient assessment and RAG context
+        to produce a condition-specific list of actions for ER staff to prepare
+        before the patient arrives. Replaces the static PRE_ARRIVAL_PREP dict
+        in hospital_dashboard.py with GPT-4-generated, complaint-aware items.
+
+        Args:
+            chief_complaint: Patient complaint in English.
+            assessment: Full triage assessment dict.
+
+        Returns:
+            List of preparation action strings for ER staff (English).
+        """
+        triage_level    = assessment.get("triage_level", TRIAGE_URGENT)
+        red_flags       = assessment.get("red_flags", [])
+        suspected       = assessment.get("suspected_conditions", [])
+        risk_score      = assessment.get("risk_score", 5)
+        time_sensitivity = assessment.get("time_sensitivity", "")
+
+        context, rag_found = self._retrieve_context(chief_complaint)
+
+        if rag_found:
+            knowledge_section = f"""Use the following medical guidelines:
+{context}"""
+        else:
+            knowledge_section = "Use general emergency medicine knowledge."
+
+        system_prompt = f"""You are an emergency department AI assistant generating a
+pre-arrival preparation checklist for ER nursing and medical staff.
+
+{knowledge_section}
+
+INCOMING PATIENT:
+- Triage level: {triage_level}
+- Chief complaint: {chief_complaint}
+- Risk score: {risk_score}/10
+- Time sensitivity: {time_sensitivity}
+- Red flags: {", ".join(red_flags) if red_flags else "none"}
+- Suspected conditions: {", ".join(suspected) if suspected else "unknown"}
+
+TASK: Generate 4-7 specific, actionable preparation steps for ER staff to complete
+BEFORE the patient arrives. Steps must be tailored to this exact presentation.
+
+RULES:
+1. Be specific to the complaint — not generic.
+2. Include room/bay assignment, equipment, medications to prepare, team to alert.
+3. For EMERGENCY: include trauma/resus bay, attending alert, crash cart if relevant.
+4. Order steps by priority (most critical first).
+5. Each item: one short imperative sentence (max 12 words).
+6. Do NOT include "call ambulance" or patient-side actions.
+
+OUTPUT FORMAT (strict JSON):
+{{
+  "prep_items": [
+    "Activate resuscitation bay 1",
+    "Alert cardiology and attending physician immediately",
+    "Prepare 12-lead ECG and defibrillator",
+    "Pre-order STAT troponin, BNP, and CBC",
+    "Draw up aspirin 300mg and IV morphine"
+  ]
+}}"""
+
+        user_message = f"Generate ER prep checklist for: {chief_complaint}"
+
+        if not self._initialized:
+            return self._mock_hospital_prep(triage_level, chief_complaint)
+
+        try:
+            response = self.openai_client.chat.completions.create(
+                model=self.deployment,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",   "content": user_message},
+                ],
+                response_format={"type": "json_object"},
+                max_completion_tokens=400,
+            )
+            usage = getattr(response, "usage", None)
+            if usage:
+                logger.info(
+                    "generate_hospital_prep — tokens: prompt=%d completion=%d total=%d",
+                    usage.prompt_tokens, usage.completion_tokens, usage.total_tokens,
+                )
+            result = json.loads(response.choices[0].message.content)
+            items = result.get("prep_items", [])
+            logger.info("Generated %d hospital prep items for '%s'", len(items), chief_complaint[:50])
+            return items
+        except Exception as exc:
+            logger.error("Hospital prep generation failed: %s", exc)
+            return self._mock_hospital_prep(triage_level, chief_complaint)
+
+    def _mock_hospital_prep(self, triage_level: str, chief_complaint: str) -> list[str]:
+        """Fallback hospital prep checklist when Azure OpenAI is unavailable."""
+        complaint_lower = chief_complaint.lower()
+
+        if any(kw in complaint_lower for kw in ["chest", "heart", "cardiac"]):
+            return [
+                "Activate resuscitation bay",
+                "Alert cardiologist and attending physician",
+                "Prepare 12-lead ECG and defibrillator",
+                "Pre-order STAT troponin, BNP, CBC, and coagulation panel",
+                "Draw up aspirin 300mg and IV access x2",
+                "Prepare cath lab on standby",
+            ]
+        if any(kw in complaint_lower for kw in ["stroke", "speech", "arm weakness", "face"]):
+            return [
+                "Activate stroke protocol — alert neurology",
+                "Reserve CT scanner for immediate head CT",
+                "Prepare thrombolysis assessment checklist",
+                "IV access x2 and STAT glucose check",
+                "Alert stroke team and neurosurgery if haemorrhagic suspected",
+            ]
+        if any(kw in complaint_lower for kw in ["bleed", "trauma", "amputat", "fracture", "accident"]):
+            return [
+                "Activate trauma bay",
+                "Alert trauma surgeon and anaesthesiology",
+                "Prepare massive transfusion protocol (MTP)",
+                "Type and crossmatch — order O-negative blood on standby",
+                "Prepare tourniquet, surgical tray, and wound packing supplies",
+                "Alert operating theatre for possible emergency surgery",
+            ]
+        if any(kw in complaint_lower for kw in ["breath", "asthma", "respiratory"]):
+            return [
+                "Prepare resuscitation room with oxygen and nebuliser",
+                "Alert respiratory team",
+                "Prepare salbutamol nebuliser and IV hydrocortisone",
+                "STAT ABG and chest X-ray on arrival",
+                "Intubation tray on standby",
+            ]
+
+        # Generic by level
+        if triage_level == TRIAGE_EMERGENCY:
+            return [
+                "Assign resuscitation bay",
+                "Alert attending physician immediately",
+                "Prepare crash cart and defibrillator",
+                "Pre-order STAT labs and imaging",
+                "IV access x2 on arrival",
+            ]
+        if triage_level == TRIAGE_URGENT:
+            return [
+                "Assign treatment room",
+                "Notify triage nurse and attending",
+                "Prepare standard labs and vitals station",
+                "Queue imaging as required",
+            ]
+        return [
+            "Assign waiting area with monitoring",
+            "Standard intake forms ready",
+            "Vitals check on arrival",
+        ]
 
     def create_patient_record(
         self,

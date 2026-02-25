@@ -80,26 +80,10 @@ LEVEL_ICONS = {
     TRIAGE_ROUTINE: "🟢",
 }
 
-PRE_ARRIVAL_PREP = {
-    TRIAGE_EMERGENCY: [
-        "Assign resuscitation bay",
-        "Alert attending physician",
-        "Prepare crash cart",
-        "Pre-order STAT labs",
-        "ECG ready",
-    ],
-    TRIAGE_URGENT: [
-        "Assign treatment room",
-        "Notify triage nurse",
-        "Prepare standard labs",
-        "Queue imaging",
-    ],
-    TRIAGE_ROUTINE: [
-        "Assign waiting area",
-        "Standard intake forms",
-        "Vitals on arrival",
-    ],
-}
+# PRE_ARRIVAL_PREP removed — preparation checklists are now generated
+# dynamically by GPT-4 via triage_engine.generate_hospital_prep() so that
+# each patient card shows condition-specific ER preparation steps.
+_PREP_CACHE: dict[str, list[str]] = {}  # patient_id → prep items cache
 
 
 # ---------------------------------------------------------------------------
@@ -176,11 +160,21 @@ def render_patient_card(patient: dict) -> None:
     else:
         st.success(body)
 
-    # Pre-arrival checklist (only for incoming patients)
-    preps = PRE_ARRIVAL_PREP.get(level, [])
-    if preps and status == "incoming":
-        with st.expander(f"📋 Pre-Arrival Prep — {pid}"):
-            for prep_item in preps:
+    # Pre-arrival checklist — GPT-4 generated, condition-specific
+    if status == "incoming":
+        with st.expander(f"📋 Pre-Arrival Prep — {pid}", expanded=(level == TRIAGE_EMERGENCY)):
+            # Use cached prep items to avoid regenerating on every rerun
+            if pid not in _PREP_CACHE:
+                with st.spinner("Generating prep checklist..."):
+                    try:
+                        _PREP_CACHE[pid] = triage_engine.generate_hospital_prep(
+                            chief_complaint=patient.get("chief_complaint", "unknown complaint"),
+                            assessment=patient,
+                        )
+                    except Exception as exc:
+                        logger.error("Prep generation failed for %s: %s", pid, exc)
+                        _PREP_CACHE[pid] = ["Assign appropriate bay", "Alert attending physician", "Prepare standard monitoring"]
+            for prep_item in _PREP_CACHE.get(pid, []):
                 st.checkbox(prep_item, key=f"{pid}_{prep_item}")
 
     # Status action buttons
