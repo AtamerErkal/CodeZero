@@ -85,7 +85,7 @@ BASE_CSS = """
     letter-spacing: 0.02em;
 }
 
-/* ── Radio options: big pill buttons ── */
+/* ── Radio options: big pill buttons with dark theme contrast ── */
 div[data-testid="stRadio"] > div {
     gap: 10px !important;
     flex-direction: column !important;
@@ -93,23 +93,33 @@ div[data-testid="stRadio"] > div {
 div[data-testid="stRadio"] > div > label {
     font-size: 1.25rem !important;
     padding: 18px 24px !important;
-    border: 2.5px solid #cbd5e1 !important;
+    border: 2.5px solid #475569 !important;
     border-radius: 14px !important;
     min-height: 64px !important;
     cursor: pointer !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
+    color: #f1f5f9 !important;
 }
-div[data-testid="stRadio"] > div > label:hover,
+div[data-testid="stRadio"] > div > label:hover {
+    border-color: #3b82f6 !important;
+    background: rgba(59,130,246,0.12) !important;
+}
 div[data-testid="stRadio"] > div > label:has(input:checked) {
-    border-color: #2563eb !important;
-    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    background: rgba(59,130,246,0.18) !important;
 }
 
-/* ── Multiselect options: large touch targets ── */
+/* ── Multiselect options ── */
 div[data-testid="stMultiSelect"] span {
     font-size: 1.1rem !important;
+}
+
+/* ── Select slider ── */
+div[data-testid="stSelectSlider"] label {
+    font-size: 1rem !important;
+    color: #f1f5f9 !important;
 }
 
 /* ── Slider: larger thumb ── */
@@ -139,12 +149,22 @@ div[data-testid="stProgressBar"] > div {
 /* ── Caption / help text ── */
 .stCaption, small { font-size: 1rem !important; }
 
-/* ── Metric values: very large ── */
+/* ── Metric values ── */
 div[data-testid="stMetric"] label { font-size: 1rem !important; }
 div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
     font-size: 2.2rem !important;
     font-weight: 800 !important;
 }
+
+/* ── Text area + input: light text on dark bg ── */
+textarea, input[type="text"], input[type="number"] {
+    color: #f1f5f9 !important;
+    background: #1e293b !important;
+    border-color: #475569 !important;
+}
+
+/* ── Expander ── */
+details summary p { font-size: 1.05rem !important; }
 </style>
 """
 
@@ -809,17 +829,42 @@ def page_location() -> None:
 
     assessment = st.session_state.assessment
     level = assessment.get("triage_level", TRIAGE_URGENT)
-    color = TRIAGE_COLORS.get(level, "🟠")
-    summary = assessment.get("assessment", "")
 
+    # Patient-facing urgency message — no clinical jargon
     if level == TRIAGE_EMERGENCY:
-        st.error(f"## {color} EMERGENCY\n\n{summary}")
+        banner_bg    = "#7f1d1d"
+        banner_border= "#dc2626"
+        banner_icon  = "🚨"
+        banner_title = "Please go to the emergency room immediately."
+        banner_body  = "Your symptoms need urgent medical attention right now."
+        time_hint    = "Every minute matters — please do not wait."
     elif level == TRIAGE_URGENT:
-        st.warning(f"## {color} URGENT\n\n{summary}")
+        banner_bg    = "#78350f"
+        banner_border= "#d97706"
+        banner_icon  = "⚠️"
+        banner_title = "You need to go to hospital soon."
+        banner_body  = "Your symptoms require medical evaluation within the next 30 minutes."
+        time_hint    = "Please find the nearest hospital and go now."
     else:
-        st.success(f"## {color} ROUTINE\n\n{summary}")
+        banner_bg    = "#14532d"
+        banner_border= "#16a34a"
+        banner_icon  = "ℹ️"
+        banner_title = "You should see a doctor today."
+        banner_body  = "Your symptoms are not immediately dangerous, but please get checked."
+        time_hint    = "Visit a GP or urgent care clinic when convenient."
 
-    st.subheader("📍 Find Nearest Hospitals")
+    st.markdown(f"""
+<div style="background:{banner_bg}; border-left:5px solid {banner_border};
+     border-radius:14px; padding:1.2rem 1.4rem; margin:0.5rem 0 1.2rem 0;">
+  <p style="font-size:1.5rem; font-weight:800; margin:0 0 0.3rem 0; color:#f8fafc;">
+    {banner_icon} {banner_title}
+  </p>
+  <p style="font-size:1.05rem; color:#e2e8f0; margin:0 0 0.3rem 0;">{banner_body}</p>
+  <p style="font-size:0.95rem; color:#cbd5e1; margin:0;">{time_hint}</p>
+</div>
+""", unsafe_allow_html=True)
+
+    st.subheader("📍 Find the nearest hospital")
 
     # Use GPS captured on the input page if available, else fall back to manual
     gps_lat = st.session_state.get("patient_lat")
@@ -982,13 +1027,27 @@ def page_result() -> None:
     color = TRIAGE_COLORS.get(level, "🟠")
     summary = assessment.get("assessment", "")
 
-    # ── Triage level banner — kept minimal for the patient ─────────────
+    # ── Patient-friendly confirmation banner ──────────────────────────
     if level == TRIAGE_EMERGENCY:
-        st.error(f"## {color} EMERGENCY")
+        msg_title = "🚨 Hospital has been notified — go now!"
+        msg_body  = "They are preparing for your arrival. Head to the emergency entrance immediately."
+        banner_bg = "#7f1d1d"; banner_border = "#dc2626"
     elif level == TRIAGE_URGENT:
-        st.warning(f"## {color} URGENT")
+        msg_title = "✅ Hospital has been notified."
+        msg_body  = "Please head there now and follow the instructions below before you leave."
+        banner_bg = "#78350f"; banner_border = "#d97706"
     else:
-        st.success(f"## {color} ROUTINE")
+        msg_title = "✅ Your details have been sent."
+        msg_body  = "Please follow the instructions below and go to the hospital when ready."
+        banner_bg = "#14532d"; banner_border = "#16a34a"
+
+    st.markdown(f"""
+<div style="background:{banner_bg}; border-left:5px solid {banner_border};
+     border-radius:14px; padding:1.2rem 1.4rem; margin:0.5rem 0 1rem 0;">
+  <p style="font-size:1.4rem; font-weight:800; margin:0 0 0.3rem 0; color:#f8fafc;">{msg_title}</p>
+  <p style="font-size:1rem; color:#e2e8f0; margin:0;">{msg_body}</p>
+</div>
+""", unsafe_allow_html=True)
 
     # Hospital ETA card
     if eta:

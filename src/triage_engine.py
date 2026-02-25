@@ -896,6 +896,7 @@ OUTPUT FORMAT (strict JSON):
         language: str = "en-US",
         eta_minutes: Optional[int] = None,
         location: Optional[dict] = None,
+        demographics: Optional[dict] = None,
     ) -> dict:
         """Create a complete patient record for hospital notification.
 
@@ -905,6 +906,7 @@ OUTPUT FORMAT (strict JSON):
             language: Patient's detected language locale.
             eta_minutes: Estimated time of arrival in minutes.
             location: Patient's GPS coordinates dict.
+            demographics: Age range and biological sex from intake.
 
         Returns:
             Complete patient notification record.
@@ -928,6 +930,9 @@ OUTPUT FORMAT (strict JSON):
             "arrival_time": None,
             "location": location,
             "language": language,
+            # Demographics — collected during intake, sent to hospital dashboard
+            "age_range": demographics.get("age_range", "Unknown") if demographics else "Unknown",
+            "sex": demographics.get("sex", "Unknown") if demographics else "Unknown",
         }
 
         if eta_minutes is not None:

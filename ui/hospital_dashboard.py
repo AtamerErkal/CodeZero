@@ -1,26 +1,17 @@
 """
 Hospital ER Dashboard — CodeZero
-=================================
-Professional emergency department command center.
-
-Features:
-  - Real-time patient queue with EMERGENCY / URGENT / ROUTINE priority lanes
-  - Patient demographics (age, sex) displayed on each card
-  - Photo indicator when patient submitted a wound photo
-  - GPT-4 generated pre-arrival prep checklist per patient
-  - Hospital occupancy control (Low / Medium / High / Full) per hospital
-  - Occupancy affects patient routing score in maps_handler
-  - Traffic-aware ETA via Azure Maps
-  - Auto-refresh every 30 seconds
-
-Run: streamlit run ui/hospital_dashboard.py --server.port 8502
+Fixes:
+  1. Duplicate key  → hashlib MD5 per hospital name (never truncates)
+  2. Demographics   → age_range / sex always shown on card + detail panel
+  3. Photo          → photo badge on card + detail block inside expander
+  4. Sort TypeError → no string negation, groupby approach
+  5. Modern design  → postvisit.ai inspired expandable detail panel
+  6. Auto-refresh   → removed (manual only)
 """
-
 from __future__ import annotations
-
-import logging
-import sys
+import hashlib, logging, sys
 from datetime import datetime, timezone
+from itertools import groupby
 from pathlib import Path
 
 import streamlit as st
@@ -29,511 +20,510 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.hospital_queue import HospitalQueue
-from src.maps_handler import GERMANY_HOSPITALS, set_hospital_occupancy, get_hospital_occupancy, _OCCUPANCY_LABELS
-from src.triage_engine import TRIAGE_COLORS, TRIAGE_EMERGENCY, TRIAGE_ROUTINE, TRIAGE_URGENT, TriageEngine
+from src.maps_handler import GERMANY_HOSPITALS, set_hospital_occupancy, get_hospital_occupancy
+from src.triage_engine import TRIAGE_EMERGENCY, TRIAGE_ROUTINE, TRIAGE_URGENT, TriageEngine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Page config — wide layout, dark professional theme via CSS
-# ---------------------------------------------------------------------------
-st.set_page_config(
-    page_title="CodeZero ER Dashboard",
-    page_icon="🏥",
-    layout="wide",
-)
+st.set_page_config(page_title="CodeZero ER", page_icon="🏥", layout="wide")
 
 st.markdown("""
 <style>
-/* ── Global ── */
-.block-container { padding: 1rem 2rem 2rem 2rem; }
-body { font-size: 0.95rem; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+* { font-family: 'Inter', sans-serif; }
+.block-container { padding: 1.2rem 2.2rem 2rem 2.2rem !important; }
 
-/* ── Metric cards ── */
 div[data-testid="stMetric"] {
-    background: #1e293b;
-    border-radius: 10px;
-    padding: 0.8rem 1rem;
-    border-left: 4px solid #334155;
+  background: #111827; border-radius: 12px;
+  padding: 1rem 1.2rem; border: 1px solid #1f2937;
 }
-div[data-testid="stMetric"] label { color: #94a3b8 !important; font-size: 0.8rem !important; }
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-    font-size: 1.8rem !important; font-weight: 800 !important; color: #f1f5f9 !important;
+div[data-testid="stMetric"] label {
+  color: #6b7280 !important; font-size: 0.7rem !important;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+div[data-testid="stMetricValue"] {
+  font-size: 2rem !important; font-weight: 800 !important; color: #f9fafb !important;
+}
+div[data-testid="stTabs"] button { font-weight: 600; font-size: 0.9rem; }
+.stButton > button { border-radius: 8px; font-weight: 600; font-size: 0.85rem; min-height: 36px; }
+
+.cz-card {
+  border-radius: 14px; padding: 1rem 1.2rem;
+  margin-bottom: 6px; border: 1px solid #1f2937;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cz-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+.cz-e { border-left: 4px solid #ef4444; background: linear-gradient(135deg,#1c0a0a,#111827); }
+.cz-u { border-left: 4px solid #f59e0b; background: linear-gradient(135deg,#1c1000,#111827); }
+.cz-r { border-left: 4px solid #10b981; background: linear-gradient(135deg,#001c0f,#111827); }
+
+.bx {
+  display:inline-flex; align-items:center; padding: 3px 9px;
+  border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+  margin: 2px 3px 2px 0; white-space: nowrap;
 }
 
-/* ── Buttons ── */
-.stButton > button { min-height: 40px; border-radius: 8px; font-weight: 600; }
-
-/* ── Patient card containers ── */
-.patient-card {
-    border-radius: 12px;
-    padding: 1rem 1.2rem;
-    margin-bottom: 1rem;
-    border-left: 5px solid;
+.dp {
+  background: #0d1117; border: 1px solid #21262d;
+  border-radius: 12px; padding: 1.2rem 1.4rem; margin: 4px 0 8px 0;
 }
-.card-emergency { border-color: #dc2626; background: #1a0505; }
-.card-urgent    { border-color: #d97706; background: #1a0f00; }
-.card-routine   { border-color: #16a34a; background: #001a07; }
+.dp-section { margin-bottom: 1rem; }
+.dp-section:last-child { margin-bottom: 0; }
+.dp-title {
+  font-size: 0.68rem; color: #4b5563; text-transform: uppercase;
+  letter-spacing: 0.1em; font-weight: 700; margin-bottom: 0.5rem;
+  padding-bottom: 0.4rem; border-bottom: 1px solid #1f2937;
+}
+.dp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:0.8rem; }
+.dp-field-label { font-size: 0.68rem; color: #6b7280; margin-bottom: 3px; }
+.dp-field-value { font-size: 0.9rem; font-weight: 600; color: #e5e7eb; }
 
-/* ── Tab styling ── */
-div[data-testid="stTabs"] button { font-weight: 600; font-size: 0.95rem; }
-
-/* ── Selectbox ── */
-div[data-testid="stSelectbox"] { max-width: 220px; }
-
-/* ── Expander ── */
-details summary { font-weight: 600; }
+div[data-testid="stExpander"] {
+  border: 1px solid #1f2937 !important; border-radius: 10px !important;
+  background: #0d1117 !important; margin-bottom: 4px;
+}
+details > summary p { font-size: 0.88rem !important; color: #9ca3af !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------
-# Cached shared instances
-# ---------------------------------------------------------------------------
+# ── Services ──────────────────────────────────────────────────────────────────
+@st.cache_resource
+def _queue() -> HospitalQueue: return HospitalQueue()
 
 @st.cache_resource
-def get_queue() -> HospitalQueue:
-    return HospitalQueue()
+def _engine() -> TriageEngine: return TriageEngine()
 
-@st.cache_resource
-def get_triage_engine() -> TriageEngine:
-    return TriageEngine()
-
-hospital_queue = get_queue()
-triage_engine  = get_triage_engine()
-
-# Per-session prep cache: patient_id → list[str]
+hospital_queue = _queue()
+triage_engine  = _engine()
 _PREP_CACHE: dict[str, list[str]] = {}
 
-LEVEL_ICONS = {
-    TRIAGE_EMERGENCY: "🔴",
-    TRIAGE_URGENT:    "🟠",
-    TRIAGE_ROUTINE:   "🟢",
-}
-
-LEVEL_LABELS = {
-    TRIAGE_EMERGENCY: "EMERGENCY",
-    TRIAGE_URGENT:    "URGENT",
-    TRIAGE_ROUTINE:   "ROUTINE",
-}
+ICONS  = {TRIAGE_EMERGENCY: "🔴", TRIAGE_URGENT: "🟠", TRIAGE_ROUTINE: "🟢"}
+COLORS = {TRIAGE_EMERGENCY: "#ef4444", TRIAGE_URGENT: "#f59e0b", TRIAGE_ROUTINE: "#10b981"}
+CARD   = {TRIAGE_EMERGENCY: "cz-e", TRIAGE_URGENT: "cz-u", TRIAGE_ROUTINE: "cz-r"}
+PORDER = {TRIAGE_EMERGENCY: 0, TRIAGE_URGENT: 1, TRIAGE_ROUTINE: 2}
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-def minutes_until_arrival(iso_timestamp: str) -> str:
-    if not iso_timestamp:
-        return "N/A"
-    try:
-        arrival = datetime.fromisoformat(iso_timestamp.replace("Z", "+00:00"))
-        delta   = (arrival - datetime.now(timezone.utc)).total_seconds() / 60
-        return "ARRIVED" if delta <= 0 else f"{int(delta)} min"
-    except Exception:
-        return "N/A"
+def _hkey(prefix: str, s: str) -> str:
+    """Unique Streamlit key via MD5 — safe for any unicode hospital name."""
+    return f"{prefix}_{hashlib.md5(s.encode()).hexdigest()[:10]}"
 
 
-def _badge(text: str, color: str) -> str:
-    """Return an HTML inline badge."""
+def _eta_str(arrival_iso, eta_raw) -> str:
+    if arrival_iso:
+        try:
+            d = (datetime.fromisoformat(str(arrival_iso).replace("Z", "+00:00"))
+                 - datetime.now(timezone.utc)).total_seconds() / 60
+            return "ARRIVED" if d <= 0 else f"{int(d)} min"
+        except Exception:
+            pass
+    return f"~{eta_raw} min" if eta_raw else "N/A"
+
+
+# ── Detail panel HTML builder (no nested f-strings) ───────────────────────────
+def _build_detail_html(p: dict) -> str:
+    lvl        = p.get("triage_level", TRIAGE_URGENT)
+    pid        = p.get("patient_id", "UNKNOWN")
+    age        = p.get("age_range") or "—"
+    sex        = p.get("sex") or "—"
+    lang       = (p.get("language") or "en")[:5].upper()
+    risk       = p.get("risk_score", 5)
+    comp       = p.get("chief_complaint", "")
+    asmt       = p.get("assessment", "")
+    flags      = [f.replace("_", " ").title() for f in p.get("red_flags", []) if f != "none_identified"]
+    conds      = p.get("suspected_conditions", [])
+    dest       = p.get("destination_hospital", "")
+    has_photo  = bool(p.get("has_photo"))
+    photo_note = p.get("photo_note", "Patient submitted a wound/symptom photo")
+    rec_action = p.get("recommended_action", "")
+    time_sens  = p.get("time_sensitivity", "")
+    src_gl     = ", ".join(p.get("source_guidelines", []))
+    ts         = (p.get("timestamp", "")[:16] or "").replace("T", " ")
+    eta        = _eta_str(p.get("arrival_time"), p.get("eta_minutes"))
+    clr        = COLORS.get(lvl, "#f59e0b")
+    risk_clr   = "#ef4444" if risk >= 8 else "#f59e0b" if risk >= 5 else "#10b981"
+    icon       = ICONS.get(lvl, "🟠")
+
+    # Build optional sections as strings
+    flags_html = ""
+    if flags:
+        badges = "".join(
+            '<span class="bx" style="background:#ef444422;color:#fca5a5;border:1px solid #ef444455;">'
+            + f + "</span>"
+            for f in flags
+        )
+        flags_html = (
+            '<div class="dp-section">'
+            '<div class="dp-title">🚩 Red Flags</div>'
+            '<div style="display:flex;flex-wrap:wrap;gap:5px;">' + badges + "</div>"
+            "</div>"
+        )
+
+    conds_html = ""
+    if conds:
+        conds_html = (
+            '<div class="dp-grid"><div>'
+            '<div class="dp-field-label">Suspected Conditions</div>'
+            '<div class="dp-field-value" style="color:#93c5fd;">' + " · ".join(conds) + "</div>"
+            "</div></div>"
+        )
+
+    actions_html = ""
+    if rec_action:
+        actions_html = (
+            '<div class="dp-section">'
+            '<div class="dp-title">📋 Actions</div>'
+            '<div class="dp-grid">'
+            '<div><div class="dp-field-label">Recommended Action</div>'
+            '<div class="dp-field-value">' + rec_action + "</div></div>"
+            '<div><div class="dp-field-label">Time Sensitivity</div>'
+            '<div class="dp-field-value" style="color:' + clr + ';">' + time_sens + "</div></div>"
+            "</div></div>"
+        )
+
+    photo_html = ""
+    if has_photo:
+        photo_html = (
+            '<div class="dp-section">'
+            '<div class="dp-title">📷 Photo Attachment</div>'
+            '<p style="color:#a78bfa;font-size:0.87rem;margin:0;">' + photo_note + "</p>"
+            "</div>"
+        )
+
+    dest_html = ""
+    if dest:
+        dest_html = (
+            '<div class="dp-section">'
+            '<div class="dp-title">🏥 Destination Hospital</div>'
+            '<p style="color:#e5e7eb;font-size:0.9rem;font-weight:600;margin:0;">' + dest + "</p>"
+            "</div>"
+        )
+
+    src_html = ""
+    if src_gl:
+        src_html = (
+            '<div class="dp-section">'
+            '<div class="dp-title">📚 Source Guidelines</div>'
+            '<p style="color:#6b7280;font-size:0.82rem;margin:0;">' + src_gl + "</p>"
+            "</div>"
+        )
+
     return (
-        f'<span style="background:{color};color:#fff;padding:2px 8px;'
-        f'border-radius:6px;font-size:0.75rem;font-weight:700;">{text}</span>'
+        '<div class="dp">'
+
+        # Header
+        '<div style="display:flex;justify-content:space-between;align-items:center;'
+        'margin-bottom:1rem;padding-bottom:0.8rem;border-bottom:1px solid #21262d;flex-wrap:wrap;gap:6px;">'
+        '<div>'
+        '<span style="font-size:1.05rem;font-weight:800;color:#f9fafb;">' + icon + " " + lvl + "</span>"
+        '<span style="color:#4b5563;font-size:0.9rem;margin-left:8px;">' + pid + "</span>"
+        "</div>"
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+        '<span class="bx" style="background:' + risk_clr + '22;color:' + risk_clr + ';border:1px solid ' + risk_clr + '55;">Risk ' + str(risk) + "/10</span>"
+        '<span class="bx" style="background:#1f2937;color:#9ca3af;border:1px solid #374151;">Submitted ' + ts + "</span>"
+        "</div></div>"
+
+        # Demographics
+        '<div class="dp-section">'
+        '<div class="dp-title">👤 Patient Demographics</div>'
+        '<div class="dp-grid">'
+        '<div><div class="dp-field-label">Age Range</div><div class="dp-field-value">' + age + "</div></div>"
+        '<div><div class="dp-field-label">Biological Sex</div><div class="dp-field-value">' + sex + "</div></div>"
+        '<div><div class="dp-field-label">Language</div><div class="dp-field-value">' + lang + "</div></div>"
+        '<div><div class="dp-field-label">ETA</div><div class="dp-field-value" style="color:' + clr + ';">' + eta + "</div></div>"
+        "</div></div>"
+
+        # Complaint
+        '<div class="dp-section">'
+        '<div class="dp-title">🗣️ Chief Complaint</div>'
+        '<p style="color:#e5e7eb;font-size:0.92rem;margin:0;font-weight:500;">' + comp + "</p>"
+        "</div>"
+
+        # Assessment
+        '<div class="dp-section">'
+        '<div class="dp-title">🩺 Clinical Assessment</div>'
+        '<p style="color:#d1d5db;font-size:0.87rem;margin:0 0 0.7rem;line-height:1.6;">' + asmt + "</p>"
+        + conds_html +
+        "</div>"
+
+        + flags_html
+        + actions_html
+        + photo_html
+        + dest_html
+        + src_html
+        + "</div>"
     )
 
 
-# ---------------------------------------------------------------------------
-# Patient card
-# ---------------------------------------------------------------------------
-def render_patient_card(patient: dict) -> None:
-    level    = patient.get("triage_level", TRIAGE_URGENT)
-    pid      = patient.get("patient_id", "UNKNOWN")
-    status   = patient.get("status", "incoming")
-    arrival  = patient.get("arrival_time")
-    eta_raw  = patient.get("eta_minutes")
-    countdown = minutes_until_arrival(arrival) if arrival else (f"~{eta_raw} min" if eta_raw else "N/A")
+# ── Patient card ──────────────────────────────────────────────────────────────
+def render_patient_card(p: dict) -> None:
+    lvl       = p.get("triage_level", TRIAGE_URGENT)
+    pid       = p.get("patient_id", "UNKNOWN")
+    stat      = p.get("status", "incoming")
+    eta       = _eta_str(p.get("arrival_time"), p.get("eta_minutes"))
+    age       = p.get("age_range") or "—"
+    sex       = p.get("sex") or "—"
+    lang      = (p.get("language") or "en")[:5].upper()
+    risk      = p.get("risk_score", 5)
+    comp      = p.get("chief_complaint", "")
+    asmt      = p.get("assessment", "")
+    flags     = [f.replace("_", " ").title() for f in p.get("red_flags", []) if f != "none_identified"]
+    dest      = p.get("destination_hospital", "")
+    has_photo = bool(p.get("has_photo"))
 
-    # Demographics
-    age_range = patient.get("age_range", "—")
-    sex       = patient.get("sex", "—")
-    lang      = patient.get("language", "en")
+    clr      = COLORS.get(lvl, "#f59e0b")
+    risk_clr = "#ef4444" if risk >= 8 else "#f59e0b" if risk >= 5 else "#10b981"
+    stat_bg  = {"incoming": "#92400e", "arrived": "#1e3a5f", "in_treatment": "#4c1d95", "discharged": "#14532d"}.get(stat, "#374151")
 
-    # Red flags
-    flags = [f.replace("_", " ").title() for f in patient.get("red_flags", []) if f != "none_identified"]
+    photo_bx  = '<span class="bx" style="background:#5b21b644;color:#a78bfa;border:1px solid #7c3aed;">📷 PHOTO</span>' if has_photo else ""
+    flags_row = ""
+    if flags:
+        flags_row = "<p style='margin:0.2rem 0 0;font-size:0.79rem;'><span style='color:#ef4444;'>🚩</span> <span style='color:#fca5a5;'>" + " · ".join(flags[:4]) + "</span></p>"
+    dest_row = "<p style='margin:0.15rem 0 0;font-size:0.79rem;color:#4b5563;'>🏥 " + dest + "</p>" if dest else ""
 
-    # Photo indicator
-    photo_badge = ' &nbsp;<span style="background:#7c3aed;color:#fff;padding:2px 7px;border-radius:6px;font-size:0.72rem;font-weight:700;">📷 PHOTO</span>' if patient.get("has_photo") else ""
+    st.markdown(
+        '<div class="cz-card ' + CARD.get(lvl, "cz-u") + '">'
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;">'
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">'
+        '<span style="font-size:1rem;font-weight:800;color:#f9fafb;">' + ICONS.get(lvl, "🟠") + " " + lvl + "</span>"
+        '<span style="color:#4b5563;font-size:0.88rem;font-weight:500;">— ' + pid + "</span>"
+        '<span class="bx" style="background:' + stat_bg + '44;color:#e5e7eb;border:1px solid ' + stat_bg + ';">' + stat.replace("_", " ").upper() + "</span>"
+        + photo_bx +
+        "</div>"
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;">'
+        '<span class="bx" style="background:#1f293799;color:#9ca3af;border:1px solid #374151;">🧑 ' + age + "</span>"
+        '<span class="bx" style="background:#1f293799;color:#9ca3af;border:1px solid #374151;">⚧ ' + sex + "</span>"
+        '<span class="bx" style="background:#1f293799;color:#9ca3af;border:1px solid #374151;">🌐 ' + lang + "</span>"
+        '<span class="bx" style="background:' + risk_clr + '22;color:' + risk_clr + ';border:1px solid ' + risk_clr + '55;">⚡ ' + str(risk) + "/10</span>"
+        '<span style="color:#6b7280;font-size:0.8rem;">⏱ ' + eta + "</span>"
+        "</div></div>"
+        "<p style='margin:0.5rem 0 0.15rem;color:#6b7280;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;'>Complaint</p>"
+        "<p style='margin:0 0 0.25rem;color:#f3f4f6;font-size:0.93rem;font-weight:600;'>" + comp + "</p>"
+        "<p style='margin:0 0 0.2rem;color:#6b7280;font-size:0.83rem;line-height:1.45;'>" + asmt[:180] + ("…" if len(asmt) > 180 else "") + "</p>"
+        + flags_row + dest_row +
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    icon        = LEVEL_ICONS.get(level, "🟠")
-    card_class  = {"EMERGENCY": "card-emergency", "URGENT": "card-urgent", "ROUTINE": "card-routine"}.get(level, "card-urgent")
-    risk        = patient.get("risk_score", 5)
+    with st.expander("🔍 Full Record — " + pid):
+        st.markdown(_build_detail_html(p), unsafe_allow_html=True)
 
-    st.markdown(f"""
-<div class="patient-card {card_class}">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.4rem;">
-    <div>
-      <span style="font-size:1.05rem; font-weight:800;">{icon} {level} — {pid}</span>{photo_badge}
-      &nbsp;&nbsp;
-      <span style="color:#94a3b8; font-size:0.85rem;">⏱ {countdown}</span>
-    </div>
-    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-      <span style="background:#334155;color:#cbd5e1;padding:2px 8px;border-radius:6px;font-size:0.78rem;">🧑 {age_range}</span>
-      <span style="background:#334155;color:#cbd5e1;padding:2px 8px;border-radius:6px;font-size:0.78rem;">⚧ {sex}</span>
-      <span style="background:#334155;color:#cbd5e1;padding:2px 8px;border-radius:6px;font-size:0.78rem;">🌍 {lang[:2].upper()}</span>
-      <span style="background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:6px;font-size:0.78rem;">Risk {risk}/10</span>
-    </div>
-  </div>
-  <p style="margin:0.5rem 0 0.2rem 0; color:#cbd5e1; font-size:0.95rem;">
-    <strong>Complaint:</strong> {patient.get("chief_complaint", "")}
-  </p>
-  <p style="margin:0 0 0.3rem 0; color:#94a3b8; font-size:0.88rem;">
-    {patient.get("assessment", "")[:200]}{"..." if len(patient.get("assessment","")) > 200 else ""}
-  </p>
-  {"<p style='margin:0;font-size:0.82rem;'>🚩 <strong>Red flags:</strong> " + " · ".join(flags[:5]) + "</p>" if flags else ""}
-  {"<p style='margin:0.2rem 0 0;font-size:0.82rem;color:#94a3b8;'>🏥 " + patient.get("destination_hospital","") + "</p>" if patient.get("destination_hospital") else ""}
-</div>
-""", unsafe_allow_html=True)
-
-    # ── GPT-4 Pre-arrival prep (only for incoming) ──
-    if status == "incoming":
-        with st.expander(f"📋 Pre-Arrival Prep — {pid}", expanded=(level == TRIAGE_EMERGENCY)):
+    if stat == "incoming":
+        with st.expander("🏥 Pre-Arrival Prep — " + pid, expanded=(lvl == TRIAGE_EMERGENCY)):
             if pid not in _PREP_CACHE:
-                with st.spinner("Generating prep checklist..."):
+                with st.spinner("Generating checklist..."):
                     try:
                         _PREP_CACHE[pid] = triage_engine.generate_hospital_prep(
-                            chief_complaint=patient.get("chief_complaint", "unknown"),
-                            assessment=patient,
+                            chief_complaint=p.get("chief_complaint", "unknown"),
+                            assessment=p,
                         )
                     except Exception as exc:
-                        logger.error("Prep generation failed for %s: %s", pid, exc)
-                        _PREP_CACHE[pid] = [
-                            "Assign appropriate bay",
-                            "Alert attending physician",
-                            "Prepare standard monitoring",
-                        ]
+                        logger.error("Prep failed %s: %s", pid, exc)
+                        _PREP_CACHE[pid] = ["Assign appropriate bay", "Alert attending physician", "Prepare standard monitoring"]
             for item in _PREP_CACHE.get(pid, []):
-                st.checkbox(item, key=f"prep_{pid}_{item[:30]}")
+                st.checkbox(item, key=_hkey("prep_" + pid, item))
 
-    # ── Status action buttons ──
-    cols = st.columns([2, 2, 2, 2, 1])
-    with cols[0]:
-        if status == "incoming" and st.button("✅ Arrived", key=f"arrive_{pid}", use_container_width=True):
-            hospital_queue.update_status(pid, "arrived")
-            st.rerun()
-    with cols[1]:
-        if status == "arrived" and st.button("🩺 Treating", key=f"treat_{pid}", use_container_width=True):
-            hospital_queue.update_status(pid, "in_treatment")
-            st.rerun()
-    with cols[2]:
-        if status == "in_treatment" and st.button("🏠 Discharge", key=f"discharge_{pid}", use_container_width=True):
-            hospital_queue.update_status(pid, "discharged")
-            st.rerun()
-    with cols[3]:
-        if st.button("📄 Full Record", key=f"details_{pid}", use_container_width=True):
-            with st.expander(f"Full JSON — {pid}", expanded=True):
-                st.json(patient)
-    with cols[4]:
-        status_colors = {"incoming": "#d97706", "arrived": "#2563eb", "in_treatment": "#7c3aed", "discharged": "#16a34a"}
-        st.markdown(
-            f'<div style="background:{status_colors.get(status,"#334155")};color:#fff;'
-            f'padding:6px 10px;border-radius:8px;font-size:0.78rem;font-weight:700;text-align:center;">'
-            f'{status.replace("_"," ").upper()}</div>',
-            unsafe_allow_html=True,
-        )
+    c1, c2, c3, _ = st.columns([2, 2, 2, 3])
+    with c1:
+        if stat == "incoming" and st.button("✅ Arrived", key="arr_" + pid, use_container_width=True):
+            hospital_queue.update_status(pid, "arrived"); st.rerun()
+    with c2:
+        if stat == "arrived" and st.button("🩺 Treating", key="trt_" + pid, use_container_width=True):
+            hospital_queue.update_status(pid, "in_treatment"); st.rerun()
+    with c3:
+        if stat == "in_treatment" and st.button("🏠 Discharge", key="dis_" + pid, use_container_width=True):
+            hospital_queue.update_status(pid, "discharged"); st.rerun()
 
-    st.divider()
+    st.markdown("<div style='margin-bottom:0.4rem'></div>", unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------------------------
-# All patients table
-# ---------------------------------------------------------------------------
-def render_all_patients_table(patients: list[dict]) -> None:
+# ── All records ───────────────────────────────────────────────────────────────
+def render_all_table(patients: list[dict]) -> None:
     if not patients:
-        st.info("No patient records yet.")
-        return
+        st.info("No records yet."); return
     try:
         import pandas as pd
-        df = pd.DataFrame(patients)
+        df   = pd.DataFrame(patients)
         cols = ["patient_id", "triage_level", "chief_complaint", "age_range", "sex",
                 "risk_score", "eta_minutes", "destination_hospital", "language", "status", "timestamp"]
-        available = [c for c in cols if c in df.columns]
-        st.dataframe(df[available], use_container_width=True, hide_index=True)
-    except Exception as exc:
-        logger.error("DataFrame render error: %s", exc)
+        st.dataframe(df[[c for c in cols if c in df.columns]], use_container_width=True, hide_index=True)
+    except Exception as e:
+        logger.error(e)
         for p in patients:
             st.write(p)
 
 
-# ---------------------------------------------------------------------------
-# Occupancy management tab
-# ---------------------------------------------------------------------------
+# ── Occupancy ─────────────────────────────────────────────────────────────────
 def render_occupancy_tab() -> None:
     st.subheader("🏥 Hospital Occupancy Control")
-    st.caption(
-        "Set current ER occupancy for each hospital. "
-        "Occupancy affects patient routing — full hospitals are deprioritised."
-    )
+    st.caption("Occupancy is added as routing penalty (full = +60 min).")
 
-    # Filter hospitals by Bundesland for easier navigation
-    bundeslaender = {
-        "Baden-Württemberg": ["Stuttgart", "Tübingen", "Freiburg", "Karlsruhe", "Heidelberg", "Mannheim", "Aalen", "Heilbronn", "Schwenningen", "Konstanz", "Reutlingen", "Esslingen", "Ludwigsburg", "Friedrichshafen", "Offenburg", "Pforzheim"],
-        "Bayern": ["München", "Augsburg", "Würzburg", "Erlangen", "Nürnberg", "Regensburg", "Landshut", "Rosenheim", "Ingolstadt", "Passau", "Bayreuth", "Coburg", "Bamberg", "Memmingen", "Kaufbeuren"],
+    bl: dict[str, list[str]] = {
+        "All": [],
+        "Baden-Württemberg": ["Stuttgart","Tübingen","Freiburg","Karlsruhe","Heidelberg","Mannheim","Aalen","Heilbronn","Schwenningen","Konstanz","Reutlingen","Esslingen","Ludwigsburg","Friedrichshafen","Offenburg","Pforzheim"],
+        "Bayern": ["München","Augsburg","Würzburg","Erlangen","Nürnberg","Regensburg","Landshut","Rosenheim","Ingolstadt","Passau","Bayreuth","Coburg","Bamberg","Memmingen","Kaufbeuren"],
         "Berlin": ["Berlin"],
-        "Brandenburg": ["Brandenburg", "Potsdam", "Frankfurt (Oder)"],
+        "Brandenburg": ["Brandenburg","Potsdam","Frankfurt (Oder)"],
         "Bremen": ["Bremen"],
         "Hamburg": ["Hamburg"],
-        "Hessen": ["Frankfurt", "Marburg", "Kassel", "Wiesbaden", "Darmstadt", "Offenbach"],
-        "Mecklenburg-Vorpommern": ["Greifswald", "Rostock", "Schwerin"],
-        "Niedersachsen": ["Hannover", "Braunschweig", "Oldenburg", "Osnabrück", "Wolfsburg", "Hildesheim", "Göttingen"],
-        "Nordrhein-Westfalen": ["Köln", "Düsseldorf", "Essen", "Bochum", "Münster", "Bonn", "Dortmund", "Bielefeld", "Aachen", "Wuppertal", "Leverkusen", "Duisburg", "Gelsenkirchen", "Gütersloh", "Minden", "Solingen", "Krefeld", "Hamm"],
-        "Rheinland-Pfalz": ["Mainz", "Kaiserslautern", "Koblenz", "Ludwigshafen", "Trier"],
-        "Saarland": ["Homburg", "Saarbrücken"],
-        "Sachsen": ["Leipzig", "Dresden", "Chemnitz", "Zwickau", "Görlitz"],
-        "Sachsen-Anhalt": ["Halle", "Magdeburg", "Dessau"],
-        "Schleswig-Holstein": ["Kiel", "Lübeck", "Schleswig", "Rendsburg"],
-        "Thüringen": ["Jena", "Erfurt", "Suhl", "Gera"],
+        "Hessen": ["Frankfurt","Marburg","Kassel","Wiesbaden","Darmstadt","Offenbach"],
+        "Mecklenburg-Vorpommern": ["Greifswald","Rostock","Schwerin"],
+        "Niedersachsen": ["Hannover","Braunschweig","Oldenburg","Osnabrück","Wolfsburg","Hildesheim","Göttingen"],
+        "NRW": ["Köln","Düsseldorf","Essen","Bochum","Münster","Bonn","Dortmund","Bielefeld","Aachen","Wuppertal","Leverkusen","Duisburg","Gelsenkirchen","Gütersloh","Minden","Solingen","Krefeld","Hamm"],
+        "Rheinland-Pfalz": ["Mainz","Kaiserslautern","Koblenz","Ludwigshafen","Trier"],
+        "Saarland": ["Homburg","Saarbrücken"],
+        "Sachsen": ["Leipzig","Dresden","Chemnitz","Zwickau","Görlitz"],
+        "Sachsen-Anhalt": ["Halle","Magdeburg","Dessau"],
+        "Schleswig-Holstein": ["Kiel","Lübeck","Schleswig","Rendsburg"],
+        "Thüringen": ["Jena","Erfurt","Suhl","Gera"],
     }
 
-    selected_land = st.selectbox("Filter by Bundesland", ["All"] + list(bundeslaender.keys()))
+    sel  = st.selectbox("Bundesland", list(bl.keys()), key="occ_bl")
+    show = GERMANY_HOSPITALS if sel == "All" else [
+        h for h in GERMANY_HOSPITALS if any(k in h["name"] or k in h["address"] for k in bl[sel])
+    ]
+    st.caption(str(len(show)) + " hospitals shown")
 
-    # Filter hospital list
-    if selected_land == "All":
-        hospitals_to_show = GERMANY_HOSPITALS
-    else:
-        keywords = bundeslaender.get(selected_land, [])
-        hospitals_to_show = [
-            h for h in GERMANY_HOSPITALS
-            if any(kw in h["name"] or kw in h["address"] for kw in keywords)
-        ]
-
-    st.markdown(f"**{len(hospitals_to_show)} hospitals** — select occupancy level:")
-    st.markdown("")
-
-    occupancy_options = ["low", "medium", "high", "full"]
+    opts  = ["low", "medium", "high", "full"]
     icons = {"low": "🟢", "medium": "🟡", "high": "🟠", "full": "🔴"}
-    penalty_labels = {"low": "+0 min", "medium": "+10 min", "high": "+25 min", "full": "+60 min"}
+    pen   = {"low": "+0 min", "medium": "+10 min", "high": "+25 min", "full": "+60 min"}
 
-    for h in hospitals_to_show:
-        name    = h["name"]
-        current = get_hospital_occupancy(name)
-        c1, c2  = st.columns([3, 1])
+    for h in show:
+        name = h["name"]
+        cur  = get_hospital_occupancy(name)
+        key  = _hkey("occ", name)   # MD5 hash → always unique, never truncated
+        c1, c2 = st.columns([4, 1])
         with c1:
-            new_level = st.select_slider(
-                f"{name}",
-                options=occupancy_options,
-                value=current,
-                key=f"occ_{name[:40]}",
-                format_func=lambda x: f"{icons[x]} {x.capitalize()} ({penalty_labels[x]})",
+            nv = st.select_slider(
+                name, options=opts, value=cur, key=key,
+                format_func=lambda x: icons[x] + " " + x.capitalize() + "  (" + pen[x] + ")",
+                label_visibility="visible",
             )
         with c2:
-            st.markdown(
-                f'<div style="margin-top:1.8rem;font-size:0.8rem;color:#94a3b8;">'
-                f'{h["address"].split(",")[-1].strip()}</div>',
-                unsafe_allow_html=True,
-            )
-        if new_level != current:
-            set_hospital_occupancy(name, new_level)
+            city = h["address"].split(",")[-1].strip()
+            st.markdown('<div style="padding-top:1.7rem;font-size:0.75rem;color:#4b5563;">' + city + "</div>", unsafe_allow_html=True)
+        if nv != cur:
+            set_hospital_occupancy(name, nv)
 
 
-# ---------------------------------------------------------------------------
-# Admin / test tools
-# ---------------------------------------------------------------------------
-def _add_test_emergency() -> None:
-    record = triage_engine.create_patient_record(
-        chief_complaint="Severe chest pain with arm radiation and sweating",
-        assessment={
-            "triage_level": TRIAGE_EMERGENCY,
-            "assessment": "3 red flags: pain radiation, diaphoresis, dyspnea. Possible ACS.",
-            "red_flags": ["pain_radiation", "diaphoresis", "dyspnea"],
-            "recommended_action": "Proceed to ER immediately — activate cath lab.",
-            "risk_score": 9,
-            "source_guidelines": ["chest_pain_protocol.txt"],
-            "suspected_conditions": ["Acute Coronary Syndrome"],
-            "time_sensitivity": "Within 10 minutes",
-        },
-        language="de-DE",
-        eta_minutes=12,
-        demographics={"age_range": "45-59", "sex": "Male"},
+# ── Test helpers ──────────────────────────────────────────────────────────────
+def _mk(complaint, asmt_dict, lang, eta, demographics, dest):
+    r = triage_engine.create_patient_record(
+        chief_complaint=complaint, assessment=asmt_dict,
+        language=lang, eta_minutes=eta, demographics=demographics,
     )
-    record["destination_hospital"] = "Klinikum Stuttgart – Katharinenhospital"
-    hospital_queue.add_patient(record)
-    st.success(f"Added EMERGENCY: {record['patient_id']}")
+    r["destination_hospital"] = dest
+    hospital_queue.add_patient(r)
+    return r["patient_id"]
+
+def _add_emergency():
+    pid = _mk("Severe chest pain with arm radiation and sweating",
+        {"triage_level": TRIAGE_EMERGENCY, "assessment": "3 red flags: radiation, diaphoresis, dyspnea. Possible ACS.",
+         "red_flags": ["pain_radiation","diaphoresis","dyspnea"], "recommended_action": "Activate cath lab immediately.",
+         "risk_score": 9, "source_guidelines": ["chest_pain_protocol.txt"],
+         "suspected_conditions": ["Acute Coronary Syndrome"], "time_sensitivity": "Within 10 minutes"},
+        "de-DE", 12, {"age_range": "45-59", "sex": "Male"}, "Klinikum Stuttgart – Katharinenhospital")
+    st.success("Added EMERGENCY: " + pid)
+
+def _add_urgent():
+    pid = _mk("Sudden severe headache and vomiting for 2 hours",
+        {"triage_level": TRIAGE_URGENT, "assessment": "Thunderclap headache — SAH must be excluded.",
+         "red_flags": ["thunderclap_headache","vomiting"], "recommended_action": "CT head within 30 minutes.",
+         "risk_score": 7, "source_guidelines": [], "suspected_conditions": ["SAH","Migraine"],
+         "time_sensitivity": "Within 30 minutes"},
+        "tr-TR", 22, {"age_range": "30-44", "sex": "Female"}, "Robert-Bosch-Krankenhaus Stuttgart")
+    st.success("Added URGENT: " + pid)
+
+def _add_routine():
+    pid = _mk("Mild headache for 2 days, no fever",
+        {"triage_level": TRIAGE_ROUTINE, "assessment": "Pain 3/10. No red flags. Tension headache.",
+         "red_flags": ["none_identified"], "recommended_action": "See GP if persists 48h.",
+         "risk_score": 2, "source_guidelines": [], "suspected_conditions": ["Tension Headache"],
+         "time_sensitivity": "Within 48 hours"},
+        "en-US", 45, {"age_range": "18-29", "sex": "Female"}, "Universitätsklinikum Tübingen")
+    st.success("Added ROUTINE: " + pid)
 
 
-def _add_test_urgent() -> None:
-    record = triage_engine.create_patient_record(
-        chief_complaint="Sudden severe headache and vomiting for 2 hours",
-        assessment={
-            "triage_level": TRIAGE_URGENT,
-            "assessment": "Thunderclap headache — subarachnoid haemorrhage must be excluded.",
-            "red_flags": ["thunderclap_headache", "vomiting"],
-            "recommended_action": "Urgent CT head within 30 minutes.",
-            "risk_score": 7,
-            "source_guidelines": [],
-            "suspected_conditions": ["Subarachnoid Haemorrhage", "Migraine"],
-            "time_sensitivity": "Within 30 minutes",
-        },
-        language="tr-TR",
-        eta_minutes=22,
-        demographics={"age_range": "30-44", "sex": "Female"},
-    )
-    record["destination_hospital"] = "Robert-Bosch-Krankenhaus Stuttgart"
-    hospital_queue.add_patient(record)
-    st.success(f"Added URGENT: {record['patient_id']}")
-
-
-def _add_test_routine() -> None:
-    record = triage_engine.create_patient_record(
-        chief_complaint="Mild headache for 2 days, no fever",
-        assessment={
-            "triage_level": TRIAGE_ROUTINE,
-            "assessment": "Pain 3/10. No red flags. Tension headache likely.",
-            "red_flags": ["none_identified"],
-            "recommended_action": "See GP if symptoms persist beyond 48 hours.",
-            "risk_score": 2,
-            "source_guidelines": [],
-            "suspected_conditions": ["Tension Headache"],
-            "time_sensitivity": "Within 48 hours",
-        },
-        language="en-US",
-        eta_minutes=45,
-        demographics={"age_range": "18-29", "sex": "Female"},
-    )
-    record["destination_hospital"] = "Universitätsklinikum Tübingen"
-    hospital_queue.add_patient(record)
-    st.success(f"Added ROUTINE: {record['patient_id']}")
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
+# ── Main ──────────────────────────────────────────────────────────────────────
 def main() -> None:
-    now_str = datetime.now(timezone.utc).strftime("%d %b %Y — %H:%M UTC")
+    now_str = datetime.now(timezone.utc).strftime("%d %b %Y  %H:%M UTC")
 
-    # ── Header ──
-    col_title, col_time = st.columns([4, 1])
-    with col_title:
+    h1, h2 = st.columns([6, 1])
+    with h1:
         st.markdown("## 🏥 CodeZero — ER Command Center")
-    with col_time:
-        st.markdown(
-            f'<div style="text-align:right;padding-top:0.6rem;color:#64748b;font-size:0.85rem;">{now_str}</div>',
-            unsafe_allow_html=True,
-        )
+    with h2:
+        st.markdown('<div style="text-align:right;padding-top:0.8rem;color:#4b5563;font-size:0.8rem;">' + now_str + "</div>", unsafe_allow_html=True)
 
-    # ── Summary metrics ──
-    stats    = hospital_queue.get_queue_stats()
-    by_level = stats.get("by_level", {})
-
+    stats = hospital_queue.get_queue_stats()
+    by_lv = stats.get("by_level", {})
     m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("📥 Total Incoming",  stats.get("total_incoming", 0))
-    m2.metric("🔴 Emergency",       by_level.get(TRIAGE_EMERGENCY, 0))
-    m3.metric("🟠 Urgent",          by_level.get(TRIAGE_URGENT, 0))
-    m4.metric("🟢 Routine",         by_level.get(TRIAGE_ROUTINE, 0))
-    m5.metric("✅ Treated Today",   stats.get("total_treated", stats.get("total_discharged", 0)))
-
+    m1.metric("📥 Incoming",  stats.get("total_incoming", 0))
+    m2.metric("🔴 Emergency", by_lv.get(TRIAGE_EMERGENCY, 0))
+    m3.metric("🟠 Urgent",    by_lv.get(TRIAGE_URGENT, 0))
+    m4.metric("🟢 Routine",   by_lv.get(TRIAGE_ROUTINE, 0))
+    m5.metric("✅ Treated",   stats.get("total_treated", stats.get("total_discharged", 0)))
     st.divider()
 
-    # ── Tabs ──
-    tab_incoming, tab_all, tab_occupancy, tab_admin = st.tabs([
-        "📥 Incoming Patients",
-        "📊 All Records",
-        "🏥 Occupancy Control",
-        "⚙️ Admin",
-    ])
+    t_in, t_all, t_occ, t_adm = st.tabs(["📥 Incoming", "📊 All Records", "🏥 Occupancy", "⚙️ Admin"])
 
-    with tab_incoming:
-        incoming = hospital_queue.get_incoming_patients(limit=20)
+    with t_in:
+        incoming = hospital_queue.get_incoming_patients(limit=40)
         if not incoming:
-            st.markdown("""
-<div style="text-align:center;padding:3rem;color:#475569;">
-  <div style="font-size:3rem;">🏥</div>
-  <p style="font-size:1.1rem;">No incoming patients.<br>Waiting for triage submissions...</p>
-</div>""", unsafe_allow_html=True)
+            st.markdown('<div style="text-align:center;padding:3rem;color:#4b5563;"><div style="font-size:3rem;">🏥</div><p>No incoming patients yet.</p></div>', unsafe_allow_html=True)
         else:
-            # ── Sort controls ──────────────────────────────────────────────
-            sort_col, _ = st.columns([2, 3])
-            with sort_col:
-                sort_mode = st.selectbox(
-                    "Sort by",
-                    options=["newest_first", "by_category", "by_eta"],
-                    format_func=lambda x: {
-                        "newest_first": "🕐 Newest first",
-                        "by_category":  "🔴 Category (Emergency → Routine)",
-                        "by_eta":       "⏱ Arrival time (soonest first)",
-                    }[x],
-                    key="sort_mode",
-                    label_visibility="collapsed",
-                )
+            sc, _ = st.columns([2, 5])
+            with sc:
+                sm = st.selectbox("Sort", ["newest_first","by_category","by_eta"],
+                    format_func=lambda x: {"newest_first":"🕐 Newest first","by_category":"🔴 Category","by_eta":"⏱ Soonest arrival"}[x],
+                    key="sort_mode", label_visibility="collapsed")
 
-            priority_order = {TRIAGE_EMERGENCY: 0, TRIAGE_URGENT: 1, TRIAGE_ROUTINE: 2}
+            if sm == "newest_first":
+                out = list(reversed(incoming))
+            elif sm == "by_category":
+                srt = sorted(incoming, key=lambda p: PORDER.get(p.get("triage_level", TRIAGE_URGENT), 1))
+                out = []
+                for _, grp in groupby(srt, key=lambda p: PORDER.get(p.get("triage_level", TRIAGE_URGENT), 1)):
+                    out.extend(sorted(list(grp), key=lambda p: p.get("timestamp", ""), reverse=True))
+            else:
+                out = sorted(incoming, key=lambda p: p.get("eta_minutes", 999))
 
-            if sort_mode == "newest_first":
-                # Most recently submitted first (reverse insertion order)
-                sorted_patients = list(reversed(incoming))
-            elif sort_mode == "by_category":
-                # EMERGENCY → URGENT → ROUTINE, then newest within each group
-                sorted_patients = sorted(
-                    incoming,
-                    key=lambda p: (
-                        priority_order.get(p.get("triage_level", TRIAGE_URGENT), 1),
-                        # within same category: newest first (reverse timestamp)
-                        -(p.get("timestamp", "") or ""),
-                    ),
-                )
-            else:  # by_eta
-                sorted_patients = sorted(
-                    incoming,
-                    key=lambda p: p.get("eta_minutes", 999),
-                )
+            for p in out:
+                render_patient_card(p)
 
-            for patient in sorted_patients:
-                render_patient_card(patient)
+    with t_all:
+        render_all_table(hospital_queue.get_all_patients(limit=100))
 
-    with tab_all:
-        all_patients = hospital_queue.get_all_patients(limit=100)
-        render_all_patients_table(all_patients)
-
-    with tab_occupancy:
+    with t_occ:
         render_occupancy_tab()
 
-    with tab_admin:
-        st.subheader("⚙️ Admin Tools")
-
+    with t_adm:
+        st.subheader("⚙️ Admin")
         with st.expander("Add Test Patients", expanded=True):
-            a1, a2, a3 = st.columns(3)
-            with a1:
-                if st.button("➕ Add Emergency", use_container_width=True, type="primary"):
-                    _add_test_emergency(); st.rerun()
-            with a2:
-                if st.button("➕ Add Urgent", use_container_width=True):
-                    _add_test_urgent(); st.rerun()
-            with a3:
-                if st.button("➕ Add Routine", use_container_width=True):
-                    _add_test_routine(); st.rerun()
-
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                if st.button("➕ Emergency", use_container_width=True, type="primary"): _add_emergency(); st.rerun()
+            with c2:
+                if st.button("➕ Urgent", use_container_width=True): _add_urgent(); st.rerun()
+            with c3:
+                if st.button("➕ Routine", use_container_width=True): _add_routine(); st.rerun()
         st.divider()
-        if st.button("🗑 Clear All Records", type="secondary"):
-            hospital_queue.clear_queue()
-            st.success("Queue cleared.")
-            st.rerun()
+        if st.button("🗑 Clear All", type="secondary"):
+            hospital_queue.clear_queue(); st.success("Cleared."); st.rerun()
 
-    # ── Sidebar ──
     with st.sidebar:
         st.markdown("### 🏥 CodeZero ER")
         st.divider()
-        st.markdown("**Priority Levels**")
-        st.markdown("🔴 **Emergency** — Immediate (< 10 min)")
-        st.markdown("🟠 **Urgent** — Within 30 min")
-        st.markdown("🟢 **Routine** — Within 2 hours")
+        st.markdown("**Triage Levels**")
+        st.markdown("🔴 Emergency — < 10 min")
+        st.markdown("🟠 Urgent — < 30 min")
+        st.markdown("🟢 Routine — < 2 hours")
         st.divider()
-        st.markdown("**Status Workflow**")
-        st.markdown("📥 Incoming → ✅ Arrived → 🩺 Treating → 🏠 Discharged")
+        st.markdown("**Occupancy Penalty**")
+        st.markdown("🟢 Low → +0 min")
+        st.markdown("🟡 Medium → +10 min")
+        st.markdown("🟠 High → +25 min")
+        st.markdown("🔴 Full → +60 min")
         st.divider()
-        st.markdown("**Occupancy Penalties**")
-        st.markdown("🟢 Low — +0 min to ETA score")
-        st.markdown("🟡 Medium — +10 min")
-        st.markdown("🟠 High — +25 min")
-        st.markdown("🔴 Full — +60 min (last resort)")
-        st.divider()
-
         if st.button("🔄 Refresh", use_container_width=True, type="primary"):
             st.rerun()
 
