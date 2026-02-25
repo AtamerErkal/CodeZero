@@ -149,6 +149,103 @@ GERMANY_HOSPITALS: list[dict] = [
     {"name":"Klinikum Gera","lat":50.8829,"lon":12.0766,"address":"Straße des Friedens 122, 07548 Gera"},
 ]
 
+
+# ── United Kingdom (NHS Major Emergency Hospitals) ────────────────────────────
+UK_HOSPITALS: list[dict] = [
+    # England - London
+    {"name":"King's College Hospital","lat":51.4685,"lon":-0.0944,"address":"Denmark Hill, London SE5 9RS","country":"UK"},
+    {"name":"Guy's Hospital","lat":51.5035,"lon":-0.0873,"address":"Great Maze Pond, London SE1 9RT","country":"UK"},
+    {"name":"St Thomas' Hospital","lat":51.4988,"lon":-0.1188,"address":"Westminster Bridge Rd, London SE1 7EH","country":"UK"},
+    {"name":"King's College Hospital – Golden Jubilee","lat":51.4978,"lon":-0.1411,"address":"Grosvenor Wing, London W2 1NY","country":"UK"},
+    {"name":"Royal London Hospital","lat":51.5183,"lon":-0.0593,"address":"Whitechapel Rd, London E1 1FR","country":"UK"},
+    {"name":"St Bartholomew's Hospital","lat":51.5171,"lon":-0.1008,"address":"West Smithfield, London EC1A 7BE","country":"UK"},
+    {"name":"University College Hospital","lat":51.5247,"lon":-0.1338,"address":"235 Euston Rd, London NW1 2BU","country":"UK"},
+    {"name":"Charing Cross Hospital","lat":51.4895,"lon":-0.2193,"address":"Fulham Palace Rd, London W6 8RF","country":"UK"},
+    {"name":"Chelsea and Westminster Hospital","lat":51.4844,"lon":-0.1814,"address":"369 Fulham Rd, London SW10 9NH","country":"UK"},
+    {"name":"Northwick Park Hospital","lat":51.5786,"lon":-0.3198,"address":"Watford Rd, Harrow HA1 3UJ","country":"UK"},
+    # England - Midlands & North
+    {"name":"Queen Elizabeth Hospital Birmingham","lat":52.4529,"lon":-1.9427,"address":"Mindelsohn Way, Birmingham B15 2GW","country":"UK"},
+    {"name":"Nottingham University Hospitals – QMC","lat":52.9497,"lon":-1.1864,"address":"Derby Road, Nottingham NG7 2UH","country":"UK"},
+    {"name":"Leicester Royal Infirmary","lat":52.6264,"lon":-1.1246,"address":"Infirmary Square, Leicester LE1 5WW","country":"UK"},
+    {"name":"Sheffield Teaching Hospitals – Northern General","lat":53.4130,"lon":-1.4521,"address":"Herries Road, Sheffield S5 7AU","country":"UK"},
+    {"name":"Leeds General Infirmary","lat":53.8026,"lon":-1.5476,"address":"Great George St, Leeds LS1 3EX","country":"UK"},
+    {"name":"Manchester Royal Infirmary","lat":53.4627,"lon":-2.2246,"address":"Oxford Road, Manchester M13 9WL","country":"UK"},
+    {"name":"Salford Royal Hospital","lat":53.4882,"lon":-2.3353,"address":"Stott Lane, Salford M6 8HD","country":"UK"},
+    {"name":"Liverpool Royal Hospital","lat":53.4068,"lon":-2.9640,"address":"Prescot Street, Liverpool L7 8XP","country":"UK"},
+    {"name":"Freeman Hospital Newcastle","lat":54.9912,"lon":-1.6038,"address":"Freeman Road, Newcastle NE7 7DN","country":"UK"},
+    {"name":"James Cook University Hospital Middlesbrough","lat":54.5505,"lon":-1.1891,"address":"Marton Road, Middlesbrough TS4 3BW","country":"UK"},
+    # England - South & East
+    {"name":"Southampton General Hospital","lat":50.9319,"lon":-1.4324,"address":"Tremona Rd, Southampton SO16 6YD","country":"UK"},
+    {"name":"Bristol Royal Infirmary","lat":51.4600,"lon":-2.5988,"address":"Marlborough St, Bristol BS2 8HW","country":"UK"},
+    {"name":"John Radcliffe Hospital Oxford","lat":51.7618,"lon":-1.2215,"address":"Headley Way, Oxford OX3 9DU","country":"UK"},
+    {"name":"Addenbrooke's Hospital Cambridge","lat":52.1752,"lon":0.1401,"address":"Hills Road, Cambridge CB2 0QQ","country":"UK"},
+    {"name":"Royal Cornwall Hospital Truro","lat":50.2584,"lon":-5.0625,"address":"Treliske, Truro TR1 3LJ","country":"UK"},
+    # Scotland
+    {"name":"Royal Infirmary of Edinburgh","lat":55.9215,"lon":-3.1349,"address":"51 Little France Crescent, Edinburgh EH16 4SA","country":"UK"},
+    {"name":"Glasgow Royal Infirmary","lat":55.8621,"lon":-4.2368,"address":"84 Castle Street, Glasgow G4 0SF","country":"UK"},
+    {"name":"Queen Elizabeth University Hospital Glasgow","lat":55.8595,"lon":-4.3117,"address":"1345 Govan Road, Glasgow G51 4TF","country":"UK"},
+    {"name":"Ninewells Hospital Dundee","lat":56.4631,"lon":-3.0280,"address":"Tom McDonald Avenue, Dundee DD2 1SY","country":"UK"},
+    {"name":"Aberdeen Royal Infirmary","lat":57.1427,"lon":-2.1136,"address":"Foresterhill, Aberdeen AB25 2ZN","country":"UK"},
+    # Wales
+    {"name":"University Hospital of Wales Cardiff","lat":51.5100,"lon":-3.1940,"address":"Heath Park, Cardiff CF14 4XW","country":"UK"},
+    # Northern Ireland
+    {"name":"Royal Victoria Hospital Belfast","lat":54.5961,"lon":-5.9549,"address":"Grosvenor Road, Belfast BT12 6BA","country":"UK"},
+]
+
+# ── Turkey (Major Emergency Hospitals) ───────────────────────────────────────
+TR_HOSPITALS: list[dict] = [
+    # İstanbul - Avrupa Yakası
+    {"name":"Çapa Tıp Fakültesi Hastanesi","lat":41.0167,"lon":28.9317,"address":"Koca Mustafapaşa Cd. 34098, İstanbul","country":"TR"},
+    {"name":"Cerrahpaşa Tıp Fakültesi Hastanesi","lat":41.0077,"lon":28.9375,"address":"Kocamustafapaşa Cd. 34098, İstanbul","country":"TR"},
+    {"name":"Marmara Üniversitesi Pendik Eğitim Araştırma Hastanesi","lat":40.8773,"lon":29.3064,"address":"Fevzi Çakmak Mah. 34899, İstanbul","country":"TR"},
+    {"name":"Haseki Eğitim Araştırma Hastanesi","lat":41.0076,"lon":28.9430,"address":"Adnan Adıvar Cd. 34130, İstanbul","country":"TR"},
+    {"name":"Şişli Hamidiye Etfal Eğitim Araştırma Hastanesi","lat":41.0689,"lon":28.9873,"address":"Halaskargazi Cd. 34371, İstanbul","country":"TR"},
+    {"name":"Bağcılar Eğitim Araştırma Hastanesi","lat":41.0383,"lon":28.8546,"address":"Doktor Lütfi Kırdar Cd. 34200, İstanbul","country":"TR"},
+    {"name":"Bakırköy Ruh Sinir Hastalıkları Hastanesi","lat":40.9796,"lon":28.8704,"address":"Dr. Mazhar Osman Cd. 34147, İstanbul","country":"TR"},
+    {"name":"Acıbadem Maslak Hastanesi","lat":41.1152,"lon":29.0230,"address":"Büyükdere Cd. 40, 34457 İstanbul","country":"TR"},
+    {"name":"Memorial Şişli Hastanesi","lat":41.0659,"lon":28.9829,"address":"Piyalepaşa Bulvarı 34385, İstanbul","country":"TR"},
+    # İstanbul - Anadolu Yakası
+    {"name":"Kartal Eğitim Araştırma Hastanesi","lat":40.8913,"lon":29.2000,"address":"Şemsi Denizer Cd. 34865, İstanbul","country":"TR"},
+    {"name":"Ümraniye Eğitim Araştırma Hastanesi","lat":41.0219,"lon":29.1225,"address":"Alemdağ Cd. 34766, İstanbul","country":"TR"},
+    {"name":"Göztepe Prof. Dr. Süleyman Yalçın Şehir Hastanesi","lat":40.9794,"lon":29.0750,"address":"Dr. Erkin Cd. 34722, İstanbul","country":"TR"},
+    # Ankara
+    {"name":"Ankara Şehir Hastanesi","lat":39.8715,"lon":32.7532,"address":"Bilkent, 06800 Çankaya/Ankara","country":"TR"},
+    {"name":"Hacettepe Üniversitesi Hastanesi","lat":39.9360,"lon":32.8628,"address":"Hacettepe, 06100 Sıhhiye/Ankara","country":"TR"},
+    {"name":"Ankara Üniversitesi İbn-i Sina Hastanesi","lat":39.9428,"lon":32.8573,"address":"Samanpazarı, 06100 Altındağ/Ankara","country":"TR"},
+    {"name":"Gazi Üniversitesi Hastanesi","lat":39.9266,"lon":32.8126,"address":"Emniyet Mah. 06500, Ankara","country":"TR"},
+    {"name":"Dr. Abdurrahman Yurtaslan Ankara Onkoloji Eğitim Hastanesi","lat":39.9455,"lon":32.7869,"address":"Mehmet Akif Ersoy Mah. 06200, Ankara","country":"TR"},
+    # İzmir
+    {"name":"Ege Üniversitesi Tıp Fakültesi Hastanesi","lat":38.4613,"lon":27.2302,"address":"Bornova, 35100 İzmir","country":"TR"},
+    {"name":"Dokuz Eylül Üniversitesi Hastanesi","lat":38.3872,"lon":27.0963,"address":"Balçova, 35340 İzmir","country":"TR"},
+    {"name":"İzmir Katip Çelebi Üniversitesi Atatürk Eğitim Araştırma Hastanesi","lat":38.4665,"lon":27.1780,"address":"Basın Sitesi Mah. 35150, İzmir","country":"TR"},
+    # Diğer şehirler
+    {"name":"Bursa Şehir Hastanesi","lat":40.2044,"lon":29.0608,"address":"Nilüfer, 16110 Bursa","country":"TR"},
+    {"name":"Uludağ Üniversitesi Tıp Fakültesi Hastanesi","lat":40.2211,"lon":28.9979,"address":"Görükle, 16059 Bursa","country":"TR"},
+    {"name":"Adana Şehir Hastanesi","lat":37.0117,"lon":35.3218,"address":"Adana","country":"TR"},
+    {"name":"Çukurova Üniversitesi Balcalı Hastanesi","lat":37.0517,"lon":35.3424,"address":"Balcalı, 01790 Sarıçam/Adana","country":"TR"},
+    {"name":"Erciyes Üniversitesi Hastanesi","lat":38.7435,"lon":35.5175,"address":"Talas, 38039 Kayseri","country":"TR"},
+    {"name":"Antalya Eğitim Araştırma Hastanesi","lat":36.8996,"lon":30.6900,"address":"Soğuksu Mah. 07070, Antalya","country":"TR"},
+    {"name":"Akdeniz Üniversitesi Hastanesi","lat":36.8963,"lon":30.6574,"address":"Konyaaltı, 07070 Antalya","country":"TR"},
+    {"name":"Ondokuz Mayıs Üniversitesi Hastanesi","lat":41.3392,"lon":36.3311,"address":"Kurupelit, 55139 Samsun","country":"TR"},
+    {"name":"Trabzon Karadeniz Teknik Üniversitesi Farabi Hastanesi","lat":41.0177,"lon":39.7312,"address":"Ortahisar, 61080 Trabzon","country":"TR"},
+    {"name":"Konya Şehir Hastanesi","lat":37.8742,"lon":32.4920,"address":"Selçuklu, 42250 Konya","country":"TR"},
+    {"name":"Selçuk Üniversitesi Tıp Fakültesi Hastanesi","lat":37.9233,"lon":32.5077,"address":"Selçuklu, 42075 Konya","country":"TR"},
+    {"name":"Gaziantep Şehir Hastanesi","lat":37.0799,"lon":37.3826,"address":"Şahinbey, 27000 Gaziantep","country":"TR"},
+    {"name":"Diyarbakır Şehir Hastanesi","lat":37.9248,"lon":40.2101,"address":"Kayapınar, 21120 Diyarbakır","country":"TR"},
+    {"name":"Eskişehir Osmangazi Üniversitesi Hastanesi","lat":39.7666,"lon":30.5235,"address":"Meşelik Kampüsü, 26040 Eskişehir","country":"TR"},
+]
+
+# Combined hospital lookup
+ALL_HOSPITALS: list[dict] = (
+    [{**h, "country": "DE"} for h in GERMANY_HOSPITALS] +
+    UK_HOSPITALS +
+    TR_HOSPITALS
+)
+
+def get_hospitals_by_country(country_code: str) -> list[dict]:
+    """Filter hospitals by country code: DE, UK, TR."""
+    return [h for h in ALL_HOSPITALS if h.get("country","DE") == country_code]
+
 _OCCUPANCY_REGISTRY: dict[str, str] = {}
 
 _OCCUPANCY_PENALTY: dict[str, int] = {"low": 0, "medium": 10, "high": 25, "full": 60}
@@ -173,8 +270,8 @@ class MapsHandler:
         else:
             logger.info("Azure Maps initialized.")
 
-    def find_nearest_hospitals(self, patient_lat: float, patient_lon: float, count: int = 3, radius_km: int = 100) -> list[dict]:
-        candidates = self._germany_search(patient_lat, patient_lon, radius_km)
+    def find_nearest_hospitals(self, patient_lat: float, patient_lon: float, count: int = 3, radius_km: int = 100, country: str = "DE") -> list[dict]:
+        candidates = self._search_hospitals(patient_lat, patient_lon, radius_km, country)
         enriched: list[dict] = []
         for h in candidates:
             eta = self.calculate_eta_to_hospital(patient_lat, patient_lon, h["lat"], h["lon"])
@@ -202,6 +299,19 @@ class MapsHandler:
         if self._initialized:
             return self._azure_maps_eta(patient_lat, patient_lon, hospital_lat, hospital_lon)
         return self._fallback_eta(patient_lat, patient_lon, hospital_lat, hospital_lon)
+
+    def _search_hospitals(self, patient_lat: float, patient_lon: float, radius_km: int = 100, country: str = "DE") -> list[dict]:
+        """Search all hospitals for a given country within radius."""
+        pool = [h for h in ALL_HOSPITALS if h.get("country", "DE") == country]
+        if not pool:
+            pool = ALL_HOSPITALS  # fallback to all
+        scored = sorted(
+            [{**h, "distance_km": round(self._haversine_distance(patient_lat, patient_lon, h["lat"], h["lon"]), 1)}
+             for h in pool],
+            key=lambda x: x["distance_km"]
+        )
+        within = [h for h in scored if h["distance_km"] <= radius_km]
+        return (within[:10] if within else scored[:5])
 
     def _germany_search(self, patient_lat: float, patient_lon: float, radius_km: int = 100) -> list[dict]:
         scored = sorted(
@@ -241,10 +351,10 @@ class MapsHandler:
 
     def _fallback_eta(self, patient_lat, patient_lon, hospital_lat, hospital_lon) -> dict:
         dist  = self._haversine_distance(patient_lat, patient_lon, hospital_lat, hospital_lon)
-        eta   = max(1, round((dist * 1.3 / 30) * 60))
+        eta   = max(1, round((dist * 1.3 / 55) * 60))   # 55 km/h average (urban+highway mix)
         return {"eta_minutes": eta, "distance_km": round(dist, 1),
                 "traffic_delay_minutes": 0,
-                "route_summary": f"~{round(dist,1)} km · ~{eta} min (est.)",
+                "route_summary": f"{round(dist,1)} km · ~{eta} min (estimated)",
                 "source": "estimated"}
 
     @staticmethod

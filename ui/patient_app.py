@@ -1,34 +1,33 @@
 """
-Patient Triage App - CodeZero
-==============================
-Mobile-responsive, multilingual patient-facing triage interface.
-Supports voice input (Azure Speech) and text input in any language.
+CodeZero Patient App — v2.0
+============================
+Scenario flow:
+  1. INPUT        — Voice (mic) or text. Minimal UI. GPS auto-detected.
+  2. PHOTOS       — Optional 1–3 photos (add / delete / re-add)
+  3. DEMOGRAPHICS — Age range + sex (2 quick questions)
+  4. QUESTIONS    — AI follow-up questions + health number + data sharing consent
+  5. TRIAGE       — Emergency call button (112/999/112) OR nearest 3 hospitals
+                    with distance, ETA, occupancy
+  6. RESULT       — DO / DON'T list, registration number, location tracking note
 
-Run: streamlit run ui/patient_app.py
-
-FIXES APPLIED:
-  - RTL layout injected automatically for Arabic / Hebrew detection
-  - Translation results are cached to avoid redundant API calls
-  - Wildcard 'from src.triage_engine import *' replaced with explicit imports
-  - Startup credential status panel shows which Azure services are active
-  - Token usage logging added via triage_engine wrapper
+Hospital dashboard receives:
+  - Transcript, photos flag, Q&A, AI assessment, demographics, health record link
 """
-
+from __future__ import annotations
+import hashlib
 import logging
 import os
+import random
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import streamlit as st
 
-# ---------------------------------------------------------------------------
-# Project root on sys.path
-# ---------------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# FIX: Explicit imports — no wildcard
 from src.hospital_queue import HospitalQueue
 from src.knowledge_indexer import KnowledgeIndexer
 from src.maps_handler import MapsHandler
@@ -51,221 +50,139 @@ except Exception:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# RTL languages — layout direction flipped for these locales
-# ---------------------------------------------------------------------------
 RTL_LOCALES = {"ar-SA", "ar-EG", "ar-AE", "he-IL", "fa-IR", "ur-PK"}
 
-# ---------------------------------------------------------------------------
-# Page configuration
-# ---------------------------------------------------------------------------
-st.set_page_config(
-    page_title="CodeZero Triage",
-    page_icon="🏥",
-    layout="centered",
-)
-
-# ---------------------------------------------------------------------------
-# Base CSS (LTR default — overridden below for RTL)
-# ---------------------------------------------------------------------------
-BASE_CSS = """
-<style>
-/* ── Mobile-first layout ── */
-.block-container {
-    max-width: 480px;
-    padding: 1rem 1rem 4rem 1rem !important;
+# Emergency numbers by detected country (from phone locale / GPS)
+EMERGENCY_NUMBERS: dict[str, dict] = {
+    "de": {"number": "112", "label": "Notruf"},
+    "en-GB": {"number": "999", "label": "Emergency"},
+    "tr": {"number": "112", "label": "Acil"},
+    "en": {"number": "112", "label": "Emergency"},
+    "fr": {"number": "15", "label": "SAMU"},
+    "nl": {"number": "112", "label": "Spoed"},
+    "default": {"number": "112", "label": "Emergency"},
 }
 
-/* ── All buttons: large touch targets ── */
+# Simulated ER occupancy (in production: real-time hospital API)
+_SIMULATED_OCCUPANCY = ["🟢 Low", "🟡 Moderate", "🟠 High", "🔴 Full"]
+
+def _sim_occupancy(hospital_name: str) -> str:
+    # Deterministic but varied per hospital name
+    h = int(hashlib.md5(hospital_name.encode()).hexdigest()[:4], 16) % 4
+    return _SIMULATED_OCCUPANCY[h]
+
+# ── Page config ───────────────────────────────────────────────────────────────
+st.set_page_config(page_title="CodeZero", page_icon="🚑", layout="centered")
+
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+* { font-family: 'Inter', sans-serif; }
+
+.block-container { max-width: 500px; padding: 1rem 1rem 4rem 1rem !important; }
+
+/* Big tap-friendly buttons */
 .stButton > button {
-    min-height: 72px !important;
-    font-size: 1.3rem !important;
-    font-weight: 700 !important;
-    border-radius: 16px !important;
-    letter-spacing: 0.02em;
+    min-height: 60px !important; font-size: 1.15rem !important;
+    font-weight: 700 !important; border-radius: 14px !important;
+    letter-spacing: 0.01em; transition: transform 0.1s;
 }
+.stButton > button:active { transform: scale(0.97); }
 
-/* ── Radio options: big pill buttons with dark theme contrast ── */
-div[data-testid="stRadio"] > div {
-    gap: 10px !important;
-    flex-direction: column !important;
-}
+/* Radio — pill style */
+div[data-testid="stRadio"] > div { gap: 8px !important; flex-direction: column !important; }
 div[data-testid="stRadio"] > div > label {
-    font-size: 1.25rem !important;
-    padding: 18px 24px !important;
-    border: 2.5px solid #475569 !important;
-    border-radius: 14px !important;
-    min-height: 64px !important;
-    cursor: pointer !important;
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
+    font-size: 1.15rem !important; padding: 16px 20px !important;
+    border: 2px solid #334155 !important; border-radius: 12px !important;
+    min-height: 56px !important; cursor: pointer !important;
+    width: 100% !important; display: flex !important; align-items: center !important;
     color: #f1f5f9 !important;
 }
-div[data-testid="stRadio"] > div > label:hover {
-    border-color: #3b82f6 !important;
-    background: rgba(59,130,246,0.12) !important;
-}
-div[data-testid="stRadio"] > div > label:has(input:checked) {
-    border-color: #3b82f6 !important;
-    background: rgba(59,130,246,0.18) !important;
-}
+div[data-testid="stRadio"] > div > label:hover { border-color: #3b82f6 !important; background: rgba(59,130,246,0.1) !important; }
+div[data-testid="stRadio"] > div > label:has(input:checked) { border-color: #3b82f6 !important; background: rgba(59,130,246,0.15) !important; }
 
-/* ── Multiselect options ── */
-div[data-testid="stMultiSelect"] span {
-    font-size: 1.1rem !important;
+/* Text area */
+textarea { font-size: 1.1rem !important; border-radius: 12px !important; }
+
+/* Progress bar */
+div[data-testid="stProgress"] > div > div { background: #3b82f6 !important; }
+
+/* Audio input */
+div[data-testid="stAudioInput"] { margin: 0.5rem 0; }
+
+/* Input fields */
+input[type="text"], input[type="number"] { font-size: 1rem !important; }
+
+/* Hospital card */
+.hosp-card {
+    border: 2px solid #1e293b; border-radius: 14px;
+    padding: 1rem 1.1rem; margin-bottom: 0.6rem;
+    background: #0f172a; transition: border-color 0.15s;
 }
+.hosp-card.fastest { border-color: #22c55e; background: #052e16; }
+.hosp-card.second  { border-color: #1e293b; }
 
-/* ── Select slider ── */
-div[data-testid="stSelectSlider"] label {
-    font-size: 1rem !important;
-    color: #f1f5f9 !important;
-}
+/* DO/DON'T list */
+.do-item   { color: #4ade80; font-size: 1rem; padding: 4px 0; }
+.dont-item { color: #f87171; font-size: 1rem; padding: 4px 0; }
 
-/* ── Slider: larger thumb ── */
-div[data-testid="stSlider"] input[type=range] {
-    height: 8px !important;
-}
-
-/* ── Headings: large and bold for mobile ── */
-h1 { font-size: 2rem !important; }
-h2 { font-size: 1.7rem !important; }
-h3 { font-size: 1.4rem !important; }
-
-/* ── Audio input: large record button ── */
-div[data-testid="stAudioInput"] button {
-    width: 100px !important;
-    height: 100px !important;
-    border-radius: 50% !important;
-    font-size: 2.5rem !important;
+/* Registration number box */
+.reg-box {
+    background: #0f172a; border: 2px solid #3b82f6;
+    border-radius: 12px; padding: 0.8rem 1rem; text-align: center;
+    font-size: 1.8rem; font-weight: 800; letter-spacing: 0.15em; color: #60a5fa;
+    margin: 0.8rem 0;
 }
 
-/* ── Progress bar: thicker ── */
-div[data-testid="stProgressBar"] > div {
-    height: 10px !important;
-    border-radius: 5px !important;
-}
-
-/* ── Caption / help text ── */
-.stCaption, small { font-size: 1rem !important; }
-
-/* ── Metric values ── */
-div[data-testid="stMetric"] label { font-size: 1rem !important; }
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-    font-size: 2.2rem !important;
-    font-weight: 800 !important;
-}
-
-/* ── Text area + input: light text on dark bg ── */
-textarea, input[type="text"], input[type="number"] {
-    color: #f1f5f9 !important;
-    background: #1e293b !important;
-    border-color: #475569 !important;
-}
-
-/* ── Expander ── */
-details summary p { font-size: 1.05rem !important; }
+/* Photo grid */
+.photo-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.5rem 0; }
 </style>
-"""
-
-RTL_CSS = """
-<style>
-/* RTL override for Arabic, Hebrew, Farsi, Urdu */
-body, .block-container, .stMarkdown, .stTextArea textarea,
-.stTextInput input, .stRadio, .stMultiSelect, .stSelectSlider {
-    direction: rtl;
-    text-align: right;
-}
-.stButton > button { direction: rtl; }
-</style>
-"""
-
-st.markdown(BASE_CSS, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 
-def _inject_rtl_if_needed() -> None:
-    """Inject RTL CSS when the detected language requires it."""
-    if st.session_state.get("detected_language", "en-US") in RTL_LOCALES:
-        st.markdown(RTL_CSS, unsafe_allow_html=True)
-
-
-# ---------------------------------------------------------------------------
-# Service loader — crash-proof, with startup status tracking
-# ---------------------------------------------------------------------------
+# ── Services ──────────────────────────────────────────────────────────────────
 @st.cache_resource
-def load_services() -> tuple:
-    """Initialize all Azure service clients.
-
-    Returns:
-        Tuple of (TriageEngine, Translator, MapsHandler, HospitalQueue,
-        SpeechHandler | None, dict[service_name, bool]).
-    """
-    status: dict[str, bool] = {}
-
+def load_services():
+    status = {}
+    ki = te = tr = mh = hq = sh = None
     try:
-        ki = KnowledgeIndexer()
-        status["AI Search"] = ki._initialized
-    except Exception:
-        ki = None
-        status["AI Search"] = False
-
+        ki = KnowledgeIndexer(); status["AI Search"] = ki._initialized
+    except Exception: status["AI Search"] = False
     try:
-        tr = Translator()
-        status["Translator"] = tr._initialized
-    except Exception:
-        tr = None
-        status["Translator"] = False
-
+        tr = Translator(); status["Translator"] = tr._initialized
+    except Exception: status["Translator"] = False
     try:
         te = TriageEngine(knowledge_indexer=ki, translator=tr)
-        status["OpenAI (GPT-4)"] = te._initialized
-    except Exception:
-        te = None
-        status["OpenAI (GPT-4)"] = False
-
+        status["GPT-4"] = te._initialized
+    except Exception: status["GPT-4"] = False
     try:
-        mh = MapsHandler()
-        status["Azure Maps"] = mh._initialized
-    except Exception:
-        mh = None
-        status["Azure Maps"] = False
-
+        mh = MapsHandler(); status["Azure Maps"] = mh._initialized
+    except Exception: status["Azure Maps"] = False
     try:
-        hq = HospitalQueue()
-        status["Hospital Queue (DB)"] = True
-    except Exception:
-        hq = None
-        status["Hospital Queue (DB)"] = False
-
+        hq = HospitalQueue(); status["Queue"] = True
+    except Exception: status["Queue"] = False
     try:
         sh = SpeechHandler() if _HAS_SPEECH else None
-        status["Speech Services"] = bool(sh and sh._initialized)
-    except Exception:
-        sh = None
-        status["Speech Services"] = False
-
+        status["Speech"] = bool(sh and sh._initialized)
+    except Exception: status["Speech"] = False
     return te, tr, mh, hq, sh, status
 
+triage_engine, translator, maps_handler, hospital_queue, speech_handler, _svc_status = load_services()
 
-triage_engine, translator, maps_handler, hospital_queue, speech_handler, _svc_status = (
-    load_services()
-)
-
-# ---------------------------------------------------------------------------
-# Session state defaults
-# ---------------------------------------------------------------------------
+# ── Session state ─────────────────────────────────────────────────────────────
 _DEFAULTS: dict = dict(
     step="input",
     complaint_text="",
     complaint_english="",
     detected_language="en-US",
+    photos=[],              # list of bytes — max 3
     questions=[],
     answers=[],
     q_idx=0,
-    demographics={},           # age_range + sex collected before AI questions
-    demo_idx=0,                # index into DEMOGRAPHIC_QUESTIONS
-    patient_photo=None,        # optional camera photo of wound/rash/swelling
-    gps_fetched=False,         # GPS already fetched this session
+    demographics={},
+    demo_idx=0,
+    health_number="",       # patient-entered health number
+    data_consent=False,     # consent to share with hospital
     assessment=None,
     patient_record=None,
     eta_info=None,
@@ -273,714 +190,155 @@ _DEFAULTS: dict = dict(
     selected_hospital=None,
     patient_lat=None,
     patient_lon=None,
+    gps_fetched=False,
     pre_arrival_advice=None,
+    reg_number=None,        # registration number shown on arrival
+    country="DE",           # detected from GPS or language
 )
-for _key, _val in _DEFAULTS.items():
-    if _key not in st.session_state:
-        st.session_state[_key] = _val
+for _k, _v in _DEFAULTS.items():
+    if _k not in st.session_state:
+        st.session_state[_k] = _v
 
-# ---------------------------------------------------------------------------
-# Translation helper with in-session cache
-# FIX: Previously called Azure Translator on every Streamlit rerun.
-# Now results are cached in session_state to avoid redundant API calls.
-# ---------------------------------------------------------------------------
-_TRANSLATION_CACHE_KEY = "_translation_cache"
-if _TRANSLATION_CACHE_KEY not in st.session_state:
-    st.session_state[_TRANSLATION_CACHE_KEY] = {}
+_TC = "_tcache"
+if _TC not in st.session_state:
+    st.session_state[_TC] = {}
 
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
 def t(text: str) -> str:
-    """Translate English UI text into the patient's detected language.
-
-    Results are cached in session state to prevent redundant API calls
-    on every Streamlit rerun (which happen after every widget interaction).
-
-    Args:
-        text: English source text.
-
-    Returns:
-        Translated string, or original text if translation unavailable.
-    """
     lang = st.session_state.detected_language
     if not translator or lang.startswith("en"):
         return text
-
-    cache: dict = st.session_state[_TRANSLATION_CACHE_KEY]
-    cache_key = f"{lang}:{text}"
-    if cache_key in cache:
-        return cache[cache_key]
-
+    cache = st.session_state[_TC]
+    key = f"{lang}:{text[:80]}"
+    if key in cache:
+        return cache[key]
     try:
-        translated = translator.translate_from_english(text, lang)
-        cache[cache_key] = translated
-        return translated
+        out = translator.translate_from_english(text, lang)
+        cache[key] = out
+        return out
     except Exception:
         return text
 
 
-# ---------------------------------------------------------------------------
-# Session reset
-# ---------------------------------------------------------------------------
-def reset() -> None:
-    """Reset all session state to defaults and clear translation cache."""
-    for key, val in _DEFAULTS.items():
-        st.session_state[key] = val
-    st.session_state[_TRANSLATION_CACHE_KEY] = {}
+def reset():
+    for k, v in _DEFAULTS.items():
+        st.session_state[k] = v
+    st.session_state[_TC] = {}
 
 
-# ---------------------------------------------------------------------------
-# Core processing pipeline
-# ---------------------------------------------------------------------------
-def do_process(text: str) -> None:
-    """Detect language, translate to English, generate questions, advance step.
-
-    Args:
-        text: Raw patient input (any language).
-    """
-    # Step 1: Detect language
-    detected_code: str | None = None
-    if translator:
-        try:
-            detected_code = translator.detect_language(text)
-        except Exception as exc:
-            logger.warning("Language detection failed: %s", exc)
-
-    locale_map = {
-        "de": "de-DE", "tr": "tr-TR", "ar": "ar-SA",
-        "fr": "fr-FR", "es": "es-ES", "it": "it-IT",
-        "pt": "pt-BR", "ru": "ru-RU", "zh-Hans": "zh-CN",
-        "he": "he-IL", "fa": "fa-IR", "ur": "ur-PK",
-        "en": "en-US",
-    }
-    st.session_state.detected_language = (
-        locale_map.get(detected_code or "en", "en-US")
-    )
-    # Clear cache when language changes
-    st.session_state[_TRANSLATION_CACHE_KEY] = {}
-
-    # Step 2: Translate to English for backend processing
-    english = text
-    if translator:
-        try:
-            english = translator.translate_to_english(
-                text, st.session_state.detected_language
-            )
-        except Exception as exc:
-            logger.warning("Translation to English failed: %s", exc)
-
-    st.session_state.complaint_text = text
-    st.session_state.complaint_english = english
-
-    # Step 3: Collect demographics first, then generate AI questions
-    # Demographics are reset here so each new complaint starts fresh
-    st.session_state.demographics = {}
-    st.session_state.demo_idx = 0
-    st.session_state.q_idx = 0
-    st.session_state.answers = []
-    st.session_state.questions = []
-    st.session_state.step = "demographics"
-    st.rerun()
+def _inject_rtl():
+    if st.session_state.detected_language in RTL_LOCALES:
+        st.markdown('<style>.block-container { direction: rtl; text-align: right; }</style>', unsafe_allow_html=True)
 
 
-def try_transcribe(audio) -> str | None:
-    """Attempt Azure Speech transcription of a Streamlit audio_input recording.
+def _emergency_number() -> dict:
+    lang = st.session_state.detected_language.split("-")[0]
+    ctry = st.session_state.get("country", "DE")
+    if ctry == "UK":
+        return {"number": "999", "label": "Emergency"}
+    return EMERGENCY_NUMBERS.get(lang, EMERGENCY_NUMBERS["default"])
 
-    ``st.audio_input`` returns raw browser audio bytes, typically in WebM/Opus
-    format. Azure Speech SDK only accepts proper WAV (RIFF/PCM) files.
-    This function detects the format, converts to WAV when needed, then
-    calls recognition.
 
-    Args:
-        audio: Streamlit audio upload object with a ``.getvalue()`` method.
+def _gen_reg_number() -> str:
+    return "CZ-" + datetime.now(timezone.utc).strftime("%H%M") + "-" + str(random.randint(1000, 9999))
 
-    Returns:
-        Transcribed text string, or ``None`` if transcription failed.
-    """
+
+def _try_transcribe(audio) -> str | None:
     if not speech_handler or not getattr(speech_handler, "_initialized", False):
         return None
-
-    raw_bytes = audio.getvalue()
-    if not raw_bytes:
+    raw = audio.getvalue()
+    if not raw:
         return None
-
     try:
-        # Detect audio format by magic bytes
-        # WebM starts with 0x1A 0x45 0xDF 0xA3 (EBML header)
-        # WAV  starts with "RIFF"
-        # OGG  starts with "OggS"
-        is_wav = raw_bytes[:4] == b"RIFF"
-        is_ogg = raw_bytes[:4] == b"OggS"
-        is_webm = raw_bytes[:4] == b"\x1a\x45\xdf\xa3"
-
+        is_wav  = raw[:4] == b"RIFF"
+        is_ogg  = raw[:4] == b"OggS"
         if is_wav:
-            # Already WAV — write directly and recognize
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                tmp.write(raw_bytes)
-                wav_path = tmp.name
-            logger.info("Audio is already WAV format.")
+                tmp.write(raw); wav_path = tmp.name
         else:
-            # Browser format (WebM/Opus, OGG, MP4…) — must convert to WAV
-            src_suffix = ".ogg" if is_ogg else ".webm"
-            logger.info(
-                "Browser audio detected (is_webm=%s, is_ogg=%s). "
-                "Converting to WAV via speech_handler...",
-                is_webm, is_ogg,
-            )
-            wav_path = speech_handler.convert_browser_audio_to_wav(
-                raw_bytes, source_suffix=src_suffix
-            )
+            src = ".ogg" if is_ogg else ".webm"
+            wav_path = speech_handler.convert_browser_audio_to_wav(raw, source_suffix=src)
             if not wav_path:
-                st.warning(
-                    "⚠️ Could not convert audio to WAV format. "
-                    "Please install **ffmpeg** on the server, or type your symptoms instead.\n\n"
-                    "Install: `sudo apt-get install ffmpeg` (Linux) or "
-                    "`brew install ffmpeg` (macOS)"
-                )
                 return None
-
         result = speech_handler.recognize_from_audio_file(wav_path)
-
-        # Clean up temp WAV file
         try:
             os.unlink(wav_path)
         except OSError:
             pass
-
         if result and result.get("text"):
-            detected_lang = result.get("language", "en-US")
-            st.session_state.detected_language = detected_lang
-            logger.info(
-                "Transcribed: '%s' (language: %s)", result["text"][:60], detected_lang
-            )
+            st.session_state.detected_language = result.get("language", "en-US")
             return result["text"]
-
-        # Recognition returned None — check logs for specific error code
-        logger.warning("Azure Speech returned no text. Result: %s", result)
-        st.warning(
-            "⚠️ Azure Speech could not transcribe the audio.\n\n"
-            "**Check the terminal for the exact error.** Common causes:\n"
-            "- `SPEECH_KEY` is missing or wrong in `.env`\n"
-            "- `SPEECH_REGION` does not match your Azure resource (e.g. `westeurope`)\n"
-            "- Audio was too short or silent\n\n"
-            "You can type your symptoms in the text box below."
-        )
-
     except Exception as exc:
         logger.error("Transcription error: %s", exc)
-        st.warning(f"⚠️ Transcription error: {exc}\n\nPlease type your symptoms below.")
-
     return None
 
 
-# ---------------------------------------------------------------------------
-# STEP 1: INPUT
-# ---------------------------------------------------------------------------
-def page_input() -> None:
-    """Mobile-first voice input page.
+def _detect_country_from_gps(lat: float, lon: float) -> str:
+    """Rough country detection from lat/lon bounding boxes."""
+    if 47.2 <= lat <= 55.1 and 5.9 <= lon <= 15.1:
+        return "DE"
+    if 49.9 <= lat <= 60.9 and -8.6 <= lon <= 1.8:
+        return "UK"
+    if 35.8 <= lat <= 42.1 and 26.0 <= lon <= 44.8:
+        return "TR"
+    return "DE"
 
-    Designed for a patient holding a phone in distress.
-    Primary action: speak into the microphone.
-    Secondary action: type if voice unavailable.
-    Demo shortcuts removed — real patients do not need them.
-    """
-    _inject_rtl_if_needed()
 
-    # ── App header ────────────────────────────────────────────────────────
-    st.markdown("""
-<div style="text-align:center; padding: 1.5rem 0 0.5rem 0;">
-  <div style="font-size:5rem; line-height:1;">🏥</div>
-  <h1 style="font-size:2rem; font-weight:800; margin:0.3rem 0 0.2rem 0;">CodeZero</h1>
-  <p style="font-size:1.1rem; color:#64748b; margin:0;">
-    Tell us what's wrong — speak in any language
-  </p>
-</div>
-""", unsafe_allow_html=True)
-
-    # ── GPS: read coords written by JS into query params ─────────────────
-    # Pure browser approach — no external package required.
-    # On first page load the iframe script asks for location permission
-    # and rewrites the URL with ?cz_lat=...&cz_lon=...
-    # Streamlit picks up the new params on the next rerun.
-    if not st.session_state.get("gps_fetched"):
+def _do_process(text: str) -> None:
+    detected_code: str | None = None
+    if translator:
         try:
-            params = st.query_params
-            if "cz_lat" in params and "cz_lon" in params:
-                st.session_state.patient_lat = float(params["cz_lat"])
-                st.session_state.patient_lon = float(params["cz_lon"])
-                st.session_state.gps_fetched = True
+            detected_code = translator.detect_language(text)
+        except Exception:
+            pass
+    locale_map = {
+        "de": "de-DE", "tr": "tr-TR", "ar": "ar-SA", "fr": "fr-FR",
+        "es": "es-ES", "it": "it-IT", "ru": "ru-RU", "en": "en-US",
+        "nl": "nl-NL", "pl": "pl-PL",
+    }
+    st.session_state.detected_language = locale_map.get(detected_code or "en", "en-US")
+    st.session_state[_TC] = {}
+
+    english = text
+    if translator:
+        try:
+            english = translator.translate_to_english(text, st.session_state.detected_language)
         except Exception:
             pass
 
-    if not st.session_state.get("gps_fetched"):
-        st.components.v1.html("""
-<script>
-(function() {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(function(pos) {
-    try {
-      var url = new URL(window.parent.location.href);
-      url.searchParams.set("cz_lat", pos.coords.latitude.toFixed(6));
-      url.searchParams.set("cz_lon", pos.coords.longitude.toFixed(6));
-      window.parent.location.replace(url.toString());
-    } catch(e) {}
-  }, function() {}, {timeout: 7000, enableHighAccuracy: false});
-})();
-</script>
-""", height=0)
-
-    # GPS status line
-    if st.session_state.get("patient_lat"):
-        st.markdown(
-            '<p style="text-align:center;font-size:0.9rem;color:#16a34a;margin:0.1rem 0 0.5rem 0;">'
-            '📍 Location detected</p>',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            '<p style="text-align:center;font-size:0.9rem;color:#94a3b8;margin:0.1rem 0 0.5rem 0;">'
-            '📍 Allow location when prompted</p>',
-            unsafe_allow_html=True,
-        )
-
-    # ── Primary: voice input ──────────────────────────────────────────────
-    if hasattr(st, "audio_input"):
-        if "ffmpeg_available" not in st.session_state:
-            import shutil
-            st.session_state.ffmpeg_available = shutil.which("ffmpeg") is not None
-
-        st.markdown("""
-<div style="text-align:center; margin: 0.5rem 0 0.3rem 0;">
-  <p style="font-size:1.2rem; font-weight:600; color:#1e293b; margin-bottom:0.2rem;">
-    🎤 Tap the microphone and describe your symptoms
-  </p>
-  <p style="font-size:1rem; color:#64748b; margin:0;">
-    Speak clearly — any language is understood
-  </p>
-</div>
-""", unsafe_allow_html=True)
-
-        audio = st.audio_input(" ", label_visibility="collapsed")
-
-        if audio is not None:
-            with st.spinner("🔄 Transcribing..."):
-                transcribed = try_transcribe(audio)
-            if transcribed:
-                st.markdown(f"""
-<div style="background:#f0fdf4; border:2px solid #22c55e; border-radius:14px;
-     padding:1rem 1.2rem; margin:0.8rem 0; font-size:1.1rem;">
-  ✅ <strong>Heard:</strong> {transcribed}
-</div>
-""", unsafe_allow_html=True)
-                if st.button(
-                    "▶  Start Assessment",
-                    type="primary",
-                    use_container_width=True,
-                    key="btn_voice",
-                ):
-                    do_process(transcribed)
-            else:
-                st.warning("⚠️ Could not understand the audio. Please try again or type below.")
-    else:
-        st.info("Voice input requires Streamlit ≥ 1.41.0. Please type below.")
-
-    # ── Optional: photo of wound / affected area ─────────────────────────
-    # camera_input is guarded with try/except — some browsers block it
-    # silently and cause a blank screen without the guard.
-    try:
-        if hasattr(st, "camera_input"):
-            with st.expander("📷 Add a photo (optional)"):
-                if not st.session_state.get("patient_photo"):
-                    photo = st.camera_input(
-                        "Take a photo of the affected area",
-                        label_visibility="collapsed",
-                    )
-                    if photo is not None:
-                        st.session_state.patient_photo = photo
-                        st.success("✅ Photo saved.")
-                else:
-                    st.success("✅ Photo already captured.")
-                    if st.button("Retake photo", key="retake_photo"):
-                        st.session_state.patient_photo = None
-                        st.rerun()
-    except Exception:
-        pass
-
-    # ── Divider with "or" ─────────────────────────────────────────────────
-    st.markdown("""
-<div style="display:flex; align-items:center; gap:0.8rem; margin:1.2rem 0;">
-  <hr style="flex:1; border:1px solid #e2e8f0; margin:0;">
-  <span style="font-size:1rem; color:#94a3b8; white-space:nowrap;">or type</span>
-  <hr style="flex:1; border:1px solid #e2e8f0; margin:0;">
-</div>
-""", unsafe_allow_html=True)
-
-    # ── Secondary: text input ─────────────────────────────────────────────
-    complaint = st.text_area(
-        "Describe your symptoms",
-        placeholder="e.g. I have severe chest pain and difficulty breathing",
-        height=110,
-        label_visibility="collapsed",
-    )
-    st.caption("🌍 Any language is auto-detected")
-
-    if st.button("▶  Start Assessment", type="primary", use_container_width=True, key="btn_text"):
-        if complaint and complaint.strip():
-            do_process(complaint.strip())
-        else:
-            st.warning("Please describe your symptoms first.")
+    st.session_state.complaint_text    = text
+    st.session_state.complaint_english = english
+    st.session_state.demographics      = {}
+    st.session_state.demo_idx          = 0
+    st.session_state.q_idx             = 0
+    st.session_state.answers           = []
+    st.session_state.questions         = []
+    st.session_state.step              = "photos"
+    st.rerun()
 
 
-# ---------------------------------------------------------------------------
-# STEP 1b: DEMOGRAPHICS
-# ---------------------------------------------------------------------------
-def page_demographics() -> None:
-    """Collect age range and biological sex before generating AI questions.
+def _do_notify(lat, lon, eta, hospital_name):
+    location = {"lat": lat, "lon": lon} if lat and lon else None
+    eta_min  = eta.get("eta_minutes") if eta else None
 
-    These two questions are asked once per triage session. The answers are
-    stored in session_state.demographics and passed to generate_questions()
-    so the AI can adapt clinical questions to the patient profile.
-    """
-    _inject_rtl_if_needed()
-
-    st.title("🏥 Quick Patient Information")
-    st.info(f"**Your concern:** {st.session_state.complaint_text}")
-    st.caption("Two quick questions before we assess your symptoms.")
-
-    demo_questions = DEMOGRAPHIC_QUESTIONS
-    idx = st.session_state.demo_idx
-
-    # All demographic questions answered — generate AI questions and proceed
-    if idx >= len(demo_questions):
-        with st.spinner("⚙️ Preparing your personalised assessment..."):
-            if triage_engine:
-                st.session_state.questions = triage_engine.generate_questions(
-                    st.session_state.complaint_english,
-                    demographics=st.session_state.demographics,
-                )
-            else:
-                st.session_state.questions = []
-        st.session_state.q_idx = 0
-        st.session_state.step = "questions"
-        st.rerun()
-        return
-
-    st.progress((idx) / len(demo_questions), text=f"Step {idx + 1} of {len(demo_questions)}")
-
-    q = demo_questions[idx]
-    q_text   = q.get("question", "")
-    options  = q.get("options", [])
-
-    st.markdown(f"### {t(q_text)}")
-
-    answer = st.radio(
-        "Select",
-        [t(opt) for opt in options],
-        key=f"demo_{idx}",
-        horizontal=True,
-    )
-
-    if st.button("Next ➡", type="primary", use_container_width=True, key=f"demo_next_{idx}"):
-        if answer:
-            # Store demographic answer in english
-            eng_answer = answer
-            if translator:
-                try:
-                    eng_answer = translator.translate_to_english(answer, st.session_state.detected_language)
-                except Exception:
-                    pass
-
-            # Map question to demographics dict key
-            if idx == 0:
-                st.session_state.demographics["age_range"] = eng_answer
-            elif idx == 1:
-                st.session_state.demographics["sex"] = eng_answer
-
-            st.session_state.demo_idx += 1
-            st.rerun()
-        else:
-            st.warning("Please select an answer.")
-
-
-# ---------------------------------------------------------------------------
-# STEP 2: QUESTIONS
-# ---------------------------------------------------------------------------
-def page_questions() -> None:
-    """Render the dynamic follow-up questions page."""
-    _inject_rtl_if_needed()
-
-    st.title("🏥 Assessment Questions")
-    st.info(f"**Your concern:** {st.session_state.complaint_text}")
-
-    questions = st.session_state.questions
-    idx = st.session_state.q_idx
-    lang = st.session_state.detected_language
-
-    # All questions answered — run final assessment
-    if idx >= len(questions):
-        with st.spinner("🔍 Analyzing your answers..."):
-            if triage_engine:
-                assessment = triage_engine.assess_triage(
-                    st.session_state.complaint_english,
-                    st.session_state.answers,
-                )
-            else:
-                # Demo fallback
-                assessment = {
-                    "triage_level": TRIAGE_URGENT,
-                    "assessment": "Demo mode — Azure OpenAI not configured.",
-                    "red_flags": [],
-                    "risk_score": 5,
-                    "recommended_action": "Please consult a doctor.",
-                    "time_sensitivity": "Soon",
-                    "source_guidelines": [],
-                    "suspected_conditions": [],
-                }
-            st.session_state.assessment = assessment
-            st.session_state.step = "location"
-            st.rerun()
-        return
-
-    total = len(questions)
-    st.progress(idx / total, text=f"Question {idx + 1} of {total}")
-
-    question = questions[idx]
-    q_text: str = question.get("question", "")
-    q_type: str = question.get("type", "yes_no")
-    options: list[str] = question.get("options", [])
-
-    # Safety net: if AI returned free_text or empty options, convert to
-    # sensible clickable defaults so the patient is never stuck.
-    if q_type == "free_text" or not options:
-        # Detect what kind of default options make sense from the question text
-        q_lower = q_text.lower()
-        if any(w in q_lower for w in ["when", "how long", "since", "start", "began", "zaman", "başla", "süre"]):
-            q_type = "multiple_choice"
-            options = ["Just now", "Less than 1 hour ago", "1–6 hours ago", "6–24 hours ago", "More than 1 day ago"]
-        elif any(w in q_lower for w in ["how", "rate", "scale", "severity", "şiddet", "puan"]):
-            q_type = "scale"
-            options = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
-        elif any(w in q_lower for w in ["where", "location", "nerede", "yer", "bölge"]):
-            q_type = "multiple_choice"
-            options = ["Head / neck", "Chest", "Abdomen", "Back", "Arms", "Legs", "All over"]
-        elif any(w in q_lower for w in ["how did", "onset", "sudden", "gradual", "başlangıç", "ani"]):
-            q_type = "multiple_choice"
-            options = ["Suddenly", "Gradually over minutes", "Gradually over hours", "Gradually over days"]
-        else:
-            q_type = "yes_no"
-            options = ["Yes", "No"]
-
-    st.markdown(f"### Q{idx + 1}: {t(q_text)}")
-
-    answer = None
-    if q_type == "scale":
-        answer = st.select_slider("Select", options=options, key=f"q_{idx}")
-    elif q_type == "multiple_choice":
-        selected = st.multiselect(
-            "Select all that apply",
-            [t(opt) for opt in options],
-            key=f"q_{idx}",
-        )
-        answer = ", ".join(selected) if selected else None
-    else:
-        # yes_no and any unknown type — always render as radio with options
-        if not options:
-            options = ["Yes", "No"]
-        answer = st.radio(
-            "Select",
-            [t(opt) for opt in options],
-            key=f"q_{idx}",
-            horizontal=True,
-        )
-
-    nav_col1, nav_col2 = st.columns(2)
-    with nav_col1:
-        if idx > 0 and st.button("⬅ Back", use_container_width=True, key="back"):
-            st.session_state.q_idx -= 1
-            if st.session_state.answers:
-                st.session_state.answers.pop()
-            st.rerun()
-    with nav_col2:
-        if st.button("Next ➡", type="primary", use_container_width=True, key="next"):
-            if answer:
-                # Translate answer back to English for backend processing
-                eng_answer = str(answer)
-                if translator:
-                    try:
-                        eng_answer = translator.translate_to_english(str(answer), lang)
-                    except Exception:
-                        pass
-                st.session_state.answers.append({
-                    "question": q_text,
-                    "answer": eng_answer,
-                    "original_answer": str(answer),
-                })
-                st.session_state.q_idx += 1
-                st.rerun()
-            else:
-                st.warning("Please select an answer.")
-
-
-# ---------------------------------------------------------------------------
-# STEP 3: LOCATION & HOSPITAL SELECTION
-# ---------------------------------------------------------------------------
-def page_location() -> None:
-    """Render the location and nearest hospital selection page."""
-    _inject_rtl_if_needed()
-
-    assessment = st.session_state.assessment
-    level = assessment.get("triage_level", TRIAGE_URGENT)
-
-    # Patient-facing urgency message — no clinical jargon
-    if level == TRIAGE_EMERGENCY:
-        banner_bg    = "#7f1d1d"
-        banner_border= "#dc2626"
-        banner_icon  = "🚨"
-        banner_title = "Please go to the emergency room immediately."
-        banner_body  = "Your symptoms need urgent medical attention right now."
-        time_hint    = "Every minute matters — please do not wait."
-    elif level == TRIAGE_URGENT:
-        banner_bg    = "#78350f"
-        banner_border= "#d97706"
-        banner_icon  = "⚠️"
-        banner_title = "You need to go to hospital soon."
-        banner_body  = "Your symptoms require medical evaluation within the next 30 minutes."
-        time_hint    = "Please find the nearest hospital and go now."
-    else:
-        banner_bg    = "#14532d"
-        banner_border= "#16a34a"
-        banner_icon  = "ℹ️"
-        banner_title = "You should see a doctor today."
-        banner_body  = "Your symptoms are not immediately dangerous, but please get checked."
-        time_hint    = "Visit a GP or urgent care clinic when convenient."
-
-    st.markdown(f"""
-<div style="background:{banner_bg}; border-left:5px solid {banner_border};
-     border-radius:14px; padding:1.2rem 1.4rem; margin:0.5rem 0 1.2rem 0;">
-  <p style="font-size:1.5rem; font-weight:800; margin:0 0 0.3rem 0; color:#f8fafc;">
-    {banner_icon} {banner_title}
-  </p>
-  <p style="font-size:1.05rem; color:#e2e8f0; margin:0 0 0.3rem 0;">{banner_body}</p>
-  <p style="font-size:0.95rem; color:#cbd5e1; margin:0;">{time_hint}</p>
-</div>
-""", unsafe_allow_html=True)
-
-    st.subheader("📍 Find the nearest hospital")
-
-    # Use GPS captured on the input page if available, else fall back to manual
-    gps_lat = st.session_state.get("patient_lat")
-    gps_lon = st.session_state.get("patient_lon")
-
-    if gps_lat and gps_lon:
-        st.success(f"📍 Location detected automatically ({gps_lat:.4f}, {gps_lon:.4f})")
-        lat, lon = gps_lat, gps_lon
-    else:
-        st.caption("📍 GPS not available — enter your coordinates manually")
-        loc_col1, loc_col2 = st.columns(2)
-        with loc_col1:
-            lat = st.number_input("Latitude", value=48.78, format="%.4f")
-        with loc_col2:
-            lon = st.number_input("Longitude", value=9.18, format="%.4f")
-
-    # Auto-search if GPS already captured on input page and not yet searched
-    if gps_lat and gps_lon and not st.session_state.nearby_hospitals:
-        with st.spinner("📍 Finding nearest hospitals..."):
-            if maps_handler:
-                st.session_state.nearby_hospitals = maps_handler.find_nearest_hospitals(lat, lon, count=3)
-                st.session_state.patient_lat = lat
-                st.session_state.patient_lon = lon
-            st.rerun()
-
-    action_col1, action_col2 = st.columns(2)
-    with action_col1:
-        if st.button("🔍 Find Hospitals", type="primary", use_container_width=True, key="find"):
-            with st.spinner("Searching for nearby hospitals..."):
-                if maps_handler:
-                    hospitals = maps_handler.find_nearest_hospitals(lat, lon, count=3)
-                else:
-                    hospitals = []
-                st.session_state.nearby_hospitals = hospitals
-                st.session_state.patient_lat = lat
-                st.session_state.patient_lon = lon
-                st.rerun()
-    with action_col2:
-        if st.button("⏭ Skip", use_container_width=True, key="skip"):
-            _do_notify(None, None, None, None)
-            st.session_state.step = "result"
-            st.rerun()
-
-    # Hospital list
-    hospitals = st.session_state.nearby_hospitals
-    if hospitals:
-        st.divider()
-        st.subheader("🏥 Nearest Emergency Hospitals")
-        for i, hospital in enumerate(hospitals):
-            badge = " ⭐ FASTEST" if i == 0 else ""
-            card_text = (
-                f"**#{i + 1} {hospital['name']}{badge}**\n\n"
-                f"📏 {hospital['distance_km']} km · ⏱ {hospital['eta_minutes']} min\n\n"
-                f"📍 {hospital.get('address', '')}"
-            )
-            if i == 0:
-                st.success(card_text)
-            else:
-                st.info(card_text)
-
-            if st.button(
-                f"✅ Go to {hospital['name']}",
-                key=f"sel_{i}",
-                use_container_width=True,
-            ):
-                eta_info = {
-                    "hospital_name": hospital["name"],
-                    "hospital_lat": hospital["lat"],
-                    "hospital_lon": hospital["lon"],
-                    "eta_minutes": hospital["eta_minutes"],
-                    "distance_km": hospital["distance_km"],
-                    "address": hospital.get("address", ""),
-                    "route_summary": hospital.get("route_summary", ""),
-                    "traffic_delay_minutes": hospital.get("traffic_delay_minutes", 0),
-                }
-                st.session_state.selected_hospital = hospital
-                st.session_state.eta_info = eta_info
-                _do_notify(
-                    st.session_state.patient_lat,
-                    st.session_state.patient_lon,
-                    eta_info,
-                    hospital["name"],
-                )
-                st.session_state.step = "result"
-                st.rerun()
-
-
-def _do_notify(
-    lat: float | None,
-    lon: float | None,
-    eta: dict | None,
-    hospital_name: str | None,
-) -> None:
-    """Create patient record and push it to the hospital queue.
-
-    Args:
-        lat: Patient's latitude, or None.
-        lon: Patient's longitude, or None.
-        eta: ETA info dict, or None.
-        hospital_name: Name of the destination hospital, or None.
-    """
-    location = {"lat": lat, "lon": lon} if lat is not None and lon is not None else None
-    eta_minutes = eta.get("eta_minutes") if eta else None
+    # Build photos metadata list
+    photos_meta = []
+    for i, photo_bytes in enumerate(st.session_state.photos):
+        photos_meta.append({"index": i + 1, "size_bytes": len(photo_bytes)})
 
     if triage_engine:
         record = triage_engine.create_patient_record(
             chief_complaint=st.session_state.complaint_english,
             assessment=st.session_state.assessment,
             language=st.session_state.detected_language,
-            eta_minutes=eta_minutes,
+            eta_minutes=eta_min,
             location=location,
             demographics=st.session_state.get("demographics"),
         )
     else:
         record = {
-            "patient_id": "DEMO-0000",
+            "patient_id": "DEMO-" + str(random.randint(1000, 9999)),
             "triage_level": TRIAGE_URGENT,
             "chief_complaint": st.session_state.complaint_text,
             "language": st.session_state.detected_language,
@@ -989,17 +347,26 @@ def _do_notify(
     if hospital_name:
         record["destination_hospital"] = hospital_name
 
-    # Attach photo flag (actual bytes not JSON-serializable but flag alerts staff)
-    if st.session_state.get("patient_photo") is not None:
-        record["has_photo"] = True
-        record["photo_note"] = "Patient submitted a wound/symptom photo — review in app"
+    # Enrich record
+    record["qa_transcript"]   = st.session_state.answers
+    record["complaint_text"]  = st.session_state.complaint_text   # original language
+    record["has_photo"]       = len(st.session_state.photos) > 0
+    record["photo_count"]     = len(st.session_state.photos)
+    record["photos_meta"]     = photos_meta
+    record["photo_note"]      = f"Patient attached {len(st.session_state.photos)} photo(s)" if st.session_state.photos else ""
+    record["health_number"]   = st.session_state.get("health_number", "")
+    record["data_consent"]    = st.session_state.get("data_consent", False)
+    record["age_range"]       = st.session_state.demographics.get("age_range", "—")
+    record["sex"]             = st.session_state.demographics.get("sex", "—")
 
     if hospital_queue:
         hospital_queue.add_patient(record)
 
+    reg = _gen_reg_number()
     st.session_state.patient_record = record
+    st.session_state.reg_number     = reg
 
-    # Generate pre-arrival DO / DON'T advice in the patient's language
+    # Pre-arrival advice
     if triage_engine:
         try:
             advice = triage_engine.generate_pre_arrival_advice(
@@ -1009,155 +376,610 @@ def _do_notify(
             )
             st.session_state.pre_arrival_advice = advice
         except Exception as exc:
-            logger.error("Pre-arrival advice generation failed: %s", exc)
+            logger.error("Pre-arrival advice: %s", exc)
             st.session_state.pre_arrival_advice = None
 
 
-# ---------------------------------------------------------------------------
-# STEP 4: RESULT
-# ---------------------------------------------------------------------------
-def page_result() -> None:
-    """Render the final triage result and hospital notification page."""
-    _inject_rtl_if_needed()
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 1 — INPUT
+# Ultra-minimal: voice first, tiny "type instead" option
+# ══════════════════════════════════════════════════════════════════════════════
+def page_input() -> None:
+    _inject_rtl()
 
-    assessment = st.session_state.assessment
-    record = st.session_state.patient_record
-    eta = st.session_state.eta_info
-    level = assessment.get("triage_level", TRIAGE_URGENT)
-    color = TRIAGE_COLORS.get(level, "🟠")
-    summary = assessment.get("assessment", "")
+    # GPS detection
+    if not st.session_state.gps_fetched:
+        try:
+            p = st.query_params
+            if "cz_lat" in p and "cz_lon" in p:
+                lat = float(p["cz_lat"]); lon = float(p["cz_lon"])
+                st.session_state.patient_lat = lat
+                st.session_state.patient_lon = lon
+                st.session_state.gps_fetched = True
+                st.session_state.country = _detect_country_from_gps(lat, lon)
+        except Exception:
+            pass
 
-    # ── Patient-friendly confirmation banner ──────────────────────────
-    if level == TRIAGE_EMERGENCY:
-        msg_title = "🚨 Hospital has been notified — go now!"
-        msg_body  = "They are preparing for your arrival. Head to the emergency entrance immediately."
-        banner_bg = "#7f1d1d"; banner_border = "#dc2626"
-    elif level == TRIAGE_URGENT:
-        msg_title = "✅ Hospital has been notified."
-        msg_body  = "Please head there now and follow the instructions below before you leave."
-        banner_bg = "#78350f"; banner_border = "#d97706"
-    else:
-        msg_title = "✅ Your details have been sent."
-        msg_body  = "Please follow the instructions below and go to the hospital when ready."
-        banner_bg = "#14532d"; banner_border = "#16a34a"
+    if not st.session_state.gps_fetched:
+        st.components.v1.html("""
+<script>
+(function(){
+  if(!navigator.geolocation)return;
+  navigator.geolocation.getCurrentPosition(function(p){
+    try{
+      var u=new URL(window.parent.location.href);
+      u.searchParams.set("cz_lat",p.coords.latitude.toFixed(6));
+      u.searchParams.set("cz_lon",p.coords.longitude.toFixed(6));
+      window.parent.location.replace(u.toString());
+    }catch(e){}
+  },function(){},{timeout:8000,enableHighAccuracy:false});
+})();
+</script>""", height=0)
 
-    st.markdown(f"""
-<div style="background:{banner_bg}; border-left:5px solid {banner_border};
-     border-radius:14px; padding:1.2rem 1.4rem; margin:0.5rem 0 1rem 0;">
-  <p style="font-size:1.4rem; font-weight:800; margin:0 0 0.3rem 0; color:#f8fafc;">{msg_title}</p>
-  <p style="font-size:1rem; color:#e2e8f0; margin:0;">{msg_body}</p>
+    # ── Header ──
+    st.markdown("""
+<div style="text-align:center; padding:2rem 0 1rem 0;">
+  <div style="font-size:4rem; line-height:1.1;">🚑</div>
+  <h1 style="font-size:2.2rem; font-weight:900; margin:0.2rem 0 0.4rem 0; color:#f8fafc;">CodeZero</h1>
+  <p style="font-size:1.05rem; color:#64748b; margin:0;">Medical emergency assistant</p>
 </div>
 """, unsafe_allow_html=True)
 
-    # Hospital ETA card
-    if eta:
-        st.info(
-            f"**🏥 {eta.get('hospital_name', '')}**\n\n"
-            f"📍 {eta.get('address', '')}\n\n"
-            f"📏 {eta.get('distance_km', '?')} km · ⏱ {eta.get('eta_minutes', '?')} min"
-        )
+    # GPS status
+    if st.session_state.patient_lat:
+        st.markdown('<p style="text-align:center;font-size:0.88rem;color:#22c55e;margin:0 0 0.8rem 0;">📍 Location detected</p>', unsafe_allow_html=True)
+    else:
+        st.markdown('<p style="text-align:center;font-size:0.88rem;color:#475569;margin:0 0 0.8rem 0;">📍 Allow location access when prompted</p>', unsafe_allow_html=True)
 
-    # Hospital notification confirmation
-    if record:
-        st.success(f"✅ Hospital notified! Patient ID: **{record.get('patient_id', '')}**")
-
-    # Emergency call button (tel: link)
-    if level == TRIAGE_EMERGENCY:
-        st.markdown(
-            '<div style="text-align:center; margin:1.5rem 0">'
-            '<a href="tel:112" style="background:#dc2626; color:white; padding:18px 48px;'
-            ' border-radius:12px; font-size:1.5rem; font-weight:700;'
-            ' text-decoration:none; display:inline-block;">📞 CALL 112 NOW</a>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-    # ── Pre-arrival DO / DON'T advice card (patient-facing, in their language)
-    advice = st.session_state.get("pre_arrival_advice")
-    if advice:
-        do_list   = advice.get("do_list", [])
-        dont_list = advice.get("dont_list", [])
-
-        if do_list or dont_list:
-            border_color = {
-                TRIAGE_EMERGENCY: "#dc2626",
-                TRIAGE_URGENT:    "#d97706",
-                TRIAGE_ROUTINE:   "#2563eb",
-            }.get(level, "#d97706")
-
-            st.markdown(f"""
-<div style="border:2px solid {border_color}; border-radius:14px;
-     padding:1.2rem 1.4rem; margin:1.2rem 0;">
+    # ── Primary: voice ──
+    st.markdown("""
+<div style="text-align:center; margin:0.5rem 0 0.2rem 0;">
+  <p style="font-size:1.25rem; font-weight:700; color:#f1f5f9; margin:0 0 0.2rem 0;">🎤 Record your symptoms</p>
+  <p style="font-size:0.95rem; color:#64748b; margin:0;">Speak in your language — tap the microphone</p>
+</div>
 """, unsafe_allow_html=True)
-            st.markdown("### ⏱ Before You Arrive at Hospital")
 
-            if do_list:
-                st.markdown("**✅ DO:**")
-                for item in do_list:
-                    st.markdown(f"- {item}")
+    if hasattr(st, "audio_input"):
+        audio = st.audio_input(" ", label_visibility="collapsed", key="audio_main")
+        if audio is not None:
+            with st.spinner("🔄 Processing..."):
+                transcribed = _try_transcribe(audio)
+            if transcribed:
+                st.markdown(f"""
+<div style="background:#052e16; border:2px solid #22c55e; border-radius:12px; padding:1rem 1.1rem; margin:0.6rem 0;">
+  <p style="color:#86efac; font-size:0.8rem; margin:0 0 0.3rem 0; text-transform:uppercase; letter-spacing:0.05em;">Understood</p>
+  <p style="color:#f0fdf4; font-size:1.05rem; margin:0; font-style:italic;">"{transcribed}"</p>
+</div>
+""", unsafe_allow_html=True)
+                if st.button("Continue →", type="primary", use_container_width=True, key="btn_voice"):
+                    _do_process(transcribed)
+            else:
+                st.markdown('<p style="color:#f87171;text-align:center;font-size:0.95rem;margin:0.4rem 0;">Could not process audio — please type below</p>', unsafe_allow_html=True)
+    else:
+        st.info("Upgrade Streamlit for voice input: `pip install -U streamlit`")
 
-            if dont_list:
-                st.markdown("**❌ DON'T:**")
-                for item in dont_list:
-                    st.markdown(f"- {item}")
+    # ── "Or type" — minimal, secondary ──
+    with st.expander("✏️ Type instead", expanded=False):
+        complaint = st.text_area(
+            "Describe your symptoms",
+            placeholder="e.g. Sudden chest pain, difficulty breathing...",
+            height=90,
+            label_visibility="collapsed",
+        )
+        st.caption("🌍 Any language is understood")
+        if st.button("Continue →", type="primary", use_container_width=True, key="btn_text"):
+            if complaint and complaint.strip():
+                _do_process(complaint.strip())
+            else:
+                st.warning("Please describe your symptoms first.")
 
-            st.markdown("</div>", unsafe_allow_html=True)
-    elif not advice:
-        # Advice still generating or unavailable — show reassuring placeholder
-        st.info("⏳ Personalised advice is being prepared...")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 2 — PHOTOS (optional, max 3)
+# ══════════════════════════════════════════════════════════════════════════════
+def page_photos() -> None:
+    _inject_rtl()
+
+    st.markdown("""
+<div style="text-align:center; padding:1rem 0 0.5rem 0;">
+  <p style="font-size:1.3rem; font-weight:700; color:#f1f5f9; margin:0;">📷 Add photos</p>
+  <p style="font-size:0.95rem; color:#64748b; margin:0.2rem 0 0;">Wound, rash, swelling — up to 3 photos</p>
+</div>
+""", unsafe_allow_html=True)
+
+    photos = st.session_state.photos
+    max_photos = 3
+
+    # Show existing photos with delete option
+    if photos:
+        cols = st.columns(min(len(photos), 3))
+        for i, photo_bytes in enumerate(photos):
+            with cols[i % 3]:
+                st.image(photo_bytes, use_container_width=True, caption=f"Photo {i+1}")
+                if st.button("🗑 Remove", key=f"del_photo_{i}", use_container_width=True):
+                    st.session_state.photos.pop(i)
+                    st.rerun()
+
+    # Add more photos
+    if len(photos) < max_photos:
+        st.markdown(f'<p style="color:#64748b;font-size:0.9rem;margin:0.3rem 0;">({len(photos)}/{max_photos} photos)</p>', unsafe_allow_html=True)
+
+        # Camera input
+        try:
+            if hasattr(st, "camera_input"):
+                new_photo = st.camera_input("Take a photo", label_visibility="collapsed", key=f"cam_{len(photos)}")
+                if new_photo is not None:
+                    st.session_state.photos.append(new_photo.getvalue())
+                    st.rerun()
+        except Exception:
+            pass
+
+        # File upload fallback
+        uploaded = st.file_uploader(
+            "Or upload a photo",
+            type=["jpg", "jpeg", "png", "heic"],
+            label_visibility="collapsed",
+            key=f"up_{len(photos)}",
+        )
+        if uploaded is not None:
+            st.session_state.photos.append(uploaded.getvalue())
+            st.rerun()
+
+    # Navigation
+    col_skip, col_cont = st.columns(2)
+    with col_skip:
+        if st.button("Skip →", use_container_width=True, key="skip_photos"):
+            st.session_state.step = "demographics"
+            st.rerun()
+    with col_cont:
+        label = "Continue →" if photos else "Skip →"
+        if st.button(label, type="primary", use_container_width=True, key="cont_photos"):
+            st.session_state.step = "demographics"
+            st.rerun()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 3 — DEMOGRAPHICS (age + sex)
+# ══════════════════════════════════════════════════════════════════════════════
+def page_demographics() -> None:
+    _inject_rtl()
+
+    dqs  = DEMOGRAPHIC_QUESTIONS
+    idx  = st.session_state.demo_idx
+
+    if idx >= len(dqs):
+        # Generate AI questions
+        with st.spinner("Preparing your assessment..."):
+            if triage_engine:
+                st.session_state.questions = triage_engine.generate_questions(
+                    st.session_state.complaint_english,
+                    demographics=st.session_state.demographics,
+                )
+            else:
+                st.session_state.questions = []
+        st.session_state.q_idx = 0
+        st.session_state.step  = "questions"
+        st.rerun()
+        return
+
+    st.markdown(f"""
+<div style="text-align:center;padding:0.8rem 0 0.3rem;">
+  <p style="font-size:1.2rem;font-weight:700;color:#f1f5f9;margin:0;">Quick questions first</p>
+  <p style="font-size:0.9rem;color:#64748b;margin:0.1rem 0;">{idx+1} of {len(dqs)}</p>
+</div>""", unsafe_allow_html=True)
+
+    st.progress((idx) / len(dqs))
+
+    q = dqs[idx]
+    st.markdown(f'<p style="font-size:1.15rem;font-weight:600;color:#f1f5f9;margin:0.8rem 0 0.5rem 0;">{t(q["question"])}</p>', unsafe_allow_html=True)
+
+    answer = st.radio("Select", [t(o) for o in q["options"]], key=f"demo_{idx}", label_visibility="collapsed")
+
+    if st.button("Next →", type="primary", use_container_width=True, key=f"demo_next_{idx}"):
+        if answer:
+            eng = answer
+            if translator:
+                try:
+                    eng = translator.translate_to_english(answer, st.session_state.detected_language)
+                except Exception:
+                    pass
+            if idx == 0:
+                st.session_state.demographics["age_range"] = eng
+            elif idx == 1:
+                st.session_state.demographics["sex"] = eng
+            st.session_state.demo_idx += 1
+            st.rerun()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 4 — QUESTIONS + health number + consent
+# ══════════════════════════════════════════════════════════════════════════════
+def page_questions() -> None:
+    _inject_rtl()
+
+    questions = st.session_state.questions
+    idx       = st.session_state.q_idx
+    lang      = st.session_state.detected_language
+
+    # After all AI questions: health number + consent screen
+    if idx >= len(questions):
+        _page_consent()
+        return
+
+    total = len(questions) + 1  # +1 for consent screen
+    st.progress(idx / total)
+    st.markdown(f'<p style="color:#64748b;font-size:0.8rem;text-align:right;margin:0 0 0.5rem 0;">Question {idx+1} of {len(questions)}</p>', unsafe_allow_html=True)
+
+    question = questions[idx]
+    q_text: str  = question.get("question", "")
+    q_type: str  = question.get("type", "yes_no")
+    options: list = question.get("options", [])
+
+    # Normalise free-text / empty options
+    if q_type == "free_text" or not options:
+        q_lower = q_text.lower()
+        if any(w in q_lower for w in ["when","how long","since","start","began","zaman","başla"]):
+            q_type = "multiple_choice"
+            options = ["Just now","< 1 hour ago","1–6 hours ago","6–24 hours ago","More than 1 day"]
+        elif any(w in q_lower for w in ["how","rate","scale","severity","şiddet","puan","pain"]):
+            q_type = "scale"
+            options = [str(i) for i in range(1, 11)]
+        elif any(w in q_lower for w in ["where","location","nerede","yer"]):
+            q_type = "multiple_choice"
+            options = ["Head/neck","Chest","Abdomen","Back","Arms","Legs","Whole body"]
+        else:
+            q_type = "yes_no"
+            options = ["Yes","No","Not sure"]
+
+    st.markdown(f'<p style="font-size:1.15rem;font-weight:600;color:#f1f5f9;margin:0 0 0.5rem 0;">{t(q_text)}</p>', unsafe_allow_html=True)
+
+    answer = None
+    if q_type == "scale":
+        answer = st.select_slider("", options=options, key=f"q_{idx}")
+    elif q_type == "multiple_choice":
+        sel = st.multiselect("", [t(o) for o in options], key=f"q_{idx}", label_visibility="collapsed")
+        answer = ", ".join(sel) if sel else None
+    else:
+        answer = st.radio("", [t(o) for o in options], key=f"q_{idx}", label_visibility="collapsed")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        if idx > 0 and st.button("← Back", use_container_width=True, key="q_back"):
+            st.session_state.q_idx -= 1
+            if st.session_state.answers: st.session_state.answers.pop()
+            st.rerun()
+    with c2:
+        if st.button("Next →", type="primary", use_container_width=True, key="q_next"):
+            if answer:
+                eng = str(answer)
+                if translator:
+                    try: eng = translator.translate_to_english(str(answer), lang)
+                    except Exception: pass
+                st.session_state.answers.append({"question": q_text, "answer": eng, "original_answer": str(answer)})
+                st.session_state.q_idx += 1
+                st.rerun()
+            else:
+                st.warning("Please select an answer.")
+
+
+def _page_consent() -> None:
+    """Health number + data sharing consent — last step before triage."""
+    _inject_rtl()
+
+    st.markdown("""
+<div style="text-align:center;padding:0.5rem 0 0.8rem;">
+  <p style="font-size:1.2rem;font-weight:700;color:#f1f5f9;margin:0;">Almost done</p>
+  <p style="font-size:0.9rem;color:#64748b;margin:0.1rem 0;">One last step before your assessment</p>
+</div>""", unsafe_allow_html=True)
+
+    # Health number (optional)
+    st.markdown('<p style="font-size:1rem;font-weight:600;color:#cbd5e1;margin:0 0 0.3rem 0;">🪪 Your health / insurance number <span style="color:#475569;font-weight:400;">(optional)</span></p>', unsafe_allow_html=True)
+    hn = st.text_input(
+        "Health number",
+        value=st.session_state.health_number,
+        placeholder="e.g. DE-1985-447291 / NHS-789012345 / SGK-5512873690",
+        label_visibility="collapsed",
+    )
+    st.session_state.health_number = hn
+    if hn:
+        st.markdown('<p style="color:#4ade80;font-size:0.85rem;margin:0;">✅ Health number entered — your records will be available to the treating team</p>', unsafe_allow_html=True)
 
     st.divider()
-    if st.button("🔄 New Triage", type="primary", use_container_width=True, key="restart"):
-        reset()
+
+    # Consent
+    st.markdown('<p style="font-size:1rem;font-weight:600;color:#cbd5e1;margin:0 0 0.5rem 0;">📋 Data sharing consent</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:0.92rem;color:#94a3b8;margin:0 0 0.8rem 0;">Do you consent to sharing the information you have provided — including your symptoms, answers, and health number — with the hospital you are directed to?</p>', unsafe_allow_html=True)
+
+    consent = st.radio(
+        "Consent",
+        ["✅ Yes — share my information with the hospital", "❌ No — do not share my data"],
+        label_visibility="collapsed",
+        key="consent_radio",
+    )
+    st.session_state.data_consent = "Yes" in consent
+
+    if st.button("Get my assessment →", type="primary", use_container_width=True, key="btn_consent"):
+        # Run triage assessment
+        with st.spinner("🔍 Analysing your answers..."):
+            if triage_engine:
+                assessment = triage_engine.assess_triage(
+                    st.session_state.complaint_english,
+                    st.session_state.answers,
+                )
+            else:
+                assessment = {
+                    "triage_level": TRIAGE_URGENT,
+                    "assessment": "AI not configured — demo mode.",
+                    "red_flags": [], "risk_score": 5,
+                    "recommended_action": "Please see a doctor.",
+                    "time_sensitivity": "Soon",
+                    "source_guidelines": [], "suspected_conditions": [],
+                }
+        st.session_state.assessment = assessment
+        st.session_state.step = "triage"
         st.rerun()
 
 
-# ---------------------------------------------------------------------------
-# Sidebar — service status panel (Grup B: startup credential validator)
-# ---------------------------------------------------------------------------
-def render_sidebar() -> None:
-    """Render sidebar with Azure service status indicators."""
-    with st.sidebar:
-        st.markdown("### 🏥 CodeZero")
-        st.caption("AI-powered pre-hospital triage")
-        st.divider()
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 5 — TRIAGE (emergency number + hospital selection)
+# ══════════════════════════════════════════════════════════════════════════════
+def page_triage() -> None:
+    _inject_rtl()
 
-        st.markdown("**Azure Services Status:**")
-        for service_name, is_live in _svc_status.items():
-            icon = "✅" if is_live else "⚠️"
-            mode = "Live" if is_live else "Demo mode"
-            st.markdown(f"{icon} {service_name} — *{mode}*")
+    assessment = st.session_state.assessment
+    level      = assessment.get("triage_level", TRIAGE_URGENT)
+    emg        = _emergency_number()
 
-        st.divider()
+    # ── Emergency banner ──────────────────────────────────────────────────
+    if level == TRIAGE_EMERGENCY:
+        st.markdown(f"""
+<div style="background:#7f1d1d;border-left:5px solid #dc2626;border-radius:14px;padding:1.1rem 1.3rem;margin:0.2rem 0 1rem 0;">
+  <p style="font-size:1.4rem;font-weight:800;color:#fef2f2;margin:0 0 0.2rem 0;">🚨 Go to emergency immediately</p>
+  <p style="font-size:1rem;color:#fecaca;margin:0;">Your symptoms require urgent care — do not wait</p>
+</div>
+""", unsafe_allow_html=True)
+        # Big call button
+        st.markdown(f"""
+<div style="text-align:center;margin:0.5rem 0 1rem 0;">
+  <a href="tel:{emg['number']}" style="background:#dc2626;color:white;padding:20px 48px;
+     border-radius:14px;font-size:1.6rem;font-weight:800;text-decoration:none;
+     display:inline-block;box-shadow:0 4px 16px rgba(220,38,38,0.4);">
+    📞 CALL {emg['number']}
+  </a>
+  <p style="color:#64748b;font-size:0.85rem;margin:0.5rem 0 0 0;">{emg['label']} · Tap to call</p>
+</div>
+<div style="text-align:center;margin:0 0 0.8rem 0;">
+  <p style="color:#94a3b8;font-size:0.9rem;">— or select a hospital below —</p>
+</div>
+""", unsafe_allow_html=True)
 
-        # Current language indicator
-        lang = st.session_state.get("detected_language", "en-US")
-        rtl_note = " (RTL)" if lang in RTL_LOCALES else ""
-        st.caption(f"🌍 Detected language: **{lang}**{rtl_note}")
-        st.divider()
-
-        st.caption("⚠️ Demo system only. Call 112/911 for real emergencies.")
-
-
-# ---------------------------------------------------------------------------
-# Main router
-# ---------------------------------------------------------------------------
-def main() -> None:
-    """Route to the appropriate page based on session state step."""
-    render_sidebar()
-
-    step = st.session_state.step
-    if step == "demographics":
-        page_demographics()
-    elif step == "questions":
-        page_questions()
-    elif step == "location":
-        page_location()
-    elif step == "result":
-        page_result()
+    elif level == TRIAGE_URGENT:
+        st.markdown("""
+<div style="background:#78350f;border-left:5px solid #f59e0b;border-radius:14px;padding:1.1rem 1.3rem;margin:0.2rem 0 1rem 0;">
+  <p style="font-size:1.25rem;font-weight:800;color:#fefce8;margin:0 0 0.2rem 0;">⚠️ You need to go to hospital soon</p>
+  <p style="font-size:0.95rem;color:#fde68a;margin:0;">Please find a hospital within the next 30 minutes</p>
+</div>
+""", unsafe_allow_html=True)
     else:
-        page_input()
+        st.markdown("""
+<div style="background:#14532d;border-left:5px solid #22c55e;border-radius:14px;padding:1.1rem 1.3rem;margin:0.2rem 0 1rem 0;">
+  <p style="font-size:1.2rem;font-weight:700;color:#f0fdf4;margin:0 0 0.2rem 0;">ℹ️ You should see a doctor today</p>
+  <p style="font-size:0.9rem;color:#bbf7d0;margin:0;">Your symptoms are not immediately life-threatening</p>
+</div>
+""", unsafe_allow_html=True)
 
+    # ── Hospital search ────────────────────────────────────────────────────
+    st.markdown('<p style="font-size:1.1rem;font-weight:700;color:#f1f5f9;margin:0.5rem 0 0.3rem 0;">🏥 Nearest Emergency Hospitals</p>', unsafe_allow_html=True)
+
+    lat = st.session_state.patient_lat
+    lon = st.session_state.patient_lon
+    country = st.session_state.get("country", "DE")
+
+    # Auto-search on first render
+    if not st.session_state.nearby_hospitals:
+        if lat and lon and maps_handler:
+            with st.spinner("Finding nearest hospitals..."):
+                hospitals = maps_handler.find_nearest_hospitals(lat, lon, count=3, country=country)
+                st.session_state.nearby_hospitals = hospitals
+            st.rerun()
+        elif not lat:
+            # Manual coordinate entry
+            st.caption("📍 GPS not available — enter approximate location")
+            c1, c2 = st.columns(2)
+            with c1:
+                lat = st.number_input("Latitude", value=48.78, format="%.4f", key="manual_lat")
+            with c2:
+                lon = st.number_input("Longitude", value=9.18, format="%.4f", key="manual_lon")
+            if st.button("Find Hospitals", type="primary", use_container_width=True, key="find_manual"):
+                if maps_handler:
+                    hospitals = maps_handler.find_nearest_hospitals(lat, lon, count=3, country=country)
+                    st.session_state.nearby_hospitals = hospitals
+                    st.session_state.patient_lat = lat
+                    st.session_state.patient_lon = lon
+                    st.rerun()
+
+    hospitals = st.session_state.nearby_hospitals
+
+    if hospitals:
+        for i, h in enumerate(hospitals):
+            occupancy = _sim_occupancy(h["name"])
+            occ_color = {"🟢": "#22c55e","🟡": "#eab308","🟠": "#f97316","🔴": "#ef4444"}.get(occupancy[:2], "#94a3b8")
+            is_fastest = i == 0
+            card_class = "fastest" if is_fastest else "second"
+            rank_badge = "⭐ FASTEST" if is_fastest else f"#{i+1}"
+
+            st.markdown(f"""
+<div class="hosp-card {card_class}">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.4rem;">
+    <span style="font-size:1rem;font-weight:700;color:#f8fafc;">{rank_badge} {h['name']}</span>
+  </div>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.4rem;">
+    <span style="color:#94a3b8;font-size:0.95rem;">📏 {h['distance_km']} km</span>
+    <span style="color:#94a3b8;font-size:0.95rem;">⏱ ~{h['eta_minutes']} min</span>
+    <span style="color:{occ_color};font-size:0.9rem;font-weight:600;">{occupancy}</span>
+  </div>
+  <p style="color:#64748b;font-size:0.88rem;margin:0;">📍 {h.get('address','')}</p>
+</div>
+""", unsafe_allow_html=True)
+
+            if st.button(f"Go to {h['name']}", key=f"sel_{i}", use_container_width=True,
+                         type="primary" if is_fastest else "secondary"):
+                eta_info = {
+                    "hospital_name": h["name"],
+                    "hospital_lat":  h["lat"],
+                    "hospital_lon":  h["lon"],
+                    "eta_minutes":   h["eta_minutes"],
+                    "distance_km":   h["distance_km"],
+                    "address":       h.get("address", ""),
+                    "route_summary": h.get("route_summary", ""),
+                    "occupancy":     occupancy,
+                }
+                st.session_state.selected_hospital = h
+                st.session_state.eta_info = eta_info
+                _do_notify(st.session_state.patient_lat, st.session_state.patient_lon, eta_info, h["name"])
+                st.session_state.step = "result"
+                st.rerun()
+    else:
+        if lat:
+            st.info("Searching for hospitals...")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 6 — RESULT (instructions, reg number, tracking note)
+# ══════════════════════════════════════════════════════════════════════════════
+def page_result() -> None:
+    _inject_rtl()
+
+    assessment = st.session_state.assessment or {}
+    eta        = st.session_state.eta_info or {}
+    record     = st.session_state.patient_record or {}
+    level      = assessment.get("triage_level", TRIAGE_URGENT)
+    reg_no     = st.session_state.reg_number or _gen_reg_number()
+    emg        = _emergency_number()
+
+    # ── Confirmation banner ───────────────────────────────────────────────
+    if level == TRIAGE_EMERGENCY:
+        st.markdown("""
+<div style="background:#7f1d1d;border-left:5px solid #dc2626;border-radius:14px;padding:1.1rem 1.3rem;margin:0.3rem 0 0.8rem 0;">
+  <p style="font-size:1.3rem;font-weight:800;color:#fef2f2;margin:0 0 0.2rem 0;">🚨 Hospital notified — head there now!</p>
+  <p style="font-size:0.95rem;color:#fecaca;margin:0;">They are preparing for your arrival</p>
+</div>""", unsafe_allow_html=True)
+    elif level == TRIAGE_URGENT:
+        st.markdown("""
+<div style="background:#78350f;border-left:5px solid #f59e0b;border-radius:14px;padding:1.1rem 1.3rem;margin:0.3rem 0 0.8rem 0;">
+  <p style="font-size:1.2rem;font-weight:800;color:#fefce8;margin:0 0 0.2rem 0;">✅ Hospital notified</p>
+  <p style="font-size:0.9rem;color:#fde68a;margin:0;">Please follow the instructions below</p>
+</div>""", unsafe_allow_html=True)
+    else:
+        st.markdown("""
+<div style="background:#0c4a6e;border-left:5px solid #0ea5e9;border-radius:14px;padding:1.1rem 1.3rem;margin:0.3rem 0 0.8rem 0;">
+  <p style="font-size:1.2rem;font-weight:700;color:#f0f9ff;margin:0 0 0.2rem 0;">✅ Your information has been sent</p>
+  <p style="font-size:0.9rem;color:#bae6fd;margin:0;">See instructions below before leaving</p>
+</div>""", unsafe_allow_html=True)
+
+    # ── Hospital + ETA ───────────────────────────────────────────────────
+    if eta:
+        occ = eta.get("occupancy", "")
+        st.markdown(f"""
+<div style="background:#1e293b;border-radius:12px;padding:0.9rem 1rem;margin:0.3rem 0 0.8rem 0;">
+  <p style="font-size:1.05rem;font-weight:700;color:#f1f5f9;margin:0 0 0.3rem 0;">🏥 {eta.get('hospital_name','')}</p>
+  <p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.2rem 0;">📍 {eta.get('address','')}</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+    <span style="color:#7dd3fc;font-size:0.95rem;">📏 {eta.get('distance_km','?')} km</span>
+    <span style="color:#7dd3fc;font-size:0.95rem;">⏱ ~{eta.get('eta_minutes','?')} min</span>
+    <span style="color:#86efac;font-size:0.9rem;">{occ}</span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+    # ── Registration number ───────────────────────────────────────────────
+    st.markdown('<p style="font-size:0.9rem;font-weight:600;color:#94a3b8;margin:0 0 0.2rem 0;text-transform:uppercase;letter-spacing:0.06em;">Your hospital registration number</p>', unsafe_allow_html=True)
+    st.markdown(f'<div class="reg-box">{reg_no}</div>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#64748b;font-size:0.82rem;margin:0 0 0.8rem 0;text-align:center;">Show this number at the hospital reception when you arrive</p>', unsafe_allow_html=True)
+
+    # ── Emergency call (for EMERGENCY level) ────────────────────────────
+    if level == TRIAGE_EMERGENCY:
+        st.markdown(f"""
+<div style="text-align:center;margin:0.5rem 0 1rem 0;">
+  <a href="tel:{emg['number']}" style="background:#dc2626;color:white;padding:16px 40px;
+     border-radius:12px;font-size:1.4rem;font-weight:800;text-decoration:none;
+     display:inline-block;">
+    📞 CALL {emg['number']}
+  </a>
+</div>
+""", unsafe_allow_html=True)
+
+    # ── Pre-arrival advice ────────────────────────────────────────────────
+    advice = st.session_state.pre_arrival_advice
+    if advice:
+        do_list   = advice.get("do_list",   [])
+        dont_list = advice.get("dont_list", [])
+        if do_list or dont_list:
+            border = {"EMERGENCY": "#dc2626", "URGENT": "#f59e0b", "ROUTINE": "#22c55e"}.get(level, "#3b82f6")
+            st.markdown(f'<div style="border:2px solid {border};border-radius:14px;padding:1rem 1.2rem;margin:0.5rem 0;">', unsafe_allow_html=True)
+            st.markdown("**⏱ Before you arrive**")
+            if do_list:
+                st.markdown("**✅ DO:**")
+                for item in do_list:
+                    st.markdown(f'<p class="do-item">✓ {item}</p>', unsafe_allow_html=True)
+            if dont_list:
+                st.markdown("**❌ DON'T:**")
+                for item in dont_list:
+                    st.markdown(f'<p class="dont-item">✗ {item}</p>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.info("⏳ Personalised advice being prepared...")
+
+    # ── Location tracking note ─────────────────────────────────────────────
+    st.markdown("""
+<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:0.9rem 1rem;margin:0.8rem 0;">
+  <p style="color:#94a3b8;font-size:0.88rem;margin:0;">
+    📍 <strong style="color:#cbd5e1;">Keep your location enabled</strong> while travelling to hospital —
+    your care team can track your arrival in real time.
+  </p>
+</div>
+""", unsafe_allow_html=True)
+
+    st.divider()
+    if st.button("🔄 New assessment", type="primary", use_container_width=True, key="restart"):
+        reset(); st.rerun()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SIDEBAR
+# ══════════════════════════════════════════════════════════════════════════════
+def render_sidebar() -> None:
+    with st.sidebar:
+        st.markdown("### 🚑 CodeZero")
+        st.caption("AI pre-hospital triage")
+        st.divider()
+        # Step indicator
+        step = st.session_state.step
+        steps = ["input","photos","demographics","questions","triage","result"]
+        labels = ["Symptoms","Photos","Info","Questions","Hospital","Result"]
+        for i, (s, lab) in enumerate(zip(steps, labels)):
+            icon = "✅" if steps.index(step) > i else ("▶" if s == step else "○")
+            st.markdown(f"{icon} {lab}")
+        st.divider()
+        # Services
+        for svc, ok in _svc_status.items():
+            st.markdown(f"{'✅' if ok else '⚠️'} {svc} — *{'Live' if ok else 'Demo'}*")
+        st.divider()
+        st.caption("⚠️ Demo only. Call 112 for real emergencies.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ROUTER
+# ══════════════════════════════════════════════════════════════════════════════
+def main() -> None:
+    render_sidebar()
+    step = st.session_state.step
+    if   step == "photos":       page_photos()
+    elif step == "demographics": page_demographics()
+    elif step == "questions":    page_questions()
+    elif step == "triage":       page_triage()
+    elif step == "result":       page_result()
+    else:                        page_input()
 
 if __name__ == "__main__":
     main()
