@@ -330,20 +330,27 @@ def patient_questions(body: QuestionsRequest):
     questions = triage.generate_questions(chief_complaint=complaint_en)
     logger.info("Generated %d questions for complaint: '%s…'", len(questions), complaint_en[:50])
 
+    # ── Step 3: Translate questions back to detected language (if not English) ──
+    if translator and body.detected_language and not body.detected_language.startswith("en"):
+        for q in questions:
+            try:
+                translated_q = translator.translate_from_english(q["question"], body.detected_language)
+                if translated_q:
+                    q["question"] = translated_q
+            except Exception as exc:
+                logger.warning("Question translation failed (%s)", exc)
+            
+            if "options" in q and q["options"]:
+                translated_opts = []
+                for opt in q["options"]:
+                    try:
+                        translated_opt = translator.translate_from_english(opt, body.detected_language)
+                        translated_opts.append(translated_opt if translated_opt else opt)
+                    except Exception:
+                        translated_opts.append(opt)
+                q["options"] = translated_opts
+
     return QuestionsResponse(questions=questions, complaint_en=complaint_en)
-
-
-@app.post("/api/patient/assess")
-def patient_assess(body: AssessRequest):
-    """Translate patient answers to English, run GPT-4 triage assessment,
-    and generate pre-arrival DO/DON'T advice.
-
-    Mirrors Streamlit flow:
-      page_questions: translator.translate_to_english(answer)
-      _page_consent: triage_engine.assess_triage()
-      _do_notify:    triage_engine.generate_pre_arrival_advice()
-    """
-    triage, translator = _get_triage_engine()
 
 
 @app.post("/api/patient/assess")
