@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -51,6 +51,51 @@ app.add_middleware(
 
 NAT_FLAG = {"DE": "🇩🇪", "TR": "🇹🇷", "UK": "🇬🇧", "GB": "🇬🇧"}
 
+
+# ── schemas ───────────────────────────────────────────────────────────────────
+from pydantic import BaseModel as _BM
+from typing import Optional as _Opt, List as _List
+
+class QuestionsRequest(_BM):
+    complaint:          str
+    detected_language:  _Opt[str] = None
+    demographics:       _Opt[dict] = None
+
+class QuestionsResponse(_BM):
+    questions:    list
+    complaint_en: str
+
+class AnswerItem(_BM):
+    question:        str
+    answer:          str
+    original_answer: _Opt[str] = None
+
+class AssessRequest(_BM):
+    complaint:          str
+    complaint_en:       _Opt[str] = None
+    detected_language:  _Opt[str] = None
+    questions:          _List[str] = []
+    answers:            list = []
+    demographics:       _Opt[dict] = None
+    has_photo:          bool = False
+    photo_count:        int = 0
+    photo_base64:       _Opt[str] = None
+    photo_mime:         _Opt[str] = None
+
+class SubmitRequest(_BM):
+    complaint:          str
+    complaint_en:       _Opt[str] = None
+    detected_language:  _Opt[str] = None
+    assessment:         dict
+    hospital:           _Opt[dict] = None
+    lat:                _Opt[float] = None
+    lon:                _Opt[float] = None
+    answers:            list = []
+    has_photo:          bool = False
+    photo_count:        int = 0
+    reg_number:         _Opt[str] = None
+    demographics:       _Opt[dict] = None
+    data_consent:       _Opt[bool] = None
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -144,6 +189,235 @@ def api_patients(sort: str = "triage", limit: int = 50):
     # default: triage (already ordered by DB query)
 
     return enriched
+
+
+@app.get("/api/patient/hospitals")
+def patient_hospitals(lat: float, lon: float, country: str = "DE", n: int = 5):
+    """Return nearest n hospitals with distance and ETA."""
+    maps = _get_maps()
+    try:
+        hospitals = maps.find_nearest_hospitals(lat, lon, count=n, country=country)
+        return hospitals
+    except Exception as exc:
+        logger.error("Hospital search error: %s", exc)
+        # Fallback: compute straight-line distance from embedded list
+        from src.maps_handler import GERMANY_HOSPITALS
+        results = []
+        for h in GERMANY_HOSPITALS:
+            dist = _haversine(lat, lon, h["lat"], h["lon"])
+            eta  = int(dist / 0.7)  # rough 42 km/h urban speed
+            results.append({
+                "name":        h["name"],
+                "address":     h.get("address", ""),
+                "lat":         h["lat"],
+                "lon":         h["lon"],
+                "distance_km": round(dist, 1),
+                "eta_minutes": max(5, eta),
+                "occupancy":   "",
+            })
+        results.sort(key=lambda x: x["distance_km"])
+        return results[:n]
+
+
+@app.post("/api/patient/submit")
+def patient_submit(body: SubmitRequest):
+    """Receive completed patient assessment and add to hospital queue.
+
+    Mirrors Streamlit _do_notify():
+      - Creates patient record via TriageEngine.create_patient_record()
+      - Enriches with Q&A transcript, photo metadata, language, consent
+      - Adds to HospitalQueue
+    """
+    triage, _ = _get_triage_engine()
+
+    hospital  = body.hospital or {}
+    eta       = hospital.get("eta_minutes")
+    location  = {"lat": body.lat, "lon": body.lon} if body.lat else None
+
+    record = triage.create_patient_record(
+        chief_complaint=body.complaint_en or body.complaint,
+        assessment=body.assessment,
+        language=body.detected_language or "en-US",
+        eta_minutes=eta,
+        location=location,
+        demographics=body.demographics,
+    )
+
+    # Override patient_id with registration number for dashboard display
+    if body.reg_number:
+        record["patient_id"] = body.reg_number
+
+    # Enrich — mirrors Streamlit _do_notify() record enrichment
+    record["qa_transcript"]       = body.answers
+    record["complaint_text"]      = body.complaint        # original language
+    record["has_photo"]           = body.has_photo
+    record["photo_count"]         = body.photo_count
+    record["data_consent"]        = body.data_consent
+    record["target_hospital"]     = hospital.get("name", "")
+    record["location_lat"]        = body.lat
+    record["location_lon"]        = body.lon
+    record["status"]              = "incoming"
+    record["detected_language"]   = body.detected_language or "en-US"
+
+    hq.add_patient(record)
+    logger.info(
+        "Patient submitted: %s → %s (lang=%s consent=%s)",
+        record["patient_id"], hospital.get("name", ""),
+        body.detected_language, body.data_consent,
+    )
+
+    return {"ok": True, "patient_id": record["patient_id"]}
+
+
+@app.post("/api/patient/transcribe")
+async def patient_transcribe(audio: UploadFile = File(...)):
+    """Transcribe patient audio (WebM/Opus from browser) → text."""
+    raw = await audio.read()
+    speech = _get_speech()
+
+    suffix = ".webm"
+    if audio.filename:
+        ext = os.path.splitext(audio.filename)[1].lower()
+        if ext in (".webm", ".ogg", ".mp4", ".wav", ".m4a"):
+            suffix = ext
+
+    wav_path = speech.convert_browser_audio_to_wav(raw, source_suffix=suffix)
+
+    if wav_path:
+        result = speech.recognize_from_audio_file(wav_path)
+        try:
+            os.unlink(wav_path)
+        except Exception:
+            pass
+        if result:
+            return {"text": result.get("text", ""), "language": result.get("language", "en-US")}
+
+    # Fallback: return empty so frontend falls back to manual typing
+    return {"text": "", "language": "en-US"}
+
+
+@app.post("/api/patient/questions", response_model=QuestionsResponse)
+def patient_questions(body: QuestionsRequest):
+    """Translate complaint to English via Azure Translator, then generate
+    GPT-4 clinical follow-up questions via TriageEngine.
+
+    This mirrors the Streamlit flow:
+      _do_process(): Azure Translator.translate_to_english()
+      page_photos → _go_to_questions(): TriageEngine.generate_questions()
+    """
+    triage, translator = _get_triage_engine()
+
+    # ── Step 1: Translate complaint to English (Azure Translator) ─────
+    complaint_en = body.complaint
+    if translator:
+        try:
+            # Pass detected language as source to improve translation accuracy
+            result = translator.translate_to_english(
+                body.complaint,
+                source_language=body.detected_language,
+            )
+            if result:
+                complaint_en = result
+                logger.info(
+                    "Complaint translated from %s to EN: '%s…'",
+                    body.detected_language or "auto",
+                    complaint_en[:60],
+                )
+        except Exception as exc:
+            logger.warning("Translation failed (%s) — using original text.", exc)
+
+    # ── Step 2: Generate GPT-4 clinical questions (TriageEngine) ──────
+    questions = triage.generate_questions(chief_complaint=complaint_en)
+    logger.info("Generated %d questions for complaint: '%s…'", len(questions), complaint_en[:50])
+
+    return QuestionsResponse(questions=questions, complaint_en=complaint_en)
+
+
+@app.post("/api/patient/assess")
+def patient_assess(body: AssessRequest):
+    """Translate patient answers to English, run GPT-4 triage assessment,
+    and generate pre-arrival DO/DON'T advice.
+
+    Mirrors Streamlit flow:
+      page_questions: translator.translate_to_english(answer)
+      _page_consent: triage_engine.assess_triage()
+      _do_notify:    triage_engine.generate_pre_arrival_advice()
+    """
+    triage, translator = _get_triage_engine()
+
+
+@app.post("/api/patient/assess")
+def patient_assess(body: AssessRequest):
+    """Translate patient answers to English, run GPT-4 triage assessment,
+    and generate pre-arrival DO/DON'T advice.
+
+    Mirrors Streamlit flow:
+      page_questions: translator.translate_to_english(answer)
+      _page_consent: triage_engine.assess_triage()
+      _do_notify:    triage_engine.generate_pre_arrival_advice()
+    """
+    triage, translator = _get_triage_engine()
+
+    complaint_en = body.complaint_en or body.complaint
+
+    # ── Step 1: Translate answers to English (Azure Translator) ───────
+    # Mirrors Streamlit: eng = translator.translate_to_english(str(answer), lang)
+    qa_pairs = []
+    for item in body.answers:
+        if isinstance(item, dict):
+            q   = item.get("question", "")
+            ans = item.get("answer", item.get("original_answer", ""))
+        else:
+            continue
+
+        if not ans:
+            continue
+
+        # Translate answer to English for accurate GPT-4 assessment
+        ans_en = str(ans)
+        if translator and body.detected_language and not body.detected_language.startswith("en"):
+            try:
+                translated = translator.translate_to_english(
+                    str(ans),
+                    source_language=body.detected_language,
+                )
+                if translated:
+                    ans_en = translated
+            except Exception as exc:
+                logger.warning("Answer translation failed (%s) — using original.", exc)
+
+        qa_pairs.append({"question": q, "answer": ans_en})
+
+    logger.info(
+        "Assessing triage: complaint='%s…', %d Q&A pairs, lang=%s",
+        complaint_en[:50], len(qa_pairs), body.detected_language or "en",
+    )
+
+    # ── Step 2: GPT-4 triage assessment (TriageEngine) ─────────────────
+    assessment = triage.assess_triage(
+        chief_complaint=complaint_en,
+        answers=qa_pairs,
+    )
+
+    # ── Step 3: Generate pre-arrival DO/DON'T advice (GPT-4 + RAG) ────
+    # Mirrors Streamlit _do_notify() → generate_pre_arrival_advice()
+    advice = triage.generate_pre_arrival_advice(
+        chief_complaint=complaint_en,
+        assessment=assessment,
+        language=body.detected_language or "en-US",
+    )
+    assessment["do_list"]   = advice.get("do_list",   [])
+    assessment["dont_list"] = advice.get("dont_list", [])
+
+    logger.info(
+        "Assessment done: level=%s score=%s do=%d dont=%d",
+        assessment.get("triage_level"),
+        assessment.get("risk_score"),
+        len(assessment["do_list"]),
+        len(assessment["dont_list"]),
+    )
+
+    return assessment
 
 
 @app.get("/api/patient/{patient_id}")
@@ -294,6 +568,289 @@ def serve_dashboard():
     if html_path.exists():
         return HTMLResponse(html_path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Dashboard HTML not found</h1><p>Run the build step first.</p>", status_code=404)
+
+
+@app.get("/patient", response_class=HTMLResponse)
+def serve_patient_app():
+    html_path = ROOT / "ui" / "patient_app.html"
+    if html_path.exists():
+        return HTMLResponse(html_path.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Patient app HTML not found</h1>", status_code=404)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PATIENT APP APIs
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Lazy-init services (only when first patient API call arrives)
+_patient_services: dict = {}
+
+
+def _get_triage_engine():
+    if "triage" not in _patient_services:
+        from src.triage_engine import TriageEngine
+        from src.translator import Translator
+        from src.knowledge_indexer import KnowledgeIndexer
+        try:
+            ki = KnowledgeIndexer()
+        except Exception:
+            ki = None
+        try:
+            tr = Translator()
+        except Exception:
+            tr = None
+        _patient_services["triage"]     = TriageEngine(knowledge_indexer=ki, translator=tr)
+        _patient_services["translator"] = tr
+    return _patient_services["triage"], _patient_services.get("translator")
+
+
+def _get_speech():
+    if "speech" not in _patient_services:
+        from src.speech_handler import SpeechHandler
+        _patient_services["speech"] = SpeechHandler()
+    return _patient_services["speech"]
+
+
+def _get_maps():
+    if "maps" not in _patient_services:
+        from src.maps_handler import MapsHandler
+        _patient_services["maps"] = MapsHandler()
+    return _patient_services["maps"]
+
+
+# ── POST /api/patient/transcribe ──────────────────────────────────────────────
+from fastapi import UploadFile, File
+import tempfile, os
+
+
+@app.post("/api/patient/transcribe")
+async def patient_transcribe(audio: UploadFile = File(...)):
+    """Transcribe patient audio (WebM/Opus from browser) → text."""
+    raw = await audio.read()
+    speech = _get_speech()
+
+    suffix = ".webm"
+    if audio.filename:
+        ext = os.path.splitext(audio.filename)[1].lower()
+        if ext in (".webm", ".ogg", ".mp4", ".wav", ".m4a"):
+            suffix = ext
+
+    wav_path = speech.convert_browser_audio_to_wav(raw, source_suffix=suffix)
+
+    if wav_path:
+        result = speech.recognize_from_audio_file(wav_path)
+        try:
+            os.unlink(wav_path)
+        except Exception:
+            pass
+        if result:
+            return {"text": result.get("text", ""), "language": result.get("language", "en-US")}
+
+    # Fallback: return empty so frontend falls back to manual typing
+    return {"text": "", "language": "en-US"}
+
+
+@app.post("/api/patient/questions", response_model=QuestionsResponse)
+def patient_questions(body: QuestionsRequest):
+    """Translate complaint to English via Azure Translator, then generate
+    GPT-4 clinical follow-up questions via TriageEngine.
+
+    This mirrors the Streamlit flow:
+      _do_process(): Azure Translator.translate_to_english()
+      page_photos → _go_to_questions(): TriageEngine.generate_questions()
+    """
+    triage, translator = _get_triage_engine()
+
+    # ── Step 1: Translate complaint to English (Azure Translator) ─────
+    complaint_en = body.complaint
+    if translator:
+        try:
+            # Pass detected language as source to improve translation accuracy
+            result = translator.translate_to_english(
+                body.complaint,
+                source_language=body.detected_language,
+            )
+            if result:
+                complaint_en = result
+                logger.info(
+                    "Complaint translated from %s to EN: '%s…'",
+                    body.detected_language or "auto",
+                    complaint_en[:60],
+                )
+        except Exception as exc:
+            logger.warning("Translation failed (%s) — using original text.", exc)
+
+    # ── Step 2: Generate GPT-4 clinical questions (TriageEngine) ──────
+    questions = triage.generate_questions(chief_complaint=complaint_en)
+    logger.info("Generated %d questions for complaint: '%s…'", len(questions), complaint_en[:50])
+
+    return QuestionsResponse(questions=questions, complaint_en=complaint_en)
+
+
+@app.post("/api/patient/assess")
+def patient_assess(body: AssessRequest):
+    """Translate patient answers to English, run GPT-4 triage assessment,
+    and generate pre-arrival DO/DON'T advice.
+
+    Mirrors Streamlit flow:
+      page_questions: translator.translate_to_english(answer)
+      _page_consent: triage_engine.assess_triage()
+      _do_notify:    triage_engine.generate_pre_arrival_advice()
+    """
+    triage, translator = _get_triage_engine()
+
+    complaint_en = body.complaint_en or body.complaint
+
+    # ── Step 1: Translate answers to English (Azure Translator) ───────
+    # Mirrors Streamlit: eng = translator.translate_to_english(str(answer), lang)
+    qa_pairs = []
+    for item in body.answers:
+        if isinstance(item, dict):
+            q   = item.get("question", "")
+            ans = item.get("answer", item.get("original_answer", ""))
+        else:
+            continue
+
+        if not ans:
+            continue
+
+        # Translate answer to English for accurate GPT-4 assessment
+        ans_en = str(ans)
+        if translator and body.detected_language and not body.detected_language.startswith("en"):
+            try:
+                translated = translator.translate_to_english(
+                    str(ans),
+                    source_language=body.detected_language,
+                )
+                if translated:
+                    ans_en = translated
+            except Exception as exc:
+                logger.warning("Answer translation failed (%s) — using original.", exc)
+
+        qa_pairs.append({"question": q, "answer": ans_en})
+
+    logger.info(
+        "Assessing triage: complaint='%s…', %d Q&A pairs, lang=%s",
+        complaint_en[:50], len(qa_pairs), body.detected_language or "en",
+    )
+
+    # ── Step 2: GPT-4 triage assessment (TriageEngine) ─────────────────
+    assessment = triage.assess_triage(
+        chief_complaint=complaint_en,
+        answers=qa_pairs,
+    )
+
+    # ── Step 3: Generate pre-arrival DO/DON'T advice (GPT-4 + RAG) ────
+    # Mirrors Streamlit _do_notify() → generate_pre_arrival_advice()
+    advice = triage.generate_pre_arrival_advice(
+        chief_complaint=complaint_en,
+        assessment=assessment,
+        language=body.detected_language or "en-US",
+    )
+    assessment["do_list"]   = advice.get("do_list",   [])
+    assessment["dont_list"] = advice.get("dont_list", [])
+
+    logger.info(
+        "Assessment done: level=%s score=%s do=%d dont=%d",
+        assessment.get("triage_level"),
+        assessment.get("risk_score"),
+        len(assessment["do_list"]),
+        len(assessment["dont_list"]),
+    )
+
+    return assessment
+
+
+# ── GET /api/patient/hospitals ────────────────────────────────────────────────
+import math as _math
+
+
+def _haversine(lat1, lon1, lat2, lon2) -> float:
+    R = 6371.0
+    dlat = _math.radians(lat2 - lat1)
+    dlon = _math.radians(lon2 - lon1)
+    a = (_math.sin(dlat / 2) ** 2
+         + _math.cos(_math.radians(lat1)) * _math.cos(_math.radians(lat2))
+         * _math.sin(dlon / 2) ** 2)
+    return R * 2 * _math.atan2(_math.sqrt(a), _math.sqrt(1 - a))
+
+
+@app.get("/api/patient/hospitals")
+def patient_hospitals(lat: float, lon: float, country: str = "DE", n: int = 5):
+    """Return nearest n hospitals with distance and ETA."""
+    maps = _get_maps()
+    try:
+        hospitals = maps.find_nearest_hospitals(lat, lon, count=n, country=country)
+        return hospitals
+    except Exception as exc:
+        logger.error("Hospital search error: %s", exc)
+        # Fallback: compute straight-line distance from embedded list
+        from src.maps_handler import GERMANY_HOSPITALS
+        results = []
+        for h in GERMANY_HOSPITALS:
+            dist = _haversine(lat, lon, h["lat"], h["lon"])
+            eta  = int(dist / 0.7)  # rough 42 km/h urban speed
+            results.append({
+                "name":        h["name"],
+                "address":     h.get("address", ""),
+                "lat":         h["lat"],
+                "lon":         h["lon"],
+                "distance_km": round(dist, 1),
+                "eta_minutes": max(5, eta),
+                "occupancy":   "",
+            })
+        results.sort(key=lambda x: x["distance_km"])
+        return results[:n]
+
+
+@app.post("/api/patient/submit")
+def patient_submit(body: SubmitRequest):
+    """Receive completed patient assessment and add to hospital queue.
+
+    Mirrors Streamlit _do_notify():
+      - Creates patient record via TriageEngine.create_patient_record()
+      - Enriches with Q&A transcript, photo metadata, language, consent
+      - Adds to HospitalQueue
+    """
+    triage, _ = _get_triage_engine()
+
+    hospital  = body.hospital or {}
+    eta       = hospital.get("eta_minutes")
+    location  = {"lat": body.lat, "lon": body.lon} if body.lat else None
+
+    record = triage.create_patient_record(
+        chief_complaint=body.complaint_en or body.complaint,
+        assessment=body.assessment,
+        language=body.detected_language or "en-US",
+        eta_minutes=eta,
+        location=location,
+        demographics=body.demographics,
+    )
+
+    # Override patient_id with registration number for dashboard display
+    if body.reg_number:
+        record["patient_id"] = body.reg_number
+
+    # Enrich — mirrors Streamlit _do_notify() record enrichment
+    record["qa_transcript"]       = body.answers
+    record["complaint_text"]      = body.complaint        # original language
+    record["has_photo"]           = body.has_photo
+    record["photo_count"]         = body.photo_count
+    record["data_consent"]        = body.data_consent
+    record["target_hospital"]     = hospital.get("name", "")
+    record["location_lat"]        = body.lat
+    record["location_lon"]        = body.lon
+    record["status"]              = "incoming"
+    record["detected_language"]   = body.detected_language or "en-US"
+
+    hq.add_patient(record)
+    logger.info(
+        "Patient submitted: %s → %s (lang=%s consent=%s)",
+        record["patient_id"], hospital.get("name", ""),
+        body.detected_language, body.data_consent,
+    )
+
+    return {"ok": True, "patient_id": record["patient_id"]}
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

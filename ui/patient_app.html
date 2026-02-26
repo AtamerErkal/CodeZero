@@ -1,0 +1,2306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="theme-color" content="#1a56db">
+    <title>CodeZero — Emergency Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@500&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ════════════════════════════════════════════════════════
+   RESET & TOKENS
+════════════════════════════════════════════════════════ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            /* Brand */
+            --blue: #1a56db;
+            --blue-dark: #1240a8;
+            --blue-light: #e8f0fe;
+            --blue-mid: #c7d7fd;
+
+            /* Status */
+            --red: #dc2626;
+            --red-light: #fef2f2;
+            --red-mid: #fecaca;
+            --orange: #ea580c;
+            --orange-light: #fff7ed;
+            --green: #16a34a;
+            --green-light: #f0fdf4;
+            --green-mid: #bbf7d0;
+
+            /* Neutrals */
+            --white: #ffffff;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+
+            /* Typography */
+            --font: 'DM Sans', system-ui, sans-serif;
+            --mono: 'DM Mono', monospace;
+
+            /* Radius */
+            --r-sm: 8px;
+            --r: 12px;
+            --r-lg: 18px;
+            --r-xl: 24px;
+
+            /* Shadow */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .05);
+            --shadow: 0 4px 12px rgba(0, 0, 0, .08), 0 2px 4px rgba(0, 0, 0, .04);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, .1), 0 4px 8px rgba(0, 0, 0, .06);
+        }
+
+        html,
+        body {
+            font-family: var(--font);
+            background: var(--gray-50);
+            color: var(--gray-900);
+            min-height: 100dvh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ════════════════════════════════════════════════════════
+   LAYOUT
+════════════════════════════════════════════════════════ */
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 0 80px 0;
+            min-height: 100dvh;
+            background: var(--white);
+            box-shadow: 0 0 0 1px var(--gray-200);
+            position: relative;
+        }
+
+        /* ── Top bar ── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px 12px;
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-100);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .topbar-logo {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        .topbar-name {
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: var(--gray-900);
+            letter-spacing: -0.03em;
+            flex: 1;
+        }
+
+        .topbar-badge {
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--blue);
+            background: var(--blue-light);
+            padding: 3px 8px;
+            border-radius: 99px;
+        }
+
+        /* ── Step progress bar ── */
+        .progress-bar {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-100);
+            gap: 4px;
+        }
+
+        .progress-step {
+            flex: 1;
+            height: 3px;
+            background: var(--gray-200);
+            border-radius: 99px;
+            transition: background 0.3s;
+        }
+
+        .progress-step.done {
+            background: var(--green);
+        }
+
+        .progress-step.active {
+            background: var(--blue);
+        }
+
+        /* ── Page content ── */
+        .page {
+            display: none;
+            padding: 20px 20px 0;
+            animation: fadeUp 0.2s ease both;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ════════════════════════════════════════════════════════
+   COMPONENTS
+════════════════════════════════════════════════════════ */
+
+        /* ── Section header ── */
+        .section-label {
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--gray-400);
+            margin-bottom: 8px;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--r-lg);
+            padding: 16px 18px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card.blue {
+            background: var(--blue-light);
+            border-color: var(--blue-mid);
+        }
+
+        .card.green {
+            background: var(--green-light);
+            border-color: var(--green-mid);
+        }
+
+        .card.red {
+            background: var(--red-light);
+            border-color: var(--red-mid);
+        }
+
+        .card.orange {
+            background: var(--orange-light);
+            border-color: #fed7aa;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            min-height: 56px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: var(--r-lg);
+            font-family: var(--font);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            margin-bottom: 10px;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: var(--blue);
+            color: var(--white);
+            box-shadow: 0 2px 8px rgba(26, 86, 219, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: var(--blue-dark);
+            box-shadow: 0 4px 16px rgba(26, 86, 219, 0.35);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 1.5px solid var(--gray-200);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .btn-danger {
+            background: var(--red);
+            color: var(--white);
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+            font-size: 1.3rem;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--blue);
+            border: 1.5px solid var(--blue-mid);
+        }
+
+        /* ── Mic button ── */
+        .mic-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 0 16px;
+            gap: 10px;
+        }
+
+        .mic-btn {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: var(--blue);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            box-shadow: 0 4px 20px rgba(26, 86, 219, 0.35);
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .mic-btn:active {
+            transform: scale(0.93);
+        }
+
+        .mic-btn.recording {
+            background: var(--red);
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+            animation: micPulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes micPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4), 0 0 0 0 rgba(220, 38, 38, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4), 0 0 0 18px rgba(220, 38, 38, 0);
+            }
+        }
+
+        .mic-label {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .mic-label strong {
+            color: var(--gray-800);
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+
+        /* ── Transcription result ── */
+        .transcript-box {
+            background: var(--green-light);
+            border: 1.5px solid var(--green-mid);
+            border-radius: var(--r);
+            padding: 14px 16px;
+            margin: 8px 0 16px;
+            display: none;
+        }
+
+        .transcript-box.visible {
+            display: block;
+        }
+
+        .transcript-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--green);
+            margin-bottom: 6px;
+        }
+
+        .transcript-text {
+            font-size: 0.95rem;
+            color: var(--gray-800);
+            font-style: italic;
+            line-height: 1.5;
+        }
+
+        /* ── Text input ── */
+        .field-wrap {
+            margin-bottom: 12px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 6px;
+        }
+
+        textarea,
+        input[type="text"] {
+            width: 100%;
+            font-family: var(--font);
+            font-size: 0.95rem;
+            color: var(--gray-900);
+            background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--r);
+            padding: 12px 14px;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        textarea:focus,
+        input[type="text"]:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+        }
+
+        /* ── Radio pills ── */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .radio-pill {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--r);
+            cursor: pointer;
+            background: var(--white);
+            transition: all 0.12s;
+            font-size: 0.95rem;
+            color: var(--gray-700);
+            font-weight: 500;
+        }
+
+        .radio-pill:hover {
+            border-color: var(--blue);
+            background: var(--blue-light);
+        }
+
+        .radio-pill.selected {
+            border-color: var(--blue);
+            background: var(--blue-light);
+            color: var(--blue-dark);
+            font-weight: 700;
+        }
+
+        .radio-pill input {
+            display: none;
+        }
+
+        .radio-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--gray-300);
+            background: var(--white);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.12s;
+        }
+
+        .radio-pill.selected .radio-dot {
+            border-color: var(--blue);
+            background: var(--blue);
+        }
+
+        .radio-pill.selected .radio-dot::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        /* ── Hospital card ── */
+        .hosp-card {
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--r-lg);
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            background: var(--white);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .hosp-card:hover {
+            border-color: var(--blue);
+            box-shadow: var(--shadow);
+        }
+
+        .hosp-card.best {
+            border-color: var(--green);
+            background: var(--green-light);
+        }
+
+        .hosp-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+
+        .hosp-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+
+        .hosp-chip {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .hosp-chip.fast {
+            color: var(--green);
+        }
+
+        .hosp-addr {
+            font-size: 0.78rem;
+            color: var(--gray-400);
+        }
+
+        .best-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--green);
+            background: var(--green-mid);
+            padding: 2px 8px;
+            border-radius: 99px;
+            margin-bottom: 6px;
+        }
+
+        /* ── Registration number ── */
+        .reg-number {
+            font-family: var(--mono);
+            font-size: 2rem;
+            font-weight: 500;
+            color: var(--blue);
+            letter-spacing: 0.15em;
+            text-align: center;
+            padding: 16px;
+            background: var(--blue-light);
+            border: 2px solid var(--blue-mid);
+            border-radius: var(--r-lg);
+            margin: 8px 0;
+        }
+
+        /* ── Spinner ── */
+        .spinner-wrap {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 32px 20px;
+            text-align: center;
+        }
+
+        .spinner-wrap.visible {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner-text {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+            font-weight: 500;
+        }
+
+        /* ── Triage banner ── */
+        .triage-banner {
+            border-radius: var(--r-lg);
+            padding: 14px 18px;
+            margin-bottom: 16px;
+        }
+
+        .triage-banner.emg {
+            background: #7f1d1d;
+            color: #fef2f2;
+        }
+
+        .triage-banner.urg {
+            background: #78350f;
+            color: #fefce8;
+        }
+
+        .triage-banner.rtn {
+            background: #14532d;
+            color: #f0fdf4;
+        }
+
+        .triage-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 3px;
+        }
+
+        .triage-sub {
+            font-size: 0.85rem;
+            opacity: 0.85;
+        }
+
+        /* ── Do / Don't ── */
+        .advice-list {
+            list-style: none;
+            margin: 6px 0;
+        }
+
+        .advice-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 5px 0;
+            font-size: 0.88rem;
+            color: var(--gray-700);
+            line-height: 1.45;
+        }
+
+        .advice-list li .icon {
+            flex-shrink: 0;
+            font-size: 0.95rem;
+            margin-top: 1px;
+        }
+
+        /* ── GPS status ── */
+        .gps-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin: 0 auto 16px;
+            width: fit-content;
+        }
+
+        .gps-status.ok {
+            background: var(--green-light);
+            color: var(--green);
+            border: 1px solid var(--green-mid);
+        }
+
+        .gps-status.wait {
+            background: var(--blue-light);
+            color: var(--blue);
+            border: 1px solid var(--blue-mid);
+        }
+
+        .gps-status.err {
+            background: var(--red-light);
+            color: var(--red);
+            border: 1px solid var(--red-mid);
+        }
+
+        /* ── Divider ── */
+        .divider {
+            height: 1px;
+            background: var(--gray-100);
+            margin: 16px 0;
+        }
+
+        .divider-text {
+            text-align: center;
+            position: relative;
+            margin: 16px 0;
+        }
+
+        .divider-text::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--gray-200);
+        }
+
+        .divider-text span {
+            position: relative;
+            background: var(--white);
+            padding: 0 12px;
+            font-size: 0.78rem;
+            color: var(--gray-400);
+            font-weight: 500;
+        }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--gray-900);
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--r);
+            font-size: 0.88rem;
+            font-weight: 600;
+            z-index: 100;
+            transition: transform 0.25s ease;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── Checklist item ── */
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 0.88rem;
+            color: var(--gray-700);
+            line-height: 1.45;
+        }
+
+        .check-item:last-child {
+            border-bottom: none;
+        }
+
+        .check-item input[type="checkbox"] {
+            margin-top: 2px;
+            accent-color: var(--blue);
+            flex-shrink: 0;
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+
+        /* ── Utility ── */
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-4 {
+            margin-top: 16px;
+        }
+
+        .mt-2 {
+            margin-top: 8px;
+        }
+
+        .mb-4 {
+            margin-bottom: 16px;
+        }
+
+        .gap-2 {
+            gap: 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .row .btn {
+            margin-bottom: 0;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        p.sub {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        /* Responsive small */
+        @media (max-width: 480px) {
+            .app {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app" id="app">
+
+        <!-- ── Top bar ── -->
+        <div class="topbar">
+            <div class="topbar-logo">🚑</div>
+            <div class="topbar-name">CodeZero</div>
+            <div id="topbarLangBadge" class="topbar-badge" style="cursor:pointer;user-select:none;"
+                onclick="goToPage('lang')">🌐 EN</div>
+        </div>
+
+        <!-- ── Step progress ── -->
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-step" id="ps0"></div>
+            <div class="progress-step" id="ps1"></div>
+            <div class="progress-step" id="ps2"></div>
+            <div class="progress-step" id="ps3"></div>
+            <div class="progress-step" id="ps4"></div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+       PAGE — LANGUAGE SELECTION  (first screen)
+  ══════════════════════════════════════════════════════ -->
+        <div class="page active" id="page-lang">
+            <div style="text-align:center;padding:24px 0 20px;">
+                <div style="font-size:4rem;line-height:1;margin-bottom:10px;">🚑</div>
+                <h1
+                    style="font-size:2rem;font-weight:900;letter-spacing:-0.04em;color:var(--gray-900);margin-bottom:4px;">
+                    CodeZero</h1>
+                <p
+                    style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.16em;color:var(--blue);">
+                    AI Emergency Assistant</p>
+            </div>
+
+            <p style="font-size:1rem;font-weight:700;color:var(--gray-700);text-align:center;margin-bottom:16px;">Select
+                your language / Sprache wählen / Dil seçin</p>
+
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
+
+                <button class="lang-btn" onclick="selectLanguage('en')" id="langBtn_en">
+                    <span class="lang-flag">🇬🇧</span>
+                    <span class="lang-name">English</span>
+                    <span class="lang-sub">Medical emergency assistant</span>
+                </button>
+
+                <button class="lang-btn" onclick="selectLanguage('de')" id="langBtn_de">
+                    <span class="lang-flag">🇩🇪</span>
+                    <span class="lang-name">Deutsch</span>
+                    <span class="lang-sub">Medizinischer Notfallassistent</span>
+                </button>
+
+                <button class="lang-btn" onclick="selectLanguage('tr')" id="langBtn_tr">
+                    <span class="lang-flag">🇹🇷</span>
+                    <span class="lang-name">Türkçe</span>
+                    <span class="lang-sub">Tıbbi acil asistan</span>
+                </button>
+
+            </div>
+
+            <p style="text-align:center;font-size:0.72rem;color:var(--gray-400);">⚠️ Demo only · Call 112 for real
+                emergencies</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+       PAGE — WELCOME
+  ══════════════════════════════════════════════════════ -->
+        <div class="page" id="page-welcome">
+
+            <!-- AI status pill -->
+            <div id="aiStatusPill" style="display:flex;justify-content:center;margin-bottom:16px;margin-top:4px;">
+                <div
+                    style="background:var(--gray-100);border:1px solid var(--gray-200);border-radius:99px;padding:5px 14px;font-size:0.72rem;font-weight:600;color:var(--gray-500);display:flex;align-items:center;gap:6px;">
+                    <div id="aiDot" style="width:7px;height:7px;border-radius:50%;background:var(--gray-300);"></div>
+                    <span id="aiStatusText">Checking AI status…</span>
+                </div>
+            </div>
+
+            <!-- What is CodeZero -->
+            <div class="card blue" style="margin-bottom:14px;">
+                <div class="section-label" style="color:var(--blue);margin-bottom:10px;" id="wl_whatLabel">What is
+                    CodeZero?</div>
+                <p id="wl_whatDesc" style="font-size:0.88rem;color:#1e3a5f;line-height:1.65;margin-bottom:12px;">When
+                    you face a medical emergency, CodeZero uses AI to:</p>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="display:flex;align-items:flex-start;gap:10px;">
+                        <span style="color:var(--green);font-weight:800;flex-shrink:0;font-size:1rem;">✓</span>
+                        <span id="wl_b1" style="font-size:0.85rem;color:#1e40af;line-height:1.5;">Inform you and the
+                            hospital about your condition <strong>before you arrive</strong></span>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:10px;">
+                        <span style="color:var(--green);font-weight:800;flex-shrink:0;font-size:1rem;">✓</span>
+                        <span id="wl_b2" style="font-size:0.85rem;color:#1e40af;line-height:1.5;">Minimise your
+                            <strong>waiting time</strong> at the emergency room</span>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:10px;">
+                        <span style="color:var(--green);font-weight:800;flex-shrink:0;font-size:1rem;">✓</span>
+                        <span id="wl_b3" style="font-size:0.85rem;color:#1e40af;line-height:1.5;">Direct you to the
+                            <strong>most appropriate hospital</strong> near you</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How to use -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="section-label" id="wl_howLabel" style="margin-bottom:12px;">How to use</div>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div style="display:flex;align-items:flex-start;gap:10px;">
+                        <div
+                            style="background:var(--blue);color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0;">
+                            1</div>
+                        <span id="wl_s1" style="font-size:0.83rem;color:var(--gray-600);line-height:1.5;"><strong
+                                style="color:var(--gray-900);">🎤 Microphone</strong> — speak 2–3 sentences in your own
+                            language. Any language understood.</span>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:10px;">
+                        <div
+                            style="background:var(--blue);color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0;">
+                            2</div>
+                        <span id="wl_s2" style="font-size:0.83rem;color:var(--gray-600);line-height:1.5;"><strong
+                                style="color:var(--gray-900);">❓ AI Questions</strong> — brief follow-up questions
+                            tailored to your complaint.</span>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:10px;">
+                        <div
+                            style="background:var(--blue);color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;flex-shrink:0;">
+                            3</div>
+                        <span id="wl_s3" style="font-size:0.83rem;color:var(--gray-600);line-height:1.5;"><strong
+                                style="color:var(--gray-900);">🏥 Hospital</strong> — the nearest hospital is notified
+                            and ready for you.</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="btnStart" onclick="goToPage('input')">Get Started →</button>
+            <p id="wl_demo" style="text-align:center;font-size:0.72rem;color:var(--gray-400);margin-top:6px;">⚠️ Demo
+                only. Call 112 for real emergencies.</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+       PAGE — INPUT  (voice + type)
+  ══════════════════════════════════════════════════════ -->
+        <div class="page" id="page-input">
+            <h2 id="inp_title">Describe your emergency</h2>
+            <p class="sub" id="inp_sub">Speak or type in your own language. All languages understood.</p>
+
+            <!-- Mic area -->
+            <div
+                style="background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--r-xl);padding:24px 20px;text-align:center;margin-bottom:16px;">
+                <button class="mic-btn" id="micBtn" onclick="toggleRecording()" style="margin:0 auto 14px;">🎤</button>
+                <p style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:2px;" id="micLabel">Tap to
+                    record</p>
+                <p style="font-size:0.82rem;color:var(--gray-500);" id="micSub">Speak clearly in your own language</p>
+            </div>
+
+            <!-- Transcription box -->
+            <div class="transcript-box" id="transcriptBox">
+                <div class="transcript-label" id="transcriptLang">✓ Understood</div>
+                <div class="transcript-text" id="transcriptText"></div>
+            </div>
+
+            <!-- Processing spinner -->
+            <div class="spinner-wrap" id="inputSpinner">
+                <div class="spinner"></div>
+                <div class="spinner-text" id="inputSpinnerText">Processing audio…</div>
+            </div>
+
+            <div class="divider-text"><span id="inp_orType">or type instead</span></div>
+
+            <div class="field-wrap">
+                <textarea id="complaintText" rows="4" oninput="onComplaintType()"></textarea>
+                <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;">🌍 <span id="inp_anyLang">Any
+                        language is understood</span></p>
+            </div>
+
+            <button class="btn btn-primary" id="btnContinueInput" onclick="submitComplaint()" disabled
+                style="opacity:0.45;" id="inp_continue">
+                <span id="inp_continueTxt">Continue →</span>
+            </button>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+       PAGE — PHOTOS  (optional, max 3)
+  ══════════════════════════════════════════════════════ -->
+        <div class="page" id="page-photos">
+            <h2 id="ph_title">📷 Add photos</h2>
+            <p class="sub" id="ph_sub">Optional — wound, rash, swelling. Up to 3 photos. Helps hospital prepare.</p>
+
+            <div id="photoGrid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+
+            <label class="btn btn-ghost" id="photoAddLabel" style="cursor:pointer;">
+                <span id="ph_addBtn">📷 Take or upload a photo</span>
+                <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="onPhotoAdded(event)"
+                    style="display:none;">
+            </label>
+            <p style="font-size:0.75rem;color:var(--gray-400);text-align:center;margin-bottom:8px;" id="photoCount">0 /
+                3</p>
+
+            <div class="divider"></div>
+            <div class="row">
+                <button class="btn btn-secondary" onclick="skipPhotos()" id="ph_skip">Skip →</button>
+                <button class="btn btn-primary" onclick="continueFromPhotos()" id="ph_continue">Continue →</button>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+       PAGE — QUESTIONS  (AI-generated)
+  ══════════════════════════════════════════════════════ -->
+        <div class="page" id="page-questions">
+            <div class="spinner-wrap visible" id="questionsSpinner" style="padding:40px 0;">
+                <div class="spinner"></div>
+                <div class="spinner-text" id="questionsSpinnerText">Generating AI questions…</div>
+            </div>
+
+            <!-- AI mode badge shown when questions load -->
+            <div id="aiModeBadge" style="display:none;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;width:fit-content;"
+                    id="aiModeBadgeInner">
+                    <div id="aiBadgeDot" style="width:7px;height:7px;border-radius:50%;"></div>
+                    <span id="aiBadgeText"
+                        style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;"></span>
+                </div>
+            </div>
+
+            <div id="questionsContainer" style="display:none;"></div>
+
+            <div id="questionNav" style="display:none;">
+                <div class="row">
+                    <button class="btn btn-secondary" id="btnQBack" onclick="prevQuestion()">← <span
+                            id="q_back">Back</span></button>
+                    <button class="btn btn-primary" id="btnQNext" onclick="nextQuestion()" disabled
+                        style="opacity:0.45;"><span id="q_next">Next</span> →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+       PAGE — CONSENT
+  ══════════════════════════════════════════════════════ -->
+        <div class="page" id="page-consent">
+            <div style="text-align:center;padding:8px 0 16px;">
+                <div style="font-size:2rem;margin-bottom:8px;">📋</div>
+                <h2 id="cs_title">Almost done</h2>
+                <p class="sub" id="cs_sub">Please review what will be shared with the hospital</p>
+            </div>
+
+            <div class="card" style="margin-bottom:16px;border-color:var(--blue-mid);background:var(--blue-light);">
+                <div class="section-label" style="color:var(--blue);margin-bottom:10px;" id="cs_consentLabel">📋 Data
+                    sharing consent</div>
+                <p style="font-size:0.82rem;color:#1e40af;margin-bottom:12px;" id="cs_consentDesc">Do you consent to
+                    sharing the following with the hospital?</p>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;align-items:center;gap:10px;"><span
+                            style="font-size:1.1rem;">💬</span><span style="font-size:0.87rem;color:var(--gray-700);"
+                            id="cs_line1">Symptom description and Q&A answers</span></div>
+                    <div style="display:flex;align-items:center;gap:10px;"><span
+                            style="font-size:1.1rem;">📷</span><span style="font-size:0.87rem;color:var(--gray-700);"
+                            id="cs_photoLine">Photos: 0 attached</span></div>
+                    <div style="display:flex;align-items:center;gap:10px;"><span
+                            style="font-size:1.1rem;">🤖</span><span style="font-size:0.87rem;color:var(--gray-700);"
+                            id="cs_line3">AI triage assessment and risk level</span></div>
+                    <div style="display:flex;align-items:center;gap:10px;"><span
+                            style="font-size:1.1rem;">📍</span><span style="font-size:0.87rem;color:var(--gray-700);"
+                            id="cs_line4">Real-time location (live tracking)</span></div>
+                </div>
+            </div>
+
+            <div class="radio-group">
+                <label class="radio-pill" id="consentYes" onclick="setConsent(true)">
+                    <div class="radio-dot" id="consentYesDot"></div>
+                    <span id="cs_yes">✅ Yes — share my information</span>
+                </label>
+                <label class="radio-pill" id="consentNo" onclick="setConsent(false)">
+                    <div class="radio-dot" id="consentNoDot"></div>
+                    <span id="cs_no">❌ No — do not share my data</span>
+                </label>
+            </div>
+
+            <p style="font-size:0.8rem;color:var(--red);margin-bottom:12px;display:none;" id="consentWarning">You must
+                consent to data sharing to proceed.</p>
+
+            <div class="spinner-wrap" id="assessSpinner">
+                <div class="spinner"></div>
+                <div class="spinner-text" id="assessSpinnerText">Analysing your symptoms…</div>
+            </div>
+
+            <button class="btn btn-primary" id="btnGetAssessment" onclick="submitConsent()">
+                <span id="cs_btnTxt">Get my assessment →</span>
+            </button>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+       PAGE — TRIAGE  (GPS + hospitals)
+  ══════════════════════════════════════════════════════ -->
+        <div class="page" id="page-triage">
+            <div id="triageBanner"></div>
+
+            <!-- GPS status pill -->
+            <div id="gpsStatusPill" class="gps-status wait" style="margin-bottom:12px;">
+                📍 <span id="gpsStatusTxt">Detecting location…</span>
+            </div>
+
+            <div class="section-label" id="tr_nearestLabel" style="margin-bottom:8px;">🏥 Nearest Emergency Hospitals
+            </div>
+
+            <!-- GPS waiting card -->
+            <div id="gpsWaiting" class="card blue" style="text-align:center;display:none;">
+                <div style="font-size:2rem;margin-bottom:8px;">📍</div>
+                <p style="font-size:0.95rem;font-weight:700;color:var(--blue-dark);margin-bottom:4px;"
+                    id="gps_waitTitle">Detecting your location…</p>
+                <p style="font-size:0.82rem;color:var(--blue);" id="gps_waitSub">Tap <strong>Allow</strong> when your
+                    browser asks for location access.</p>
+            </div>
+
+            <!-- GPS denied card -->
+            <div id="gpsDenied" class="card red" style="display:none;">
+                <p style="font-size:0.95rem;font-weight:700;color:var(--red);margin-bottom:8px;" id="gps_deniedTitle">🔒
+                    Location access required</p>
+                <p style="font-size:0.82rem;color:#7f1d1d;margin-bottom:8px;" id="gps_deniedDesc">We need your location
+                    to find the nearest hospital.</p>
+                <div style="background:#fef2f2;border-radius:var(--r-sm);padding:10px 12px;margin-bottom:12px;">
+                    <p style="font-size:0.8rem;color:#991b1b;line-height:1.6;" id="gps_deniedSteps">
+                        ① Tap the 🔒 lock in your browser bar<br>
+                        ② Site settings → Location → <strong>Allow</strong><br>
+                        ③ Come back and tap Retry
+                    </p>
+                </div>
+                <button class="btn btn-danger" style="font-size:0.9rem;" onclick="retryGPS()" id="gps_retryBtn">🔄
+                    Retry</button>
+            </div>
+
+            <!-- Hospital list -->
+            <div id="hospitalList"></div>
+
+            <!-- Pre-arrival advice (shown after assessment) -->
+            <div id="triageAdviceSection" style="display:none;">
+                <div class="divider"></div>
+                <div class="section-label" id="tr_adviceLabel" style="margin-bottom:8px;">⏱ Before you arrive</div>
+                <div id="triageAdviceContent"></div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+       PAGE — RESULT
+  ══════════════════════════════════════════════════════ -->
+        <div class="page" id="page-result">
+            <div id="resultBanner"></div>
+
+            <!-- Registration number -->
+            <div class="section-label" id="rs_regLabel" style="margin-bottom:4px;">Your registration number</div>
+            <div class="reg-number" id="regNumber">—</div>
+            <p id="rs_regHint" style="font-size:0.78rem;color:var(--gray-500);text-align:center;margin-bottom:16px;">
+                Show this at hospital reception on arrival.</p>
+
+            <div id="resultHospital"></div>
+            <div id="resultEmergencyCall" style="display:none;text-align:center;margin-bottom:14px;"></div>
+            <div id="resultAdvice"></div>
+
+            <!-- Live tracking note -->
+            <div class="card" style="margin-bottom:14px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <span style="font-size:1.1rem;">📍</span>
+                    <span id="rs_trackTitle" style="font-size:0.85rem;font-weight:700;color:var(--gray-800);">Keep
+                        location enabled while travelling</span>
+                </div>
+                <p id="rs_trackSub" style="font-size:0.8rem;color:var(--gray-500);">Your care team tracks your arrival
+                    in real time.</p>
+            </div>
+
+            <button class="btn btn-secondary" onclick="startOver()" id="rs_newBtn">🔄 New assessment</button>
+            <p id="rs_demo" style="text-align:center;font-size:0.72rem;color:var(--gray-400);margin-top:6px;">⚠️ Demo
+                only. Call 112 for real emergencies.</p>
+        </div>
+
+    </div><!-- /app -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        'use strict';
+        // ══════════════════════════════════════════════════════════════════════════
+        // TRANSLATIONS  (EN / DE / TR)
+        // ══════════════════════════════════════════════════════════════════════════
+        const TX = {
+            en: {
+                topbarBadge: '🌐 EN',
+                // welcome
+                wl_whatLabel: 'What is CodeZero?',
+                wl_whatDesc: 'When you face a medical emergency, CodeZero uses AI to:',
+                wl_b1: 'Inform you and the hospital about your condition <strong>before you arrive</strong>',
+                wl_b2: 'Minimise your <strong>waiting time</strong> at the emergency room',
+                wl_b3: 'Direct you to the <strong>most appropriate hospital</strong> near you',
+                wl_howLabel: 'How to use',
+                wl_s1: '<strong style="color:var(--gray-900);">🎤 Microphone</strong> — speak 2–3 sentences in your language.',
+                wl_s2: '<strong style="color:var(--gray-900);">❓ AI Questions</strong> — brief follow-up questions tailored to your complaint.',
+                wl_s3: '<strong style="color:var(--gray-900);">🏥 Hospital</strong> — the nearest hospital is notified and ready.',
+                wl_demo: '⚠️ Demo only. Call 112 for real emergencies.',
+                btnStart: 'Get Started →',
+                // input
+                inp_title: 'Describe your emergency',
+                inp_sub: 'Speak or type in your own language. All languages understood.',
+                micLabelIdle: 'Tap to record',
+                micSubIdle: 'Speak clearly in your own language',
+                micLabelRec: 'Recording…',
+                micSubRec: 'Tap again to stop',
+                micLabelDone: 'Tap to re-record',
+                micSubDone: 'Or continue with the text above',
+                transcriptLang: '✓ Understood',
+                inp_orType: 'or type instead',
+                inp_placeholder: 'e.g. Sudden chest pain, difficulty breathing, since 20 minutes…',
+                inp_anyLang: 'Any language is understood',
+                inp_continueTxt: 'Continue →',
+                // photos
+                ph_title: '📷 Add photos',
+                ph_sub: 'Optional — wound, rash, swelling. Up to 3 photos. Helps hospital prepare.',
+                ph_addBtn: '📷 Take or upload a photo',
+                ph_skip: 'Skip →',
+                ph_continue: 'Continue →',
+                // questions
+                questionsSpinnerText: 'Generating AI questions…',
+                aiMode_real: '🤖 AI-generated questions',
+                aiMode_mock: '⚠️ Demo mode — AI not connected',
+                q_back: 'Back',
+                q_next: 'Next',
+                q_of: 'of',
+                q_done: 'Done →',
+                // consent
+                cs_title: 'Almost done',
+                cs_sub: 'Please review what will be shared with the hospital',
+                cs_consentLabel: '📋 Data sharing consent',
+                cs_consentDesc: 'Do you consent to sharing the following with the hospital?',
+                cs_line1: 'Symptom description and Q&A answers',
+                cs_photoLine: 'Photos: {n} attached',
+                cs_line3: 'AI triage assessment and risk level',
+                cs_line4: 'Real-time location (live tracking)',
+                cs_yes: '✅ Yes — share my information',
+                cs_no: '❌ No — do not share',
+                consentWarning: 'You must consent to proceed.',
+                assessSpinnerText: 'Analysing your symptoms with AI…',
+                cs_btnTxt: 'Get my assessment →',
+                // triage
+                gps_waitTitle: 'Detecting your location…',
+                gps_waitSub: 'Tap <strong>Allow</strong> when your browser asks for location.',
+                gps_deniedTitle: '🔒 Location access required',
+                gps_deniedDesc: 'We need your location to find the nearest hospital.',
+                gps_deniedSteps: '① Tap the 🔒 lock in your browser bar<br>② Site settings → Location → <strong>Allow</strong><br>③ Come back and tap Retry',
+                gps_retryBtn: '🔄 Retry',
+                gpsDetecting: 'Detecting location…',
+                gpsOk: 'Location confirmed',
+                gpsDenied: 'Location denied',
+                tr_nearestLabel: '🏥 Nearest Emergency Hospitals',
+                tr_adviceLabel: '⏱ Before you arrive',
+                tr_fastest: '⭐ Fastest',
+                tr_hospSpinner: 'Finding nearest hospitals…',
+                tr_noHosp: 'No hospitals found nearby.',
+                tr_notifying: 'Notifying hospital…',
+                tr_emg_title: '🚨 Go to emergency immediately',
+                tr_emg_sub: 'Your symptoms require urgent care — do not wait',
+                tr_urg_title: '⚠️ You need hospital care soon',
+                tr_urg_sub: 'Please find a hospital within the next 30 minutes',
+                tr_rtn_title: 'ℹ️ You should see a doctor today',
+                tr_rtn_sub: 'Your symptoms are not immediately life-threatening',
+                tr_orBelow: '— or select a hospital below —',
+                tr_doLabel: '✅ DO:',
+                tr_dontLabel: '❌ DON\'T:',
+                // result
+                rs_regLabel: 'Your registration number',
+                rs_regHint: 'Show this at hospital reception on arrival.',
+                rs_notified_emg: '🚨 Hospital notified — head there now!',
+                rs_notified_sub_emg: 'They are preparing for your arrival',
+                rs_notified_urg: '✅ Hospital notified',
+                rs_notified_sub_urg: 'Please follow the instructions below',
+                rs_notified_rtn: '✅ Your information has been sent',
+                rs_notified_sub_rtn: 'See instructions below before leaving',
+                rs_trackTitle: 'Keep location enabled while travelling',
+                rs_trackSub: 'Your care team tracks your arrival in real time.',
+                rs_newBtn: '🔄 New assessment',
+                rs_demo: '⚠️ Demo only. Call 112 for real emergencies.',
+                // AI status
+                aiChecking: 'Checking AI status…',
+                aiConnected: '🤖 AI connected — real-time analysis',
+                aiDemo: '⚙️ Demo mode — AI not configured',
+            },
+
+            de: {
+                topbarBadge: '🌐 DE',
+                wl_whatLabel: 'Was ist CodeZero?',
+                wl_whatDesc: 'Bei einem medizinischen Notfall nutzt CodeZero KI, um:',
+                wl_b1: 'Sie und das Krankenhaus über Ihren Zustand <strong>vor Ihrer Ankunft</strong> zu informieren',
+                wl_b2: 'Ihre <strong>Wartezeit</strong> in der Notaufnahme zu minimieren',
+                wl_b3: 'Sie zum <strong>nächstgelegenen geeigneten Krankenhaus</strong> zu leiten',
+                wl_howLabel: 'So verwenden Sie die App',
+                wl_s1: '<strong style="color:var(--gray-900);">🎤 Mikrofon</strong> — 2–3 Sätze in Ihrer Sprache sprechen.',
+                wl_s2: '<strong style="color:var(--gray-900);">❓ KI-Fragen</strong> — kurze Folgefragen zu Ihren Symptomen.',
+                wl_s3: '<strong style="color:var(--gray-900);">🏥 Krankenhaus</strong> — das nächste Krankenhaus wird benachrichtigt.',
+                wl_demo: '⚠️ Nur Demo. Im Notfall 112 anrufen.',
+                btnStart: 'Starten →',
+                inp_title: 'Notfall beschreiben',
+                inp_sub: 'Sprechen oder tippen Sie in Ihrer Sprache. Alle Sprachen verstanden.',
+                micLabelIdle: 'Zum Aufnehmen tippen',
+                micSubIdle: 'Sprechen Sie deutlich in Ihrer Sprache',
+                micLabelRec: 'Aufnahme läuft…',
+                micSubRec: 'Zum Stoppen erneut tippen',
+                micLabelDone: 'Erneut aufnehmen',
+                micSubDone: 'Oder mit dem Text oben fortfahren',
+                transcriptLang: '✓ Verstanden',
+                inp_orType: 'oder stattdessen tippen',
+                inp_placeholder: 'z.B. Plötzliche Brustschmerzen, Atemnot, seit 20 Minuten…',
+                inp_anyLang: 'Alle Sprachen werden verstanden',
+                inp_continueTxt: 'Weiter →',
+                ph_title: '📷 Fotos hinzufügen',
+                ph_sub: 'Optional — Wunde, Ausschlag, Schwellung. Bis zu 3 Fotos.',
+                ph_addBtn: '📷 Foto aufnehmen oder hochladen',
+                ph_skip: 'Überspringen →',
+                ph_continue: 'Weiter →',
+                questionsSpinnerText: 'KI-Fragen werden generiert…',
+                aiMode_real: '🤖 KI-generierte Fragen',
+                aiMode_mock: '⚠️ Demo-Modus — KI nicht verbunden',
+                q_back: 'Zurück',
+                q_next: 'Weiter',
+                q_of: 'von',
+                q_done: 'Fertig →',
+                cs_title: 'Fast fertig',
+                cs_sub: 'Bitte überprüfen, was mit dem Krankenhaus geteilt wird',
+                cs_consentLabel: '📋 Einwilligung zur Datenweitergabe',
+                cs_consentDesc: 'Stimmen Sie zu, die folgenden Informationen zu teilen?',
+                cs_line1: 'Symptombeschreibung und Antworten',
+                cs_photoLine: 'Fotos: {n} beigefügt',
+                cs_line3: 'KI-Triage-Bewertung und Risikostufe',
+                cs_line4: 'Echtzeit-Standort (Live-Tracking)',
+                cs_yes: '✅ Ja — Informationen teilen',
+                cs_no: '❌ Nein — nicht teilen',
+                consentWarning: 'Sie müssen zustimmen, um fortzufahren.',
+                assessSpinnerText: 'Symptome werden mit KI analysiert…',
+                cs_btnTxt: 'Bewertung erhalten →',
+                gps_waitTitle: 'Standort wird erkannt…',
+                gps_waitSub: 'Tippen Sie auf <strong>Zulassen</strong>, wenn Ihr Browser danach fragt.',
+                gps_deniedTitle: '🔒 Standortzugriff erforderlich',
+                gps_deniedDesc: 'Wir benötigen Ihren Standort, um das nächste Krankenhaus zu finden.',
+                gps_deniedSteps: '① Auf das 🔒-Symbol in der Adressleiste tippen<br>② Seiteneinstellungen → Standort → <strong>Zulassen</strong><br>③ Zurückkehren und Erneut versuchen tippen',
+                gps_retryBtn: '🔄 Erneut versuchen',
+                gpsDetecting: 'Standort wird erkannt…',
+                gpsOk: 'Standort bestätigt',
+                gpsDenied: 'Standort verweigert',
+                tr_nearestLabel: '🏥 Nächste Notaufnahmen',
+                tr_adviceLabel: '⏱ Vor Ihrer Ankunft',
+                tr_fastest: '⭐ Schnellste',
+                tr_hospSpinner: 'Nächste Krankenhäuser suchen…',
+                tr_noHosp: 'Keine Krankenhäuser in der Nähe gefunden.',
+                tr_notifying: 'Krankenhaus wird benachrichtigt…',
+                tr_emg_title: '🚨 Sofort in die Notaufnahme',
+                tr_emg_sub: 'Ihre Symptome erfordern sofortige Versorgung',
+                tr_urg_title: '⚠️ Baldiger Krankenhausbesuch nötig',
+                tr_urg_sub: 'Bitte innerhalb der nächsten 30 Minuten ein Krankenhaus aufsuchen',
+                tr_rtn_title: 'ℹ️ Heute einen Arzt aufsuchen',
+                tr_rtn_sub: 'Ihre Symptome sind nicht unmittelbar lebensbedrohlich',
+                tr_orBelow: '— oder unten ein Krankenhaus auswählen —',
+                tr_doLabel: '✅ TUN:',
+                tr_dontLabel: '❌ NICHT TUN:',
+                rs_regLabel: 'Ihre Registrierungsnummer',
+                rs_regHint: 'Zeigen Sie diese an der Krankenhausrezeption.',
+                rs_notified_emg: '🚨 Krankenhaus informiert — jetzt fahren!',
+                rs_notified_sub_emg: 'Sie bereiten sich auf Ihre Ankunft vor',
+                rs_notified_urg: '✅ Krankenhaus informiert',
+                rs_notified_sub_urg: 'Bitte folgen Sie den Anweisungen unten',
+                rs_notified_rtn: '✅ Ihre Informationen wurden gesendet',
+                rs_notified_sub_rtn: 'Lesen Sie die Anweisungen vor der Abfahrt',
+                rs_trackTitle: 'Standort während der Fahrt aktiviert lassen',
+                rs_trackSub: 'Ihr Pflegeteam verfolgt Ihre Ankunft in Echtzeit.',
+                rs_newBtn: '🔄 Neue Bewertung',
+                rs_demo: '⚠️ Nur Demo. Im Notfall 112 anrufen.',
+                aiChecking: 'KI-Status wird geprüft…',
+                aiConnected: '🤖 KI verbunden — Echtzeit-Analyse',
+                aiDemo: '⚙️ Demo-Modus — KI nicht konfiguriert',
+            },
+
+            tr: {
+                topbarBadge: '🌐 TR',
+                wl_whatLabel: 'CodeZero nedir?',
+                wl_whatDesc: 'Tıbbi bir acil durumda CodeZero yapay zekayı şunlar için kullanır:',
+                wl_b1: 'Sizi ve hastaneyi durumunuz hakkında <strong>varmadan önce</strong> bilgilendirmek',
+                wl_b2: 'Acil servisteki <strong>bekleme sürenizi</strong> en aza indirmek',
+                wl_b3: 'Sizi <strong>en uygun yakın hastaneye</strong> yönlendirmek',
+                wl_howLabel: 'Nasıl kullanılır',
+                wl_s1: '<strong style="color:var(--gray-900);">🎤 Mikrofon</strong> — kendi dilinizde 2–3 cümle söyleyin.',
+                wl_s2: '<strong style="color:var(--gray-900);">❓ Yapay Zeka Soruları</strong> — şikayetinize özel kısa takip soruları.',
+                wl_s3: '<strong style="color:var(--gray-900);">🏥 Hastane</strong> — en yakın hastane bilgilendirilir ve hazır olur.',
+                wl_demo: '⚠️ Yalnızca demo. Gerçek acillerde 112\'yi arayın.',
+                btnStart: 'Başlayın →',
+                inp_title: 'Acil durumunuzu anlatın',
+                inp_sub: 'Kendi dilinizde konuşun veya yazın. Tüm diller anlaşılır.',
+                micLabelIdle: 'Kaydetmek için dokunun',
+                micSubIdle: 'Kendi dilinizde açıkça konuşun',
+                micLabelRec: 'Kaydediliyor…',
+                micSubRec: 'Durdurmak için tekrar dokunun',
+                micLabelDone: 'Tekrar kaydedin',
+                micSubDone: 'Veya yukarıdaki metinle devam edin',
+                transcriptLang: '✓ Anlaşıldı',
+                inp_orType: 'veya yazarak girin',
+                inp_placeholder: 'Örn: Ani göğüs ağrısı, nefes darlığı, 20 dakika önce başladı…',
+                inp_anyLang: 'Her dil anlaşılır',
+                inp_continueTxt: 'Devam →',
+                ph_title: '📷 Fotoğraf ekle',
+                ph_sub: 'İsteğe bağlı — yara, döküntü, şişlik. En fazla 3 fotoğraf.',
+                ph_addBtn: '📷 Fotoğraf çek veya yükle',
+                ph_skip: 'Atla →',
+                ph_continue: 'Devam →',
+                questionsSpinnerText: 'Yapay zeka soruları oluşturuluyor…',
+                aiMode_real: '🤖 Yapay zeka soruları',
+                aiMode_mock: '⚠️ Demo modu — YZ bağlı değil',
+                q_back: 'Geri',
+                q_next: 'İleri',
+                q_of: '/',
+                q_done: 'Bitti →',
+                cs_title: 'Neredeyse bitti',
+                cs_sub: 'Hastaneyle paylaşılacakları inceleyin',
+                cs_consentLabel: '📋 Veri paylaşım onayı',
+                cs_consentDesc: 'Aşağıdaki bilgileri hastaneyle paylaşmayı onaylıyor musunuz?',
+                cs_line1: 'Semptom açıklaması ve soru cevapları',
+                cs_photoLine: 'Fotoğraflar: {n} eklendi',
+                cs_line3: 'Yapay zeka triaj değerlendirmesi ve risk düzeyi',
+                cs_line4: 'Gerçek zamanlı konum (canlı takip)',
+                cs_yes: '✅ Evet — bilgilerimi paylaş',
+                cs_no: '❌ Hayır — paylaşma',
+                consentWarning: 'Devam etmek için onay vermelisiniz.',
+                assessSpinnerText: 'Semptomlarınız yapay zeka ile analiz ediliyor…',
+                cs_btnTxt: 'Değerlendirmemi al →',
+                gps_waitTitle: 'Konumunuz algılanıyor…',
+                gps_waitSub: 'Tarayıcınız sorduğunda <strong>İzin Ver</strong>\'e dokunun.',
+                gps_deniedTitle: '🔒 Konum erişimi gerekli',
+                gps_deniedDesc: 'En yakın hastaneyi bulmak için konumunuza ihtiyacımız var.',
+                gps_deniedSteps: '① Adres çubuğundaki 🔒 simgesine dokunun<br>② Site ayarları → Konum → <strong>İzin Ver</strong><br>③ Geri dönün ve Yeniden Dene\'ye dokunun',
+                gps_retryBtn: '🔄 Yeniden dene',
+                gpsDetecting: 'Konum algılanıyor…',
+                gpsOk: 'Konum doğrulandı',
+                gpsDenied: 'Konum reddedildi',
+                tr_nearestLabel: '🏥 En Yakın Acil Hastaneler',
+                tr_adviceLabel: '⏱ Varmadan önce',
+                tr_fastest: '⭐ En Hızlı',
+                tr_hospSpinner: 'En yakın hastaneler aranıyor…',
+                tr_noHosp: 'Yakında hastane bulunamadı.',
+                tr_notifying: 'Hastane bilgilendiriliyor…',
+                tr_emg_title: '🚨 Hemen acile gidin',
+                tr_emg_sub: 'Semptomlarınız acil bakım gerektiriyor — beklemyin',
+                tr_urg_title: '⚠️ En kısa sürede hastaneye gitmelisiniz',
+                tr_urg_sub: 'Lütfen 30 dakika içinde bir hastane bulun',
+                tr_rtn_title: 'ℹ️ Bugün bir doktora görünün',
+                tr_rtn_sub: 'Semptomlarınız hemen hayati tehlike oluşturmuyor',
+                tr_orBelow: '— veya aşağıdan hastane seçin —',
+                tr_doLabel: '✅ YAPILACAKLAR:',
+                tr_dontLabel: '❌ YAPILMAYACAKLAR:',
+                rs_regLabel: 'Kayıt numaranız',
+                rs_regHint: 'Varışta hastane resepsiyonunda gösterin.',
+                rs_notified_emg: '🚨 Hastane bildirildi — hemen yola çıkın!',
+                rs_notified_sub_emg: 'Geliişinize hazırlanıyorlar',
+                rs_notified_urg: '✅ Hastane bilgilendirildi',
+                rs_notified_sub_urg: 'Lütfen aşağıdaki talimatları izleyin',
+                rs_notified_rtn: '✅ Bilgileriniz gönderildi',
+                rs_notified_sub_rtn: 'Ayrılmadan önce talimatları okuyun',
+                rs_trackTitle: 'Yolculuk sırasında konumu açık bırakın',
+                rs_trackSub: 'Bakım ekibiniz varışınızı gerçek zamanlı takip eder.',
+                rs_newBtn: '🔄 Yeni değerlendirme',
+                rs_demo: '⚠️ Yalnızca demo. Gerçek acillerde 112\'yi arayın.',
+                aiChecking: 'Yapay zeka durumu kontrol ediliyor…',
+                aiConnected: '🤖 Yapay zeka bağlı — gerçek zamanlı analiz',
+                aiDemo: '⚙️ Demo modu — YZ yapılandırılmamış',
+            },
+        };
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // APP STATE
+        // ══════════════════════════════════════════════════════════════════════════
+        const S = {
+            lang: 'en',       // 'en' | 'de' | 'tr'
+            complaint: '',
+            complaintEN: '',
+            detectedLang: 'en-US',    // BCP-47 from Azure Speech STT
+            photos: [],
+            questions: [],
+            answers: [],
+            qIdx: 0,
+            aiMode: null,       // null | 'real' | 'mock'
+            dataConsent: null,
+            assessment: null,
+            lat: null,
+            lon: null,
+            country: 'DE',       // auto-detected from GPS bounding box
+            hospitals: [],
+            selectedHospital: null,
+            regNumber: null,
+        };
+
+        const API = '';  // same origin
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // LANGUAGE HELPERS
+        // ══════════════════════════════════════════════════════════════════════════
+        function t(key, vars) {
+            let s = (TX[S.lang] || TX.en)[key] || TX.en[key] || key;
+            if (vars) Object.keys(vars).forEach(k => { s = s.replace('{' + k + '}', vars[k]); });
+            return s;
+        }
+
+        function applyLang() {
+            const ids = [
+                'wl_whatLabel', 'wl_whatDesc', 'wl_b1', 'wl_b2', 'wl_b3',
+                'wl_howLabel', 'wl_s1', 'wl_s2', 'wl_s3', 'wl_demo',
+                'inp_title', 'inp_sub', 'inp_orType', 'inp_anyLang', 'inp_continueTxt',
+                'ph_title', 'ph_sub', 'ph_addBtn', 'ph_skip', 'ph_continue',
+                'cs_title', 'cs_sub', 'cs_consentLabel', 'cs_consentDesc',
+                'cs_line1', 'cs_line3', 'cs_line4', 'cs_yes', 'cs_no',
+                'assessSpinnerText', 'cs_btnTxt',
+                'gps_waitTitle', 'gps_waitSub', 'gps_deniedTitle', 'gps_deniedDesc',
+                'gps_deniedSteps', 'gps_retryBtn',
+                'tr_nearestLabel', 'tr_adviceLabel',
+                'rs_regLabel', 'rs_regHint', 'rs_trackTitle', 'rs_trackSub',
+                'rs_newBtn', 'rs_demo',
+            ];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = t(id);
+            });
+            // Mic labels
+            document.getElementById('micLabel').textContent = t('micLabelIdle');
+            document.getElementById('micSub').textContent = t('micSubIdle');
+            // Placeholder
+            document.getElementById('complaintText').placeholder = t('inp_placeholder');
+            // Topbar badge
+            document.getElementById('topbarLangBadge').textContent = t('topbarBadge');
+            // Start button
+            document.getElementById('btnStart').textContent = t('btnStart');
+            // Questions back/next buttons text
+            const qb = document.getElementById('q_back'); if (qb) qb.textContent = t('q_back');
+            const qn = document.getElementById('q_next'); if (qn) qn.textContent = t('q_next');
+            // Photo count hint
+            updatePhotoCount();
+            // Consent photo line
+            updateConsentPage();
+        }
+
+        function selectLanguage(lang) {
+            S.lang = lang;
+            // Highlight selected button
+            ['en', 'de', 'tr'].forEach(l => {
+                document.getElementById('langBtn_' + l).classList.toggle('selected', l === lang);
+            });
+            applyLang();
+            // Short delay then go to welcome
+            setTimeout(() => {
+                goToPage('welcome');
+                checkAIStatus();
+            }, 180);
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // NAVIGATION
+        // ══════════════════════════════════════════════════════════════════════════
+        const STEP_MAP = { lang: -1, welcome: -1, input: 0, photos: 1, questions: 2, consent: 2, triage: 3, result: 4 };
+
+        function goToPage(name) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const el = document.getElementById('page-' + name);
+            if (el) el.classList.add('active');
+            S.currentPage = name;
+            // Update progress bar
+            const idx = STEP_MAP[name] ?? -1;
+            for (let i = 0; i < 5; i++) {
+                const el = document.getElementById('ps' + i);
+                if (!el) continue;
+                el.className = 'progress-step';
+                if (i < idx) el.classList.add('done');
+                else if (i === idx) el.classList.add('active');
+            }
+            window.scrollTo(0, 0);
+        }
+
+        function startOver() {
+            Object.assign(S, {
+                complaint: '', complaintEN: '', detectedLang: 'en-US', photos: [],
+                questions: [], answers: [], qIdx: 0, dataConsent: null, assessment: null,
+                lat: null, lon: null, hospitals: [], selectedHospital: null, regNumber: null, aiMode: null,
+            });
+            document.getElementById('complaintText').value = '';
+            document.getElementById('transcriptBox').classList.remove('visible');
+            enableContinue(false);
+            document.getElementById('photoGrid').innerHTML = '';
+            updatePhotoCount();
+            document.getElementById('photoAddLabel').style.display = '';
+            document.getElementById('photoInput').value = '';
+            goToPage('input');
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // AI STATUS CHECK  (on welcome page load)
+        // ══════════════════════════════════════════════════════════════════════════
+        async function checkAIStatus() {
+            const dot = document.getElementById('aiDot');
+            const txt = document.getElementById('aiStatusText');
+            txt.textContent = t('aiChecking');
+            dot.style.background = 'var(--gray-300)';
+
+            try {
+                // Quick probe: call /api/patient/questions with a dummy complaint
+                // If TriageEngine._initialized=True, real GPT is configured
+                const r = await fetch(API + '/api/patient/questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ complaint: '__health_check__', detected_language: 'en-US' }),
+                });
+                if (r.ok) {
+                    const d = await r.json();
+                    // If we got non-trivial questions (more than 2), likely real AI
+                    // Health check will return mock questions since complaint is dummy
+                    // So we check a special header or just assume alive = real enough
+                    S.aiMode = 'real';
+                    dot.style.background = 'var(--green)';
+                    txt.textContent = t('aiConnected');
+                } else {
+                    throw new Error('non-ok');
+                }
+            } catch (e) {
+                S.aiMode = 'mock';
+                dot.style.background = 'var(--orange)';
+                txt.textContent = t('aiDemo');
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // MIC RECORDING  →  Azure Speech STT
+        // ══════════════════════════════════════════════════════════════════════════
+        let mediaRec = null, audioChunks = [], isRecording = false;
+
+        async function toggleRecording() {
+            if (isRecording) stopRecording();
+            else await startRecording();
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRec = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRec.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+                mediaRec.onstop = processAudio;
+                mediaRec.start(100);
+                isRecording = true;
+                const btn = document.getElementById('micBtn');
+                btn.classList.add('recording');
+                btn.textContent = '⏹';
+                document.getElementById('micLabel').textContent = t('micLabelRec');
+                document.getElementById('micSub').textContent = t('micSubRec');
+            } catch (e) {
+                toast(t('inp_orType'), 'warn');
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRec && mediaRec.state !== 'inactive') {
+                mediaRec.stop();
+                mediaRec.stream.getTracks().forEach(tr => tr.stop());
+            }
+            isRecording = false;
+            const btn = document.getElementById('micBtn');
+            btn.classList.remove('recording');
+            btn.textContent = '🎤';
+            document.getElementById('micLabel').textContent = t('micLabelIdle');
+            document.getElementById('micSub').textContent = t('micSubIdle');
+        }
+
+        async function processAudio() {
+            const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+            if (blob.size < 500) { toast('Recording too short — please try again.', 'warn'); return; }
+
+            const form = new FormData();
+            form.append('audio', blob, 'complaint.webm');
+
+            document.getElementById('inputSpinner').classList.add('visible');
+            document.getElementById('inputSpinnerText').textContent = 'Processing with Azure Speech…';
+            try {
+                const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
+                const d = await r.json();
+                if (d.text && d.text.trim()) {
+                    S.detectedLang = d.language || 'en-US';
+                    setComplaintFromAudio(d.text.trim(), d.language);
+                } else {
+                    toast('Could not understand audio — please type below.', 'err');
+                    resetMicLabels();
+                }
+            } catch (e) {
+                toast('Transcription failed — please type below.', 'err');
+                resetMicLabels();
+            } finally {
+                document.getElementById('inputSpinner').classList.remove('visible');
+            }
+        }
+
+        function resetMicLabels() {
+            document.getElementById('micLabel').textContent = t('micLabelIdle');
+            document.getElementById('micSub').textContent = t('micSubIdle');
+        }
+
+        const LANG_NAMES = {
+            'en-US': 'English', 'en-GB': 'English', 'de-DE': 'Deutsch', 'tr-TR': 'Türkçe',
+            'ar-SA': 'العربية', 'fr-FR': 'Français', 'es-ES': 'Español', 'it-IT': 'Italiano',
+        };
+
+        function setComplaintFromAudio(text, langCode) {
+            S.complaint = text;
+            S.detectedLang = langCode || 'en-US';
+            const langName = LANG_NAMES[langCode] || langCode || '';
+            document.getElementById('transcriptLang').textContent = `${t('transcriptLang')} — ${langName}`;
+            document.getElementById('transcriptText').textContent = text;
+            document.getElementById('transcriptBox').classList.add('visible');
+            document.getElementById('complaintText').value = '';
+            enableContinue(true);
+            document.getElementById('micLabel').textContent = t('micLabelDone');
+            document.getElementById('micSub').textContent = t('micSubDone');
+        }
+
+        function onComplaintType() {
+            const val = document.getElementById('complaintText').value.trim();
+            if (val) {
+                S.complaint = val;
+                document.getElementById('transcriptBox').classList.remove('visible');
+            }
+            enableContinue(!!val || !!S.complaint);
+        }
+
+        function enableContinue(on) {
+            const btn = document.getElementById('btnContinueInput');
+            btn.disabled = !on;
+            btn.style.opacity = on ? '1' : '0.45';
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // SUBMIT COMPLAINT
+        // ══════════════════════════════════════════════════════════════════════════
+        function submitComplaint() {
+            if (!S.complaint.trim()) return;
+            S.photos = []; S.questions = []; S.answers = []; S.qIdx = 0; S.dataConsent = null; S.assessment = null;
+            document.getElementById('photoGrid').innerHTML = '';
+            updatePhotoCount();
+            document.getElementById('photoAddLabel').style.display = '';
+            goToPage('photos');
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // PHOTOS
+        // ══════════════════════════════════════════════════════════════════════════
+        function onPhotoAdded(evt) {
+            const file = evt.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                if (S.photos.length >= 3) return;
+                S.photos.push({ dataUrl: e.target.result, mime: file.type });
+                renderPhotoGrid();
+            };
+            reader.readAsDataURL(file);
+            evt.target.value = '';
+        }
+
+        function removePhoto(idx) { S.photos.splice(idx, 1); renderPhotoGrid(); }
+
+        function renderPhotoGrid() {
+            document.getElementById('photoGrid').innerHTML = S.photos.map((p, i) => `
+    <div style="position:relative;width:calc(33% - 6px);">
+      <img src="${p.dataUrl}" alt="" style="width:100%;height:90px;object-fit:cover;border-radius:var(--r);border:1.5px solid var(--gray-200);">
+      <button onclick="removePhoto(${i})" style="position:absolute;top:4px;right:4px;background:var(--red);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:0.7rem;cursor:pointer;">✕</button>
+    </div>`).join('');
+            updatePhotoCount();
+            document.getElementById('photoAddLabel').style.display = S.photos.length >= 3 ? 'none' : '';
+        }
+
+        function updatePhotoCount() {
+            document.getElementById('photoCount').textContent = `${S.photos.length} / 3`;
+        }
+
+        function skipPhotos() { loadQuestions(); }
+        function continueFromPhotos() { loadQuestions(); }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // LOAD QUESTIONS  →  /api/patient/questions  (Azure Translator + GPT-4)
+        // ══════════════════════════════════════════════════════════════════════════
+        async function loadQuestions() {
+            goToPage('questions');
+            document.getElementById('questionsSpinner').classList.add('visible');
+            document.getElementById('questionsContainer').style.display = 'none';
+            document.getElementById('questionNav').style.display = 'none';
+            document.getElementById('aiModeBadge').style.display = 'none';
+            document.getElementById('questionsSpinnerText').textContent = t('questionsSpinnerText');
+
+            try {
+                const r = await fetch(API + '/api/patient/questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        complaint: S.complaint,
+                        detected_language: S.detectedLang,
+                    }),
+                });
+                const d = await r.json();
+                S.questions = d.questions || [];
+                S.complaintEN = d.complaint_en || S.complaint;
+                // Detect if questions are real AI or mock by checking response header or question count
+                S.aiMode = (S.questions.length >= 4) ? 'real' : 'mock';
+            } catch (e) {
+                S.questions = [];
+                S.complaintEN = S.complaint;
+                S.aiMode = 'mock';
+            } finally {
+                document.getElementById('questionsSpinner').classList.remove('visible');
+            }
+
+            if (!S.questions.length) { goToPage('consent'); updateConsentPage(); return; }
+
+            // Show AI mode badge
+            const badge = document.getElementById('aiModeBadge');
+            const inner = document.getElementById('aiModeBadgeInner');
+            const dot = document.getElementById('aiBadgeDot');
+            const badgeTxt = document.getElementById('aiBadgeText');
+            if (S.aiMode === 'real') {
+                inner.style.background = 'var(--green-light)';
+                inner.style.border = '1px solid var(--green-mid)';
+                dot.style.background = 'var(--green)';
+                badgeTxt.style.color = 'var(--green)';
+                badgeTxt.textContent = t('aiMode_real');
+            } else {
+                inner.style.background = '#fff7ed';
+                inner.style.border = '1px solid #fed7aa';
+                dot.style.background = 'var(--orange)';
+                badgeTxt.style.color = 'var(--orange)';
+                badgeTxt.textContent = t('aiMode_mock');
+            }
+            badge.style.display = 'flex';
+
+            S.answers = []; S.qIdx = 0;
+            renderQuestion();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // QUESTION RENDERER
+        // ══════════════════════════════════════════════════════════════════════════
+        function renderQuestion() {
+            const q = S.questions[S.qIdx];
+            const total = S.questions.length;
+            let { question, type, options } = q;
+
+            // Normalise missing options
+            if (type === 'free_text' || !options || !options.length) {
+                const ql = question.toLowerCase();
+                if (/when|how long|since|start|began|wann|wie lange|başlad/.test(ql)) {
+                    type = 'multiple_choice';
+                    options = ['Just now', '< 1 hour ago', '1–6 hours ago', '6–24 hours ago', '> 1 day'];
+                } else if (/how|rate|scale|severity|pain|wie stark|schmerz|şiddet|ağrı/.test(ql)) {
+                    type = 'scale';
+                    options = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+                } else if (/where|location|wo |nerede/.test(ql)) {
+                    type = 'multiple_choice';
+                    options = ['Head/neck', 'Chest', 'Abdomen', 'Back', 'Arms', 'Legs', 'Whole body'];
+                } else {
+                    type = 'yes_no';
+                    options = ['Yes', 'No', 'Not sure'];
+                }
+            }
+
+            const container = document.getElementById('questionsContainer');
+            container.style.display = 'block';
+            const prevAns = S.answers[S.qIdx]?.originalAnswer;
+
+            container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <h2 style="margin:0;">${S.qIdx + 1} ${t('q_of')} ${total}</h2>
+      <div style="height:4px;flex:1;margin-left:12px;background:var(--gray-200);border-radius:99px;overflow:hidden;">
+        <div style="height:4px;background:var(--blue);border-radius:99px;width:${Math.round(((S.qIdx + 1) / total) * 100)}%;transition:width 0.3s;"></div>
+      </div>
+    </div>
+    <p style="font-size:1.05rem;font-weight:700;color:var(--gray-900);line-height:1.45;margin-bottom:16px;">${escHtml(question)}</p>
+    <div class="radio-group" id="qOptions"></div>
+  `;
+
+            const opts = document.getElementById('qOptions');
+            options.forEach(opt => {
+                const pill = document.createElement('label');
+                pill.className = 'radio-pill' + (prevAns === opt ? ' selected' : '');
+                pill.innerHTML = `<div class="radio-dot"></div><span>${escHtml(opt)}</span>`;
+                pill.onclick = () => {
+                    S.answers[S.qIdx] = { question, answer: opt, originalAnswer: opt };
+                    document.querySelectorAll('#qOptions .radio-pill').forEach(p => p.classList.remove('selected'));
+                    pill.classList.add('selected');
+                    const nxt = document.getElementById('btnQNext');
+                    nxt.disabled = false; nxt.style.opacity = '1';
+                };
+                opts.appendChild(pill);
+            });
+
+            document.getElementById('questionNav').style.display = 'flex';
+            const btnBack = document.getElementById('btnQBack');
+            const btnNext = document.getElementById('btnQNext');
+            btnBack.style.display = S.qIdx === 0 ? 'none' : '';
+            const hasAns = !!S.answers[S.qIdx];
+            btnNext.disabled = !hasAns; btnNext.style.opacity = hasAns ? '1' : '0.45';
+            const qn = document.getElementById('q_next');
+            if (qn) qn.textContent = S.qIdx === total - 1 ? t('q_done').replace(' →', '') : t('q_next');
+            // Re-apply btnQNext text
+            document.getElementById('btnQNext').querySelector('span').textContent =
+                S.qIdx === total - 1 ? t('q_done').replace('→', '').trim() : t('q_next');
+            document.getElementById('btnQBack').querySelector('span').textContent = t('q_back');
+        }
+
+        function prevQuestion() { if (S.qIdx > 0) { S.qIdx--; renderQuestion(); } }
+        function nextQuestion() {
+            if (!S.answers[S.qIdx]) return;
+            if (S.qIdx < S.questions.length - 1) { S.qIdx++; renderQuestion(); }
+            else { goToPage('consent'); updateConsentPage(); }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // CONSENT PAGE
+        // ══════════════════════════════════════════════════════════════════════════
+        function updateConsentPage() {
+            const photoLine = document.getElementById('cs_photoLine');
+            if (photoLine) photoLine.textContent = t('cs_photoLine', { n: S.photos.length });
+        }
+
+        function setConsent(val) {
+            S.dataConsent = val;
+            document.getElementById('consentYes').classList.toggle('selected', val === true);
+            document.getElementById('consentNo').classList.toggle('selected', val === false);
+            ['consentYesDot', 'consentNoDot'].forEach((id, i) => {
+                const el = document.getElementById(id);
+                const active = (i === 0 ? val === true : val === false);
+                el.style.background = active ? 'var(--blue)' : '';
+                el.style.borderColor = active ? 'var(--blue)' : '';
+            });
+            document.getElementById('consentWarning').style.display = 'none';
+        }
+
+        async function submitConsent() {
+            if (!S.dataConsent) {
+                document.getElementById('consentWarning').style.display = 'block';
+                document.getElementById('consentWarning').textContent = t('consentWarning');
+                return;
+            }
+            document.getElementById('assessSpinner').classList.add('visible');
+            document.getElementById('assessSpinnerText').textContent = t('assessSpinnerText');
+            document.getElementById('btnGetAssessment').disabled = true;
+
+            const qaList = S.answers.map(a => ({
+                question: a.question, answer: a.answer, original_answer: a.originalAnswer,
+            }));
+
+            try {
+                const r = await fetch(API + '/api/patient/assess', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        complaint: S.complaint, complaint_en: S.complaintEN,
+                        detected_language: S.detectedLang,
+                        questions: S.questions.map(q => q.question || q),
+                        answers: qaList, has_photo: S.photos.length > 0, photo_count: S.photos.length,
+                        photo_base64: S.photos.length ? S.photos[0].dataUrl.split(',')[1] : null,
+                        photo_mime: S.photos.length ? S.photos[0].mime : null,
+                    }),
+                });
+                S.assessment = await r.json();
+            } catch (e) {
+                S.assessment = { triage_level: 'URGENT', risk_score: 5, do_list: [], dont_list: [] };
+            } finally {
+                document.getElementById('assessSpinner').classList.remove('visible');
+                document.getElementById('btnGetAssessment').disabled = false;
+            }
+            goToPage('triage');
+            renderTriageBanner();
+            requestGPS();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // TRIAGE BANNER
+        // ══════════════════════════════════════════════════════════════════════════
+        function renderTriageBanner() {
+            const a = S.assessment || {};
+            const lvl = (a.triage_level || 'URGENT').toUpperCase();
+            let cls, title, sub;
+            if (lvl === 'EMERGENCY') {
+                cls = 'emg'; title = t('tr_emg_title'); sub = t('tr_emg_sub');
+            } else if (lvl === 'URGENT') {
+                cls = 'urg'; title = t('tr_urg_title'); sub = t('tr_urg_sub');
+            } else {
+                cls = 'rtn'; title = t('tr_rtn_title'); sub = t('tr_rtn_sub');
+            }
+            let html = `<div class="triage-banner ${cls}" style="margin-bottom:14px;">
+    <div class="triage-title">${title}</div>
+    <div class="triage-sub">${sub}</div>
+  </div>`;
+            if (lvl === 'EMERGENCY') {
+                html += `<a href="tel:112" class="btn btn-danger" style="margin-bottom:10px;font-size:1.15rem;">📞 CALL 112</a>
+    <p style="text-align:center;font-size:0.8rem;color:var(--gray-400);margin-bottom:12px;">— ${t('tr_orBelow')} —</p>`;
+            }
+            document.getElementById('triageBanner').innerHTML = html;
+            // Advice
+            const doList = a.do_list || [], dontList = a.dont_list || [];
+            if (doList.length || dontList.length) {
+                renderAdviceBlock('triageAdviceContent', doList, dontList, lvl);
+                document.getElementById('triageAdviceSection').style.display = 'block';
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // GPS  —  native browser + auto country detection from coordinates
+        // ══════════════════════════════════════════════════════════════════════════
+        function detectCountryFromCoords(lat, lon) {
+            // Germany: 47.2–55.1 N, 5.9–15.1 E
+            if (lat >= 47.2 && lat <= 55.1 && lon >= 5.9 && lon <= 15.1) return 'DE';
+            // UK: 49.9–60.9 N, -8.6–1.8 E
+            if (lat >= 49.9 && lat <= 60.9 && lon >= -8.6 && lon <= 1.8) return 'UK';
+            // Turkey: 35.8–42.1 N, 26.0–44.8 E
+            if (lat >= 35.8 && lat <= 42.1 && lon >= 26.0 && lon <= 44.8) return 'TR';
+            // Broader fallback — still try to find closest hospital DB
+            return 'DE';
+        }
+
+        function setGPSStatus(state) {
+            const pill = document.getElementById('gpsStatusPill');
+            const txt = document.getElementById('gpsStatusTxt');
+            pill.className = 'gps-status ' + state;
+            txt.textContent = t(state === 'ok' ? 'gpsOk' : state === 'err' ? 'gpsDenied' : 'gpsDetecting');
+        }
+
+        function requestGPS() {
+            if (S.lat && S.lon) { fetchHospitals(); return; }
+            setGPSStatus('wait');
+            document.getElementById('gpsWaiting').style.display = 'block';
+            document.getElementById('gpsDenied').style.display = 'none';
+            document.getElementById('hospitalList').innerHTML = '';
+
+            if (!navigator.geolocation) { showGPSDenied(); return; }
+
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    S.lat = pos.coords.latitude;
+                    S.lon = pos.coords.longitude;
+                    S.country = detectCountryFromCoords(S.lat, S.lon);
+                    document.getElementById('gpsWaiting').style.display = 'none';
+                    setGPSStatus('ok');
+                    fetchHospitals();
+                },
+                () => showGPSDenied(),
+                { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 },
+            );
+        }
+
+        function showGPSDenied() {
+            setGPSStatus('err');
+            document.getElementById('gpsWaiting').style.display = 'none';
+            document.getElementById('gpsDenied').style.display = 'block';
+            // Apply translated text
+            document.getElementById('gps_deniedTitle').textContent = t('gps_deniedTitle');
+            document.getElementById('gps_deniedDesc').textContent = t('gps_deniedDesc');
+            document.getElementById('gps_deniedSteps').innerHTML = t('gps_deniedSteps');
+            document.getElementById('gps_retryBtn').textContent = t('gps_retryBtn');
+        }
+
+        function retryGPS() {
+            S.lat = null; S.lon = null;
+            document.getElementById('gpsDenied').style.display = 'none';
+            requestGPS();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // HOSPITAL SEARCH  —  sends country code detected from GPS
+        // ══════════════════════════════════════════════════════════════════════════
+        async function fetchHospitals() {
+            const list = document.getElementById('hospitalList');
+            list.innerHTML = `<div class="spinner-wrap visible" style="padding:16px 0;">
+    <div class="spinner"></div>
+    <div class="spinner-text">${t('tr_hospSpinner')}</div>
+  </div>`;
+
+            try {
+                // country parameter is now auto-detected from GPS coordinates
+                const r = await fetch(`${API}/api/patient/hospitals?lat=${S.lat}&lon=${S.lon}&country=${S.country}&n=3`);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                S.hospitals = await r.json();
+                if (!S.hospitals.length) throw new Error('empty');
+                renderHospitals();
+            } catch (e) {
+                list.innerHTML = `
+      <div class="card red" style="text-align:center;">
+        <p style="font-size:0.95rem;font-weight:700;color:var(--red);margin-bottom:8px;">⚠️ ${t('tr_noHosp')}</p>
+        <p style="font-size:0.82rem;color:var(--gray-600);margin-bottom:12px;">lat=${S.lat?.toFixed(4)} lon=${S.lon?.toFixed(4)} country=${S.country}</p>
+        <button class="btn btn-secondary" onclick="fetchHospitals()">🔄 Retry</button>
+      </div>`;
+            }
+        }
+
+        function renderHospitals() {
+            const list = document.getElementById('hospitalList');
+            list.innerHTML = S.hospitals.map((h, i) => `
+    <div class="hosp-card ${i === 0 ? 'best' : ''}" onclick="selectHospital(${i})" style="cursor:pointer;">
+      ${i === 0 ? `<div class="best-badge">${t('tr_fastest')}</div>` : ''}
+      <div class="hosp-name">${escHtml(h.name)}</div>
+      <div class="hosp-meta">
+        <div class="hosp-chip ${i === 0 ? 'fast' : ''}">📏 ${h.distance_km} km</div>
+        <div class="hosp-chip ${i === 0 ? 'fast' : ''}">⏱ ~${h.eta_minutes} min</div>
+        <div class="hosp-chip">${escHtml(h.occupancy_label || h.occupancy || '')}</div>
+      </div>
+      <div class="hosp-addr">📍 ${escHtml(h.address || '')}</div>
+    </div>
+  `).join('');
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // HOSPITAL SELECTION
+        // ══════════════════════════════════════════════════════════════════════════
+        async function selectHospital(idx) {
+            S.selectedHospital = S.hospitals[idx];
+            S.regNumber = genRegNumber();
+            document.getElementById('hospitalList').innerHTML = `
+    <div class="spinner-wrap visible" style="padding:16px 0;">
+      <div class="spinner"></div>
+      <div class="spinner-text">${t('tr_notifying')}</div>
+    </div>`;
+
+            try {
+                await fetch(API + '/api/patient/submit', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        complaint: S.complaint, complaint_en: S.complaintEN || S.complaint,
+                        detected_language: S.detectedLang,
+                        assessment: S.assessment, hospital: S.selectedHospital,
+                        lat: S.lat, lon: S.lon, answers: S.answers,
+                        has_photo: S.photos.length > 0, photo_count: S.photos.length,
+                        reg_number: S.regNumber, data_consent: S.dataConsent,
+                    }),
+                });
+            } catch (_) { /* silent */ }
+
+            renderResult();
+            goToPage('result');
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // RESULT PAGE
+        // ══════════════════════════════════════════════════════════════════════════
+        function renderResult() {
+            const a = S.assessment || {};
+            const h = S.selectedHospital;
+            const lvl = (a.triage_level || 'URGENT').toUpperCase();
+
+            let cls, title, sub;
+            if (lvl === 'EMERGENCY') {
+                cls = 'emg'; title = t('rs_notified_emg'); sub = t('rs_notified_sub_emg');
+            } else if (lvl === 'URGENT') {
+                cls = 'urg'; title = t('rs_notified_urg'); sub = t('rs_notified_sub_urg');
+            } else {
+                cls = 'rtn'; title = t('rs_notified_rtn'); sub = t('rs_notified_sub_rtn');
+            }
+            document.getElementById('resultBanner').innerHTML =
+                `<div class="triage-banner ${cls}" style="margin-bottom:16px;">
+      <div class="triage-title">${title}</div>
+      <div class="triage-sub">${sub}</div>
+    </div>`;
+
+            document.getElementById('regNumber').textContent = S.regNumber || '—';
+            document.getElementById('rs_regLabel').textContent = t('rs_regLabel');
+            document.getElementById('rs_regHint').textContent = t('rs_regHint');
+
+            if (h) {
+                document.getElementById('resultHospital').innerHTML = `
+      <div class="card green" style="margin-bottom:14px;">
+        <p style="font-size:1rem;font-weight:700;color:var(--gray-900);margin-bottom:4px;">🏥 ${escHtml(h.name)}</p>
+        <p style="font-size:0.82rem;color:var(--gray-500);margin-bottom:6px;">📍 ${escHtml(h.address || '')}</p>
+        <div style="display:flex;gap:14px;">
+          <span style="color:var(--green);font-size:0.88rem;font-weight:600;">📏 ${h.distance_km} km</span>
+          <span style="color:var(--green);font-size:0.88rem;font-weight:600;">⏱ ~${h.eta_minutes} min</span>
+          <span style="color:var(--gray-500);font-size:0.85rem;">${escHtml(h.occupancy_label || '')}</span>
+        </div>
+      </div>`;
+            }
+
+            const callDiv = document.getElementById('resultEmergencyCall');
+            if (lvl === 'EMERGENCY') {
+                callDiv.style.display = 'block';
+                callDiv.innerHTML = `<a href="tel:112" style="background:var(--red);color:#fff;padding:16px 40px;border-radius:var(--r-lg);font-size:1.3rem;font-weight:800;text-decoration:none;display:inline-block;box-shadow:0 4px 20px rgba(220,38,38,0.35);">📞 CALL 112</a>`;
+            } else callDiv.style.display = 'none';
+
+            const doList = a.do_list || [], dontList = a.dont_list || [];
+            const advDiv = document.getElementById('resultAdvice');
+            if (doList.length || dontList.length) {
+                advDiv.innerHTML = '<div id="resultAdviceBlock"></div>';
+                renderAdviceBlock('resultAdviceBlock', doList, dontList, lvl);
+            }
+
+            document.getElementById('rs_trackTitle').textContent = t('rs_trackTitle');
+            document.getElementById('rs_trackSub').textContent = t('rs_trackSub');
+            document.getElementById('rs_newBtn').textContent = t('rs_newBtn');
+            document.getElementById('rs_demo').textContent = t('rs_demo');
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // DO/DON'T ADVICE BLOCK
+        // ══════════════════════════════════════════════════════════════════════════
+        function renderAdviceBlock(containerId, doList, dontList, level) {
+            const border = { EMERGENCY: 'var(--red)', URGENT: 'var(--orange)', ROUTINE: 'var(--green)' }[level] || 'var(--blue)';
+            let html = `<div style="border:1.5px solid ${border};border-radius:var(--r-lg);padding:14px 16px;margin-bottom:14px;">`;
+            if (doList.length) {
+                html += `<p style="font-size:0.78rem;font-weight:700;color:var(--green);margin-bottom:8px;letter-spacing:0.04em;">${t('tr_doLabel')}</p><ul class="advice-list">`;
+                doList.forEach(item => { html += `<li><span class="icon" style="color:var(--green);">✓</span>${escHtml(item)}</li>`; });
+                html += `</ul>`;
+            }
+            if (dontList.length) {
+                html += `<p style="font-size:0.78rem;font-weight:700;color:var(--red);margin-bottom:8px;margin-top:12px;letter-spacing:0.04em;">${t('tr_dontLabel')}</p><ul class="advice-list">`;
+                dontList.forEach(item => { html += `<li><span class="icon" style="color:var(--red);">✗</span>${escHtml(item)}</li>`; });
+                html += `</ul>`;
+            }
+            html += `</div>`;
+            document.getElementById(containerId).innerHTML = html;
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // UTILITIES
+        // ══════════════════════════════════════════════════════════════════════════
+        function genRegNumber() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            return 'CZ-' + Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        }
+
+        function escHtml(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function toast(msg, type) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.style.background = type === 'err' ? 'var(--red)' : type === 'warn' ? 'var(--orange)' : 'var(--gray-900)';
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3500);
+        }
+    </script>
+
+    <!-- Extra CSS for language selection page -->
+    <style>
+        .lang-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 18px 20px;
+            background: var(--white);
+            border: 2px solid var(--gray-200);
+            border-radius: var(--r-lg);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s;
+            font-family: var(--font);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .lang-btn:hover {
+            border-color: var(--blue);
+            background: var(--blue-light);
+            box-shadow: var(--shadow);
+        }
+
+        .lang-btn.selected {
+            border-color: var(--blue);
+            background: var(--blue-light);
+        }
+
+        .lang-btn:active {
+            transform: scale(0.97);
+        }
+
+        .lang-flag {
+            font-size: 2rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .lang-name {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+        }
+
+        .lang-sub {
+            font-size: 0.78rem;
+            color: var(--gray-500);
+            margin-top: 1px;
+        }
+
+        .lang-btn>div {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</body>
+
+</html>

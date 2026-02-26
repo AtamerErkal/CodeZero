@@ -78,65 +78,153 @@ st.set_page_config(page_title="CodeZero", page_icon="🚑", layout="centered")
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-* { font-family: 'Inter', sans-serif; }
 
-.block-container { max-width: 500px; padding: 1rem 1rem 4rem 1rem !important; }
+/* ── Global reset to clean white ───────────────────────────── */
+* { font-family: 'Inter', sans-serif !important; }
 
-/* Big tap-friendly buttons */
+/* Force white background everywhere */
+.stApp, [data-testid="stAppViewContainer"],
+[data-testid="stMain"], [data-testid="block-container"],
+.main, .block-container {
+    background-color: #ffffff !important;
+}
+
+.block-container {
+    max-width: 500px !important;
+    padding: 1.5rem 1.2rem 5rem 1.2rem !important;
+}
+
+/* Sidebar — clean white */
+[data-testid="stSidebar"] {
+    background: #f8fafc !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+[data-testid="stSidebar"] * { color: #374151 !important; }
+[data-testid="stSidebar"] p, [data-testid="stSidebar"] span { color: #6b7280 !important; }
+[data-testid="stSidebar"] strong { color: #111827 !important; }
+
+/* ── Buttons — tap-friendly ─────────────────────────────────── */
 .stButton > button {
-    min-height: 60px !important; font-size: 1.15rem !important;
-    font-weight: 700 !important; border-radius: 14px !important;
-    letter-spacing: 0.01em; transition: transform 0.1s;
+    min-height: 58px !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    border-radius: 14px !important;
+    letter-spacing: 0.01em;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
 }
-.stButton > button:active { transform: scale(0.97); }
+.stButton > button[kind="primary"] {
+    background: #1d4ed8 !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background: #1e40af !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(29,78,216,0.3) !important;
+}
+.stButton > button:active { transform: scale(0.97) !important; }
 
-/* Radio — pill style */
-div[data-testid="stRadio"] > div { gap: 8px !important; flex-direction: column !important; }
+/* ── Radio — pill style ─────────────────────────────────────── */
+div[data-testid="stRadio"] > div {
+    gap: 8px !important;
+    flex-direction: column !important;
+}
 div[data-testid="stRadio"] > div > label {
-    font-size: 1.15rem !important; padding: 16px 20px !important;
-    border: 2px solid #334155 !important; border-radius: 12px !important;
-    min-height: 56px !important; cursor: pointer !important;
-    width: 100% !important; display: flex !important; align-items: center !important;
-    color: #f1f5f9 !important;
+    font-size: 1rem !important;
+    padding: 14px 18px !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    min-height: 52px !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    color: #1f2937 !important;
+    background: #ffffff !important;
+    transition: all 0.12s;
 }
-div[data-testid="stRadio"] > div > label:hover { border-color: #3b82f6 !important; background: rgba(59,130,246,0.1) !important; }
-div[data-testid="stRadio"] > div > label:has(input:checked) { border-color: #3b82f6 !important; background: rgba(59,130,246,0.15) !important; }
+div[data-testid="stRadio"] > div > label:hover {
+    border-color: #3b82f6 !important;
+    background: #eff6ff !important;
+}
+div[data-testid="stRadio"] > div > label:has(input:checked) {
+    border-color: #2563eb !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+}
 
-/* Text area */
-textarea { font-size: 1.1rem !important; border-radius: 12px !important; }
+/* ── Text inputs ────────────────────────────────────────────── */
+textarea, input[type="text"] {
+    font-size: 1rem !important;
+    border-radius: 12px !important;
+    border: 2px solid #e2e8f0 !important;
+    color: #1f2937 !important;
+    background: #ffffff !important;
+}
+textarea:focus, input[type="text"]:focus {
+    border-color: #3b82f6 !important;
+}
 
-/* Progress bar */
-div[data-testid="stProgress"] > div > div { background: #3b82f6 !important; }
+/* ── Progress bar ───────────────────────────────────────────── */
+div[data-testid="stProgress"] > div > div {
+    background: #2563eb !important;
+    border-radius: 99px !important;
+}
 
-/* Audio input */
+/* ── Audio input ────────────────────────────────────────────── */
 div[data-testid="stAudioInput"] { margin: 0.5rem 0; }
 
-/* Input fields */
-input[type="text"], input[type="number"] { font-size: 1rem !important; }
+/* ── Divider ────────────────────────────────────────────────── */
+hr { border-color: #f1f5f9 !important; margin: 0.8rem 0 !important; }
 
-/* Hospital card */
-.hosp-card {
-    border: 2px solid #1e293b; border-radius: 14px;
-    padding: 1rem 1.1rem; margin-bottom: 0.6rem;
-    background: #0f172a; transition: border-color 0.15s;
+/* ── Expander ───────────────────────────────────────────────── */
+[data-testid="stExpander"] {
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
 }
-.hosp-card.fastest { border-color: #22c55e; background: #052e16; }
-.hosp-card.second  { border-color: #1e293b; }
+[data-testid="stExpander"] summary { color: #374151 !important; font-weight: 600 !important; }
 
-/* DO/DON'T list */
-.do-item   { color: #4ade80; font-size: 1rem; padding: 4px 0; }
-.dont-item { color: #f87171; font-size: 1rem; padding: 4px 0; }
+/* ── Spinner ────────────────────────────────────────────────── */
+[data-testid="stSpinner"] { color: #2563eb !important; }
 
-/* Registration number box */
+/* ── Info / error / warning ─────────────────────────────────── */
+[data-testid="stAlert"] { border-radius: 12px !important; }
+
+/* ── Hospital cards ─────────────────────────────────────────── */
+.hosp-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 0.65rem;
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.hosp-card.fastest {
+    border-color: #16a34a;
+    background: #f0fdf4;
+    box-shadow: 0 2px 8px rgba(22,163,74,0.12);
+}
+
+/* ── DO / DON'T ─────────────────────────────────────────────── */
+.do-item   { color: #15803d; font-size: 0.95rem; padding: 4px 0; }
+.dont-item { color: #dc2626; font-size: 0.95rem; padding: 4px 0; }
+
+/* ── Registration number box ────────────────────────────────── */
 .reg-box {
-    background: #0f172a; border: 2px solid #3b82f6;
-    border-radius: 12px; padding: 0.8rem 1rem; text-align: center;
-    font-size: 1.8rem; font-weight: 800; letter-spacing: 0.15em; color: #60a5fa;
+    background: #eff6ff;
+    border: 2px solid #3b82f6;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    color: #1d4ed8;
     margin: 0.8rem 0;
 }
-
-/* Photo grid */
-.photo-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.5rem 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -294,6 +382,26 @@ _UI: dict[str, dict[str, str]] = {
     "Hospital":                        {"de":"Krankenhaus","tr":"Hastane","fr":"Hôpital","ar":"المستشفى","en":"Hospital"},
     "Done":                            {"de":"Fertig","tr":"Tamamlandı","fr":"Terminé","ar":"تم","en":"Done"},
     "Demo only. Call 112 for real emergencies.":{"de":"Nur Demo. Im Notfall 112 anrufen.","tr":"Yalnızca demo. Gerçek acillerde 112'yi arayın.","fr":"Démo uniquement. Appelez le 15 en urgence.","ar":"للعرض فقط. اتصل بـ 112 في حالات الطوارئ.","en":"Demo only. Call 112 for real emergencies."},
+
+    # ── New strings for redesigned page_input & sidebar ──────────────────────
+    "How to use":                       {"de":"So verwenden Sie die App","tr":"Nasıl kullanılır","fr":"Comment utiliser","ar":"كيفية الاستخدام","en":"How to use"},
+    "Progress":                         {"de":"Fortschritt","tr":"İlerleme","fr":"Progression","ar":"التقدم","en":"Progress"},
+    "What is CodeZero?":                {"de":"Was ist CodeZero?","tr":"CodeZero nedir?","fr":"Qu'est-ce que CodeZero?","ar":"ما هو CodeZero؟","en":"What is CodeZero?"},
+    "When you face a medical emergency, CodeZero uses AI to":{"de":"Bei einem medizinischen Notfall nutzt CodeZero KI, um","tr":"Bir acil durumla karşılaştığınızda CodeZero yapay zeka kullanarak","fr":"Face à une urgence médicale, CodeZero utilise l'IA pour","ar":"عند مواجهة حالة طوارئ طبية، يستخدم CodeZero الذكاء الاصطناعي","en":"When you face a medical emergency, CodeZero uses AI to"},
+    "Inform both you and the hospital about your condition before you arrive":{"de":"Sowohl Sie als auch das Krankenhaus über Ihren Zustand informieren","tr":"Hem sizi hem de gideceğiniz hastaneyi durumunuz hakkında bilgilendirmek","fr":"Informer vous et l'hôpital de votre état avant votre arrivée","ar":"إبلاغك وإبلاغ المستشفى عن حالتك قبل وصولك","en":"Inform both you and the hospital about your condition before you arrive"},
+    "Minimise your waiting time at the emergency room":{"de":"Ihre Wartezeit in der Notaufnahme minimieren","tr":"Acil servisteki bekleme sürenizi en aza indirmek","fr":"Minimiser votre temps d'attente aux urgences","ar":"تقليل وقت انتظارك في قسم الطوارئ","en":"Minimise your waiting time at the emergency room"},
+    "Direct you to the most appropriate hospital near you":{"de":"Sie zum am besten geeigneten Krankenhaus in Ihrer Nähe leiten","tr":"Sizi en uygun yakın hastaneye yönlendirmek","fr":"Vous orienter vers l'hôpital le plus approprié près de vous","ar":"توجيهك إلى المستشفى الأنسب القريب منك","en":"Direct you to the most appropriate hospital near you"},
+    "Tap the microphone and describe your emergency in 2–3 sentences in your own language. If voice is not recognised, you can type instead.":{"de":"Tippen Sie auf das Mikrofon und beschreiben Sie Ihren Notfall in 2–3 Sätzen in Ihrer Sprache. Falls Ihre Stimme nicht erkannt wird, können Sie auch tippen.","tr":"Mikrofona dokunun ve acil durumunuzu kendi dilinizde 2–3 cümleyle anlatın. Sesiniz anlaşılmazsa yazabilirsiniz.","fr":"Appuyez sur le microphone et décrivez votre urgence en 2–3 phrases dans votre langue. Si votre voix n'est pas reconnue, vous pouvez taper.","ar":"اضغط على الميكروفون وصف حالتك الطارئة بـ 2-3 جمل بلغتك. إذا لم يتعرف على صوتك، يمكنك الكتابة بدلاً من ذلك.","en":"Tap the microphone and describe your emergency in 2–3 sentences in your own language. If voice is not recognised, you can type instead."},
+    "Answer the AI follow-up questions and take a photo if relevant (optional).":{"de":"Beantworten Sie die KI-Folgefragen und machen Sie ggf. ein Foto (optional).","tr":"Yapay zekanın tamamlayıcı sorularını cevaplayın ve gerekirse fotoğraf çekin (isteğe bağlı).","fr":"Répondez aux questions de suivi de l'IA et prenez une photo si pertinent (facultatif).","ar":"أجب على أسئلة المتابعة للذكاء الاصطناعي والتقط صورة إذا كان ذلك مناسباً (اختياري).","en":"Answer the AI follow-up questions and take a photo if relevant (optional)."},
+    "Receive AI recommendations and head to the nearest hospital — they will be notified and ready for you.":{"de":"KI-Empfehlungen erhalten und zum nächsten Krankenhaus fahren — sie werden benachrichtigt und sind für Sie bereit.","tr":"Yapay zeka tavsiyelerini alın ve en yakın hastaneye yola çıkın — hastane bilgilendirilecek ve sizi beklemeye hazır olacak.","fr":"Recevez les recommandations de l'IA et rendez-vous à l'hôpital le plus proche — ils seront prévenus et prêts pour vous.","ar":"احصل على توصيات الذكاء الاصطناعي وتوجه إلى أقرب مستشفى — سيتم إخطارهم وسيكونون جاهزين لك.","en":"Receive AI recommendations and head to the nearest hospital — they will be notified and ready for you."},
+    "Location confirmed — GPS active":  {"de":"Standort bestätigt — GPS aktiv","tr":"Konum onaylandı — GPS aktif","fr":"Position confirmée — GPS actif","ar":"تم تأكيد الموقع — GPS نشط","en":"Location confirmed — GPS active"},
+    "Describe your emergency":          {"de":"Notfall beschreiben","tr":"Acil durumunuzu tanımlayın","fr":"Décrivez votre urgence","ar":"صف حالتك الطارئة","en":"Describe your emergency"},
+    "Tap the microphone and speak in your own language":{"de":"Mikrofon tippen und in Ihrer Sprache sprechen","tr":"Mikrofona dokunun ve kendi dilinizde konuşun","fr":"Appuyez sur le micro et parlez dans votre langue","ar":"اضغط على الميكروفون وتحدث بلغتك","en":"Tap the microphone and speak in your own language"},
+    "e.g. Sudden chest pain, difficulty breathing, pain since 20 minutes...":{"de":"z.B. Plötzliche Brustschmerzen, Atembeschwerden, seit 20 Minuten...","tr":"Örn. Ani göğüs ağrısı, nefes darlığı, 20 dakikadır süren ağrı...","fr":"Ex. Douleur thoracique soudaine, difficulté à respirer, depuis 20 minutes...","ar":"مثل: ألم مفاجئ في الصدر، صعوبة في التنفس، ألم منذ 20 دقيقة...","en":"e.g. Sudden chest pain, difficulty breathing, pain since 20 minutes..."},
+    "Any language is understood":       {"de":"Jede Sprache wird verstanden","tr":"Her dil anlaşılır","fr":"Toutes les langues sont comprises","ar":"جميع اللغات مفهومة","en":"Any language is understood"},
+    "Please describe your emergency first.":{"de":"Bitte zuerst Ihren Notfall beschreiben.","tr":"Lütfen önce acil durumunuzu tanımlayın.","fr":"Veuillez d'abord décrire votre urgence.","ar":"يرجى وصف حالتك الطارئة أولاً.","en":"Please describe your emergency first."},
+    "Tap the microphone":               {"de":"Mikrofon antippen","tr":"Mikrofona dokunun","fr":"Appuyez sur le micro","ar":"اضغط على الميكروفون","en":"Tap the microphone"},
+    "Step":                             {"de":"Schritt","tr":"Adım","fr":"Étape","ar":"خطوة","en":"Step"},
 }
 
 _LANG_CODE_MAP = {
@@ -572,55 +680,98 @@ def _ensure_profile() -> None:
 def page_input() -> None:
     _inject_rtl()
 
-    # GPS detection
-    if not st.session_state.gps_fetched:
-        try:
-            p = st.query_params
-            if "cz_lat" in p and "cz_lon" in p:
-                lat = float(p["cz_lat"]); lon = float(p["cz_lon"])
-                st.session_state.patient_lat = lat
-                st.session_state.patient_lon = lon
-                st.session_state.gps_fetched = True
-                st.session_state.country = _detect_country_from_gps(lat, lon)
-        except Exception:
-            pass
-
-    if not st.session_state.gps_fetched:
-        st.components.v1.html("""
-<script>
-(function(){
-  if(!navigator.geolocation)return;
-  navigator.geolocation.getCurrentPosition(function(p){
-    try{
-      var u=new URL(window.parent.location.href);
-      u.searchParams.set("cz_lat",p.coords.latitude.toFixed(6));
-      u.searchParams.set("cz_lon",p.coords.longitude.toFixed(6));
-      window.parent.location.replace(u.toString());
-    }catch(e){}
-  },function(){},{timeout:8000,enableHighAccuracy:false});
-})();
-</script>""", height=0)
-
-    # ── Header ──
-    st.markdown(f"""
-<div style="text-align:center; padding:2rem 0 1rem 0;">
-  <div style="font-size:4rem; line-height:1.1;">🚑</div>
-  <h1 style="font-size:2.2rem; font-weight:900; margin:0.2rem 0 0.3rem 0; color:#f8fafc;">CodeZero</h1>
-  <p style="font-size:1.05rem; color:#64748b; margin:0;">{t("Medical emergency assistant")}</p>
+    # ── Brand header ─────────────────────────────────────────────────
+    st.markdown("""
+<div style="text-align:center;padding:1.5rem 0 0.8rem 0;">
+  <div style="font-size:3.5rem;line-height:1;">🚑</div>
+  <h1 style="font-size:2rem;font-weight:900;margin:0.25rem 0 0.1rem 0;
+     color:#111827;letter-spacing:-0.03em;">CodeZero</h1>
+  <p style="font-size:0.72rem;color:#2563eb;font-weight:700;text-transform:uppercase;
+     letter-spacing:0.14em;margin:0;">AI-Powered Emergency Assistant</p>
 </div>
 """, unsafe_allow_html=True)
 
-    # GPS status
-    if st.session_state.patient_lat:
-        st.markdown(f'<p style="text-align:center;font-size:0.88rem;color:#22c55e;margin:0 0 0.8rem 0;">📍 {t("Location detected")}</p>', unsafe_allow_html=True)
-    else:
-        st.markdown(f'<p style="text-align:center;font-size:0.88rem;color:#475569;margin:0 0 0.8rem 0;">📍 {t("Allow location access when prompted")}</p>', unsafe_allow_html=True)
-
-    # ── Primary: voice ──
+    # ── What is CodeZero card ─────────────────────────────────────────
     st.markdown(f"""
-<div style="text-align:center; margin:0.5rem 0 0.2rem 0;">
-  <p style="font-size:1.25rem; font-weight:700; color:#f1f5f9; margin:0 0 0.2rem 0;">🎤 {t('Record your symptoms')}</p>
-  <p style="font-size:0.95rem; color:#64748b; margin:0;">{t('Speak in your language — tap the microphone')}</p>
+<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:16px;
+     padding:1.1rem 1.25rem;margin:0.5rem 0 0.8rem 0;">
+  <p style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;
+     color:#2563eb;margin:0 0 0.5rem 0;">What is CodeZero?</p>
+  <p style="font-size:0.88rem;color:#1e3a5f;line-height:1.6;margin:0 0 0.55rem 0;">
+    {t("When you face a medical emergency, CodeZero uses AI to")}:
+  </p>
+  <div style="display:flex;flex-direction:column;gap:0.3rem;">
+    <div style="display:flex;align-items:flex-start;gap:0.45rem;">
+      <span style="color:#16a34a;font-weight:800;flex-shrink:0;">✓</span>
+      <span style="font-size:0.84rem;color:#1e40af;line-height:1.45;">
+        {t("Inform both you and the hospital about your condition before you arrive")}
+      </span>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:0.45rem;">
+      <span style="color:#16a34a;font-weight:800;flex-shrink:0;">✓</span>
+      <span style="font-size:0.84rem;color:#1e40af;line-height:1.45;">
+        {t("Minimise your waiting time at the emergency room")}
+      </span>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:0.45rem;">
+      <span style="color:#16a34a;font-weight:800;flex-shrink:0;">✓</span>
+      <span style="font-size:0.84rem;color:#1e40af;line-height:1.45;">
+        {t("Direct you to the most appropriate hospital near you")}
+      </span>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+    # ── How to use steps ──────────────────────────────────────────────
+    st.markdown(f"""
+<div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:14px;
+     padding:0.85rem 1.1rem;margin:0 0 1rem 0;">
+  <p style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;
+     color:#9ca3af;margin:0 0 0.6rem 0;">{t("How to use")}</p>
+  <div style="display:flex;flex-direction:column;gap:0.5rem;">
+    <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+      <div style="background:#2563eb;color:#fff;border-radius:50%;min-width:20px;height:20px;
+           display:flex;align-items:center;justify-content:center;font-size:0.62rem;
+           font-weight:800;flex-shrink:0;margin-top:1px;">1</div>
+      <span style="font-size:0.83rem;color:#374151;line-height:1.45;">
+        <strong style="color:#111827;">🎤 {t("Tap the microphone")}</strong>
+        &nbsp;—&nbsp;{t("Tap the microphone and describe your emergency in 2–3 sentences in your own language. If voice is not recognised, you can type instead.")}
+      </span>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+      <div style="background:#2563eb;color:#fff;border-radius:50%;min-width:20px;height:20px;
+           display:flex;align-items:center;justify-content:center;font-size:0.62rem;
+           font-weight:800;flex-shrink:0;margin-top:1px;">2</div>
+      <span style="font-size:0.83rem;color:#374151;line-height:1.45;">
+        <strong style="color:#111827;">❓ {t("Questions & photo")}</strong>
+        &nbsp;—&nbsp;{t("Answer the AI follow-up questions and take a photo if relevant (optional).")}
+      </span>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+      <div style="background:#2563eb;color:#fff;border-radius:50%;min-width:20px;height:20px;
+           display:flex;align-items:center;justify-content:center;font-size:0.62rem;
+           font-weight:800;flex-shrink:0;margin-top:1px;">3</div>
+      <span style="font-size:0.83rem;color:#374151;line-height:1.45;">
+        <strong style="color:#111827;">🏥 {t("Head to hospital")}</strong>
+        &nbsp;—&nbsp;{t("Receive AI recommendations and head to the nearest hospital — they will be notified and ready for you.")}
+      </span>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.divider()
+
+    # ── Voice input (primary) ─────────────────────────────────────────
+    st.markdown(f"""
+<div style="text-align:center;margin:0.2rem 0 0.3rem 0;">
+  <p style="font-size:1.15rem;font-weight:800;color:#111827;margin:0 0 0.15rem 0;">
+    🎤 {t("Describe your emergency")}
+  </p>
+  <p style="font-size:0.85rem;color:#6b7280;margin:0;">
+    {t("Tap the microphone and speak in your own language")}
+  </p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -631,32 +782,39 @@ def page_input() -> None:
                 transcribed = _try_transcribe(audio)
             if transcribed:
                 st.markdown(f"""
-<div style="background:#052e16; border:2px solid #22c55e; border-radius:12px; padding:1rem 1.1rem; margin:0.6rem 0;">
-  <p style="color:#86efac; font-size:0.8rem; margin:0 0 0.3rem 0; text-transform:uppercase; letter-spacing:0.05em;">{t('Understood')}</p>
-  <p style="color:#f0fdf4; font-size:1.05rem; margin:0; font-style:italic;">"{transcribed}"</p>
+<div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:12px;
+     padding:0.85rem 1.1rem;margin:0.5rem 0;">
+  <p style="color:#15803d;font-size:0.7rem;margin:0 0 0.2rem 0;text-transform:uppercase;
+     letter-spacing:0.07em;font-weight:700;">{t("Understood")}</p>
+  <p style="color:#14532d;font-size:1rem;margin:0;font-style:italic;">"{transcribed}"</p>
 </div>
 """, unsafe_allow_html=True)
-                if st.button(t("Continue →"), type="primary", use_container_width=True, key="btn_voice"):
+                if st.button(t("Continue →"), type="primary",
+                             use_container_width=True, key="btn_voice"):
                     _do_process(transcribed)
             else:
-                st.markdown(f'<p style="color:#f87171;text-align:center;font-size:0.95rem;margin:0.4rem 0;">{t("Could not process audio — please type below")}</p>', unsafe_allow_html=True)
+                st.markdown(f"""
+<p style="color:#dc2626;text-align:center;font-size:0.9rem;margin:0.4rem 0;">
+  {t("Could not process audio — please type below")}
+</p>""", unsafe_allow_html=True)
     else:
-        st.info("Upgrade Streamlit for voice input: `pip install -U streamlit`")
+        st.info("⬆️ Upgrade Streamlit for voice input: `pip install -U streamlit`")
 
-    # ── "Or type" — minimal, secondary ──
+    # ── Type instead (secondary, collapsed) ──────────────────────────
     with st.expander(f"✏️ {t('Type instead')}", expanded=False):
         complaint = st.text_area(
-            t("Describe your symptoms"),
-            placeholder=t("e.g. Sudden chest pain, difficulty breathing..."),
+            t("Describe your emergency"),
+            placeholder=t("e.g. Sudden chest pain, difficulty breathing, pain since 20 minutes..."),
             height=90,
             label_visibility="collapsed",
         )
         st.caption(f"🌍 {t('Any language is understood')}")
-        if st.button(t("Continue →"), type="primary", use_container_width=True, key="btn_text"):
+        if st.button(t("Continue →"), type="primary",
+                     use_container_width=True, key="btn_text"):
             if complaint and complaint.strip():
                 _do_process(complaint.strip())
             else:
-                st.warning(t("Please describe your symptoms first."))
+                st.warning(t("Please describe your emergency first."))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -972,8 +1130,98 @@ def page_triage() -> None:
     # ── Hospital search ────────────────────────────────────────────────────
     st.markdown(f'<p style="font-size:1.1rem;font-weight:700;color:#f1f5f9;margin:0.5rem 0 0.3rem 0;">🏥 {t("Nearest Emergency Hospitals")}</p>', unsafe_allow_html=True)
 
+    # ── GPS — request location here (before hospital search) ─────────────────
     lat = st.session_state.patient_lat
     lon = st.session_state.patient_lon
+
+    # Try to read GPS from URL params (set by JS iframe below)
+    if not lat:
+        try:
+            p = st.query_params
+            if "cz_lat" in p and "cz_lon" in p:
+                lat = float(p["cz_lat"])
+                lon = float(p["cz_lon"])
+                st.session_state.patient_lat = lat
+                st.session_state.patient_lon = lon
+                st.session_state.gps_fetched = True
+                st.session_state.country = _detect_country_from_gps(lat, lon)
+        except Exception:
+            pass
+
+    gps_denied = st.query_params.get("cz_gps_denied", "0") == "1"
+
+    if not lat and not gps_denied:
+        # Request GPS via JS — height=1 so iframe loads and executes
+        st.components.v1.html("""
+<script>
+(function(){
+  if(!navigator.geolocation){
+    try {
+      var u = new URL(window.parent.location.href);
+      u.searchParams.set("cz_gps_denied","1");
+      window.parent.location.replace(u.toString());
+    } catch(e){}
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      try {
+        var u = new URL(window.parent.location.href);
+        u.searchParams.set("cz_lat", pos.coords.latitude.toFixed(6));
+        u.searchParams.set("cz_lon", pos.coords.longitude.toFixed(6));
+        window.parent.location.replace(u.toString());
+      } catch(e){}
+    },
+    function(err){
+      try {
+        var u = new URL(window.parent.location.href);
+        u.searchParams.set("cz_gps_denied","1");
+        window.parent.location.replace(u.toString());
+      } catch(e){}
+    },
+    { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
+  );
+})();
+</script>""", height=1)
+        st.markdown("""
+<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:14px;
+     padding:1rem 1.2rem;margin:0.5rem 0 1rem 0;text-align:center;">
+  <p style="font-size:1.1rem;font-weight:800;color:#1e40af;margin:0 0 0.3rem 0;">📍 Detecting your location…</p>
+  <p style="font-size:0.85rem;color:#3b82f6;margin:0;">
+    Please tap <strong>Allow</strong> if your browser asks for location access.
+  </p>
+</div>
+""", unsafe_allow_html=True)
+        import time as _time
+        _time.sleep(2)
+        st.rerun()
+        return
+
+    if gps_denied and not lat:
+        st.markdown("""
+<div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:14px;
+     padding:1rem 1.2rem;margin:0.5rem 0 0.8rem 0;">
+  <p style="font-size:1rem;font-weight:800;color:#dc2626;margin:0 0 0.4rem 0;">
+    🔒 Location access required
+  </p>
+  <p style="font-size:0.84rem;color:#7f1d1d;margin:0 0 0.3rem 0;">
+    We need your location to find the nearest hospital.
+  </p>
+  <p style="font-size:0.82rem;color:#991b1b;margin:0;">
+    Tap the 🔒 lock icon in your browser address bar → <strong>Site settings</strong>
+    → <strong>Location</strong> → <strong>Allow</strong>, then reload.
+  </p>
+</div>
+""", unsafe_allow_html=True)
+        if st.button("🔄 I've enabled location — Retry", type="primary",
+                     use_container_width=True, key="gps_retry_triage"):
+            params = dict(st.query_params)
+            params.pop("cz_gps_denied", None)
+            st.query_params.update(params)
+            st.session_state.nearby_hospitals = []
+            st.rerun()
+        return
+
     country = st.session_state.get("country", "DE")
 
     # Auto-search on first render
@@ -984,20 +1232,9 @@ def page_triage() -> None:
                 st.session_state.nearby_hospitals = hospitals
             st.rerun()
         elif not lat:
-            # Manual coordinate entry
-            st.caption("📍 GPS not available — enter approximate location")
-            c1, c2 = st.columns(2)
-            with c1:
-                lat = st.number_input("Latitude", value=48.78, format="%.4f", key="manual_lat")
-            with c2:
-                lon = st.number_input("Longitude", value=9.18, format="%.4f", key="manual_lon")
-            if st.button("Find Hospitals", type="primary", use_container_width=True, key="find_manual"):
-                if maps_handler:
-                    hospitals = _find_hospitals(maps_handler, lat, lon, country)
-                    st.session_state.nearby_hospitals = hospitals
-                    st.session_state.patient_lat = lat
-                    st.session_state.patient_lon = lon
-                    st.rerun()
+            # Should never reach here — GPS is now mandatory from page_input
+            st.error("Location unavailable. Please restart and allow location access.")
+            st.stop()
 
     hospitals = st.session_state.nearby_hospitals
 
@@ -1153,67 +1390,62 @@ def page_result() -> None:
 # ══════════════════════════════════════════════════════════════════════════════
 def render_sidebar() -> None:
     with st.sidebar:
-        st.markdown("### 🚑 CodeZero")
-        st.caption("AI pre-hospital triage")
+        # ── Brand ────────────────────────────────────────────────────
+        st.markdown("""
+<div style="text-align:center;padding:0.75rem 0 0.5rem 0;">
+  <span style="font-size:2rem;">🚑</span>
+  <p style="font-size:1.2rem;font-weight:900;color:#111827 !important;margin:0.1rem 0 0 0;
+     letter-spacing:-0.02em;">CodeZero</p>
+  <p style="font-size:0.68rem;color:#9ca3af !important;margin:0;text-transform:uppercase;
+     letter-spacing:0.1em;">AI Emergency Assistant</p>
+</div>
+""", unsafe_allow_html=True)
         st.divider()
 
-        # ── Active patient card ──────────────────────────────────────────
-        profile = st.session_state.get("patient_profile")
-        if profile:
-            age  = get_age(profile.get("date_of_birth", ""))
-            hn   = st.session_state.health_number
-            flag = {"DE": "🇩🇪", "TR": "🇹🇷", "UK": "🇬🇧"}.get(
-                profile.get("nationality", ""), "🌍")
-            st.markdown(
-                f'''<div style="background:#1e293b;border-radius:10px;
-                padding:0.6rem 0.8rem;margin-bottom:0.5rem;">
-  <p style="color:#94a3b8;font-size:0.7rem;margin:0;text-transform:uppercase;
-     letter-spacing:0.06em;">Active Patient</p>
-  <p style="color:#f1f5f9;font-weight:700;margin:0.1rem 0;">
-    {flag} {profile.get("first_name","")} {profile.get("last_name","")}</p>
-  <p style="color:#64748b;font-size:0.78rem;margin:0;">
-    {hn} &nbsp;·&nbsp; {profile.get("blood_type","?")} &nbsp;·&nbsp;
-    {age}y &nbsp;·&nbsp; {profile.get("sex","")}</p>
-</div>''', unsafe_allow_html=True)
-
-        # ── Demo profile switcher ────────────────────────────────────────
-        with st.expander("🔄 Switch demo profile"):
-            all_nums = list_demo_health_numbers()
-            opts = {}
-            for hn in all_nums:
-                p = get_patient(hn)
-                if not p: continue
-                flag = {"DE": "🇩🇪", "TR": "🇹🇷", "UK": "🇬🇧"}.get(
-                    p.get("nationality", ""), "")
-                opts[f"{flag} {p['first_name']} {p['last_name']} ({hn})"] = hn
-            chosen = st.selectbox(
-                "", list(opts.keys()),
-                label_visibility="collapsed", key="sb_profile_sel")
-            if st.button("Load →", use_container_width=True, key="sb_load_btn"):
-                _load_profile(opts[chosen])
-                # Reset the flow (keep profile, clear everything else)
-                for k, v in _DEFAULTS.items():
-                    if k not in ("health_number", "patient_profile",
-                                 "detected_language", "country", "demographics"):
-                        st.session_state[k] = v
-                st.session_state[_TC] = {}
-                st.session_state.step = "input"
-                st.rerun()
-
+        # ── How to use ───────────────────────────────────────────────
+        st.markdown(f"""
+<p style="font-size:0.65rem;font-weight:700;text-transform:uppercase;
+   letter-spacing:0.1em;color:#9ca3af;margin:0 0 0.5rem 0;">{t("How to use")}</p>
+<div style="display:flex;flex-direction:column;gap:0.4rem;">
+  <div style="display:flex;align-items:flex-start;gap:0.45rem;">
+    <span style="font-size:0.9rem;flex-shrink:0;">🎤</span>
+    <span style="font-size:0.79rem;color:#4b5563;line-height:1.4;">{t("Tap the microphone and describe your emergency in 2–3 sentences in your own language")}</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:0.45rem;">
+    <span style="font-size:0.9rem;flex-shrink:0;">❓</span>
+    <span style="font-size:0.79rem;color:#4b5563;line-height:1.4;">{t("Answer the AI follow-up questions")}</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:0.45rem;">
+    <span style="font-size:0.9rem;flex-shrink:0;">📷</span>
+    <span style="font-size:0.79rem;color:#4b5563;line-height:1.4;">{t("Take a photo of the affected area if relevant (optional)")}</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:0.45rem;">
+    <span style="font-size:0.9rem;flex-shrink:0;">🤖</span>
+    <span style="font-size:0.79rem;color:#4b5563;line-height:1.4;">{t("Receive AI recommendations and hospital directions")}</span>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:0.45rem;">
+    <span style="font-size:0.9rem;flex-shrink:0;">🏥</span>
+    <span style="font-size:0.79rem;color:#4b5563;line-height:1.4;">{t("Head to the nearest hospital — they will be ready for you")}</span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
         st.divider()
 
-        # ── Step indicator ───────────────────────────────────────────────
+        # ── Step progress ────────────────────────────────────────────
         step   = st.session_state.step
         steps  = ["input", "photos", "questions", "triage", "result"]
         labels = [f"🎤 {t('Symptoms')}", f"📷 {t('Photos')}", f"❓ {t('Questions')}", f"🏥 {t('Hospital')}", f"✅ {t('Done')}"]
-        cur = steps.index(step) if step in steps else -1
+        cur    = steps.index(step) if step in steps else -1
+        st.markdown(f'<p style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin:0 0 0.4rem 0;">{t("Progress")}</p>', unsafe_allow_html=True)
         for i, (s, lab) in enumerate(zip(steps, labels)):
-            icon = "✅" if cur > i else ("▶" if s == step else "○")
-            st.markdown(f"{icon} {lab}")
+            if cur > i:
+                color, icon = "#16a34a", "✅"
+            elif s == step:
+                color, icon = "#2563eb", "▶"
+            else:
+                color, icon = "#d1d5db", "○"
+            st.markdown(f'<p style="color:{color};font-size:0.82rem;margin:0.15rem 0;font-weight:{"700" if s==step else "400"};">{icon} {lab}</p>', unsafe_allow_html=True)
 
-        st.divider()
-        for svc, ok in _svc_status.items():
-            st.markdown(f"{'✅' if ok else '⚠️'} {svc} — *{'Live' if ok else 'Demo'}*")
         st.divider()
         st.caption(f"⚠️ {t('Demo only. Call 112 for real emergencies.')}")
 
