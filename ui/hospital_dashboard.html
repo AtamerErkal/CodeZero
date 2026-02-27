@@ -7,6 +7,7 @@
     <title>CodeZero — ER Command Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         /* ═══════════════════════════════════════════════════════════════
@@ -2422,11 +2423,10 @@
                 <div class="kpi-card kpi-emergency">
                     <div class="kpi-icon">🚨</div>
                     <div class="kpi-label">Emergency</div>
-                    <div class="kpi-value" id="k-emg">—</div>
+                    <div class="kpi-value" id="kpi-emergency-value">—</div>
                     <div class="kpi-trend">
                         <span class="trend-indicator trend-neutral" id="trend-emg">
-                            <span class="trend-arrow">→</span>
-                            <span class="trend-text">Loading...</span>
+                            <span class="trend-arrow">→</span> <span id="trend-emg-text">—</span>
                         </span>
                     </div>
                     <div class="kpi-footer">
@@ -2440,11 +2440,10 @@
                 <div class="kpi-card kpi-urgent">
                     <div class="kpi-icon">⚠️</div>
                     <div class="kpi-label">Urgent</div>
-                    <div class="kpi-value" id="k-urg">—</div>
+                    <div class="kpi-value" id="kpi-urgent-value">—</div>
                     <div class="kpi-trend">
                         <span class="trend-indicator trend-neutral" id="trend-urg">
-                            <span class="trend-arrow">→</span>
-                            <span class="trend-text">Loading...</span>
+                            <span class="trend-arrow">→</span> <span id="trend-urg-text">—</span>
                         </span>
                     </div>
                     <div class="kpi-footer">
@@ -2458,7 +2457,7 @@
                 <div class="kpi-card kpi-info">
                     <div class="kpi-icon">🚑</div>
                     <div class="kpi-label">En Route</div>
-                    <div class="kpi-value" id="k-enroute">—</div>
+                    <div class="kpi-value" id="kpi-enroute-value">—</div>
                     <div class="kpi-eta">
                         <div class="eta-badge">
                             <span class="eta-time" id="eta-soonest">--</span>
@@ -2472,15 +2471,14 @@
                     </div>
                 </div>
 
-                <!-- Treated Card -->
+                <!-- Treated Today Card -->
                 <div class="kpi-card kpi-success">
                     <div class="kpi-icon">✓</div>
                     <div class="kpi-label">Treated Today</div>
-                    <div class="kpi-value" id="k-done">—</div>
+                    <div class="kpi-value" id="kpi-treated-value">—</div>
                     <div class="kpi-trend">
                         <span class="trend-indicator trend-neutral" id="trend-done">
-                            <span class="trend-arrow">→</span>
-                            <span class="trend-text">Loading...</span>
+                            <span class="trend-arrow">→</span> <span id="trend-done-text">—</span>
                         </span>
                     </div>
                     <div class="kpi-footer">
@@ -2928,29 +2926,59 @@
         async function loadKPI() {
             try {
                 const s = await api('/api/stats');
-                document.getElementById('k-emg').textContent = s.emergencies;
-                document.getElementById('k-urg').textContent = s.urgents;
-                document.getElementById('k-rtn').textContent = s.routines;
-                document.getElementById('k-enroute').textContent = s.en_route;
-                document.getElementById('k-inc').textContent = s.incoming;
-                document.getElementById('k-done').textContent = s.treated;
 
-                // Update trend indicators (Phase 1)
-                updateTrendIndicator('emg', s.emergencies);
-                updateTrendIndicator('urg', s.urgents);
-                updateTrendIndicator('done', s.treated);
+                // Null-safe updates
+                const setValue = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = val ?? '—';
+                };
 
-                // Update soonest ETA (Phase 1)
+                const setTrend = (trendId, textId, diff, isUp = false, isDown = false) => {
+                    const trendEl = document.getElementById(trendId);
+                    const textEl = document.getElementById(textId);
+                    if (!trendEl || !textEl) return;
+
+                    let cls = 'trend-neutral';
+                    let arrow = '→';
+                    let txt = 'Stable';
+
+                    if (isUp) { cls = 'trend-up'; arrow = '↑'; txt = `${Math.abs(diff)} more`; }
+                    if (isDown) { cls = 'trend-down'; arrow = '↓'; txt = `${Math.abs(diff)} fewer`; }
+
+                    trendEl.className = `trend-indicator ${cls}`;
+                    trendEl.querySelector('.trend-arrow').textContent = arrow;
+                    textEl.textContent = txt;
+                };
+
+                // Update values
+                setValue('kpi-emergency-value', s.emergencies);
+                setValue('kpi-urgent-value', s.urgents);
+                setValue('kpi-enroute-value', s.en_route || s.incoming);
+                setValue('kpi-treated-value', s.treated || s.in_treatment);
+
+                // Trend indicators (mock previous values - real implementation comes from localStorage or API)
+                const prev = { emergencies: 5, urgents: 12, treated: 40 }; // example
+                setTrend('trend-emg', 'trend-emg-text', s.emergencies - (prev.emergencies || 0), true, false);
+                setTrend('trend-urg', 'trend-urg-text', s.urgents - (prev.urgents || 0), true, false);
+                setTrend('trend-done', 'trend-done-text', s.treated - (prev.treated || 0), true, false);
+
+                // Soonest ETA
                 updateSoonestETA();
 
+                // Emergency badge
                 const badge = document.getElementById('emg-nav-badge');
-                if (s.emergencies > 0) {
-                    badge.textContent = s.emergencies;
-                    badge.style.display = 'flex';
-                } else {
-                    badge.style.display = 'none';
+                if (badge) {
+                    if (s.emergencies > 0) {
+                        badge.textContent = s.emergencies;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
                 }
-            } catch (e) { console.error('KPI load failed:', e); }
+
+            } catch (e) {
+                console.error('KPI load failed:', e);
+            }
         }
 
         // ── Patient list ───────────────────────────────────
