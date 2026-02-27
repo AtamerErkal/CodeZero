@@ -246,119 +246,639 @@
             border: 1px solid var(--border);
         }
 
-        /* ── KPI Bar ── */
+        /* ══════════════════════════════════════════════════
+           KPI CARDS - Phase 1 Redesign (Modern Healthcare)
+        ══════════════════════════════════════════════════ */
+
         #kpi-bar {
-            background: var(--surface);
+            padding: 24px 32px;
+            background: var(--bg);
             border-bottom: 1px solid var(--border);
+        }
+
+        .kpi-grid {
             display: grid;
-            grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr 1fr 1fr;
-            gap: 0;
-            flex-shrink: 0;
-            box-shadow: var(--shadow-sm);
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
         }
 
-        .kpi-item {
-            padding: .65rem 1.2rem;
-            border-right: 1px solid var(--border);
+        .kpi-card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            border-left: 4px solid transparent;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            transition: background .15s;
+            overflow: hidden;
         }
 
-        .kpi-item:last-child {
-            border-right: none;
-        }
-
-        .kpi-item:hover {
-            background: var(--surface2);
-        }
-
-        .kpi-item::before {
+        .kpi-card::before {
             content: '';
             position: absolute;
             top: 0;
-            left: 0;
             right: 0;
-            height: 3px;
-            border-radius: 0 0 2px 2px;
+            width: 100px;
+            height: 100px;
+            background: currentColor;
+            opacity: 0.03;
+            border-radius: 50%;
+            transform: translate(40%, -40%);
+            transition: all 0.3s;
         }
 
-        .kpi-total::before {
-            background: linear-gradient(90deg, var(--blue), var(--cyan));
+        .kpi-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            transform: translateY(-4px);
+            cursor: pointer;
         }
 
-        .kpi-emg::before {
-            background: var(--emg);
+        .kpi-card:hover::before {
+            transform: translate(30%, -30%) scale(1.2);
         }
 
-        .kpi-urg::before {
-            background: var(--urg);
+        .kpi-emergency {
+            border-left-color: var(--emg);
+            color: var(--emg);
         }
 
-        .kpi-rtn::before {
-            background: var(--rtn);
+        .kpi-urgent {
+            border-left-color: var(--urg);
+            color: var(--urg);
         }
 
-        .kpi-enroute::before {
-            background: var(--blue);
+        .kpi-info {
+            border-left-color: var(--blue);
+            color: var(--blue);
         }
 
-        .kpi-inc::before {
-            background: var(--cyan);
+        .kpi-success {
+            border-left-color: var(--rtn);
+            color: var(--rtn);
         }
 
-        .kpi-done::before {
-            background: var(--purple);
+        .kpi-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
         .kpi-label {
-            font-size: .6rem;
-            font-weight: 700;
+            font-size: 0.75rem;
+            color: var(--text2);
+            font-weight: 600;
+            margin-bottom: 12px;
             text-transform: uppercase;
-            letter-spacing: .09em;
-            color: var(--text3);
-            margin-bottom: .25rem;
+            letter-spacing: 0.05em;
+        }
+
+        .kpi-value {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1;
+            margin-bottom: 12px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .kpi-trend {
+            min-height: 24px;
+            margin-bottom: 16px;
+        }
+
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .trend-arrow {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .trend-up {
+            color: var(--rtn);
+            background: var(--rtn-light);
+        }
+
+        .trend-down {
+            color: var(--emg);
+            background: var(--emg-light);
+        }
+
+        .trend-neutral {
+            color: var(--text2);
+            background: var(--surface2);
+        }
+
+        .kpi-eta {
+            margin-bottom: 16px;
+        }
+
+        .eta-badge {
+            display: inline-flex;
+            flex-direction: column;
+            padding: 8px 14px;
+            background: var(--blue-light);
+            border: 2px solid var(--blue-mid);
+            border-radius: 8px;
+        }
+
+        .eta-time {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--blue);
+            line-height: 1;
+        }
+
+        .eta-label {
+            font-size: 0.625rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
+        }
+
+        .kpi-footer {
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .kpi-link {
+            font-size: 0.875rem;
+            color: var(--text2);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .kpi-link:hover {
+            color: var(--blue);
+        }
+
+        @media (max-width: 1280px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #kpi-bar {
+                padding: 16px;
+            }
+        }
+
+        .kpi-card.loading .kpi-value {
+            background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+            background-size: 200% 100%;
+            animation: kpiLoading 1.5s infinite;
+            color: transparent;
+            border-radius: 4px;
+            display: inline-block;
+            min-width: 80px;
+        }
+
+        @keyframes kpiLoading {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════
+           PATIENT CARDS - Phase 2 (Expanded with Health Records)
+        ══════════════════════════════════════════════════ */
+
+        /* Card Header - Photo + Demographics + ETA */
+        .pt-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 24px;
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pt-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--surface3);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .pt-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .pt-avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            background: linear-gradient(135deg, var(--blue-light), var(--blue-mid));
+        }
+
+        .pt-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pt-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .pt-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.875rem;
+            color: var(--text2);
+        }
+
+        .pt-meta-item {
             display: flex;
             align-items: center;
             gap: 4px;
         }
 
-        .kpi-value {
-            font-family: var(--font-mono);
-            font-size: 1.65rem;
-            font-weight: 700;
-            color: var(--text);
-            line-height: 1;
+        .pt-meta-sep {
+            color: var(--text3);
         }
 
-        .kpi-total .kpi-value {
-            font-size: 2.1rem;
-            color: var(--blue);
+        .pt-eta-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            background: var(--emg-light);
+            border: 2px solid var(--emg-border);
+            border-radius: 10px;
         }
 
-        .kpi-emg .kpi-value {
+        .pt-eta-badge.urgent {
+            background: var(--urg-light);
+            border-color: var(--urg-border);
+        }
+
+        .pt-eta-time {
+            font-size: 1.5rem;
+            font-weight: 800;
             color: var(--emg);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
         }
 
-        .kpi-urg .kpi-value {
+        .pt-eta-badge.urgent .pt-eta-time {
             color: var(--urg);
         }
 
-        .kpi-rtn .kpi-value {
-            color: var(--rtn);
+        .pt-eta-label {
+            font-size: 0.625rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
         }
 
-        .kpi-inc .kpi-value {
-            color: var(--cyan);
+        /* Triage Banner */
+        .pt-triage-banner {
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
         }
 
-        .kpi-done .kpi-value {
-            color: var(--purple);
+        .pt-triage-banner.emergency {
+            background: var(--emg-light);
+            border-bottom-color: var(--emg-mid);
         }
 
-        .kpi-sub {
-            font-size: .6rem;
+        .pt-triage-banner.urgent {
+            background: var(--urg-light);
+            border-bottom-color: var(--urg-mid);
+        }
+
+        .pt-triage-banner.routine {
+            background: var(--rtn-light);
+            border-bottom-color: var(--rtn-mid);
+        }
+
+        .pt-triage-level {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pt-triage-icon {
+            font-size: 24px;
+        }
+
+        .pt-triage-text h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--emg-text);
+            margin-bottom: 2px;
+        }
+
+        .pt-triage-banner.urgent .pt-triage-text h3 {
+            color: var(--urg-text);
+        }
+
+        .pt-triage-banner.routine .pt-triage-text h3 {
+            color: var(--rtn-text);
+        }
+
+        .pt-triage-time {
+            font-size: 0.8125rem;
+            color: var(--text2);
+        }
+
+        .pt-risk-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--surface);
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .pt-risk-score {
+            font-size: 1.25rem;
+            color: var(--emg);
+        }
+
+        /* Card Sections */
+        .pt-section {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .pt-section:last-of-type {
+            border-bottom: none;
+        }
+
+        .pt-section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .pt-section-icon {
+            font-size: 18px;
+        }
+
+        .pt-section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .pt-section-content {
+            font-size: 0.9375rem;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Red Flags */
+        .pt-red-flags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .pt-flag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--emg-light);
+            border: 1.5px solid var(--emg-border);
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--emg-text);
+        }
+
+        /* Medical History List */
+        .pt-history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .pt-history-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .pt-history-item:last-child {
+            border-bottom: none;
+        }
+
+        .pt-history-bullet {
             color: var(--text3);
             margin-top: 2px;
+        }
+
+        .pt-history-content {
+            flex: 1;
+        }
+
+        .pt-history-name {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .pt-history-detail {
+            font-size: 0.8125rem;
+            color: var(--text2);
+            margin-top: 2px;
+        }
+
+        /* Medications List */
+        .pt-meds-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .pt-med-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface2);
+            border-radius: 8px;
+        }
+
+        .pt-med-icon {
+            font-size: 20px;
+        }
+
+        .pt-med-content {
+            flex: 1;
+        }
+
+        .pt-med-name {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.9375rem;
+        }
+
+        .pt-med-dose {
+            font-size: 0.8125rem;
+            color: var(--text2);
+            margin-top: 2px;
+        }
+
+        /* Vitals Grid */
+        .pt-vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .pt-vital-item {
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            background: var(--surface2);
+            border-radius: 8px;
+            border-left: 3px solid var(--border);
+        }
+
+        .pt-vital-item.normal {
+            border-left-color: var(--rtn);
+        }
+
+        .pt-vital-item.warning {
+            border-left-color: var(--urg);
+        }
+
+        .pt-vital-item.critical {
+            border-left-color: var(--emg);
+        }
+
+        .pt-vital-label {
+            font-size: 0.75rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .pt-vital-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pt-vital-unit {
+            font-size: 0.875rem;
+            color: var(--text2);
+            margin-left: 4px;
+        }
+
+        /* Card Footer - Actions */
+        .pt-footer {
+            display: flex;
+            gap: 12px;
+            padding: 20px 24px;
+            background: var(--surface2);
+        }
+
+        .pt-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .pt-btn-primary {
+            background: var(--blue);
+            color: white;
+        }
+
+        .pt-btn-primary:hover {
+            background: var(--blue-dark);
+            box-shadow: var(--shadow-md);
+        }
+
+        .pt-btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .pt-btn-secondary:hover {
+            border-color: var(--blue);
+            color: var(--blue);
+        }
+
+        .pt-btn-icon-only {
+            flex: 0 0 auto;
+            width: 48px;
+            padding: 12px;
+        }
+
+        /* Responsive for Phase 2 */
+        @media (max-width: 768px) {
+            .pt-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .pt-eta-badge {
+                align-self: flex-end;
+            }
+
+            .pt-vitals-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .pt-footer {
+                flex-direction: column;
+            }
         }
 
         /* ── Main area ── */
@@ -1019,8 +1539,6 @@
             grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
             gap: .65rem;
         }
-
-        .info-field {}
 
         .info-label {
             font-size: .6rem;
@@ -1899,34 +2417,78 @@
      KPI BAR
 ══════════════════════════════════════════════════ -->
         <div id="kpi-bar">
-            <div class="kpi-item kpi-total">
-                <div class="kpi-label">Total Applications Today</div>
-                <div class="kpi-value" id="k-total">—</div>
-                <div class="kpi-sub">all statuses</div>
-            </div>
-            <div class="kpi-item kpi-emg">
-                <div class="kpi-label">🔴 Emergencies</div>
-                <div class="kpi-value" id="k-emg">—</div>
-            </div>
-            <div class="kpi-item kpi-urg">
-                <div class="kpi-label">🟠 Urgents</div>
-                <div class="kpi-value" id="k-urg">—</div>
-            </div>
-            <div class="kpi-item kpi-rtn">
-                <div class="kpi-label">🟢 Routines</div>
-                <div class="kpi-value" id="k-rtn">—</div>
-            </div>
-            <div class="kpi-item kpi-enroute">
-                <div class="kpi-label">🚑 En-Route</div>
-                <div class="kpi-value" id="k-enroute">—</div>
-            </div>
-            <div class="kpi-item kpi-inc">
-                <div class="kpi-label">📥 Incoming</div>
-                <div class="kpi-value" id="k-inc">—</div>
-            </div>
-            <div class="kpi-item kpi-done">
-                <div class="kpi-label">✅ Treated</div>
-                <div class="kpi-value" id="k-done">—</div>
+            <div class="kpi-grid">
+                <!-- Emergency Card -->
+                <div class="kpi-card kpi-emergency">
+                    <div class="kpi-icon">🚨</div>
+                    <div class="kpi-label">Emergency</div>
+                    <div class="kpi-value" id="k-emg">—</div>
+                    <div class="kpi-trend">
+                        <span class="trend-indicator trend-neutral" id="trend-emg">
+                            <span class="trend-arrow">→</span>
+                            <span class="trend-text">Loading...</span>
+                        </span>
+                    </div>
+                    <div class="kpi-footer">
+                        <a href="#" onclick="filterByTriage('EMERGENCY'); return false;" class="kpi-link">
+                            View all →
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Urgent Card -->
+                <div class="kpi-card kpi-urgent">
+                    <div class="kpi-icon">⚠️</div>
+                    <div class="kpi-label">Urgent</div>
+                    <div class="kpi-value" id="k-urg">—</div>
+                    <div class="kpi-trend">
+                        <span class="trend-indicator trend-neutral" id="trend-urg">
+                            <span class="trend-arrow">→</span>
+                            <span class="trend-text">Loading...</span>
+                        </span>
+                    </div>
+                    <div class="kpi-footer">
+                        <a href="#" onclick="filterByTriage('URGENT'); return false;" class="kpi-link">
+                            View all →
+                        </a>
+                    </div>
+                </div>
+
+                <!-- En Route Card -->
+                <div class="kpi-card kpi-info">
+                    <div class="kpi-icon">🚑</div>
+                    <div class="kpi-label">En Route</div>
+                    <div class="kpi-value" id="k-enroute">—</div>
+                    <div class="kpi-eta">
+                        <div class="eta-badge">
+                            <span class="eta-time" id="eta-soonest">--</span>
+                            <span class="eta-label">next arrival</span>
+                        </div>
+                    </div>
+                    <div class="kpi-footer">
+                        <a href="#" onclick="setSort('eta', this); return false;" class="kpi-link">
+                            View timeline →
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Treated Card -->
+                <div class="kpi-card kpi-success">
+                    <div class="kpi-icon">✓</div>
+                    <div class="kpi-label">Treated Today</div>
+                    <div class="kpi-value" id="k-done">—</div>
+                    <div class="kpi-trend">
+                        <span class="trend-indicator trend-neutral" id="trend-done">
+                            <span class="trend-arrow">→</span>
+                            <span class="trend-text">Loading...</span>
+                        </span>
+                    </div>
+                    <div class="kpi-footer">
+                        <a href="#" class="kpi-link">
+                            View history →
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -2302,16 +2864,85 @@
         }
 
         // ── KPI bar ────────────────────────────────────────
+        // Phase 1: Helper functions for KPI cards
+        function updateTrendIndicator(type, currentValue) {
+            const trendEl = document.getElementById(`trend-${type}`);
+            if (!trendEl) return;
+
+            // Mock previous values (in production, use localStorage or API)
+            const previousValues = { emg: 6, urg: 14, done: 38 };
+            const prevValue = previousValues[type] || 0;
+            const diff = currentValue - prevValue;
+
+            const arrow = trendEl.querySelector('.trend-arrow');
+            const text = trendEl.querySelector('.trend-text');
+
+            if (diff > 0) {
+                trendEl.className = 'trend-indicator trend-up';
+                arrow.textContent = '↑';
+                text.textContent = `${diff} today`;
+            } else if (diff < 0) {
+                trendEl.className = 'trend-indicator trend-down';
+                arrow.textContent = '↓';
+                text.textContent = `${Math.abs(diff)} fewer`;
+            } else {
+                trendEl.className = 'trend-indicator trend-neutral';
+                arrow.textContent = '→';
+                text.textContent = 'Stable';
+            }
+        }
+
+        async function updateSoonestETA() {
+            try {
+                const patients = await api('/api/patients?sort=eta&limit=1');
+                const etaEl = document.getElementById('eta-soonest');
+
+                if (patients && patients.length > 0 && patients[0].eta_minutes) {
+                    etaEl.textContent = `${patients[0].eta_minutes} min`;
+                } else {
+                    etaEl.textContent = '--';
+                }
+            } catch (e) {
+                console.error('ETA update failed:', e);
+            }
+        }
+
+        function filterByTriage(level) {
+            const cards = document.querySelectorAll('.pt-card');
+            cards.forEach(card => {
+                const cardLevel = card.getAttribute('data-triage');
+                if (level === 'ALL' || cardLevel === level) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Scroll to patient list
+            const patientList = document.getElementById('patient-list');
+            if (patientList) {
+                patientList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
         async function loadKPI() {
             try {
                 const s = await api('/api/stats');
-                document.getElementById('k-total').textContent = s.total;
                 document.getElementById('k-emg').textContent = s.emergencies;
                 document.getElementById('k-urg').textContent = s.urgents;
                 document.getElementById('k-rtn').textContent = s.routines;
                 document.getElementById('k-enroute').textContent = s.en_route;
                 document.getElementById('k-inc').textContent = s.incoming;
                 document.getElementById('k-done').textContent = s.treated;
+
+                // Update trend indicators (Phase 1)
+                updateTrendIndicator('emg', s.emergencies);
+                updateTrendIndicator('urg', s.urgents);
+                updateTrendIndicator('done', s.treated);
+
+                // Update soonest ETA (Phase 1)
+                updateSoonestETA();
+
                 const badge = document.getElementById('emg-nav-badge');
                 if (s.emergencies > 0) {
                     badge.textContent = s.emergencies;
@@ -2341,9 +2972,17 @@
                 el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No incoming patients in queue</div></div>';
                 return;
             }
+
+            // Phase 2: Use expanded cards if enabled
+            if (USE_EXPANDED_CARDS) {
+                el.innerHTML = pts.map(buildExpandedPatientCard).join('');
+                return;
+            }
+
+            // Legacy: Use original compact cards
             el.innerHTML = pts.map(buildPatientCard).join('');
 
-            // Attach toggle listeners
+            // Attach toggle listeners (for legacy cards)
             el.querySelectorAll('[data-card-toggle]').forEach(t => {
                 t.addEventListener('click', () => toggleCard(t.dataset.cardToggle));
             });
@@ -2365,6 +3004,314 @@
             document.querySelectorAll('[data-pane-pid="' + pid + '"].detail-pane').forEach(p => p.classList.remove('active'));
             btnEl.classList.add('active');
             document.getElementById('dp-' + pid + '-' + tabName).classList.add('active');
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  Phase 2: BUILD EXPANDED PATIENT CARD WITH HEALTH RECORDS
+        // ══════════════════════════════════════════════════════
+
+        const USE_EXPANDED_CARDS = true; // Toggle Phase 2 expanded cards
+
+        function buildExpandedPatientCard(p) {
+            const pid = p.patient_id || '';
+            const lvl = p.triage_level || 'ROUTINE';
+            const triageClass = lvl.toLowerCase();
+            const name = p.full_name || pid;
+            const hn = p.health_number || '';
+            const age = p.age || '--';
+            const sex = p.sex || 'Unknown';
+            const bloodType = p.blood_type || '--';
+            const nat = p.nationality || '';
+            const flag = FLAG[nat] || '';
+            const eta = p.eta_minutes;
+            const risk = p.risk_score || 5;
+            const dest = p.destination_hospital || '';
+
+            // Photo path
+            const photoPath = hn ? `patient_photos/${hn}.png` : '';
+            const photoHTML = photoPath ?
+                `<img src="${photoPath}" alt="${h(name)}" onerror="this.parentElement.innerHTML='<div class=\\'pt-avatar-placeholder\\'>👤</div>'">` :
+                `<div class="pt-avatar-placeholder">👤</div>`;
+
+            // Triage icon
+            const triageIcon = {
+                'EMERGENCY': '🚨',
+                'URGENT': '⚠️',
+                'ROUTINE': '🟢'
+            }[lvl] || '📋';
+
+            // Risk emoji
+            const riskEmoji = risk >= 8 ? '🔴' : risk >= 5 ? '🟠' : '🟢';
+
+            // Time sensitivity
+            const timeSensitivity = {
+                'EMERGENCY': 'IMMEDIATE - minutes matter',
+                'URGENT': 'Within 30 minutes',
+                'ROUTINE': 'Standard evaluation'
+            }[lvl] || 'Standard evaluation';
+
+            // ETA badge
+            const etaBadgeHTML = eta ? `
+                <div class="pt-eta-badge ${triageClass}">
+                    <span class="pt-eta-time">${eta}</span>
+                    <span class="pt-eta-label">min ETA</span>
+                </div>
+            ` : '';
+
+            // Chief complaint
+            const complaint = p.chief_complaint || p.assessment || 'No complaint recorded';
+
+            // Red flags
+            const redFlags = (p.red_flags || []).filter(f => f !== 'none_identified');
+            const redFlagsHTML = redFlags.length > 0 ? `
+                <div class="pt-section">
+                    <div class="pt-section-header">
+                        <span class="pt-section-icon">🔴</span>
+                        <h4 class="pt-section-title">Red Flags</h4>
+                    </div>
+                    <div class="pt-red-flags">
+                        ${redFlags.map(f => `<span class="pt-flag-pill">🔴 ${h(f.replace(/_/g, ' '))}</span>`).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            // Medical history (diagnoses)
+            const diagnosesHTML = buildDiagnosesList(p.diagnoses || []);
+
+            // Medications
+            const medsHTML = buildMedicationsList(p.medications || []);
+
+            // Vitals
+            const vitalsHTML = buildVitalsGrid(p.vitals || {});
+
+            // Allergies
+            const allergies = p.allergies || [];
+            const allergiesHTML = allergies.length > 0 ?
+                allergies.map(a => `⚠️ ${h(a.allergen)} - ${h(a.reaction)}`).join('<br>') :
+                'None known';
+
+            return `
+<div class="pt-card" data-triage="${lvl}" data-patient-id="${pid}">
+    <!-- Header: Photo + Demographics + ETA -->
+    <div class="pt-header">
+        <div class="pt-avatar">
+            ${photoHTML}
+        </div>
+        
+        <div class="pt-info">
+            <h2 class="pt-name">${h(name)}</h2>
+            <div class="pt-meta">
+                <span class="pt-meta-item">🆔 ${h(pid)}</span>
+                <span class="pt-meta-sep">•</span>
+                <span class="pt-meta-item">${sex}, ${age}y</span>
+                <span class="pt-meta-sep">•</span>
+                <span class="pt-meta-item">🩸 ${bloodType}</span>
+                ${nat ? `<span class="pt-meta-sep">•</span><span class="pt-meta-item">${flag} ${nat}</span>` : ''}
+                ${dest ? `<span class="pt-meta-sep">•</span><span class="pt-meta-item">🏥 ${h(dest)}</span>` : ''}
+            </div>
+        </div>
+        
+        ${etaBadgeHTML}
+    </div>
+    
+    <!-- Triage Banner -->
+    <div class="pt-triage-banner ${triageClass}">
+        <div class="pt-triage-level">
+            <span class="pt-triage-icon">${triageIcon}</span>
+            <div class="pt-triage-text">
+                <h3>${lvl}</h3>
+                <p class="pt-triage-time">${timeSensitivity}</p>
+            </div>
+        </div>
+        <div class="pt-risk-badge">
+            <span>Risk:</span>
+            <span class="pt-risk-score">${risk}/10</span>
+            <span>${riskEmoji}</span>
+        </div>
+    </div>
+    
+    <!-- Chief Complaint -->
+    <div class="pt-section">
+        <div class="pt-section-header">
+            <span class="pt-section-icon">💬</span>
+            <h4 class="pt-section-title">Chief Complaint</h4>
+        </div>
+        <div class="pt-section-content">
+            ${h(complaint)}
+        </div>
+    </div>
+    
+    ${redFlagsHTML}
+    ${diagnosesHTML}
+    ${medsHTML}
+    ${vitalsHTML}
+    
+    <!-- Allergies -->
+    <div class="pt-section">
+        <div class="pt-section-header">
+            <span class="pt-section-icon">⚠️</span>
+            <h4 class="pt-section-title">Allergies</h4>
+        </div>
+        <div class="pt-section-content">
+            ${allergiesHTML}
+        </div>
+    </div>
+    
+    <!-- Actions -->
+    <div class="pt-footer">
+        <button class="pt-btn pt-btn-primary" onclick="viewFullRecord('${pid}')">
+            <span>📄</span>
+            <span>View Full Record</span>
+        </button>
+        <button class="pt-btn pt-btn-secondary" onclick="callPatient('${pid}')">
+            <span>📞</span>
+            <span>Call</span>
+        </button>
+        <button class="pt-btn pt-btn-secondary" onclick="markArrived('${pid}')">
+            <span>✓</span>
+            <span>Mark Arrived</span>
+        </button>
+        <button class="pt-btn pt-btn-secondary pt-btn-icon-only" onclick="showMoreActions('${pid}')">
+            <span>⋮</span>
+        </button>
+    </div>
+</div>`;
+        }
+
+        // Helper functions for Phase 2
+        function buildDiagnosesList(diagnoses) {
+            if (!diagnoses || diagnoses.length === 0) return '';
+
+            return `<div class="pt-section">
+                <div class="pt-section-header">
+                    <span class="pt-section-icon">📋</span>
+                    <h4 class="pt-section-title">Medical History</h4>
+                </div>
+                <ul class="pt-history-list">
+                    ${diagnoses.map(d => `
+                        <li class="pt-history-item">
+                            <span class="pt-history-bullet">•</span>
+                            <div class="pt-history-content">
+                                <div class="pt-history-name">${h(d.description)}${d.icd_code ? ` (${d.icd_code})` : ''}</div>
+                                <div class="pt-history-detail">
+                                    ${d.diagnosed_date ? `Diagnosed ${d.diagnosed_date}` : ''}
+                                    ${d.diagnosing_doctor ? ` by ${d.diagnosing_doctor}` : ''}
+                                    ${d.notes ? ` • ${d.notes}` : ''}
+                                </div>
+                            </div>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>`;
+        }
+
+        function buildMedicationsList(medications) {
+            if (!medications || medications.length === 0) return '';
+
+            return `<div class="pt-section">
+                <div class="pt-section-header">
+                    <span class="pt-section-icon">💊</span>
+                    <h4 class="pt-section-title">Current Medications (${medications.length})</h4>
+                </div>
+                <div class="pt-meds-list">
+                    ${medications.map(m => `
+                        <div class="pt-med-item">
+                            <span class="pt-med-icon">💊</span>
+                            <div class="pt-med-content">
+                                <div class="pt-med-name">${h(m.name)}</div>
+                                <div class="pt-med-dose">
+                                    ${m.dosage || ''} • ${m.frequency || ''}${m.start_date ? ` • Since ${m.start_date}` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
+        function buildVitalsGrid(vitals) {
+            if (!vitals || Object.keys(vitals).length === 0) return '';
+
+            const items = [];
+
+            if (vitals.bp_systolic && vitals.bp_diastolic) {
+                const bpClass = vitals.bp_systolic < 90 || vitals.bp_systolic > 140 ? 'critical' :
+                    vitals.bp_systolic < 100 || vitals.bp_systolic > 130 ? 'warning' : 'normal';
+                items.push(`
+                    <div class="pt-vital-item ${bpClass}">
+                        <div class="pt-vital-label">Blood Pressure</div>
+                        <div class="pt-vital-value">${vitals.bp_systolic}/${vitals.bp_diastolic}<span class="pt-vital-unit">mmHg</span></div>
+                    </div>
+                `);
+            }
+
+            if (vitals.heart_rate) {
+                const hrClass = vitals.heart_rate < 60 || vitals.heart_rate > 100 ? 'warning' : 'normal';
+                items.push(`
+                    <div class="pt-vital-item ${hrClass}">
+                        <div class="pt-vital-label">Heart Rate</div>
+                        <div class="pt-vital-value">${vitals.heart_rate}<span class="pt-vital-unit">bpm</span></div>
+                    </div>
+                `);
+            }
+
+            if (vitals.spo2) {
+                const spo2Class = vitals.spo2 < 95 ? 'warning' : 'normal';
+                items.push(`
+                    <div class="pt-vital-item ${spo2Class}">
+                        <div class="pt-vital-label">SpO2</div>
+                        <div class="pt-vital-value">${vitals.spo2}<span class="pt-vital-unit">%</span></div>
+                    </div>
+                `);
+            }
+
+            if (vitals.temperature) {
+                const tempClass = vitals.temperature < 36 || vitals.temperature > 38 ? 'warning' : 'normal';
+                items.push(`
+                    <div class="pt-vital-item ${tempClass}">
+                        <div class="pt-vital-label">Temperature</div>
+                        <div class="pt-vital-value">${vitals.temperature}<span class="pt-vital-unit">°C</span></div>
+                    </div>
+                `);
+            }
+
+            if (items.length === 0) return '';
+
+            return `<div class="pt-section">
+                <div class="pt-section-header">
+                    <span class="pt-section-icon">🩺</span>
+                    <h4 class="pt-section-title">Latest Vitals</h4>
+                </div>
+                <div class="pt-vitals-grid">
+                    ${items.join('')}
+                </div>
+            </div>`;
+        }
+
+        // Action handlers for Phase 2
+        function viewFullRecord(patientId) {
+            alert('View full record for: ' + patientId);
+            // TODO: Open modal or navigate to full health record
+        }
+
+        function callPatient(patientId) {
+            alert('Call patient: ' + patientId);
+            // TODO: Initiate call
+        }
+
+        function markArrived(patientId) {
+            setStatus(patientId, 'arrived');
+        }
+
+        function showMoreActions(patientId) {
+            alert('More actions for: ' + patientId);
+            // TODO: Show actions menu
+        }
+
+        function h(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
         }
 
         // ══════════════════════════════════════════════════════
