@@ -58,8 +58,17 @@ def init_db():
         _seed(con)
 
 def _seed(con):
-    if con.execute("SELECT COUNT(*) FROM patients").fetchone()[0] > 0:
-        return
+    patient_count = con.execute("SELECT COUNT(*) FROM patients").fetchone()[0]
+    if patient_count > 0:
+        # Check sub-tables are also populated
+        vitals_ok = con.execute("SELECT COUNT(*) FROM vitals").fetchone()[0] > 0
+        diags_ok  = con.execute("SELECT COUNT(*) FROM diagnoses").fetchone()[0] > 0
+        meds_ok   = con.execute("SELECT COUNT(*) FROM medications").fetchone()[0] > 0
+        if vitals_ok and diags_ok and meds_ok:
+            return
+        # Sub-tables are missing — skip re-inserting patients but seed the rest
+        # (fall through to seed sub-table data)
+        logger.info("Re-seeding sub-tables (vitals/diagnoses/medications were empty).")
     
     rows = [
         # DEMO-DE patients (10)
@@ -96,7 +105,8 @@ def _seed(con):
         ("DEMO-UK-009","Henry","Moore","1938-03-19","Male","A+","UK","en-GB","h.moore@nhs.uk","+44 7700 100 009","3 Castle Street, Leeds LS1 2HL","Mary Moore","+44 7700 200 009","NHS-999000111","Dr. John Barker",171.0,75.0,"Aortic stenosis (moderate), AF on warfarin. Annual echo."),
         ("DEMO-UK-010","Amelia","Garcia","1977-06-28","Female","AB-","UK","en-GB","a.garcia@nhs.uk","+44 7700 010 010","12 Victoria Road, Liverpool L6 3AB","Carlos Garcia","+44 7700 020 020","NHS-000111222","Dr. Natalie Osei",164.0,68.0,"SLE on hydroxychloroquine. Vitamin D deficiency."),
     ]
-    con.executemany("INSERT OR IGNORE INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+    if patient_count == 0:
+        con.executemany("INSERT OR IGNORE INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
     
     diags = [
         ("DEMO-DE-001","I25.10","Coronary artery disease","active","2018-05-20","Dr. Becker","Stable"),
@@ -143,7 +153,7 @@ def _seed(con):
         ("DEMO-UK-010","M32.9","SLE","active","2009-08-24","Dr. Osei","HCQ 400mg"),
         ("DEMO-UK-010","E55.9","Vitamin D deficiency","active","2022-01-10","Dr. Osei","Supplementing"),
     ]
-    con.executemany("INSERT INTO diagnoses (health_number,icd_code,description,status,diagnosed_date,diagnosing_doctor,notes) VALUES (?,?,?,?,?,?,?)", diags)
+    con.executemany("INSERT OR IGNORE INTO diagnoses (health_number,icd_code,description,status,diagnosed_date,diagnosing_doctor,notes) VALUES (?,?,?,?,?,?,?)", diags)
     
     meds = [
         ("DEMO-DE-001","Atorvastatin 40mg","40mg","Once daily","2018-05-25",None,"Dr. Becker","active"),
@@ -199,7 +209,7 @@ def _seed(con):
         ("DEMO-UK-009","Atorvastatin 40mg","40mg","Once daily","2019-12-15",None,"Dr. Barker","active"),
         ("DEMO-UK-010","Hydroxychloroquine 400mg","400mg","Once daily","2009-09-01",None,"Dr. Osei","active"),
     ]
-    con.executemany("INSERT INTO medications (health_number,name,dosage,frequency,start_date,end_date,prescribing_doctor,status) VALUES (?,?,?,?,?,?,?,?)", meds)
+    con.executemany("INSERT OR IGNORE INTO medications (health_number,name,dosage,frequency,start_date,end_date,prescribing_doctor,status) VALUES (?,?,?,?,?,?,?,?)", meds)
 
     vitals = [
         ("DEMO-DE-001","2026-02-01T09:00:00",148,92,76,97.8,36.6,84.0,178.0,26.5,5.2),
@@ -233,7 +243,7 @@ def _seed(con):
         ("DEMO-UK-009","2026-02-05T09:00:00",136,82,74,97.0,36.6,75.0,171.0,25.6,5.2),
         ("DEMO-UK-010","2026-02-18T11:00:00",124,78,72,98.2,36.5,68.0,164.0,25.3,4.9),
     ]
-    con.executemany("INSERT INTO vitals (health_number,recorded_at,bp_systolic,bp_diastolic,heart_rate,spo2,temperature,weight_kg,height_cm,bmi,glucose) VALUES (?,?,?,?,?,?,?,?,?,?,?)", vitals)
+    con.executemany("INSERT OR IGNORE INTO vitals (health_number,recorded_at,bp_systolic,bp_diastolic,heart_rate,spo2,temperature,weight_kg,height_cm,bmi,glucose) VALUES (?,?,?,?,?,?,?,?,?,?,?)", vitals)
 
     labs = [
         ("DEMO-DE-001","HbA1c","5.4%","%","< 5.7%","normal","2026-02-01","Labor Stuttgart"),
@@ -257,7 +267,7 @@ def _seed(con):
         ("DEMO-UK-007","Lithium level","0.78 mmol/L","mmol/L","0.6-0.8","normal","2026-02-10","NHS Lab Bristol"),
         ("DEMO-UK-009","INR","2.4","ratio","2.0-3.0","normal","2026-02-05","NHS Lab Leeds"),
     ]
-    con.executemany("INSERT INTO lab_results (health_number,test_name,value,unit,reference_range,status,test_date,lab_name) VALUES (?,?,?,?,?,?,?,?)", labs)
+    con.executemany("INSERT OR IGNORE INTO lab_results (health_number,test_name,value,unit,reference_range,status,test_date,lab_name) VALUES (?,?,?,?,?,?,?,?)", labs)
 
     allergies = [
         ("DEMO-DE-001","Penicillin","Anaphylaxis","severe","2005-06-10"),
@@ -270,7 +280,7 @@ def _seed(con):
         ("DEMO-UK-002","Latex","Urticaria","moderate","2012-04-22"),
         ("DEMO-UK-009","Digoxin","Toxicity at low levels","moderate","2020-01-05"),
     ]
-    con.executemany("INSERT INTO allergies (health_number,allergen,reaction,severity,confirmed_date) VALUES (?,?,?,?,?)", allergies)
+    con.executemany("INSERT OR IGNORE INTO allergies (health_number,allergen,reaction,severity,confirmed_date) VALUES (?,?,?,?,?)", allergies)
 
     visits = [
         ("DEMO-DE-001","2025-11-12","Emergency","Klinikum Stuttgart","Cardiology","Chest pain at rest","Unstable angina — ACS excluded","IV GTN, monitoring","12h obs, cardiology f/u","Dr. Schreiber"),
@@ -281,7 +291,7 @@ def _seed(con):
         ("DEMO-UK-001","2025-10-08","Emergency","King's College Hospital","Cardiology","SOB, leg oedema","Decompensated heart failure","IV furosemide","Admitted 3 days, -4kg","Dr. Thompson"),
         ("DEMO-UK-002","2025-06-14","Emergency","Guy's Hospital","Emergency","Status asthmaticus","Severe asthma","Magnesium IV, HDU","Day 3 discharge","Dr. Hall"),
     ]
-    con.executemany("INSERT INTO visits (health_number,visit_date,visit_type,hospital,department,chief_complaint,diagnosis,treatment,discharge_notes,attending_doctor) VALUES (?,?,?,?,?,?,?,?,?,?)", visits)
+    con.executemany("INSERT OR IGNORE INTO visits (health_number,visit_date,visit_type,hospital,department,chief_complaint,diagnosis,treatment,discharge_notes,attending_doctor) VALUES (?,?,?,?,?,?,?,?,?,?)", visits)
     
     logger.info("Seeded 30 demo patients (10 DE + 10 TR + 10 UK)")
 

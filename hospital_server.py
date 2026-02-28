@@ -11,21 +11,28 @@ Then open: http://localhost:8001
 """
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Union as _Union
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # ── path setup ────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT))
+
+# Photo storage directories
+PATIENT_PHOTOS_DIR = ROOT / "patient_photos"
+ILLNESS_PHOTOS_DIR = ROOT / "data" / "illness_photos"
+ILLNESS_PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
 
 from src.hospital_queue import HospitalQueue
 from src.health_db import (
@@ -93,6 +100,7 @@ class SubmitRequest(_BM):
     answers:            list = []
     has_photo:          bool = False
     photo_count:        int = 0
+    photo_base64:       _Opt[_Union[str, list]] = None
     reg_number:         _Opt[str] = None
     demographics:       _Opt[dict] = None
     data_consent:       _Opt[bool] = None
@@ -160,8 +168,8 @@ def _enrich_patient(p: dict) -> dict:
                 # Past visits (optional)
                 p["visits"] = full_record.get("visits", [])[:3]  # Latest 3
         except Exception as e:
-            logger.warning(f"Failed to enrich health records for {hn}: {e}")
-            # Set empty defaults if enrichment fails
+            import traceback
+            logger.error("Failed to enrich health records for %s: %s\n%s", hn, e, traceback.format_exc())
             p["diagnoses"] = []
             p["medications"] = []
             p["vitals"] = {}
@@ -309,6 +317,20 @@ def patient_submit(body: SubmitRequest):
     record["location_lon"]        = body.lon
     record["status"]              = "incoming"
     record["detected_language"]   = body.detected_language or "en-US"
+
+    # Save illness photos to disk if present
+    if body.has_photo and body.photo_base64:
+        photos = body.photo_base64 if isinstance(body.photo_base64, list) else [body.photo_base64]
+        pid = record["patient_id"]
+        for idx_p, b64 in enumerate(photos):
+            try:
+                raw = b64.split(",", 1)[-1] if "," in b64 else b64
+                img_bytes = base64.b64decode(raw)
+                out_path = ILLNESS_PHOTOS_DIR / f"{pid}_{idx_p}.jpg"
+                out_path.write_bytes(img_bytes)
+                logger.info("Saved illness photo: %s", out_path.name)
+            except Exception as exc:
+                logger.warning("Could not save illness photo %d for %s: %s", idx_p, pid, exc)
 
     hq.add_patient(record)
     logger.info(
@@ -518,6 +540,36 @@ def api_tracking():
     return [p for p in enriched if p["location"].get("lat")]
 
 
+@app.get("/api/patient_photo/{health_number}")
+def serve_patient_photo(health_number: str):
+    """Serve static profile portrait from patient_photos folder."""
+    for ext in (".png", ".jpg", ".jpeg", ".webp"):
+        path = PATIENT_PHOTOS_DIR / f"{health_number}{ext}"
+        if path.exists():
+            mime = "image/jpeg" if ext in (".jpg", ".jpeg") else f"image/{ext.lstrip('.')}"
+            return Response(
+                content=path.read_bytes(),
+                media_type=mime,
+                headers={"Cache-Control": "max-age=86400"},
+            )
+    raise HTTPException(404, "Profile photo not found")
+
+
+@app.get("/api/illness_photo/{patient_id}/{index}")
+def serve_illness_photo(patient_id: str, index: int = 0):
+    """Serve illness photo uploaded by patient during submission."""
+    for ext in (".jpg", ".jpeg", ".png", ".webp"):
+        path = ILLNESS_PHOTOS_DIR / f"{patient_id}_{index}{ext}"
+        if path.exists():
+            mime = "image/jpeg" if ext in (".jpg", ".jpeg") else f"image/{ext.lstrip('.')}"
+            return Response(
+                content=path.read_bytes(),
+                media_type=mime,
+                headers={"Cache-Control": "max-age=300"},
+            )
+    raise HTTPException(404, "Illness photo not found")
+
+
 @app.post("/api/admin/clear")
 def api_clear():
     """Clear all patients (testing only)."""
@@ -618,11 +670,30 @@ def api_seed():
     return {"ok": True, "seeded": len(test_patients)}
 
 
+
+@app.post("/api/admin/reseed_health")
+def api_reseed_health():
+    """Force re-seed health_records DB (fixes empty vitals/diagnoses)."""
+    try:
+        from src.health_db import _conn as hdb_conn, DB_PATH as HDB_PATH, _seed as hdb_seed
+        with hdb_conn() as con:
+            # Force re-seed by clearing sub-tables and re-running seed
+            con.execute("DELETE FROM vitals")
+            con.execute("DELETE FROM diagnoses")
+            con.execute("DELETE FROM medications")
+            con.execute("DELETE FROM lab_results")
+            con.execute("DELETE FROM allergies")
+            con.execute("DELETE FROM visits")
+            hdb_seed(con)
+        return {"ok": True, "message": "Health records re-seeded successfully"}
+    except Exception as e:
+        raise HTTPException(500, f"Re-seed failed: {e}")
+
 # ── Serve the dashboard HTML ──────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
-    html_path = ROOT / "ui" / "hospital_dashboard.html"
+    html_path = ROOT / "ui" / "hospital_dashboard_modern.html"
     if html_path.exists():
         return HTMLResponse(html_path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Dashboard HTML not found</h1><p>Run the build step first.</p>", status_code=404)

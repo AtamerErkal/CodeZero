@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>CodeZero — ER Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           CODEZERO · ER COMMAND CENTER — FIXED VERSION
+           Original Design + Working Expand/Collapse
+        ═══════════════════════════════════════════════════════════════ */
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            /* Core palette */
+            --bg: #f4f6f9;
+            --surface: #ffffff;
+            --surface2: #f8fafc;
+            --surface3: #f1f5f9;
+            --border: #e2e8f0;
+            --border2: #cbd5e1;
+            --text: #0f172a;
+            --text2: #475569;
+            --text3: #94a3b8;
+            --text4: #cbd5e1;
+
+            /* Triage colors */
+            --emg: #dc2626;
+            --emg-light: #fef2f2;
+            --emg-mid: #fee2e2;
+            --emg-border: #fca5a5;
+            --emg-text: #991b1b;
+
+            --urg: #ea580c;
+            --urg-light: #fff7ed;
+            --urg-mid: #fed7aa;
+            --urg-border: #fdba74;
+            --urg-text: #9a3412;
+
+            --rtn: #16a34a;
+            --rtn-light: #f0fdf4;
+            --rtn-mid: #bbf7d0;
+            --rtn-border: #86efac;
+            --rtn-text: #166534;
+
+            --blue: #2563eb;
+            --blue-light: #eff6ff;
+            --blue-mid: #bfdbfe;
+
+            --purple: #7c3aed;
+            --purple-light: #f5f3ff;
+
+            --cyan: #0891b2;
+            --cyan-light: #ecfeff;
+
+            --yellow: #d97706;
+            --yellow-light: #fffbeb;
+
+            --slate: #334155;
+
+            /* Typography */
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            /* Spacing */
+            --nav-w: 220px;
+            --topbar-h: 56px;
+            --kpi-h: 90px;
+
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, .07), 0 2px 4px -2px rgba(0, 0, 0, .05);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, .08), 0 4px 6px -4px rgba(0, 0, 0, .05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, .1), 0 8px 10px -6px rgba(0, 0, 0, .06);
+
+            /* Radius */
+            --r-sm: 6px;
+            --r: 10px;
+            --r-md: 14px;
+            --r-lg: 18px;
+        }
+
+        html {
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border2);
+            border-radius: 99px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text3);
+        }
+
+        /* ══════════════════════════════════════════════════════
+           LAYOUT
+        ══════════════════════════════════════════════════════ */
+        #shell {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #topbar {
+            height: var(--topbar-h);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-sm);
+            z-index: 10;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.35rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+        }
+
+        .logo-icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, var(--emg), var(--urg));
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: .9rem;
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, var(--emg), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+        }
+
+        .refresh-btn {
+            padding: .5rem 1rem;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: var(--r);
+            font-size: .8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            transition: all .2s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .refresh-btn:hover {
+            background: #1d4ed8;
+            box-shadow: var(--shadow);
+        }
+
+        .auto-refresh-badge {
+            padding: .4rem .75rem;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text2);
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           KPI GRID
+        ══════════════════════════════════════════════════════ */
+        #kpi-bar {
+            margin-bottom: 2rem;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            transition: all .25s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: currentColor;
+        }
+
+        .kpi-card.kpi-emergency {
+            color: var(--emg);
+        }
+
+        .kpi-card.kpi-urgent {
+            color: var(--urg);
+        }
+
+        .kpi-card.kpi-info {
+            color: var(--blue);
+        }
+
+        .kpi-card.kpi-success {
+            color: var(--rtn);
+        }
+
+        .kpi-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .kpi-icon {
+            font-size: 1.75rem;
+            margin-bottom: .5rem;
+        }
+
+        .kpi-label {
+            font-size: .75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--text2);
+            margin-bottom: .5rem;
+        }
+
+        .kpi-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--text);
+            line-height: 1;
+            margin-bottom: .75rem;
+        }
+
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: .75rem;
+        }
+
+        .trend-indicator {
+            display: flex;
+            align-items: center;
+            gap: .25rem;
+            font-weight: 600;
+        }
+
+        .trend-neutral {
+            color: var(--text3);
+        }
+
+        .kpi-footer {
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .kpi-link {
+            font-size: .875rem;
+            color: var(--text2);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color .2s;
+        }
+
+        .kpi-link:hover {
+            color: var(--blue);
+        }
+
+        .eta-badge {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: .5rem .75rem;
+            background: var(--blue-light);
+            border: 1px solid var(--blue-mid);
+            border-radius: var(--r);
+        }
+
+        .eta-time {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--blue);
+        }
+
+        .eta-label {
+            font-size: .625rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-top: 2px;
+        }
+
+        /* Loading state */
+        .kpi-card.loading .kpi-value {
+            background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            color: transparent;
+            border-radius: 4px;
+            min-width: 80px;
+            display: inline-block;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           PATIENT CARDS — PHASE 2 WITH WORKING EXPAND/COLLAPSE
+        ══════════════════════════════════════════════════════ */
+
+        .patients-list {
+            display: grid;
+            gap: 1.25rem;
+        }
+
+        .pt-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: all .3s ease;
+        }
+
+        .pt-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .pt-card[data-triage="EMERGENCY"] {
+            border-left: 4px solid var(--emg);
+        }
+
+        .pt-card[data-triage="URGENT"] {
+            border-left: 4px solid var(--urg);
+        }
+
+        .pt-card[data-triage="ROUTINE"] {
+            border-left: 4px solid var(--rtn);
+        }
+
+        /* Header */
+        .pt-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 24px;
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pt-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--surface3);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .pt-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .pt-avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            background: linear-gradient(135deg, var(--blue-light), var(--blue-mid));
+        }
+
+        .pt-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pt-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .pt-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.875rem;
+            color: var(--text2);
+        }
+
+        .pt-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pt-meta-sep {
+            color: var(--text3);
+        }
+
+        .pt-eta-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            background: var(--emg-light);
+            border: 2px solid var(--emg-border);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .pt-eta-badge.urgent {
+            background: var(--urg-light);
+            border-color: var(--urg-border);
+        }
+
+        .pt-eta-badge.routine {
+            background: var(--rtn-light);
+            border-color: var(--rtn-border);
+        }
+
+        .pt-eta-time {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--emg);
+            line-height: 1;
+            font-family: var(--font-mono);
+        }
+
+        .pt-eta-badge.urgent .pt-eta-time {
+            color: var(--urg);
+        }
+
+        .pt-eta-badge.routine .pt-eta-time {
+            color: var(--rtn);
+        }
+
+        .pt-eta-label {
+            font-size: 0.625rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
+        }
+
+        /* Triage Banner */
+        .pt-triage-banner {
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pt-triage-banner.emergency {
+            background: var(--emg-light);
+            border-bottom-color: var(--emg-mid);
+        }
+
+        .pt-triage-banner.urgent {
+            background: var(--urg-light);
+            border-bottom-color: var(--urg-mid);
+        }
+
+        .pt-triage-banner.routine {
+            background: var(--rtn-light);
+            border-bottom-color: var(--rtn-mid);
+        }
+
+        .pt-triage-level {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pt-triage-icon {
+            font-size: 24px;
+        }
+
+        .pt-triage-text h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .pt-triage-banner.emergency .pt-triage-text h3 {
+            color: var(--emg-text);
+        }
+
+        .pt-triage-banner.urgent .pt-triage-text h3 {
+            color: var(--urg-text);
+        }
+
+        .pt-triage-banner.routine .pt-triage-text h3 {
+            color: var(--rtn-text);
+        }
+
+        .pt-triage-time {
+            font-size: 0.8125rem;
+            color: var(--text2);
+        }
+
+        .pt-risk-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--surface);
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .pt-risk-score {
+            font-size: 1.25rem;
+            color: var(--emg);
+            font-family: var(--font-mono);
+        }
+
+        /* Compact Summary (Always Visible) */
+        .pt-summary {
+            padding: 20px 24px;
+        }
+
+        .pt-section {
+            margin-bottom: 20px;
+        }
+
+        .pt-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .pt-section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .pt-section-icon {
+            font-size: 18px;
+        }
+
+        .pt-section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .pt-section-content {
+            font-size: 0.9375rem;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .pt-red-flags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .pt-flag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--emg-light);
+            border: 1.5px solid var(--emg-border);
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--emg-text);
+        }
+
+        /* Expanded Details (Collapsible) */
+        .pt-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pt-card.expanded .pt-details {
+            max-height: 5000px;
+            /* Large enough for any content */
+        }
+
+        .pt-details-content {
+            padding: 0 24px 20px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .pt-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+            margin-bottom: 24px;
+        }
+
+        .pt-info-box {
+            background: var(--surface2);
+            border-radius: var(--r);
+            padding: 12px;
+        }
+
+        .pt-info-label {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text3);
+            margin-bottom: 4px;
+        }
+
+        .pt-info-value {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .pt-info-value.mono {
+            font-family: var(--font-mono);
+        }
+
+        /* Medical Records */
+        .pt-medical-section {
+            background: var(--surface2);
+            border-radius: var(--r-md);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .pt-medical-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .pt-medical-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pt-medical-title {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text2);
+        }
+
+        /* History List */
+        .pt-history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .pt-history-item {
+            display: flex;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pt-history-item:last-child {
+            border-bottom: none;
+        }
+
+        .pt-history-bullet {
+            color: var(--text3);
+            font-weight: 700;
+        }
+
+        .pt-history-content {
+            flex: 1;
+        }
+
+        .pt-history-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .pt-history-detail {
+            font-size: 0.75rem;
+            color: var(--text2);
+        }
+
+        /* Medications */
+        .pt-meds-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .pt-med-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: var(--surface);
+            border-radius: var(--r);
+            border: 1px solid var(--border);
+        }
+
+        .pt-med-icon {
+            font-size: 20px;
+        }
+
+        .pt-med-content {
+            flex: 1;
+        }
+
+        .pt-med-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .pt-med-dose {
+            font-size: 0.75rem;
+            color: var(--text2);
+        }
+
+        /* Vitals Grid */
+        .pt-vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .pt-vital-item {
+            background: var(--surface);
+            border-radius: var(--r);
+            padding: 12px;
+            text-align: center;
+            border: 2px solid transparent;
+        }
+
+        .pt-vital-item.warning {
+            border-color: var(--urg-border);
+            background: var(--urg-light);
+        }
+
+        .pt-vital-item.critical {
+            border-color: var(--emg-border);
+            background: var(--emg-light);
+        }
+
+        .pt-vital-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text3);
+            margin-bottom: 4px;
+        }
+
+        .pt-vital-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text);
+        }
+
+        .pt-vital-unit {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text2);
+            margin-left: 2px;
+        }
+
+        /* Allergies */
+        .pt-allergy-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .pt-allergy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--urg-light);
+            border: 1.5px solid var(--urg-border);
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--urg-text);
+        }
+
+        /* Footer Actions */
+        .pt-footer {
+            display: flex;
+            gap: 10px;
+            padding: 16px 24px;
+            background: var(--surface2);
+            border-top: 1px solid var(--border);
+        }
+
+        .pt-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all .2s;
+        }
+
+        .pt-btn:hover {
+            background: var(--surface3);
+            border-color: var(--border2);
+        }
+
+        .pt-btn-primary {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: #fff;
+        }
+
+        .pt-btn-primary:hover {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+
+        .pt-btn-secondary {
+            flex: initial;
+            min-width: 100px;
+        }
+
+        .pt-btn-icon-only {
+            min-width: auto;
+            width: 44px;
+            padding: 10px;
+        }
+
+        /* Expand/Collapse Toggle */
+        .pt-expand-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--surface2);
+            border-top: 1px solid var(--border);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text2);
+            cursor: pointer;
+            transition: all .2s;
+            user-select: none;
+        }
+
+        .pt-expand-toggle:hover {
+            background: var(--surface3);
+            color: var(--text);
+        }
+
+        .pt-expand-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .pt-card.expanded .pt-expand-icon {
+            transform: rotate(180deg);
+        }
+
+        /* ══════════════════════════════════════════════════════
+           MAP
+        ══════════════════════════════════════════════════════ */
+        #map {
+            height: 400px;
+            border-radius: var(--r-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            margin-top: 1rem;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           RESPONSIVE
+        ══════════════════════════════════════════════════════ */
+        @media (max-width: 1280px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #content {
+                padding: 1rem;
+            }
+
+            .pt-vitals-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           EMPTY STATE
+        ══════════════════════════════════════════════════════ */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text3);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state-text {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="shell">
+        <!-- Topbar -->
+        <div id="topbar">
+            <div class="logo">
+                <div class="logo-icon">🚨</div>
+                <div class="logo-text">CodeZero</div>
+            </div>
+            <div class="topbar-actions">
+                <button class="refresh-btn" id="refresh-btn">
+                    <span id="refresh-icon">⟳</span>
+                    <span>Refresh</span>
+                </button>
+                <button class="refresh-btn"
+                    onclick="alert('JavaScript works! Check console (F12)'); console.log('🎉 Test button clicked!');"
+                    style="background:var(--rtn);">
+                    <span>🧪</span>
+                    <span>Test JS</span>
+                </button>
+                <div class="auto-refresh-badge" id="auto-refresh-status">
+                    Auto-refresh: ON
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div id="content">
+            <!-- KPI Bar -->
+            <div id="kpi-bar">
+                <div class="kpi-grid">
+                    <!-- Emergency -->
+                    <div class="kpi-card kpi-emergency loading">
+                        <div class="kpi-icon">🚨</div>
+                        <div class="kpi-label">Emergency</div>
+                        <div class="kpi-value" id="kpi-emergency-value">—</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator trend-neutral" id="trend-emg">
+                                <span class="trend-arrow">→</span>
+                                <span id="trend-emg-text">—</span>
+                            </span>
+                        </div>
+                        <div class="kpi-footer">
+                            <a href="#" class="kpi-link">View all →</a>
+                        </div>
+                    </div>
+
+                    <!-- Urgent -->
+                    <div class="kpi-card kpi-urgent loading">
+                        <div class="kpi-icon">⚠️</div>
+                        <div class="kpi-label">Urgent</div>
+                        <div class="kpi-value" id="kpi-urgent-value">—</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator trend-neutral" id="trend-urg">
+                                <span class="trend-arrow">→</span>
+                                <span id="trend-urg-text">—</span>
+                            </span>
+                        </div>
+                        <div class="kpi-footer">
+                            <a href="#" class="kpi-link">View all →</a>
+                        </div>
+                    </div>
+
+                    <!-- En Route -->
+                    <div class="kpi-card kpi-info loading">
+                        <div class="kpi-icon">🚑</div>
+                        <div class="kpi-label">En Route</div>
+                        <div class="kpi-value" id="kpi-enroute-value">—</div>
+                        <div class="kpi-eta">
+                            <div class="eta-badge">
+                                <span class="eta-time" id="eta-soonest">--</span>
+                                <span class="eta-label">next arrival</span>
+                            </div>
+                        </div>
+                        <div class="kpi-footer">
+                            <a href="#" class="kpi-link">View timeline →</a>
+                        </div>
+                    </div>
+
+                    <!-- Treated Today -->
+                    <div class="kpi-card kpi-success loading">
+                        <div class="kpi-icon">✓</div>
+                        <div class="kpi-label">Treated Today</div>
+                        <div class="kpi-value" id="kpi-treated-value">—</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator trend-neutral" id="trend-done">
+                                <span class="trend-arrow">→</span>
+                                <span id="trend-done-text">—</span>
+                            </span>
+                        </div>
+                        <div class="kpi-footer">
+                            <a href="#" class="kpi-link">View history →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patients List -->
+            <div class="patients-list" id="patients-list">
+                <!-- Patient cards will be injected here -->
+            </div>
+
+            <!-- Map -->
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- Load Leaflet library first -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // ============================================================================
+        // CONFIGURATION
+        // ============================================================================
+        const API_BASE = 'http://localhost:8001';
+        const AUTO_REFRESH_INTERVAL = 5000;
+        const HOSPITAL_COORDS = [48.4, 10.0];
+
+        const FLAG = {
+            'DE': '🇩🇪',
+            'TR': '🇹🇷',
+            'UK': '🇬🇧',
+            'GB': '🇬🇧',
+            'US': '🇺🇸'
+        };
+
+        let currentSort = 'triage';
+        let autoRefreshEnabled = true;
+        let autoRefreshTimer = null;
+        let map = null;
+        let markers = [];
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        console.log('🚀 CodeZero Dashboard - JavaScript Loaded!');
+        console.log('📍 API Base:', API_BASE);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ DOM Ready - Initializing...');
+            initMap();
+            loadData();
+            setupEventListeners();
+            startAutoRefresh();
+            console.log('✅ Initialization complete');
+        });
+
+        // ============================================================================
+        // MAP
+        // ============================================================================
+        function initMap() {
+            // Check if Leaflet is loaded
+            if (typeof L === 'undefined') {
+                console.warn('⚠️ Leaflet not loaded yet, retrying in 500ms...');
+                setTimeout(initMap, 500);
+                return;
+            }
+
+            console.log('🗺️ Initializing map...');
+            map = L.map('map').setView(HOSPITAL_COORDS, 11);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(map);
+
+            L.marker(HOSPITAL_COORDS, {
+                icon: L.divIcon({
+                    className: 'hospital-marker',
+                    html: '<div style="font-size:24px">🏥</div>',
+                    iconSize: [30, 30]
+                })
+            }).addTo(map).bindPopup('Hospital');
+
+            console.log('✅ Map initialized');
+        }
+
+        function updateMap(patients) {
+            if (!map || typeof L === 'undefined') {
+                console.warn('⚠️ Map not ready, skipping update');
+                return;
+            }
+
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            patients.forEach(p => {
+                const loc = p.location;
+                if (loc && loc.lat && loc.lon) {
+                    const color = {
+                        'EMERGENCY': '#dc2626',
+                        'URGENT': '#ea580c',
+                        'ROUTINE': '#16a34a'
+                    }[p.triage_level] || '#6b7280';
+
+                    const marker = L.marker([loc.lat, loc.lon], {
+                        icon: L.divIcon({
+                            className: 'patient-marker',
+                            html: `<div style="background:${color};width:16px;height:16px;border-radius:50%;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3)"></div>`,
+                            iconSize: [20, 20]
+                        })
+                    }).addTo(map);
+
+                    marker.bindPopup(`
+                        <strong>${h(p.full_name || p.patient_id)}</strong><br>
+                        ${h(p.chief_complaint)}<br>
+                        <strong>ETA:</strong> ${p.eta_display || '—'}
+                    `);
+
+                    markers.push(marker);
+                }
+            });
+        }
+
+        // ============================================================================
+        // DATA LOADING
+        // ============================================================================
+        async function loadData() {
+            try {
+                await Promise.all([
+                    loadKPIs(),
+                    loadPatients()
+                ]);
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        async function loadKPIs() {
+            try {
+                const response = await fetch(`${API_BASE}/api/stats`);
+                const data = await response.json();
+
+                document.getElementById('kpi-emergency-value').textContent = data.emergencies || 0;
+                document.getElementById('kpi-urgent-value').textContent = data.urgents || 0;
+                document.getElementById('kpi-enroute-value').textContent = data.en_route || 0;
+                document.getElementById('kpi-treated-value').textContent = data.treated || 0;
+
+                document.querySelectorAll('.kpi-card').forEach(card => {
+                    card.classList.remove('loading');
+                });
+
+                const patients = await fetch(`${API_BASE}/api/patients?sort=eta&limit=1`).then(r => r.json());
+                if (patients.length > 0 && patients[0].eta_minutes) {
+                    document.getElementById('eta-soonest').textContent = `${patients[0].eta_minutes}m`;
+                }
+
+            } catch (error) {
+                console.error('Error loading KPIs:', error);
+            }
+        }
+
+        async function loadPatients() {
+            try {
+                console.log('🔄 Loading patients from API...');
+                const response = await fetch(`${API_BASE}/api/patients?sort=${currentSort}&limit=50`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const patients = await response.json();
+                console.log('📦 Received patients:', patients.length);
+
+                renderPatients(patients);
+                updateMap(patients);
+
+            } catch (error) {
+                console.error('❌ Error loading patients:', error);
+                document.getElementById('patients-list').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <div class="empty-state-text">Error loading patients: ${error.message}</div>
+                        <div style="margin-top:1rem;font-size:0.875rem;color:var(--text3)">
+                            Make sure the server is running on ${API_BASE}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================================================
+        // PATIENT RENDERING
+        // ============================================================================
+        function renderPatients(patients) {
+            const container = document.getElementById('patients-list');
+
+            console.log('📊 Rendering patients:', patients.length);
+
+            if (!patients || patients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-text">No incoming patients in queue</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Check first patient data structure
+            if (patients[0]) {
+                console.log('🔍 First patient data:', {
+                    id: patients[0].patient_id,
+                    name: patients[0].full_name,
+                    hasDiagnoses: !!patients[0].diagnoses,
+                    hasMedications: !!patients[0].medications,
+                    hasVitals: !!patients[0].vitals,
+                    hasAllergies: !!patients[0].allergies,
+                    diagnosesCount: patients[0].diagnoses?.length || 0,
+                    medicationsCount: patients[0].medications?.length || 0,
+                    allergiesCount: patients[0].allergies?.length || 0
+                });
+            }
+
+            container.innerHTML = patients.map(p => buildPatientCard(p)).join('');
+
+            // Add expand/collapse event listeners
+            const toggles = document.querySelectorAll('.pt-expand-toggle');
+            console.log('🔘 Found toggle buttons:', toggles.length);
+
+            toggles.forEach(toggle => {
+                toggle.addEventListener('click', (e) => {
+                    console.log('🖱️ Toggle clicked!');
+                    const card = toggle.closest('.pt-card');
+                    if (card) {
+                        card.classList.toggle('expanded');
+                        console.log('✅ Card expanded state:', card.classList.contains('expanded'));
+                    } else {
+                        console.error('❌ Could not find parent card!');
+                    }
+                });
+            });
+
+            console.log('✅ Patient cards rendered successfully');
+        }
+
+        function buildPatientCard(p) {
+            const pid = p.patient_id || '';
+            const lvl = p.triage_level || 'ROUTINE';
+            const triageClass = lvl.toLowerCase();
+            const name = p.full_name || pid;
+            const hn = p.health_number || '';
+            const age = p.age || '--';
+            const sex = p.sex || 'Unknown';
+            const bloodType = p.blood_type || '--';
+            const nat = p.nationality || '';
+            const flag = FLAG[nat] || '';
+            const eta = p.eta_minutes;
+            const risk = p.risk_score || 5;
+
+            const photoPath = hn ? `patient_photos/${hn}.png` : '';
+            const photoHTML = photoPath ?
+                `<img src="${photoPath}" alt="${h(name)}" onerror="this.parentElement.innerHTML='<div class=\\'pt-avatar-placeholder\\'>👤</div>'">` :
+                `<div class="pt-avatar-placeholder">👤</div>`;
+
+            const triageIcon = {
+                'EMERGENCY': '🚨',
+                'URGENT': '⚠️',
+                'ROUTINE': '🟢'
+            }[lvl] || '📋';
+
+            const riskEmoji = risk >= 8 ? '🔴' : risk >= 5 ? '🟠' : '🟢';
+
+            const timeSensitivity = {
+                'EMERGENCY': 'IMMEDIATE - minutes matter',
+                'URGENT': 'Within 30 minutes',
+                'ROUTINE': 'Standard evaluation'
+            }[lvl] || 'Standard evaluation';
+
+            const etaBadgeHTML = eta ? `
+                <div class="pt-eta-badge ${triageClass}">
+                    <span class="pt-eta-time">${eta}</span>
+                    <span class="pt-eta-label">min ETA</span>
+                </div>
+            ` : '';
+
+            const complaint = p.chief_complaint || p.assessment || 'No complaint recorded';
+            const redFlags = (p.red_flags || []).filter(f => f !== 'none_identified');
+
+            const redFlagsHTML = redFlags.length > 0 ? `
+                <div class="pt-section">
+                    <div class="pt-section-header">
+                        <span class="pt-section-icon">🔴</span>
+                        <h4 class="pt-section-title">Red Flags</h4>
+                    </div>
+                    <div class="pt-red-flags">
+                        ${redFlags.map(f => `<span class="pt-flag-pill">🔴 ${h(f.replace(/_/g, ' '))}</span>`).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            // Medical history
+            const diagnoses = p.diagnoses || [];
+            const diagnosesHTML = diagnoses.length > 0 ? buildDiagnosesList(diagnoses) : '';
+
+            // Medications
+            const medications = p.medications || [];
+            const medsHTML = medications.length > 0 ? buildMedicationsList(medications) : '';
+
+            // Vitals
+            const vitals = p.vitals || {};
+            const vitalsHTML = Object.keys(vitals).length > 1 ? buildVitalsGrid(vitals) : '';
+
+            // Allergies
+            const allergies = p.allergies || [];
+            const allergiesHTML = allergies.length > 0 ? `
+                <div class="pt-allergy-badges">
+                    ${allergies.map(a => `
+                        <div class="pt-allergy-badge">
+                            ⚠️ ${h(a.allergen)} — ${h(a.severity || 'moderate')}
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<div style="color:var(--text3);font-size:0.875rem">None known</div>';
+
+            // Demographics grid
+            const demoHTML = `
+                <div class="pt-grid">
+                    ${p.insurance_id ? `
+                        <div class="pt-info-box">
+                            <div class="pt-info-label">Insurance</div>
+                            <div class="pt-info-value mono">${h(p.insurance_id)}</div>
+                        </div>
+                    ` : ''}
+                    ${p.height_cm ? `
+                        <div class="pt-info-box">
+                            <div class="pt-info-label">Height</div>
+                            <div class="pt-info-value">${p.height_cm} cm</div>
+                        </div>
+                    ` : ''}
+                    ${p.weight_kg ? `
+                        <div class="pt-info-box">
+                            <div class="pt-info-label">Weight</div>
+                            <div class="pt-info-value">${p.weight_kg} kg</div>
+                        </div>
+                    ` : ''}
+                    ${p.emergency_name ? `
+                        <div class="pt-info-box">
+                            <div class="pt-info-label">Emergency Contact</div>
+                            <div class="pt-info-value">${h(p.emergency_name)}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            return `
+<div class="pt-card" data-triage="${lvl}" data-patient-id="${pid}">
+    <!-- Header -->
+    <div class="pt-header">
+        <div class="pt-avatar">
+            ${photoHTML}
+        </div>
+        <div class="pt-info">
+            <h2 class="pt-name">${h(name)}</h2>
+            <div class="pt-meta">
+                <span class="pt-meta-item">🆔 ${h(pid)}</span>
+                <span class="pt-meta-sep">•</span>
+                <span class="pt-meta-item">${sex}, ${age}y</span>
+                <span class="pt-meta-sep">•</span>
+                <span class="pt-meta-item">🩸 ${bloodType}</span>
+                ${nat ? `<span class="pt-meta-sep">•</span><span class="pt-meta-item">${flag} ${nat}</span>` : ''}
+            </div>
+        </div>
+        ${etaBadgeHTML}
+    </div>
+    
+    <!-- Triage Banner -->
+    <div class="pt-triage-banner ${triageClass}">
+        <div class="pt-triage-level">
+            <span class="pt-triage-icon">${triageIcon}</span>
+            <div class="pt-triage-text">
+                <h3>${lvl}</h3>
+                <p class="pt-triage-time">${timeSensitivity}</p>
+            </div>
+        </div>
+        <div class="pt-risk-badge">
+            <span>Risk:</span>
+            <span class="pt-risk-score">${risk}/10</span>
+            <span>${riskEmoji}</span>
+        </div>
+    </div>
+    
+    <!-- Compact Summary (Always Visible) -->
+    <div class="pt-summary">
+        <div class="pt-section">
+            <div class="pt-section-header">
+                <span class="pt-section-icon">💬</span>
+                <h4 class="pt-section-title">Chief Complaint</h4>
+            </div>
+            <div class="pt-section-content">
+                ${h(complaint)}
+            </div>
+        </div>
+        ${redFlagsHTML}
+    </div>
+    
+    <!-- Expanded Details (Collapsible) -->
+    <div class="pt-details">
+        <div class="pt-details-content">
+            ${demoHTML}
+            
+            ${allergies.length > 0 ? `
+            <div class="pt-medical-section">
+                <div class="pt-medical-header">
+                    <span class="pt-section-icon">⚠️</span>
+                    <h4 class="pt-medical-title">Allergies</h4>
+                </div>
+                ${allergiesHTML}
+            </div>
+            ` : ''}
+            
+            ${vitalsHTML}
+            ${diagnosesHTML}
+            ${medsHTML}
+        </div>
+    </div>
+    
+    <!-- Expand Toggle -->
+    <div class="pt-expand-toggle">
+        <span>View Full Medical Record</span>
+        <span class="pt-expand-icon">▼</span>
+    </div>
+    
+    <!-- Footer Actions -->
+    <div class="pt-footer">
+        <button class="pt-btn pt-btn-primary" onclick="viewFullRecord('${pid}')">
+            <span>📄</span>
+            <span>Full Record</span>
+        </button>
+        <button class="pt-btn pt-btn-secondary" onclick="markArrived('${pid}')">
+            <span>✓</span>
+            <span>Mark Arrived</span>
+        </button>
+    </div>
+</div>`;
+        }
+
+        // ============================================================================
+        // HELPER FUNCTIONS
+        // ============================================================================
+        function buildDiagnosesList(diagnoses) {
+            return `
+<div class="pt-medical-section">
+    <div class="pt-medical-header">
+        <span class="pt-section-icon">📋</span>
+        <h4 class="pt-medical-title">Medical History</h4>
+    </div>
+    <ul class="pt-history-list">
+        ${diagnoses.slice(0, 5).map(d => `
+            <li class="pt-history-item">
+                <span class="pt-history-bullet">•</span>
+                <div class="pt-history-content">
+                    <div class="pt-history-name">${h(d.description)}${d.icd_code ? ` (${d.icd_code})` : ''}</div>
+                    <div class="pt-history-detail">
+                        ${d.diagnosed_date ? `Diagnosed ${d.diagnosed_date}` : ''}
+                        ${d.diagnosing_doctor ? ` by ${d.diagnosing_doctor}` : ''}
+                    </div>
+                </div>
+            </li>
+        `).join('')}
+    </ul>
+</div>`;
+        }
+
+        function buildMedicationsList(medications) {
+            return `
+<div class="pt-medical-section">
+    <div class="pt-medical-header">
+        <span class="pt-section-icon">💊</span>
+        <h4 class="pt-medical-title">Current Medications (${medications.length})</h4>
+    </div>
+    <div class="pt-meds-list">
+        ${medications.map(m => `
+            <div class="pt-med-item">
+                <span class="pt-med-icon">💊</span>
+                <div class="pt-med-content">
+                    <div class="pt-med-name">${h(m.name)}</div>
+                    <div class="pt-med-dose">
+                        ${m.dosage || ''} • ${m.frequency || ''}${m.start_date ? ` • Since ${m.start_date}` : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('')}
+    </div>
+</div>`;
+        }
+
+        function buildVitalsGrid(vitals) {
+            const items = [];
+
+            if (vitals.bp_systolic && vitals.bp_diastolic) {
+                const bpClass = vitals.bp_systolic < 90 || vitals.bp_systolic > 140 ? 'critical' :
+                    vitals.bp_systolic < 100 || vitals.bp_systolic > 130 ? 'warning' : 'normal';
+                items.push(`
+                    <div class="pt-vital-item ${bpClass}">
+                        <div class="pt-vital-label">Blood Pressure</div>
+                        <div class="pt-vital-value">${vitals.bp_systolic}/${vitals.bp_diastolic}<span class="pt-vital-unit">mmHg</span></div>
+                    </div>
+                `);
+            }
+
+            if (vitals.heart_rate) {
+                const hrClass = vitals.heart_rate < 60 || vitals.heart_rate > 100 ? 'warning' : 'normal';
+                items.push(`
+                    <div class="pt-vital-item ${hrClass}">
+                        <div class="pt-vital-label">Heart Rate</div>
+                        <div class="pt-vital-value">${vitals.heart_rate}<span class="pt-vital-unit">bpm</span></div>
+                    </div>
+                `);
+            }
+
+            if (vitals.spo2) {
+                const spo2Class = vitals.spo2 < 95 ? 'warning' : 'normal';
+                items.push(`
+                    <div class="pt-vital-item ${spo2Class}">
+                        <div class="pt-vital-label">SpO2</div>
+                        <div class="pt-vital-value">${vitals.spo2}<span class="pt-vital-unit">%</span></div>
+                    </div>
+                `);
+            }
+
+            if (vitals.temperature) {
+                const tempClass = vitals.temperature < 36 || vitals.temperature > 38 ? 'warning' : 'normal';
+                items.push(`
+                    <div class="pt-vital-item ${tempClass}">
+                        <div class="pt-vital-label">Temperature</div>
+                        <div class="pt-vital-value">${vitals.temperature}<span class="pt-vital-unit">°C</span></div>
+                    </div>
+                `);
+            }
+
+            if (items.length === 0) return '';
+
+            return `
+<div class="pt-medical-section">
+    <div class="pt-medical-header">
+        <span class="pt-section-icon">💓</span>
+        <h4 class="pt-medical-title">Latest Vitals</h4>
+    </div>
+    <div class="pt-vitals-grid">
+        ${items.join('')}
+    </div>
+</div>`;
+        }
+
+        function h(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // ============================================================================
+        // ACTION HANDLERS
+        // ============================================================================
+        function viewFullRecord(patientId) {
+            // This now just ensures the card is expanded
+            const card = document.querySelector(`[data-patient-id="${patientId}"]`);
+            if (card && !card.classList.contains('expanded')) {
+                card.classList.add('expanded');
+            }
+        }
+
+        function markArrived(patientId) {
+            if (confirm(`Mark ${patientId} as arrived?`)) {
+                fetch(`${API_BASE}/api/patients/${patientId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'arrived' })
+                }).then(() => {
+                    loadData();
+                }).catch(err => {
+                    console.error('Error updating status:', err);
+                });
+            }
+        }
+
+        // ============================================================================
+        // EVENT LISTENERS
+        // ============================================================================
+        function setupEventListeners() {
+            document.getElementById('refresh-btn').addEventListener('click', () => {
+                const icon = document.getElementById('refresh-icon');
+                icon.style.animation = 'rotate 1s linear';
+                setTimeout(() => { icon.style.animation = ''; }, 1000);
+                loadData();
+            });
+        }
+
+        // ============================================================================
+        // AUTO-REFRESH
+        // ============================================================================
+        function startAutoRefresh() {
+            if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+
+            autoRefreshTimer = setInterval(() => {
+                if (autoRefreshEnabled) {
+                    loadData();
+                }
+            }, AUTO_REFRESH_INTERVAL);
+        }
+    </script>
+</body>
+
+</html>
