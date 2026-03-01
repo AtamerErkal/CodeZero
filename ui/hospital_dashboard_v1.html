@@ -138,9 +138,9 @@
             height: var(--topbar-h);
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            justify-content: space-between;
             padding: 0 1.5rem;
             flex-shrink: 0;
             box-shadow: var(--shadow-sm);
@@ -151,18 +151,19 @@
             display: flex;
             align-items: center;
             gap: .65rem;
+            justify-self: start;
         }
 
         .brand-logo {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, var(--emg), #9b1c1c);
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             border-radius: var(--r-sm);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.1rem;
-            box-shadow: 0 2px 8px rgba(220, 38, 38, .3);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, .25);
         }
 
         .brand-name {
@@ -171,25 +172,55 @@
             font-weight: 800;
             color: var(--text);
             letter-spacing: -.02em;
+            line-height: 1.1;
         }
 
         .brand-name span {
+            color: var(--blue);
+        }
+
+        .brand-subtitle {
+            font-size: .62rem;
+            color: var(--text3);
+            font-weight: 500;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            margin-top: 1px;
+        }
+
+        /* ── Center title ── */
+        .topbar-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+        }
+
+        .topbar-title {
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: .02em;
+            color: var(--text);
+        }
+
+        .topbar-title span {
             color: var(--emg);
         }
 
-        .brand-tag {
-            font-size: .65rem;
-            color: var(--text3);
-            font-weight: 500;
-            letter-spacing: .04em;
+        .topbar-subtitle {
+            font-size: .6rem;
+            font-weight: 600;
+            letter-spacing: .1em;
             text-transform: uppercase;
-            margin-left: .25rem;
+            color: var(--text3);
         }
 
         .topbar-right {
             display: flex;
             align-items: center;
             gap: 1.25rem;
+            justify-self: end;
         }
 
         .live-indicator {
@@ -237,13 +268,25 @@
         }
 
         .topbar-refresh {
-            font-family: var(--font-mono);
-            font-size: .65rem;
-            color: var(--text3);
+            font-family: var(--font-sans);
+            font-size: .7rem;
+            font-weight: 600;
+            color: var(--text2);
             background: var(--surface3);
-            padding: 3px 8px;
+            padding: 5px 12px;
             border-radius: var(--r-sm);
             border: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background .15s, border-color .15s;
+        }
+
+        .topbar-refresh:hover {
+            background: var(--surface2);
+            border-color: var(--border2);
+            color: var(--text);
         }
 
         /* ── KPI Bar ── */
@@ -1916,18 +1959,29 @@
      TOPBAR
 ══════════════════════════════════════════════════ -->
         <div id="topbar">
+            <!-- Left: Brand -->
             <div class="brand">
-                <div class="brand-logo">🏥</div>
+                <div class="brand-logo">⚡</div>
                 <div>
                     <div class="brand-name">Code<span>Zero</span></div>
+                    <div class="brand-subtitle">Emergency Response</div>
                 </div>
-                <span class="brand-tag">ER Command Center</span>
             </div>
+
+            <!-- Center: Title -->
+            <div class="topbar-center">
+                <div class="topbar-title">Emergency Room <span>Command Center</span></div>
+                <div class="topbar-subtitle">Real-time patient management</div>
+            </div>
+
+            <!-- Right: Controls -->
             <div class="topbar-right">
                 <div class="live-indicator">
                     <div class="live-dot"></div>Live
                 </div>
-                <div class="topbar-refresh" id="refresh-countdown">Loading…</div>
+                <button class="topbar-refresh" onclick="doRefresh()" title="Refresh data">
+                    ↻ Refresh
+                </button>
                 <div class="topbar-clock" id="topbar-clock"></div>
             </div>
         </div>
@@ -1988,10 +2042,6 @@
                 </button>
                 <button class="nav-link" onclick="showTab('statistics')" id="nav-statistics">
                     <span class="nav-icon">📈</span> Statistics
-                </button>
-                <div class="nav-group-label">Records</div>
-                <button class="nav-link" onclick="showTab('health')" id="nav-health">
-                    <span class="nav-icon">🗂</span> Health Records
                 </button>
                 <div class="nav-group-label">System</div>
                 <button class="nav-link" onclick="showTab('admin')" id="nav-admin">
@@ -2279,7 +2329,6 @@
         let currentTab = 'incoming';
         let mapInstance = null;
         let mapMarkers = [];
-        let countdown = 60;
 
         // ── Clock ──────────────────────────────────────────
         function tick() {
@@ -2290,18 +2339,6 @@
         }
         setInterval(tick, 1000);
         tick();
-
-        // ── Countdown to next refresh ──────────────────────
-        function tickCountdown() {
-            countdown--;
-            const el = document.getElementById('refresh-countdown');
-            if (el) el.textContent = 'Next update in ' + countdown + 's';
-            if (countdown <= 0) {
-                countdown = 60;
-                doRefresh();
-            }
-        }
-        setInterval(tickCountdown, 1000);
 
         // ── Tab switching ──────────────────────────────────
         function showTab(name) {
@@ -2477,17 +2514,21 @@
             };
             const sActions = sActionMap[status] || '';
 
-            // Q&A table — always show English (answer), original language shown small below
+            // Q&A table — always English: answer=EN value, original_answer=patient language
             const qaHTML = qa.length
                 ? `<table class="qa-table">
-        ${qa.map(q => `<tr>
-          <td class="qa-q" style="width:45%">${h(q.question || '')}</td>
-          <td class="qa-a">
-            ${h(q.answer || q.original_answer || '')}
-            ${q.original_answer && q.original_answer !== q.answer
-                        ? `<span class="qa-orig">${h(q.original_answer)}</span>` : ''}
-          </td>
-        </tr>`).join('')}
+        ${qa.map(q => {
+                    const enAnswer = q.answer || q.original_answer || '—';
+                    const origAnswer = q.original_answer || '';
+                    const showOrig = origAnswer && origAnswer !== enAnswer;
+                    return `<tr>
+              <td class="qa-q" style="width:55%">${h(q.question || '')}</td>
+              <td class="qa-a">
+                <strong>${h(enAnswer)}</strong>
+                ${showOrig ? `<span class="qa-orig" style="display:block;font-size:.72rem;color:var(--text3);margin-top:2px">${h(origAnswer)}</span>` : ''}
+              </td>
+            </tr>`;
+                }).join('')}
        </table>`
                 : '<p style="color:var(--text3);font-size:.78rem">No follow-up Q&A recorded.</p>';
 
@@ -3248,7 +3289,7 @@
             try {
                 const r = await api('/api/admin/seed', { method: 'POST' });
                 toast('🌱 Seeded ' + r.seeded + ' test patients', 'ok');
-                countdown = 1;
+                doRefresh();
             } catch (e) { toast('❌ Seed failed', 'err'); }
         }
 
@@ -3257,7 +3298,7 @@
             try {
                 await api('/api/admin/clear', { method: 'POST' });
                 toast('🗑 Queue cleared', 'ok');
-                countdown = 1;
+                doRefresh();
             } catch (e) { toast('❌ Clear failed', 'err'); }
         }
 

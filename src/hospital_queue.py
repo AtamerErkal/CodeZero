@@ -90,31 +90,16 @@ class HospitalQueue:
                     language TEXT DEFAULT 'en-US',
                     destination_hospital TEXT DEFAULT '',
                     status TEXT DEFAULT 'incoming',
-                    health_number TEXT DEFAULT '',
-                    complaint_text TEXT DEFAULT '',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     qa_transcript TEXT DEFAULT '[]',
+                    complaint_text TEXT DEFAULT '',
                     has_photo INTEGER DEFAULT 0,
                     photo_count INTEGER DEFAULT 0,
-                    data_consent INTEGER DEFAULT 0,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    health_number TEXT DEFAULT ''
                 )
                 """
             )
-            conn.commit()
-            # Migrate: add new columns to existing DBs that may not have them
-            existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(patient_queue)").fetchall()}
-            for col_name, col_def in [
-                ("health_number",  "TEXT DEFAULT ''"),
-                ("complaint_text", "TEXT DEFAULT ''"),
-                ("qa_transcript",  "TEXT DEFAULT '[]'"),
-                ("has_photo",      "INTEGER DEFAULT 0"),
-                ("photo_count",    "INTEGER DEFAULT 0"),
-                ("data_consent",   "INTEGER DEFAULT 0"),
-            ]:
-                if col_name not in existing_cols:
-                    conn.execute(f"ALTER TABLE patient_queue ADD COLUMN {col_name} {col_def}")
-                    logger.info("DB migration: added column %s", col_name)
             conn.commit()
             conn.close()
             logger.info("Patient queue table ready at %s.", self.db_path)
@@ -175,11 +160,9 @@ class HospitalQueue:
                     red_flags, assessment, suspected_conditions, risk_score,
                     recommended_action, time_sensitivity, source_guidelines,
                     eta_minutes, arrival_time, location_lat, location_lon,
-                    language, destination_hospital, status,
-                    health_number, complaint_text, qa_transcript,
-                    has_photo, photo_count, data_consent, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incoming',
-                          ?, ?, ?, ?, ?, ?, ?)
+                    language, destination_hospital, status, updated_at,
+                    qa_transcript, complaint_text, has_photo, photo_count, health_number
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incoming', ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     record.get("patient_id", ""),
@@ -195,17 +178,16 @@ class HospitalQueue:
                     json.dumps(record.get("source_guidelines", [])),
                     record.get("eta_minutes"),
                     record.get("arrival_time"),
-                    anon_lat,
-                    anon_lon,
+                    anon_lat,   # GDPR: anonymized ~1km grid
+                    anon_lon,   # GDPR: anonymized ~1km grid
                     record.get("language", "en-US"),
                     record.get("destination_hospital", ""),
-                    record.get("health_number", ""),
-                    record.get("complaint_text", ""),
+                    datetime.now(timezone.utc).isoformat(),
                     json.dumps(record.get("qa_transcript", [])),
+                    record.get("complaint_text", ""),
                     1 if record.get("has_photo") else 0,
                     record.get("photo_count", 0),
-                    1 if record.get("data_consent") else 0,
-                    datetime.now(timezone.utc).isoformat(),
+                    record.get("health_number", ""),
                 ),
             )
             conn.commit()
@@ -258,8 +240,6 @@ class HospitalQueue:
                         patient[field] = json.loads(patient.get(field, "[]"))
                     except (json.JSONDecodeError, TypeError):
                         patient[field] = []
-                patient["has_photo"] = bool(patient.get("has_photo", 0))
-                patient["data_consent"] = bool(patient.get("data_consent", 0))
                 patients.append(patient)
 
             return patients
@@ -298,8 +278,6 @@ class HospitalQueue:
                         patient[field] = json.loads(patient.get(field, "[]"))
                     except (json.JSONDecodeError, TypeError):
                         patient[field] = []
-                patient["has_photo"] = bool(patient.get("has_photo", 0))
-                patient["data_consent"] = bool(patient.get("data_consent", 0))
                 patients.append(patient)
 
             return patients

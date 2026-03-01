@@ -290,17 +290,25 @@
             width: 88px;
             height: 88px;
             border-radius: 50%;
-            background: var(--blue);
+            background: linear-gradient(135deg, var(--blue) 0%, #2563eb 100%);
             border: none;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
             color: white;
-            box-shadow: 0 4px 20px rgba(26, 86, 219, 0.35);
-            transition: all 0.15s ease;
+            box-shadow: 0 4px 24px rgba(26, 86, 219, 0.40), 0 1px 0 rgba(255, 255, 255, .15) inset;
+            transition: all 0.18s cubic-bezier(.4, 0, .2, 1);
             position: relative;
+        }
+
+        .mic-btn svg {
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .2));
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.06);
+            box-shadow: 0 8px 32px rgba(26, 86, 219, .50);
         }
 
         .mic-btn:active {
@@ -939,6 +947,18 @@
                 </div>
             </div>
 
+            <!-- Optional health number -->
+            <div style="margin-bottom:14px;">
+                <label style="font-size:0.78rem;color:var(--gray-500);font-weight:600;display:block;margin-bottom:6px;"
+                    id="wl_hnLabel">🪪 Health number (optional)</label>
+                <input type="text" id="healthNumberInput" placeholder="e.g. DEMO-DE-001" autocomplete="off"
+                    autocapitalize="characters"
+                    style="width:100%;border:1.5px solid var(--gray-200);border-radius:var(--r-md);padding:10px 12px;font-size:0.88rem;font-family:inherit;box-sizing:border-box;outline:none;"
+                    oninput="S.healthNumber = this.value.trim().toUpperCase()"
+                    onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--gray-200)'">
+                <p style="font-size:0.72rem;color:var(--gray-400);margin-top:4px;" id="wl_hnHint">Links your existing
+                    medical record to this visit</p>
+            </div>
             <button class="btn btn-primary" id="btnStart" onclick="goToPage('input')">Get Started →</button>
             <p id="wl_demo" style="text-align:center;font-size:0.72rem;color:var(--gray-400);margin-top:6px;">⚠️ Demo
                 only. Call 112 for real emergencies.</p>
@@ -954,7 +974,21 @@
             <!-- Mic area -->
             <div
                 style="background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--r-xl);padding:24px 20px;text-align:center;margin-bottom:16px;">
-                <button class="mic-btn" id="micBtn" onclick="toggleRecording()" style="margin:0 auto 14px;">🎤</button>
+                <button class="mic-btn" id="micBtn" onclick="toggleRecording()" style="margin:0 auto 14px;"
+                    aria-label="Record voice">
+                    <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="22" />
+                        <line x1="8" y1="22" x2="16" y2="22" />
+                    </svg>
+                    <svg id="stopIcon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+                        fill="currentColor" style="display:none;">
+                        <rect x="6" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                </button>
                 <p style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:2px;" id="micLabel">Tap to
                     record</p>
                 <p style="font-size:0.82rem;color:var(--gray-500);" id="micSub">Speak clearly in your own language</p>
@@ -1161,7 +1195,12 @@
 
             <div id="resultHospital"></div>
             <div id="resultEmergencyCall" style="display:none;text-align:center;margin-bottom:14px;"></div>
-            <div id="resultAdvice"></div>
+            <!-- Pre-arrival advice section -->
+            <div id="resultAdviceSection" style="margin-bottom:4px;">
+                <div class="section-label" style="margin-bottom:8px;">⏱ <span id="rs_adviceLabel">Before you
+                        arrive</span></div>
+                <div id="resultAdvice"></div>
+            </div>
 
             <!-- Live tracking note -->
             <div class="card" style="margin-bottom:14px;">
@@ -1225,6 +1264,50 @@
                 // questions
                 questionsSpinnerText: 'Generating AI questions…',
                 aiMode_real: '🤖 AI-generated questions',
+                // Fallback questions
+                fq_onset: 'When did your symptoms start?',
+                fq_onset_now: 'Just now (< 15 min)',
+                fq_onset_1h: 'Within the last hour',
+                fq_onset_6h: '1 – 6 hours ago',
+                fq_onset_24h: '6 – 24 hours ago',
+                fq_onset_days: 'More than a day ago',
+                fq_pain_scale: 'How would you rate your pain on a scale of 1–10?',
+                fq_breathing: 'Are you having difficulty breathing right now?',
+                fq_fever: 'What is your approximate temperature?',
+                fq_nausea: 'Are you experiencing nausea or vomiting?',
+                fq_conditions: 'Do you have any known medical conditions?',
+                fq_cond_none: 'None',
+                fq_cond_heart: 'Heart disease',
+                fq_cond_diab: 'Diabetes',
+                fq_cond_bp: 'High blood pressure',
+                fq_cond_other: 'Other',
+                fq_medications: 'Are you currently taking any medications?',
+                fq_allergies: 'Do you have any known allergies to medications?',
+                fq_yes: 'Yes',
+                fq_no: 'No',
+                fq_unsure: 'Not sure',
+                wl_hnLabel: '🪪 Health number (optional)',
+                wl_hnHint: 'Links your existing medical record to this visit',
+                rs_adviceLabel: '⏱ Before you arrive',
+                // Pre-arrival advice (fallback when AI unavailable)
+                adv_call112: 'Call 112 immediately or have someone call for you',
+                adv_sit_still: 'Sit or lie down and do not move',
+                adv_stay_calm: 'Stay calm and breathe slowly',
+                adv_rest: 'Rest and avoid physical exertion',
+                adv_someone_with_you: 'Have someone accompany you to the hospital',
+                adv_bring_meds: 'Bring all current medications with you',
+                adv_bring_id: 'Bring your ID and insurance card',
+                adv_no_drive: 'Do NOT drive yourself to the hospital',
+                adv_no_eat: 'Do not eat or drink anything until examined',
+                adv_chest_loose: 'Loosen tight clothing around your chest',
+                adv_chest_no_stress: 'Avoid physical or emotional stress',
+                adv_bleed_pressure: 'Apply firm pressure to the wound with a clean cloth',
+                adv_bleed_no_remove: 'Do not remove any object embedded in a wound',
+                adv_breath_upright: 'Sit upright — do not lie flat',
+                adv_breath_no_lie: 'Do not lie flat — this worsens breathing',
+                adv_head_dark: 'Rest in a quiet, dark room if possible',
+                adv_head_no_screen: 'Avoid screens, bright lights and loud noise',
+                adv_proceed_er: 'Go to the emergency room as soon as possible',
                 aiMode_mock: '⚠️ Demo mode — AI not connected',
                 q_back: 'Back',
                 q_next: 'Next',
@@ -1320,6 +1403,48 @@
                 ph_skip: 'Überspringen →',
                 ph_continue: 'Weiter →',
                 questionsSpinnerText: 'KI-Fragen werden generiert…',
+                fq_onset: 'Wann haben Ihre Beschwerden begonnen?',
+                fq_onset_now: 'Gerade eben (< 15 Min)',
+                fq_onset_1h: 'Innerhalb der letzten Stunde',
+                fq_onset_6h: 'Vor 1 – 6 Stunden',
+                fq_onset_24h: 'Vor 6 – 24 Stunden',
+                fq_onset_days: 'Vor mehr als einem Tag',
+                fq_pain_scale: 'Wie stark sind Ihre Schmerzen (Skala 1–10)?',
+                fq_breathing: 'Haben Sie gerade Atemschwierigkeiten?',
+                fq_fever: 'Wie hoch ist Ihre ungefähre Körpertemperatur?',
+                fq_nausea: 'Leiden Sie unter Übelkeit oder Erbrechen?',
+                fq_conditions: 'Haben Sie bekannte Vorerkrankungen?',
+                fq_cond_none: 'Keine',
+                fq_cond_heart: 'Herzerkrankung',
+                fq_cond_diab: 'Diabetes',
+                fq_cond_bp: 'Bluthochdruck',
+                fq_cond_other: 'Sonstiges',
+                fq_medications: 'Nehmen Sie derzeit Medikamente ein?',
+                fq_allergies: 'Haben Sie bekannte Medikamentenallergien?',
+                fq_yes: 'Ja',
+                fq_no: 'Nein',
+                fq_unsure: 'Nicht sicher',
+                wl_hnLabel: '🪪 Krankenversicherungsnummer (optional)',
+                wl_hnHint: 'Verknüpft Ihre Krankenakte mit diesem Besuch',
+                rs_adviceLabel: '⏱ Vor Ihrer Ankunft',
+                adv_call112: 'Rufen Sie sofort 112 an oder lassen Sie jemanden rufen',
+                adv_sit_still: 'Setzen oder legen Sie sich hin und bewegen Sie sich nicht',
+                adv_stay_calm: 'Bleiben Sie ruhig und atmen Sie langsam',
+                adv_rest: 'Ruhen Sie sich aus und vermeiden Sie körperliche Anstrengung',
+                adv_someone_with_you: 'Lassen Sie sich von jemandem ins Krankenhaus begleiten',
+                adv_bring_meds: 'Bringen Sie alle aktuellen Medikamente mit',
+                adv_bring_id: 'Bringen Sie Ausweis und Krankenversicherungskarte mit',
+                adv_no_drive: 'Fahren Sie NICHT selbst ins Krankenhaus',
+                adv_no_eat: 'Essen oder trinken Sie nichts bis zur Untersuchung',
+                adv_chest_loose: 'Lockern Sie enge Kleidung um die Brust',
+                adv_chest_no_stress: 'Vermeiden Sie körperlichen oder emotionalen Stress',
+                adv_bleed_pressure: 'Drücken Sie mit einem sauberen Tuch fest auf die Wunde',
+                adv_bleed_no_remove: 'Entfernen Sie keinen in der Wunde steckenden Gegenstand',
+                adv_breath_upright: 'Sitzen Sie aufrecht — legen Sie sich nicht hin',
+                adv_breath_no_lie: 'Legen Sie sich nicht flach hin — das verschlimmert die Atmung',
+                adv_head_dark: 'Ruhen Sie sich in einem ruhigen, dunklen Raum aus',
+                adv_head_no_screen: 'Vermeiden Sie Bildschirme, helles Licht und Lärm',
+                adv_proceed_er: 'Gehen Sie so schnell wie möglich in die Notaufnahme',
                 aiMode_real: '🤖 KI-generierte Fragen',
                 aiMode_mock: '⚠️ Demo-Modus — KI nicht verbunden',
                 q_back: 'Zurück',
@@ -1412,6 +1537,48 @@
                 ph_skip: 'Atla →',
                 ph_continue: 'Devam →',
                 questionsSpinnerText: 'Yapay zeka soruları oluşturuluyor…',
+                fq_onset: 'Şikayetleriniz ne zaman başladı?',
+                fq_onset_now: 'Az önce (< 15 dk)',
+                fq_onset_1h: 'Son bir saat içinde',
+                fq_onset_6h: '1 – 6 saat önce',
+                fq_onset_24h: '6 – 24 saat önce',
+                fq_onset_days: 'Bir günden fazla önce',
+                fq_pain_scale: 'Ağrınızı 1-10 skalasında nasıl değerlendirirsiniz?',
+                fq_breathing: 'Şu anda nefes almakta güçlük çekiyor musunuz?',
+                fq_fever: 'Yaklaşık ateşiniz nedir?',
+                fq_nausea: 'Bulantı veya kusma yaşıyor musunuz?',
+                fq_conditions: 'Bilinen bir kronik hastalığınız var mı?',
+                fq_cond_none: 'Yok',
+                fq_cond_heart: 'Kalp hastalığı',
+                fq_cond_diab: 'Diyabet',
+                fq_cond_bp: 'Yüksek tansiyon',
+                fq_cond_other: 'Diğer',
+                fq_medications: 'Şu anda herhangi bir ilaç kullanıyor musunuz?',
+                fq_allergies: 'Bilinen ilaç alerjiniz var mı?',
+                fq_yes: 'Evet',
+                fq_no: 'Hayır',
+                fq_unsure: 'Emin değilim',
+                wl_hnLabel: '🪪 Sağlık numarası (isteğe bağlı)',
+                wl_hnHint: 'Mevcut tıbbi kaydınızı bu ziyaretle ilişkilendirir',
+                rs_adviceLabel: '⏱ Varmadan önce',
+                adv_call112: "Hemen 112'yi arayın veya birine aratın",
+                adv_sit_still: 'Oturun ya da uzanın ve hareket etmeyin',
+                adv_stay_calm: 'Sakin olun ve yavaş nefes alın',
+                adv_rest: 'Dinlenin ve fiziksel efordan kaçının',
+                adv_someone_with_you: 'Hastaneye birinin eşliğinde gidin',
+                adv_bring_meds: 'Kullandığınız tüm ilaçları yanınıza alın',
+                adv_bring_id: 'Kimliğinizi ve sigorta kartınızı getirin',
+                adv_no_drive: "Hastaneye KENDİNİZ araba kullanarak gitmeyin",
+                adv_no_eat: 'Muayene edilene kadar hiçbir şey yemeyin ya da içmeyin',
+                adv_chest_loose: 'Göğsünüzün etrafındaki dar giysileri gevşetin',
+                adv_chest_no_stress: 'Fiziksel veya duygusal stresten kaçının',
+                adv_bleed_pressure: 'Temiz bir bezle yaraya sıkıca bastırın',
+                adv_bleed_no_remove: 'Yaraya saplanmış bir nesneyi çıkarmayın',
+                adv_breath_upright: 'Dik oturun — yatmayın',
+                adv_breath_no_lie: 'Düz yatmayın — solunumu kötüleştirir',
+                adv_head_dark: 'Mümkünse sakin, karanlık bir odada dinlenin',
+                adv_head_no_screen: 'Ekranlardan, parlak ışıktan ve gürültüden kaçının',
+                adv_proceed_er: 'En kısa sürede acil servise gidin',
                 aiMode_real: '🤖 Yapay zeka soruları',
                 aiMode_mock: '⚠️ Demo modu — YZ bağlı değil',
                 q_back: 'Geri',
@@ -1585,6 +1752,7 @@
                 complaint: '', complaintEN: '', detectedLang: 'en-US', photos: [],
                 questions: [], answers: [], qIdx: 0, dataConsent: null, assessment: null,
                 lat: null, lon: null, hospitals: [], selectedHospital: null, regNumber: null, aiMode: null,
+                healthNumber: null,
             });
             document.getElementById('complaintText').value = '';
             document.getElementById('transcriptBox').classList.remove('visible');
@@ -1641,6 +1809,42 @@
             else await startRecording();
         }
 
+        // Web Speech API - fallback for when Azure Speech is unavailable
+        let webSpeechRec = null;
+        let webSpeechResult = '';
+
+        function startWebSpeech(langCode) {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) return;
+            webSpeechRec = new SR();
+            webSpeechRec.continuous = true;
+            webSpeechRec.interimResults = true;
+            webSpeechRec.lang = langCode || 'tr-TR';
+            webSpeechResult = '';
+            webSpeechRec.onresult = (e) => {
+                let final = '';
+                for (let i = 0; i < e.results.length; i++) {
+                    if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
+                }
+                webSpeechResult = final.trim();
+                // Live preview in transcript box
+                if (webSpeechResult) {
+                    document.getElementById('transcriptText').textContent = webSpeechResult;
+                    document.getElementById('transcriptBox').classList.add('visible');
+                    document.getElementById('transcriptLang').textContent = '🎤 ' + t('micLabelRec');
+                }
+            };
+            webSpeechRec.onerror = () => { /* silent - Azure will handle */ };
+            try { webSpeechRec.start(); } catch (e) { /* ignore */ }
+        }
+
+        function stopWebSpeech() {
+            if (webSpeechRec) {
+                try { webSpeechRec.stop(); } catch (e) { }
+                webSpeechRec = null;
+            }
+        }
+
         async function startRecording() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1650,51 +1854,116 @@
                 mediaRec.onstop = processAudio;
                 mediaRec.start(100);
                 isRecording = true;
+                // Start Web Speech in parallel as live preview + Azure fallback
+                startWebSpeech(S.selectedLang || S.detectedLang || 'tr-TR');
                 const btn = document.getElementById('micBtn');
                 btn.classList.add('recording');
-                btn.textContent = '⏹';
+                document.getElementById('micIcon').style.display = 'none';
+                document.getElementById('stopIcon').style.display = 'block';
                 document.getElementById('micLabel').textContent = t('micLabelRec');
                 document.getElementById('micSub').textContent = t('micSubRec');
             } catch (e) {
-                toast(t('inp_orType'), 'warn');
+                // If getUserMedia fails, try Web Speech API only
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SR) {
+                    isRecording = true;
+                    startWebSpeech(S.selectedLang || S.detectedLang || 'tr-TR');
+                    const btn = document.getElementById('micBtn');
+                    btn.classList.add('recording');
+                    document.getElementById('micIcon').style.display = 'none';
+                    document.getElementById('stopIcon').style.display = 'block';
+                    document.getElementById('micLabel').textContent = t('micLabelRec');
+                    document.getElementById('micSub').textContent = t('micSubRec');
+                    return;
+                }
+                const msg = e.name === 'NotAllowedError' ? 'Microphone access denied. Please allow microphone in browser settings.' :
+                    e.name === 'NotFoundError' ? 'No microphone detected on this device.' :
+                        e.name === 'NotReadableError' ? 'Microphone is in use by another application.' :
+                            'Microphone unavailable — please type your complaint below.';
+                toast(msg, 'warn');
+                document.getElementById('micLabel').textContent = t('micLabelIdle');
+                document.getElementById('micSub').textContent = t('micSubIdle');
             }
         }
 
         function stopRecording() {
+            stopWebSpeech();
             if (mediaRec && mediaRec.state !== 'inactive') {
                 mediaRec.stop();
                 mediaRec.stream.getTracks().forEach(tr => tr.stop());
+            } else if (isRecording && !mediaRec) {
+                // Was using Web Speech only - process the result directly
+                isRecording = false;
+                const btn = document.getElementById('micBtn');
+                btn.classList.remove('recording');
+                document.getElementById('micIcon').style.display = 'block';
+                document.getElementById('stopIcon').style.display = 'none';
+                if (webSpeechResult && webSpeechResult.trim()) {
+                    const lang = S.selectedLang || S.detectedLang || 'tr-TR';
+                    setComplaintFromAudio(webSpeechResult.trim(), lang);
+                } else {
+                    document.getElementById('micLabel').textContent = t('micLabelIdle');
+                    document.getElementById('micSub').textContent = t('micSubIdle');
+                    toast('Could not capture audio — please type below.', 'warn');
+                }
+                webSpeechResult = '';
+                return;
             }
             isRecording = false;
             const btn = document.getElementById('micBtn');
             btn.classList.remove('recording');
-            btn.textContent = '🎤';
+            document.getElementById('micIcon').style.display = 'block';
+            document.getElementById('stopIcon').style.display = 'none';
             document.getElementById('micLabel').textContent = t('micLabelIdle');
             document.getElementById('micSub').textContent = t('micSubIdle');
         }
 
         async function processAudio() {
             const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
-            if (blob.size < 500) { toast('Recording too short — please try again.', 'warn'); return; }
+            if (blob.size < 500) {
+                // Blob çok küçük - Web Speech sonucu kullan (varsa)
+                if (webSpeechResult && webSpeechResult.trim()) {
+                    const lang = S.selectedLang || S.detectedLang || 'tr-TR';
+                    setComplaintFromAudio(webSpeechResult.trim(), lang);
+                } else {
+                    toast('Recording too short — please try again.', 'warn');
+                }
+                webSpeechResult = '';
+                return;
+            }
 
             const form = new FormData();
             form.append('audio', blob, 'complaint.webm');
 
             document.getElementById('inputSpinner').classList.add('visible');
-            document.getElementById('inputSpinnerText').textContent = 'Processing with Azure Speech…';
+            document.getElementById('inputSpinnerText').textContent = 'Processing audio…';
             try {
                 const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
                 const d = await r.json();
                 if (d.text && d.text.trim()) {
-                    S.detectedLang = d.language || 'en-US';
+                    // Azure başarılı - Azure'ı kullan (dil tespiti daha iyi)
+                    S.detectedLang = d.language || S.selectedLang || 'en-US';
                     setComplaintFromAudio(d.text.trim(), d.language);
+                    webSpeechResult = '';
+                } else if (webSpeechResult && webSpeechResult.trim()) {
+                    // Azure boş döndü ama Web Speech bir şey yakaladı - onu kullan
+                    const lang = S.selectedLang || S.detectedLang || 'tr-TR';
+                    setComplaintFromAudio(webSpeechResult.trim(), lang);
+                    webSpeechResult = '';
                 } else {
-                    toast('Could not understand audio — please type below.', 'err');
+                    toast('Could not understand audio — please type below.', 'warn');
                     resetMicLabels();
                 }
             } catch (e) {
-                toast('Transcription failed — please type below.', 'err');
-                resetMicLabels();
+                // Fetch başarısız - Web Speech'e bak
+                if (webSpeechResult && webSpeechResult.trim()) {
+                    const lang = S.selectedLang || S.detectedLang || 'tr-TR';
+                    setComplaintFromAudio(webSpeechResult.trim(), lang);
+                } else {
+                    toast('Transcription unavailable — please type below.', 'warn');
+                    resetMicLabels();
+                }
+                webSpeechResult = '';
             } finally {
                 document.getElementById('inputSpinner').classList.remove('visible');
             }
@@ -1786,6 +2055,80 @@
         function continueFromPhotos() { loadQuestions(); }
 
         // ══════════════════════════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════════════════════════
+        // SMART FALLBACK QUESTIONS (when GPT/Azure unavailable)
+        // ══════════════════════════════════════════════════════════════════════════
+        function generateFallbackQuestions(complaint) {
+            const c = complaint.toLowerCase();
+            const questions = [];
+
+            // Onset — always ask this
+            questions.push({
+                question: t('fq_onset'),
+                type: 'multiple_choice',
+                options: [t('fq_onset_now'), t('fq_onset_1h'), t('fq_onset_6h'), t('fq_onset_24h'), t('fq_onset_days')]
+            });
+
+            // Pain severity — if pain mentioned
+            if (/pain|ache|hurt|ağrı|schmerz|douleur|dolor|bol/i.test(c)) {
+                questions.push({
+                    question: t('fq_pain_scale'),
+                    type: 'scale',
+                    options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+                });
+            }
+
+            // Breathing — chest, short of breath, asthma
+            if (/breath|chest|lung|asthma|nefes|göğüs|atemlos|brust/i.test(c)) {
+                questions.push({
+                    question: t('fq_breathing'),
+                    type: 'yes_no',
+                    options: [t('fq_yes'), t('fq_no'), t('fq_unsure')]
+                });
+            }
+
+            // Fever/temperature
+            if (/fever|temperature|chills|hot|ateş|fieber|grippe|infect/i.test(c)) {
+                questions.push({
+                    question: t('fq_fever'),
+                    type: 'multiple_choice',
+                    options: ['< 37.5°C (Normal)', '37.5–38.5°C (Low)', '38.5–39.5°C (High)', '> 39.5°C (Very high)', t('fq_unsure')]
+                });
+            }
+
+            // Nausea / vomiting / head
+            if (/nause|vomit|dizzy|headache|baş|kopf|midesi|kusm/i.test(c)) {
+                questions.push({
+                    question: t('fq_nausea'),
+                    type: 'yes_no',
+                    options: [t('fq_yes'), t('fq_no'), t('fq_unsure')]
+                });
+            }
+
+            // Medical history
+            questions.push({
+                question: t('fq_conditions'),
+                type: 'multiple_choice',
+                options: [t('fq_cond_none'), t('fq_cond_heart'), t('fq_cond_diab'), t('fq_cond_bp'), t('fq_cond_other')]
+            });
+
+            // Medications
+            questions.push({
+                question: t('fq_medications'),
+                type: 'yes_no',
+                options: [t('fq_yes'), t('fq_no'), t('fq_unsure')]
+            });
+
+            // Allergies
+            questions.push({
+                question: t('fq_allergies'),
+                type: 'yes_no',
+                options: [t('fq_yes'), t('fq_no'), t('fq_unsure')]
+            });
+
+            return questions;
+        }
+
         // LOAD QUESTIONS  →  /api/patient/questions  (Azure Translator + GPT-4)
         // ══════════════════════════════════════════════════════════════════════════
         async function loadQuestions() {
@@ -1818,6 +2161,11 @@
                 document.getElementById('questionsSpinner').classList.remove('visible');
             }
 
+            if (!S.questions.length) {
+                // GPT unavailable — generate smart fallback questions from complaint keywords
+                S.questions = generateFallbackQuestions(S.complaint || S.complaintEN || '');
+                S.aiMode = 'mock';
+            }
             if (!S.questions.length) { goToPage('consent'); updateConsentPage(); return; }
 
             // Show AI mode badge
@@ -1847,26 +2195,86 @@
         // ══════════════════════════════════════════════════════════════════════════
         // QUESTION RENDERER
         // ══════════════════════════════════════════════════════════════════════════
+
+        // Common clinical option translations for GPT-returned English options
+        const OPTION_TRANS = {
+            // Onset timing
+            'just now': { 'tr': 'Az önce', 'de': 'Gerade eben' },
+            '< 1 hour ago': { 'tr': '< 1 saat önce', 'de': 'Vor < 1 Stunde' },
+            '1–6 hours ago': { 'tr': '1–6 saat önce', 'de': 'Vor 1–6 Stunden' },
+            '6–24 hours ago': { 'tr': '6–24 saat önce', 'de': 'Vor 6–24 Stunden' },
+            '> 1 day': { 'tr': '1 günden fazla', 'de': 'Mehr als 1 Tag' },
+            // Onset type
+            'suddenly': { 'tr': 'Aniden', 'de': 'Plötzlich' },
+            'gradually over minutes': { 'tr': 'Dakikalar içinde yavaşça', 'de': 'Langsam über Minuten' },
+            'gradually over hours': { 'tr': 'Saatler içinde yavaşça', 'de': 'Langsam über Stunden' },
+            'gradually over days': { 'tr': 'Günler içinde yavaşça', 'de': 'Langsam über Tage' },
+            // Yes/No/Unsure
+            'yes': { 'tr': 'Evet', 'de': 'Ja' },
+            'no': { 'tr': 'Hayır', 'de': 'Nein' },
+            'not sure': { 'tr': 'Emin değilim', 'de': 'Nicht sicher' },
+            'unsure': { 'tr': 'Emin değilim', 'de': 'Nicht sicher' },
+            'maybe': { 'tr': 'Belki', 'de': 'Vielleicht' },
+            // Severity (yes/no style)
+            'mild': { 'tr': 'Hafif', 'de': 'Leicht' },
+            'moderate': { 'tr': 'Orta', 'de': 'Mäßig' },
+            'severe': { 'tr': 'Şiddetli', 'de': 'Schwer' },
+            'very severe': { 'tr': 'Çok şiddetli', 'de': 'Sehr schwer' },
+            // Body locations
+            'head/neck': { 'tr': 'Baş/boyun', 'de': 'Kopf/Hals' },
+            'chest': { 'tr': 'Göğüs', 'de': 'Brust' },
+            'abdomen': { 'tr': 'Karın', 'de': 'Bauch' },
+            'back': { 'tr': 'Sırt', 'de': 'Rücken' },
+            'arms': { 'tr': 'Kollar', 'de': 'Arme' },
+            'legs': { 'tr': 'Bacaklar', 'de': 'Beine' },
+            'whole body': { 'tr': 'Tüm vücut', 'de': 'Ganzer Körper' },
+            // Fever / symptoms
+            'fever or stiff neck': { 'tr': 'Ateş veya ense sertliği', 'de': 'Fieber oder Nackensteifigkeit' },
+            'nausea or vomiting': { 'tr': 'Bulantı veya kusma', 'de': 'Übelkeit oder Erbrechen' },
+            'light sensitivity': { 'tr': 'Işığa hassasiyet', 'de': 'Lichtempfindlichkeit' },
+            'all of the above': { 'tr': 'Hepsi', 'de': 'Alles oben genannte' },
+            'none of the above': { 'tr': 'Hiçbiri', 'de': 'Nichts davon' },
+            'none': { 'tr': 'Hiçbiri', 'de': 'Keines' },
+            // Time options
+            'within the last hour': { 'tr': 'Son bir saat içinde', 'de': 'In der letzten Stunde' },
+            'a few hours ago': { 'tr': 'Birkaç saat önce', 'de': 'Vor einigen Stunden' },
+            'this morning': { 'tr': 'Bu sabah', 'de': 'Heute Morgen' },
+            'yesterday': { 'tr': 'Dün', 'de': 'Gestern' },
+            'several days ago': { 'tr': 'Birkaç gün önce', 'de': 'Vor mehreren Tagen' },
+        };
+
+        function translateOption(opt, langCode) {
+            if (!langCode || langCode.startsWith('en')) return opt;
+            const langKey = langCode.startsWith('tr') ? 'tr' : langCode.startsWith('de') ? 'de' : null;
+            if (!langKey) return opt;
+            const t = OPTION_TRANS[opt.toLowerCase().trim()];
+            return (t && t[langKey]) ? t[langKey] : opt;
+        }
+
         function renderQuestion() {
-            const q = S.questions[S.qIdx];
+            // Normalize question object (API may return string or object)
+            let q = S.questions[S.qIdx];
+            if (typeof q === 'string') q = { question: q, type: 'yes_no', options: [] };
             const total = S.questions.length;
             let { question, type, options } = q;
 
             // Normalise missing options
             if (type === 'free_text' || !options || !options.length) {
                 const ql = question.toLowerCase();
+                const _lang = S.detectedLang || 'en-US';
+                const _to = (o) => translateOption(o, _lang);
                 if (/when|how long|since|start|began|wann|wie lange|başlad/.test(ql)) {
                     type = 'multiple_choice';
-                    options = ['Just now', '< 1 hour ago', '1–6 hours ago', '6–24 hours ago', '> 1 day'];
+                    options = ['Just now', '< 1 hour ago', '1–6 hours ago', '6–24 hours ago', '> 1 day'].map(_to);
                 } else if (/how|rate|scale|severity|pain|wie stark|schmerz|şiddet|ağrı/.test(ql)) {
                     type = 'scale';
                     options = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
                 } else if (/where|location|wo |nerede/.test(ql)) {
                     type = 'multiple_choice';
-                    options = ['Head/neck', 'Chest', 'Abdomen', 'Back', 'Arms', 'Legs', 'Whole body'];
+                    options = ['Head/neck', 'Chest', 'Abdomen', 'Back', 'Arms', 'Legs', 'Whole body'].map(_to);
                 } else {
                     type = 'yes_no';
-                    options = ['Yes', 'No', 'Not sure'];
+                    options = ['Yes', 'No', 'Not sure'].map(_to);
                 }
             }
 
@@ -1886,12 +2294,20 @@
   `;
 
             const opts = document.getElementById('qOptions');
-            options.forEach(opt => {
+            // Translate GPT-returned English options to patient's language
+            const _langCode = S.detectedLang || 'en-US';
+            const displayOpts = options.map(opt => ({
+                display: translateOption(opt, _langCode),
+                value: opt
+            }));
+
+            displayOpts.forEach(({ display, value }) => {
                 const pill = document.createElement('label');
-                pill.className = 'radio-pill' + (prevAns === opt ? ' selected' : '');
-                pill.innerHTML = `<div class="radio-dot"></div><span>${escHtml(opt)}</span>`;
+                pill.className = 'radio-pill' + (prevAns === value || prevAns === display ? ' selected' : '');
+                pill.innerHTML = `<div class="radio-dot"></div><span>${escHtml(display)}</span>`;
                 pill.onclick = () => {
-                    S.answers[S.qIdx] = { question, answer: opt, originalAnswer: opt };
+                    // Store original EN value as answer, display value as originalAnswer for showing
+                    S.answers[S.qIdx] = { question, answer: value, originalAnswer: display };
                     document.querySelectorAll('#qOptions .radio-pill').forEach(p => p.classList.remove('selected'));
                     pill.classList.add('selected');
                     const nxt = document.getElementById('btnQNext');
@@ -1942,6 +2358,48 @@
             document.getElementById('consentWarning').style.display = 'none';
         }
 
+        // ══════════════════════════════════════════════════════════════════════════
+        // FALLBACK ASSESSMENT + PRE-ARRIVAL ADVICE (when GPT unavailable)
+        // ══════════════════════════════════════════════════════════════════════════
+        function buildFallbackAssessment(complaint, answers) {
+            const c = (complaint || '').toLowerCase();
+            const a = (answers || []).map(x => (x.answer || '').toLowerCase()).join(' ');
+            const text = c + ' ' + a;
+
+            let level = 'ROUTINE', score = 3;
+            const emergencyKw = /chest pain|heart attack|stroke|unconscious|not breathing|anaphyla|severe bleeding|crushing|thunderclap|worst.*life|can.t breathe|göğüs ağrısı|nefes alamıyorum|brustschmerz/i;
+            const urgentKw = /vomit|fever|dizz|faint|headache|abdominal|shortness|unable|severe|bleed|swollen|fracture|ateş|kusma|baş ağrısı|schmerz|fieber/i;
+            if (emergencyKw.test(text)) { level = 'EMERGENCY'; score = 9; }
+            else if (urgentKw.test(text)) { level = 'URGENT'; score = 6; }
+
+            const doList = [], dontList = [];
+            if (level === 'EMERGENCY') {
+                doList.push(t('adv_call112'), t('adv_sit_still'), t('adv_stay_calm'));
+                dontList.push(t('adv_no_drive'), t('adv_no_eat'));
+            } else if (level === 'URGENT') {
+                doList.push(t('adv_rest'), t('adv_someone_with_you'), t('adv_bring_meds'));
+                dontList.push(t('adv_no_drive'), t('adv_no_eat'));
+            } else {
+                doList.push(t('adv_rest'), t('adv_bring_meds'), t('adv_bring_id'));
+            }
+            if (/chest|heart|brust|göğüs/i.test(text)) {
+                doList.push(t('adv_chest_loose')); dontList.push(t('adv_chest_no_stress'));
+            }
+            if (/bleed|bleeding|kanama|blutung/i.test(text)) {
+                doList.push(t('adv_bleed_pressure')); dontList.push(t('adv_bleed_no_remove'));
+            }
+            if (/breath|nefes|atem/i.test(text)) {
+                doList.push(t('adv_breath_upright')); dontList.push(t('adv_breath_no_lie'));
+            }
+            if (/head|kopf|baş ağrı/i.test(text)) {
+                doList.push(t('adv_head_dark')); dontList.push(t('adv_head_no_screen'));
+            }
+            return {
+                triage_level: level, risk_score: score, do_list: doList, dont_list: dontList,
+                suspected_conditions: [], recommended_action: t('adv_proceed_er'), ai_mode: 'fallback'
+            };
+        }
+
         async function submitConsent() {
             if (!S.dataConsent) {
                 document.getElementById('consentWarning').style.display = 'block';
@@ -1964,13 +2422,13 @@
                         detected_language: S.detectedLang,
                         questions: S.questions.map(q => q.question || q),
                         answers: qaList, has_photo: S.photos.length > 0, photo_count: S.photos.length,
-                        photo_base64: S.photos.length ? S.photos[0].dataUrl.split(',')[1] : null,
+                        photo_base64: S.photos.length ? S.photos.map(p => p.dataUrl) : null,
                         photo_mime: S.photos.length ? S.photos[0].mime : null,
                     }),
                 });
                 S.assessment = await r.json();
             } catch (e) {
-                S.assessment = { triage_level: 'URGENT', risk_score: 5, do_list: [], dont_list: [] };
+                S.assessment = buildFallbackAssessment(S.complaint || S.complaintEN || '', S.answers);
             } finally {
                 document.getElementById('assessSpinner').classList.remove('visible');
                 document.getElementById('btnGetAssessment').disabled = false;
@@ -2003,12 +2461,15 @@
     <p style="text-align:center;font-size:0.8rem;color:var(--gray-400);margin-bottom:12px;">— ${t('tr_orBelow')} —</p>`;
             }
             document.getElementById('triageBanner').innerHTML = html;
-            // Advice
-            const doList = a.do_list || [], dontList = a.dont_list || [];
-            if (doList.length || dontList.length) {
-                renderAdviceBlock('triageAdviceContent', doList, dontList, lvl);
-                document.getElementById('triageAdviceSection').style.display = 'block';
+            // Advice — always show; use fallback if GPT didn't return advice
+            let doList = a.do_list || [], dontList = a.dont_list || [];
+            if (!doList.length && !dontList.length) {
+                const fb = buildFallbackAssessment(S.complaint || S.complaintEN || '', S.answers);
+                doList = fb.do_list;
+                dontList = fb.dont_list;
             }
+            renderAdviceBlock('triageAdviceContent', doList, dontList, lvl);
+            document.getElementById('triageAdviceSection').style.display = 'block';
         }
 
         // ══════════════════════════════════════════════════════════════════════════
@@ -2128,15 +2589,34 @@
     </div>`;
 
             try {
+                // Collect all photo base64 data
+                const photoBase64 = S.photos.length > 0
+                    ? S.photos.map(p => p.dataUrl)
+                    : null;
+
+                // Build clean QA list for hospital dashboard
+                const qaList = (S.answers || []).map(a => ({
+                    question: a.question || '',
+                    answer: a.answer || '',
+                    original_answer: a.originalAnswer || a.answer || '',
+                })).filter(a => a.question && a.answer);
+
                 await fetch(API + '/api/patient/submit', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        complaint: S.complaint, complaint_en: S.complaintEN || S.complaint,
+                        complaint: S.complaint,
+                        complaint_en: S.complaintEN || S.complaint,
                         detected_language: S.detectedLang,
-                        assessment: S.assessment, hospital: S.selectedHospital,
-                        lat: S.lat, lon: S.lon, answers: S.answers,
-                        has_photo: S.photos.length > 0, photo_count: S.photos.length,
-                        reg_number: S.regNumber, data_consent: S.dataConsent,
+                        assessment: S.assessment,
+                        hospital: S.selectedHospital,
+                        lat: S.lat, lon: S.lon,
+                        answers: qaList,
+                        has_photo: S.photos.length > 0,
+                        photo_count: S.photos.length,
+                        photo_base64: photoBase64,
+                        reg_number: S.regNumber,
+                        health_number: S.healthNumber || null,
+                        data_consent: S.dataConsent,
                     }),
                 });
             } catch (_) { /* silent */ }
@@ -2190,12 +2670,16 @@
                 callDiv.innerHTML = `<a href="tel:112" style="background:var(--red);color:#fff;padding:16px 40px;border-radius:var(--r-lg);font-size:1.3rem;font-weight:800;text-decoration:none;display:inline-block;box-shadow:0 4px 20px rgba(220,38,38,0.35);">📞 CALL 112</a>`;
             } else callDiv.style.display = 'none';
 
-            const doList = a.do_list || [], dontList = a.dont_list || [];
-            const advDiv = document.getElementById('resultAdvice');
-            if (doList.length || dontList.length) {
-                advDiv.innerHTML = '<div id="resultAdviceBlock"></div>';
-                renderAdviceBlock('resultAdviceBlock', doList, dontList, lvl);
+            // Advice — always show on result page
+            let doList = a.do_list || [], dontList = a.dont_list || [];
+            if (!doList.length && !dontList.length) {
+                const fb = buildFallbackAssessment(S.complaint || S.complaintEN || '', S.answers);
+                doList = fb.do_list;
+                dontList = fb.dont_list;
             }
+            const advDiv = document.getElementById('resultAdvice');
+            advDiv.innerHTML = '<div id="resultAdviceBlock"></div>';
+            renderAdviceBlock('resultAdviceBlock', doList, dontList, lvl);
 
             document.getElementById('rs_trackTitle').textContent = t('rs_trackTitle');
             document.getElementById('rs_trackSub').textContent = t('rs_trackSub');

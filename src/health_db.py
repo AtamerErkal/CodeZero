@@ -19,6 +19,22 @@ def _conn():
     con.row_factory = sqlite3.Row
     return con
 
+def _migrate(con):
+    """Migrate legacy DB schema to current version."""
+    existing = {r[1] for r in con.execute("PRAGMA table_info(patients)").fetchall()}
+    # Add new columns that didn't exist in older schema versions
+    migrations = [
+        ("language",   "TEXT DEFAULT 'de-DE'"),
+        ("height_cm",  "REAL"),
+        ("weight_kg",  "REAL"),
+    ]
+    for col, defn in migrations:
+        if col not in existing:
+            con.execute(f"ALTER TABLE patients ADD COLUMN {col} {defn}")
+            logger.info("Migrated patients table: added column %s", col)
+    # Remove photo_url if present (not in new schema, harmless to keep)
+    con.commit()
+
 def init_db():
     with _conn() as con:
         con.executescript("""
@@ -55,20 +71,27 @@ def init_db():
             allergen TEXT NOT NULL, reaction TEXT, severity TEXT DEFAULT 'moderate',
             confirmed_date TEXT);
         """)
+        _migrate(con)
         _seed(con)
 
 def _seed(con):
-    patient_count = con.execute("SELECT COUNT(*) FROM patients").fetchone()[0]
-    if patient_count > 0:
-        # Check sub-tables are also populated
-        vitals_ok = con.execute("SELECT COUNT(*) FROM vitals").fetchone()[0] > 0
-        diags_ok  = con.execute("SELECT COUNT(*) FROM diagnoses").fetchone()[0] > 0
-        meds_ok   = con.execute("SELECT COUNT(*) FROM medications").fetchone()[0] > 0
+    # Count specifically DEMO-format patients (not legacy format like DE-1985-447291)
+    demo_count = con.execute(
+        "SELECT COUNT(*) FROM patients WHERE health_number LIKE 'DEMO-%'"
+    ).fetchone()[0]
+
+    if demo_count >= 30:
+        # All 30 demo patients exist — check sub-tables
+        vitals_ok = con.execute("SELECT COUNT(*) FROM vitals WHERE health_number LIKE 'DEMO-%'").fetchone()[0] > 0
+        diags_ok  = con.execute("SELECT COUNT(*) FROM diagnoses WHERE health_number LIKE 'DEMO-%'").fetchone()[0] > 0
+        meds_ok   = con.execute("SELECT COUNT(*) FROM medications WHERE health_number LIKE 'DEMO-%'").fetchone()[0] > 0
         if vitals_ok and diags_ok and meds_ok:
             return
-        # Sub-tables are missing — skip re-inserting patients but seed the rest
-        # (fall through to seed sub-table data)
-        logger.info("Re-seeding sub-tables (vitals/diagnoses/medications were empty).")
+        logger.info("Re-seeding sub-tables for DEMO patients.")
+    else:
+        logger.info("Seeding %d missing DEMO patients (found %d/30).", 30 - demo_count, demo_count)
+    
+    patient_count = demo_count  # used below to decide if we insert patients
     
     rows = [
         # DEMO-DE patients (10)
@@ -105,8 +128,15 @@ def _seed(con):
         ("DEMO-UK-009","Henry","Moore","1938-03-19","Male","A+","UK","en-GB","h.moore@nhs.uk","+44 7700 100 009","3 Castle Street, Leeds LS1 2HL","Mary Moore","+44 7700 200 009","NHS-999000111","Dr. John Barker",171.0,75.0,"Aortic stenosis (moderate), AF on warfarin. Annual echo."),
         ("DEMO-UK-010","Amelia","Garcia","1977-06-28","Female","AB-","UK","en-GB","a.garcia@nhs.uk","+44 7700 010 010","12 Victoria Road, Liverpool L6 3AB","Carlos Garcia","+44 7700 020 020","NHS-000111222","Dr. Natalie Osei",164.0,68.0,"SLE on hydroxychloroquine. Vitamin D deficiency."),
     ]
-    if patient_count == 0:
-        con.executemany("INSERT OR IGNORE INTO patients VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+    if demo_count < 30:
+        con.executemany(
+            """INSERT OR IGNORE INTO patients
+               (health_number, first_name, last_name, date_of_birth, sex, blood_type,
+                nationality, language, email, phone, address, emergency_name, emergency_phone,
+                insurance_id, gp_name, height_cm, weight_kg, notes)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            rows
+        )
     
     diags = [
         ("DEMO-DE-001","I25.10","Coronary artery disease","active","2018-05-20","Dr. Becker","Stable"),
@@ -305,8 +335,9 @@ def get_full_record(health_number: str) -> Optional[dict]:
     if not p:
         return None
     with _conn() as con:
-        return {
-            "patient":     p,
+        result = {
+            "demographics": p,   # used by dashboard renderMedicalHistoryInline
+            "patient":      p,   # backward compat alias
             "diagnoses":   [dict(r) for r in con.execute("SELECT * FROM diagnoses WHERE health_number=? ORDER BY diagnosed_date DESC", (health_number,)).fetchall()],
             "medications": [dict(r) for r in con.execute("SELECT * FROM medications WHERE health_number=? ORDER BY status,start_date DESC", (health_number,)).fetchall()],
             "lab_results": [dict(r) for r in con.execute("SELECT * FROM lab_results WHERE health_number=? ORDER BY test_date DESC", (health_number,)).fetchall()],
@@ -314,6 +345,7 @@ def get_full_record(health_number: str) -> Optional[dict]:
             "visits":      [dict(r) for r in con.execute("SELECT * FROM visits WHERE health_number=? ORDER BY visit_date DESC LIMIT 10", (health_number,)).fetchall()],
             "allergies":   [dict(r) for r in con.execute("SELECT * FROM allergies WHERE health_number=?", (health_number,)).fetchall()],
         }
+        return result
 
 def get_age(date_of_birth: str) -> int:
     try: return datetime.now().year - int(date_of_birth[:4])
