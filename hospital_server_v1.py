@@ -104,7 +104,7 @@ class AssessRequest(_BM):
     complaint:          str
     complaint_en:       _Opt[str] = None
     detected_language:  _Opt[str] = None
-    questions:          _List[str] = []
+    questions:          list = []   # list of str or dict (with question_en)
     answers:            list = []
     demographics:       _Opt[dict] = None
     has_photo:          bool = False
@@ -168,13 +168,33 @@ def _enrich_patient(p: dict) -> dict:
         try:
             full_record = get_full_record(hn)
             if full_record:
-                # Diagnoses (medical history)
-                p["diagnoses"] = full_record.get("diagnoses", [])
-                
-                # Active medications only
+                # ── Server-side dedup ────────────────────────────────────────────
+                # health_db may have duplicate rows if seed ran more than once
+                # (diagnoses table has no UNIQUE constraint on health_number+icd_code)
+                def _dedup(lst, key_fn):
+                    seen, out = set(), []
+                    for item in lst:
+                        k = key_fn(item)
+                        if k not in seen:
+                            seen.add(k)
+                            out.append(item)
+                    return out
+
+                # Diagnoses (medical history) — deduplicated by icd_code+description
+                raw_diags = full_record.get("diagnoses", [])
+                p["diagnoses"] = _dedup(
+                    raw_diags,
+                    lambda d: (d.get("icd_code") or "") + "|" + (d.get("description") or "")
+                )
+
+                # Active medications only — deduplicated by name+dosage
                 all_meds = full_record.get("medications", [])
-                p["medications"] = [m for m in all_meds if m.get("status") == "active"]
-                
+                active_meds = [m for m in all_meds if m.get("status") == "active"]
+                p["medications"] = _dedup(
+                    active_meds,
+                    lambda m: (m.get("name") or "") + "|" + (m.get("dosage") or "")
+                )
+
                 # Latest vitals (most recent)
                 vitals_list = full_record.get("vitals", [])
                 if vitals_list:
@@ -189,15 +209,27 @@ def _enrich_patient(p: dict) -> dict:
                     }
                 else:
                     p["vitals"] = {}
-                
-                # Allergies
-                p["allergies"] = full_record.get("allergies", [])
-                
-                # Lab results (optional, for future use)
-                p["lab_results"] = full_record.get("lab_results", [])[:5]  # Latest 5
-                
-                # Past visits (optional)
-                p["visits"] = full_record.get("visits", [])[:3]  # Latest 3
+
+                # Allergies — deduplicated by allergen name
+                raw_allergy = full_record.get("allergies", [])
+                p["allergies"] = _dedup(
+                    raw_allergy,
+                    lambda a: (a.get("allergen") or "").lower()
+                )
+
+                # Lab results (latest 5, deduplicated by test_name+test_date)
+                raw_labs = full_record.get("lab_results", [])
+                p["lab_results"] = _dedup(
+                    raw_labs,
+                    lambda l: (l.get("test_name") or "") + "|" + (l.get("test_date") or "")
+                )[:5]
+
+                # Past visits (latest 3, deduplicated by visit_date+chief_complaint)
+                raw_visits = full_record.get("visits", [])
+                p["visits"] = _dedup(
+                    raw_visits,
+                    lambda v: (v.get("visit_date") or "") + "|" + (v.get("chief_complaint") or v.get("diagnosis") or "")
+                )[:3]
         except Exception as e:
             logger.error("Health record enrich FAILED for %s: %s", hn, e, exc_info=True)
             p["diagnoses"] = []
@@ -235,6 +267,35 @@ def _enrich_patient(p: dict) -> dict:
         "lat": p.pop("location_lat", None),
         "lon": p.pop("location_lon", None),
     }
+
+    # Illness media URLs — let dashboard know which indices exist
+    pid = p.get("patient_id", "")
+    photo_count = int(p.get("photo_count") or 0)
+    if photo_count > 0 and pid:
+        media_urls = []
+        ILLNESS_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm", ".mov"]
+        for idx in range(photo_count):
+            for ext in ILLNESS_EXTS:
+                candidate = ILLNESS_PHOTOS_DIR / f"{pid}_{idx}{ext}"
+                if candidate.exists():
+                    media_urls.append(f"/api/illness_photo/{pid}/{idx}")
+                    break
+        p["illness_media_urls"] = media_urls
+    else:
+        p["illness_media_urls"] = []
+
+    # Patient profile photo flag (profile picture from health DB)
+    hn = p.get("health_number", "")
+    if hn:
+        has_profile = any(
+            (PATIENT_PHOTOS_DIR / f"{hn}{ext}").exists()
+            for ext in (".png", ".jpg", ".jpeg", ".webp")
+        )
+        p["has_profile_photo"] = has_profile
+        p["profile_photo_url"] = f"/api/patient_photo/{hn}" if has_profile else None
+    else:
+        p["has_profile_photo"] = False
+        p["profile_photo_url"] = None
 
     return p
 
@@ -339,15 +400,23 @@ def patient_submit(body: SubmitRequest):
         record["patient_id"] = body.reg_number
 
     # Enrich — mirrors Streamlit _do_notify() record enrichment
-    # Normalize answers to list-of-dicts
+    # Normalize answers to list-of-dicts — preserve question_en for dashboard display
     qa = []
     for a in (body.answers or []):
         if isinstance(a, dict):
-            qa.append({"question": a.get("question",""), "answer": a.get("answer",""),
-                       "original_answer": a.get("original_answer", a.get("originalAnswer",""))})
+            qa.append({
+                "question":        a.get("question", ""),
+                "question_en":     a.get("question_en", a.get("question", "")),  # English version
+                "answer":          a.get("answer", ""),
+                "original_answer": a.get("original_answer", a.get("originalAnswer", "")),
+            })
         elif hasattr(a, "question"):
-            qa.append({"question": a.question, "answer": a.answer,
-                       "original_answer": a.original_answer or a.answer})
+            qa.append({
+                "question":        a.question,
+                "question_en":     getattr(a, "question_en", a.question),
+                "answer":          a.answer,
+                "original_answer": getattr(a, "original_answer", None) or a.answer,
+            })
 
     record["qa_transcript"]        = qa
     record["complaint_text"]       = body.complaint          # original-language text
@@ -364,9 +433,28 @@ def patient_submit(body: SubmitRequest):
     # ALWAYS overwrite with patient_app AI assessment (more accurate than create_patient_record fallback)
     asmt_obj = body.assessment or {}
     if isinstance(asmt_obj, dict):
-        # These fields come from /api/patient/assess (GPT-4) — always prefer them
-        if asmt_obj.get("assessment"):
-            record["assessment"] = asmt_obj["assessment"]
+        # assessment text: try multiple possible key names from different GPT response formats
+        asmt_text = (
+            asmt_obj.get("assessment") or
+            asmt_obj.get("summary") or
+            asmt_obj.get("clinical_summary") or
+            asmt_obj.get("text") or
+            asmt_obj.get("description") or
+            ""
+        )
+        # If still no text, synthesize from conditions + recommended_action
+        if not asmt_text and (asmt_obj.get("suspected_conditions") or asmt_obj.get("recommended_action")):
+            conds = asmt_obj.get("suspected_conditions", [])
+            rec   = asmt_obj.get("recommended_action", "")
+            level = asmt_obj.get("triage_level", "")
+            parts = []
+            if level:   parts.append(f"Triage: {level}.")
+            if conds:   parts.append(f"Suspected: {', '.join(conds) if isinstance(conds, list) else conds}.")
+            if rec:     parts.append(f"Action: {rec}")
+            asmt_text = " ".join(parts)
+
+        if asmt_text:
+            record["assessment"] = asmt_text
         if asmt_obj.get("suspected_conditions"):
             record["suspected_conditions"] = asmt_obj["suspected_conditions"]
         if asmt_obj.get("recommended_action"):
@@ -379,17 +467,17 @@ def patient_submit(body: SubmitRequest):
             record["red_flags"] = asmt_obj["red_flags"]
         if asmt_obj.get("triage_level"):
             record["triage_level"] = asmt_obj["triage_level"]
-        # do_list / dont_list for pre-arrival advice
         if asmt_obj.get("do_list"):
             record["do_list"] = asmt_obj["do_list"]
         if asmt_obj.get("dont_list"):
             record["dont_list"] = asmt_obj["dont_list"]
-        
+
         logger.info(
-            "Assessment flattened: level=%s score=%s conds=%s",
+            "Assessment flattened: level=%s score=%s conds=%s asmt=%s",
             record.get("triage_level"),
             record.get("risk_score"),
-            str(record.get("suspected_conditions", []))[:80],
+            str(record.get("suspected_conditions", []))[:60],
+            str(record.get("assessment", ""))[:60],
         )
 
     # Link health DB record if health_number provided
@@ -595,8 +683,10 @@ def patient_questions(body: QuestionsRequest):
         except Exception as exc:
             logger.warning("Translation failed (%s) — using original text.", exc)
 
-    # ── Step 2: Generate GPT-4 clinical questions (TriageEngine) ──────
-    # Determine target language name for GPT prompt injection
+    # ── Step 2: Generate GPT-4 clinical questions — ALWAYS in English first ──
+    # English questions are the ground truth (question_en), then translated for the patient.
+    # Do NOT inject language into GPT prompt — generate clean English questions,
+    # then translate them in Step 3 so the dashboard always has question_en available.
     lang_hint  = body.detected_language or "en-US"
     _lang_map  = {
         "tr": "Turkish", "de": "German",  "fr": "French",
@@ -606,47 +696,50 @@ def patient_questions(body: QuestionsRequest):
     }
     lang_name = next((v for k, v in _lang_map.items() if lang_hint.lower().startswith(k)), None)
 
-    # Inject language instruction into complaint so GPT generates questions in
-    # the patient's language even when Azure Translator is not configured
-    gpt_complaint = complaint_en
-    if lang_name and not lang_hint.lower().startswith("en"):
-        gpt_complaint = (
-            f"[IMPORTANT: Generate ALL questions and ALL answer options ENTIRELY in {lang_name}. "
-            f"Do not use English. Patient language: {lang_name}.] "
-            f"{complaint_en}"
-        )
-
-    questions = triage.generate_questions(chief_complaint=gpt_complaint)
+    questions = triage.generate_questions(chief_complaint=complaint_en)
     logger.info("Generated %d questions (lang=%s): '%s…'", len(questions), lang_hint, complaint_en[:50])
 
-    # ── Step 3: Azure Translator fallback (only if GPT language injection failed) ──
-    if translator and lang_name and not lang_hint.lower().startswith("en"):
-        for q in questions:
-            # Only translate if question still appears to be in English
-            q_text = q.get("question", "")
-            looks_english = all(ord(c) < 128 for c in q_text.replace(" ", "")[:20])
-            if not looks_english:
-                continue   # Already in target language — skip translation
-            try:
-                translated_q = translator.translate_from_english(q_text, body.detected_language)
-                if translated_q:
-                    q["question"] = translated_q
-            except Exception as exc:
-                logger.warning("Question translation failed (%s)", exc)
+    # Step 2b: Tag each question with its English original before any translation
+    for q in questions:
+        q["question_en"] = q.get("question", "")   # Always preserve English version
 
-            if "options" in q and q["options"]:
-                translated_opts = []
-                for opt in q["options"]:
-                    try:
-                        opt_looks_en = all(ord(c) < 128 for c in opt.replace(" ", "")[:10])
-                        if opt_looks_en:
+    # ── Step 3: Translate questions/options into patient's language ────────────
+    if lang_name and not lang_hint.lower().startswith("en"):
+        # Try Azure Translator first, fall back to GPT inject on individual questions
+        if translator:
+            for q in questions:
+                q_text = q.get("question", "")
+                try:
+                    translated_q = translator.translate_from_english(q_text, body.detected_language)
+                    if translated_q:
+                        q["question"] = translated_q
+                except Exception as exc:
+                    logger.warning("Question translation failed (%s)", exc)
+
+                if "options" in q and q["options"]:
+                    translated_opts = []
+                    for opt in q["options"]:
+                        try:
                             translated_opt = translator.translate_from_english(opt, body.detected_language)
                             translated_opts.append(translated_opt if translated_opt else opt)
-                        else:
+                        except Exception:
                             translated_opts.append(opt)
-                    except Exception:
-                        translated_opts.append(opt)
-                q["options"] = translated_opts
+                    q["options"] = translated_opts
+        else:
+            # No Azure Translator: re-generate questions with language injection
+            # but keep question_en already set above
+            gpt_complaint_lang = (
+                f"[IMPORTANT: Generate ALL questions and ALL answer options ENTIRELY in {lang_name}. "
+                f"Do not use English. Patient language: {lang_name}.] "
+                f"{complaint_en}"
+            )
+            translated_questions = triage.generate_questions(chief_complaint=gpt_complaint_lang)
+            # Merge: keep question_en from English run, take question/options from translated run
+            for i, q in enumerate(questions):
+                if i < len(translated_questions):
+                    q["question"] = translated_questions[i].get("question", q["question"])
+                    if "options" in translated_questions[i]:
+                        q["options"] = translated_questions[i]["options"]
 
     return QuestionsResponse(questions=questions, complaint_en=complaint_en)
 
@@ -665,13 +758,24 @@ def patient_assess(body: AssessRequest):
 
     complaint_en = body.complaint_en or body.complaint
 
-    # ── Step 1: Translate answers to English (Azure Translator) ───────
-    # Mirrors Streamlit: eng = translator.translate_to_english(str(answer), lang)
+    # ── Step 1: Translate answers to English ───────────────────────────
     qa_pairs = []
-    for item in body.answers:
+
+    # Build a question_en lookup from body.questions list (may contain dicts with question_en)
+    q_en_lookup: dict = {}
+    for i, bq in enumerate(body.questions or []):
+        if isinstance(bq, dict):
+            q_en_lookup[i] = bq.get("question_en") or bq.get("question") or ""
+        else:
+            q_en_lookup[i] = str(bq)
+
+    for idx, item in enumerate(body.answers):
         if isinstance(item, dict):
-            q   = item.get("question", "")
-            ans = item.get("answer", item.get("original_answer", ""))
+            q_orig = item.get("question", "")
+            # question_en: prefer explicit field, then look up from questions list, then keep q_orig
+            q_en   = item.get("question_en") or q_en_lookup.get(idx, q_orig) or q_orig
+            ans    = item.get("answer", item.get("original_answer", ""))
+            ans_orig = item.get("original_answer", str(ans))
         else:
             continue
 
@@ -691,7 +795,12 @@ def patient_assess(body: AssessRequest):
             except Exception as exc:
                 logger.warning("Answer translation failed (%s) — using original.", exc)
 
-        qa_pairs.append({"question": q, "answer": ans_en})
+        qa_pairs.append({
+            "question":        q_en,           # English question for GPT + dashboard
+            "question_orig":   q_orig,         # Original language question
+            "answer":          ans_en,         # English answer for GPT + dashboard
+            "original_answer": ans_orig,       # Original language answer
+        })
 
     logger.info(
         "Assessing triage: complaint='%s…', %d Q&A pairs, lang=%s",
@@ -705,7 +814,6 @@ def patient_assess(body: AssessRequest):
     )
 
     # ── Step 3: Generate pre-arrival DO/DON'T advice (GPT-4 + RAG) ────
-    # Mirrors Streamlit _do_notify() → generate_pre_arrival_advice()
     advice = triage.generate_pre_arrival_advice(
         chief_complaint=complaint_en,
         assessment=assessment,
@@ -714,12 +822,16 @@ def patient_assess(body: AssessRequest):
     assessment["do_list"]   = advice.get("do_list",   [])
     assessment["dont_list"] = advice.get("dont_list", [])
 
+    # Include qa_pairs in response so patient_app can forward them (with question_en) to submit
+    assessment["_qa_pairs"] = qa_pairs
+
     logger.info(
-        "Assessment done: level=%s score=%s do=%d dont=%d",
+        "Assessment done: level=%s score=%s do=%d dont=%d qa=%d",
         assessment.get("triage_level"),
         assessment.get("risk_score"),
         len(assessment["do_list"]),
         len(assessment["dont_list"]),
+        len(qa_pairs),
     )
 
     return assessment
@@ -831,9 +943,9 @@ def api_seed():
          "data_consent": True, "has_photo": False, "photo_count": 0,
          "complaint_text": "Starke Brustschmerzen die in den linken Arm ausstrahlen",
          "qa_transcript": [
-             {"question": "When did it start?", "answer": "15 minutes ago", "original_answer": "Vor 15 Minuten"},
-             {"question": "Rate pain 1-10?", "answer": "9", "original_answer": "9"},
-             {"question": "Any shortness of breath?", "answer": "Yes", "original_answer": "Ja, sehr"},
+             {"question": "Wann hat es begonnen?", "question_en": "When did it start?", "answer": "15 minutes ago", "original_answer": "Vor 15 Minuten"},
+             {"question": "Schmerzstärke 1-10?", "question_en": "Rate pain 1-10?", "answer": "9", "original_answer": "9"},
+             {"question": "Kurzatmigkeit?", "question_en": "Any shortness of breath?", "answer": "Yes", "original_answer": "Ja, sehr"},
          ], "timestamp": now},
 
         {"patient_id": "ER-2026-BB02", "triage_level": "EMERGENCY",
@@ -848,9 +960,9 @@ def api_seed():
          "data_consent": True, "has_photo": True, "photo_count": 1,
          "complaint_text": "Hayatımda yaşadığım en kötü baş ağrısı, aniden geldi",
          "qa_transcript": [
-             {"question": "When did it start?", "answer": "Suddenly 20 min ago", "original_answer": "Aniden, 20 dakika önce"},
-             {"question": "Any visual changes?", "answer": "Yes, blurry", "original_answer": "Evet, bulanık görüyorum"},
-             {"question": "Any vomiting?", "answer": "Yes, twice", "original_answer": "Evet, iki kez"},
+             {"question": "Ne zaman başladı?", "question_en": "When did it start?", "answer": "Suddenly 20 min ago", "original_answer": "Aniden, 20 dakika önce"},
+             {"question": "Görme bozukluğu var mı?", "question_en": "Any visual changes?", "answer": "Yes, blurry", "original_answer": "Evet, bulanık görüyorum"},
+             {"question": "Kusma oldu mu?", "question_en": "Any vomiting?", "answer": "Yes, twice", "original_answer": "Evet, iki kez"},
          ], "timestamp": now},
 
         {"patient_id": "ER-2026-CC03", "triage_level": "URGENT",
@@ -865,8 +977,8 @@ def api_seed():
          "data_consent": True, "has_photo": True, "photo_count": 2,
          "complaint_text": "Really bad stomach pain after being hit by a car door at the car park",
          "qa_transcript": [
-             {"question": "Where is the pain?", "answer": "Left abdomen", "original_answer": "Left abdomen"},
-             {"question": "Rate pain 1-10?", "answer": "8", "original_answer": "8"},
+             {"question": "Where is the pain?", "question_en": "Where is the pain?", "answer": "Left abdomen", "original_answer": "Left abdomen"},
+             {"question": "Rate pain 1-10?", "question_en": "Rate pain 1-10?", "answer": "8", "original_answer": "8"},
          ], "timestamp": now},
 
         {"patient_id": "ER-2026-DD04", "triage_level": "URGENT",
@@ -881,8 +993,8 @@ def api_seed():
          "data_consent": True, "has_photo": False, "photo_count": 0,
          "complaint_text": "Nefes almakta çok zorlanıyorum, ciğerlerim sıkışmış gibi",
          "qa_transcript": [
-             {"question": "Do you have an inhaler?", "answer": "Yes but not helping", "original_answer": "Var ama işe yaramıyor"},
-             {"question": "How long?", "answer": "1 hour", "original_answer": "1 saattir"},
+             {"question": "İnhalatörünüz var mı?", "question_en": "Do you have an inhaler?", "answer": "Yes but not helping", "original_answer": "Var ama işe yaramıyor"},
+             {"question": "Ne zamandır?", "question_en": "How long?", "answer": "1 hour", "original_answer": "1 saattir"},
          ], "timestamp": now},
 
         {"patient_id": "ER-2026-EE05", "triage_level": "ROUTINE",
@@ -897,8 +1009,8 @@ def api_seed():
          "data_consent": True, "has_photo": False, "photo_count": 0,
          "complaint_text": "Leichte Kopfschmerzen und Schwindel seit dem Morgen",
          "qa_transcript": [
-             {"question": "How long?", "answer": "Since morning", "original_answer": "Seit dem Morgen"},
-             {"question": "Any fever?", "answer": "No", "original_answer": "Nein"},
+             {"question": "Wie lange schon?", "question_en": "How long?", "answer": "Since morning", "original_answer": "Seit dem Morgen"},
+             {"question": "Fieber?", "question_en": "Any fever?", "answer": "No", "original_answer": "Nein"},
          ], "timestamp": now},
     ]
     for tp in test_patients:
@@ -947,6 +1059,7 @@ def api_reseed_health():
 def serve_dashboard():
     # Support both legacy and modern dashboard names, in multiple locations
     for candidate in [
+        ROOT / "ui" / "hospital_dashboard_v5.html",
         ROOT / "ui" / "hospital_dashboard_v3.html",
         ROOT / "ui" / "hospital_dashboard.html",
     ]:

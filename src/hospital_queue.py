@@ -91,12 +91,7 @@ class HospitalQueue:
                     destination_hospital TEXT DEFAULT '',
                     status TEXT DEFAULT 'incoming',
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    qa_transcript TEXT DEFAULT '[]',
-                    complaint_text TEXT DEFAULT '',
-                    has_photo INTEGER DEFAULT 0,
-                    photo_count INTEGER DEFAULT 0,
-                    health_number TEXT DEFAULT ''
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
                 """
             )
@@ -161,7 +156,7 @@ class HospitalQueue:
                     recommended_action, time_sensitivity, source_guidelines,
                     eta_minutes, arrival_time, location_lat, location_lon,
                     language, destination_hospital, status, updated_at,
-                    qa_transcript, complaint_text, has_photo, photo_count, health_number
+                    qa_transcript, health_number, has_photo, photo_count, complaint_text
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incoming', ?, ?, ?, ?, ?, ?)
                 """,
                 (
@@ -178,16 +173,16 @@ class HospitalQueue:
                     json.dumps(record.get("source_guidelines", [])),
                     record.get("eta_minutes"),
                     record.get("arrival_time"),
-                    anon_lat,   # GDPR: anonymized ~1km grid
-                    anon_lon,   # GDPR: anonymized ~1km grid
+                    anon_lat,
+                    anon_lon,
                     record.get("language", "en-US"),
                     record.get("destination_hospital", ""),
                     datetime.now(timezone.utc).isoformat(),
                     json.dumps(record.get("qa_transcript", [])),
-                    record.get("complaint_text", ""),
-                    1 if record.get("has_photo") else 0,
-                    record.get("photo_count", 0),
                     record.get("health_number", ""),
+                    1 if record.get("has_photo") else 0,
+                    int(record.get("photo_count", 0)),
+                    record.get("complaint_text", ""),
                 ),
             )
             conn.commit()
@@ -235,11 +230,16 @@ class HospitalQueue:
             for row in rows:
                 patient = dict(row)
                 # Parse JSON fields
-                for field in ("red_flags", "suspected_conditions", "source_guidelines", "qa_transcript"):
+                for field in ("red_flags", "suspected_conditions", "source_guidelines"):
                     try:
                         patient[field] = json.loads(patient.get(field, "[]"))
                     except (json.JSONDecodeError, TypeError):
                         patient[field] = []
+                # Parse qa_transcript
+                try:
+                    patient["qa_transcript"] = json.loads(patient.get("qa_transcript", "[]") or "[]")
+                except (json.JSONDecodeError, TypeError):
+                    patient["qa_transcript"] = []
                 patients.append(patient)
 
             return patients
@@ -273,11 +273,15 @@ class HospitalQueue:
             patients = []
             for row in rows:
                 patient = dict(row)
-                for field in ("red_flags", "suspected_conditions", "source_guidelines", "qa_transcript"):
+                for field in ("red_flags", "suspected_conditions", "source_guidelines"):
                     try:
                         patient[field] = json.loads(patient.get(field, "[]"))
                     except (json.JSONDecodeError, TypeError):
                         patient[field] = []
+                try:
+                    patient["qa_transcript"] = json.loads(patient.get("qa_transcript", "[]") or "[]")
+                except (json.JSONDecodeError, TypeError):
+                    patient["qa_transcript"] = []
                 patients.append(patient)
 
             return patients
