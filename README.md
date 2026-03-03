@@ -32,7 +32,7 @@
 **CodeZero** is a full-stack AI-powered pre-hospital triage system that assesses patients *before* they arrive at the emergency room. It bridges the critical gap between the moment symptoms begin and the moment treatment starts — enabling hospitals to prepare for incoming patients in real-time.
 
 <div align="center">
-<img src="docs/images/demo_preview.png" alt="CodeZero Patient App and Hospital Dashboard" width="90%"/>
+<img src="" alt="CodeZero Patient App and Hospital Dashboard" width="90%"/>
 <br/><br/>
 </div>
 
