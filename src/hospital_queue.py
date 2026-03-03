@@ -319,6 +319,37 @@ class HospitalQueue:
             logger.error("Failed to update patient status: %s", exc)
             return False
 
+    def update_location(self, patient_id: str, lat: float, lon: float, eta_minutes: int) -> bool:
+        """Update a patient's live location and ETA.
+
+        Args:
+            patient_id: The patient ID string.
+            lat: Live latitude.
+            lon: Live longitude.
+            eta_minutes: Updated ETA in minutes.
+
+        Returns:
+            True if updated successfully.
+        """
+        try:
+            conn = self._get_connection()
+            anon_lat, anon_lon = self._anonymize_location(lat, lon)
+            conn.execute(
+                """
+                UPDATE patient_queue
+                SET location_lat = ?, location_lon = ?, eta_minutes = ?, updated_at = ?
+                WHERE patient_id = ?
+                """,
+                (anon_lat, anon_lon, eta_minutes, datetime.now(timezone.utc).isoformat(), patient_id),
+            )
+            conn.commit()
+            conn.close()
+            return True
+
+        except Exception as exc:
+            logger.error("Failed to update patient location/ETA: %s", exc)
+            return False
+
     def get_queue_stats(self) -> dict:
         """Get summary statistics for the current queue.
 

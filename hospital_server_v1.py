@@ -88,6 +88,7 @@ from typing import Optional as _Opt, List as _List, Union as _Union
 
 class QuestionsRequest(_BM):
     complaint:          str
+    complaint_en:       _Opt[str] = None
     detected_language:  _Opt[str] = None
     demographics:       _Opt[dict] = None
 
@@ -400,9 +401,12 @@ def patient_submit(body: SubmitRequest):
         record["patient_id"] = body.reg_number
 
     # Enrich — mirrors Streamlit _do_notify() record enrichment
-    # Normalize answers to list-of-dicts — preserve question_en for dashboard display
+    # Prefer server-translated `_qa_pairs` (English) if present in the assessment dict,
+    # otherwise fallback to `body.answers`. This bypasses browser JS caching.
+    raw_answers = body.assessment.get("_qa_pairs", body.answers or [])
+
     qa = []
-    for a in (body.answers or []):
+    for a in raw_answers:
         if isinstance(a, dict):
             qa.append({
                 "question":        a.get("question", ""),
@@ -415,7 +419,7 @@ def patient_submit(body: SubmitRequest):
                 "question":        a.question,
                 "question_en":     getattr(a, "question_en", a.question),
                 "answer":          a.answer,
-                "original_answer": getattr(a, "original_answer", None) or a.answer,
+                "original_answer": getattr(a, "original_answer", None) or getattr(a, "answer", ""),
             })
 
     record["qa_transcript"]        = qa
@@ -664,24 +668,48 @@ def patient_questions(body: QuestionsRequest):
     """
     triage, translator = _get_triage_engine()
 
-    # ── Step 1: Translate complaint to English (Azure Translator) ─────
-    complaint_en = body.complaint
-    if translator:
-        try:
-            # Pass detected language as source to improve translation accuracy
-            result = translator.translate_to_english(
-                body.complaint,
-                source_language=body.detected_language,
-            )
-            if result:
-                complaint_en = result
-                logger.info(
-                    "Complaint translated from %s to EN: '%s…'",
-                    body.detected_language or "auto",
-                    complaint_en[:60],
+    # ── Step 1: Translate complaint to English (Azure Translator / GPT fallback) ─────
+    complaint_en = body.complaint_en or body.complaint
+    lang_hint = body.detected_language or "en-US"
+
+    if not body.complaint_en and not lang_hint.lower().startswith("en"):
+        if translator:
+            try:
+                # Pass detected language as source to improve translation accuracy
+                result = translator.translate_to_english(
+                    body.complaint,
+                    source_language=body.detected_language,
                 )
-        except Exception as exc:
-            logger.warning("Translation failed (%s) — using original text.", exc)
+                if result:
+                    complaint_en = result
+                    logger.info("Complaint translated from %s to EN: '%s…'", body.detected_language or "auto", complaint_en[:60])
+            except Exception as exc:
+                logger.warning("Translation failed (%s) — using original text.", exc)
+        else:
+            # Fallback: use GPT to translate the complaint to English
+            openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
+            if openai_key and body.complaint.strip():
+                try:
+                    import openai as _oai
+                    _client = _oai.OpenAI(api_key=openai_key)
+                    _resp = _client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[{
+                            "role": "system",
+                            "content": "Translate the user's text to English. Reply with ONLY the translated text, nothing else."
+                        }, {
+                            "role": "user",
+                            "content": body.complaint
+                        }],
+                        max_tokens=250,
+                        temperature=0,
+                    )
+                    _translated = _resp.choices[0].message.content.strip()
+                    if _translated:
+                        complaint_en = _translated
+                        logger.info("Complaint (GPT-translated) from auto to EN: '%s…'", complaint_en[:60])
+                except Exception as exc:
+                    logger.warning("GPT complaint translation failed (%s) — using original.", exc)
 
     # ── Step 2: Generate GPT-4 clinical questions — ALWAYS in English first ──
     # English questions are the ground truth (question_en), then translated for the patient.
@@ -784,16 +812,43 @@ def patient_assess(body: AssessRequest):
 
         # Translate answer to English for accurate GPT-4 assessment
         ans_en = str(ans)
-        if translator and body.detected_language and not body.detected_language.startswith("en"):
-            try:
-                translated = translator.translate_to_english(
-                    str(ans),
-                    source_language=body.detected_language,
-                )
-                if translated:
-                    ans_en = translated
-            except Exception as exc:
-                logger.warning("Answer translation failed (%s) — using original.", exc)
+        if body.detected_language and not body.detected_language.startswith("en"):
+            translated = None
+            if translator:
+                try:
+                    translated = translator.translate_to_english(
+                        str(ans),
+                        source_language=body.detected_language,
+                    )
+                except Exception as exc:
+                    logger.warning("Azure answer translation failed (%s). Falling back.", exc)
+
+            if translated:
+                ans_en = translated
+            else:
+                # Fallback: use GPT to translate short answer to English
+                openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
+                if openai_key and str(ans).strip():
+                    try:
+                        import openai as _oai
+                        _client = _oai.OpenAI(api_key=openai_key)
+                        _resp = _client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[{
+                                "role": "system",
+                                "content": "Translate the user's text to English. Respond with ONLY the English translation, absolutely nothing else."
+                            }, {
+                                "role": "user",
+                                "content": str(ans)
+                            }],
+                            max_tokens=60,
+                            temperature=0,
+                        )
+                        _translated = _resp.choices[0].message.content.strip()
+                        if _translated:
+                            ans_en = _translated
+                    except Exception as exc:
+                        logger.warning("GPT answer translation failed (%s) — using original.", exc)
 
         qa_pairs.append({
             "question":        q_en,           # English question for GPT + dashboard
@@ -868,6 +923,19 @@ def api_update_status(patient_id: str, body: dict):
         raise HTTPException(500, "Failed to update status")
     return {"ok": True, "patient_id": patient_id, "status": status}
 
+
+@app.patch("/api/patient/{patient_id}/location")
+def api_update_location(patient_id: str, body: dict):
+    """Update patient live tracking location and ETA."""
+    lat = body.get("lat")
+    lon = body.get("lon")
+    eta_minutes = body.get("eta_minutes")
+    if lat is None or lon is None:
+        raise HTTPException(400, "Missing lat or lon")
+    ok = hq.update_location(patient_id, lat, lon, eta_minutes)
+    if not ok:
+        raise HTTPException(500, "Failed to update location")
+    return {"ok": True, "patient_id": patient_id}
 
 
 @app.get("/api/patient_photo/{health_number}")
@@ -1059,7 +1127,7 @@ def api_reseed_health():
 def serve_dashboard():
     # Support both legacy and modern dashboard names, in multiple locations
     for candidate in [
-        ROOT / "ui" / "hospital_dashboard_v5.html",
+        ROOT / "ui" / "hospital_dashboard_v6.html",
         ROOT / "ui" / "hospital_dashboard_v3.html",
         ROOT / "ui" / "hospital_dashboard.html",
     ]:

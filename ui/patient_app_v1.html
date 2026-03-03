@@ -2379,7 +2379,7 @@
             try {
                 const r = await fetch(API + '/api/patient/questions', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ complaint: S.complaint, detected_language: S.detectedLang })
+                    body: JSON.stringify({ complaint: S.complaint, complaint_en: S.complaintEN, detected_language: S.detectedLang })
                 });
                 const d = await r.json();
                 S.questions = d.questions || []; S.complaintEN = d.complaint_en || S.complaint;
@@ -2451,7 +2451,7 @@
                     pill.className = 'scale-pill' + (prevAns === value || prevAns === display ? ' selected' : '');
                     pill.textContent = display;
                     pill.onclick = () => {
-                        S.answers[S.qIdx] = { question, answer: value, originalAnswer: display };
+                        S.answers[S.qIdx] = { question, question_en: q.question_en || q.question || question, answer: value, originalAnswer: display };
                         document.querySelectorAll('.scale-pill').forEach(p => p.classList.remove('selected'));
                         pill.classList.add('selected');
                         const nxt = document.getElementById('btnQNext'); nxt.disabled = false; nxt.style.opacity = '1';
@@ -2465,7 +2465,7 @@
                     pill.className = 'radio-pill' + (prevAns === value || prevAns === display ? ' selected' : '');
                     pill.innerHTML = `<div class="radio-dot"></div><span>${escHtml(display)}</span>`;
                     pill.onclick = () => {
-                        S.answers[S.qIdx] = { question, answer: value, originalAnswer: display };
+                        S.answers[S.qIdx] = { question, question_en: q.question_en || q.question || question, answer: value, originalAnswer: display };
                         document.querySelectorAll('#qOptions .radio-pill').forEach(p => p.classList.remove('selected'));
                         pill.classList.add('selected');
                         const nxt = document.getElementById('btnQNext'); nxt.disabled = false; nxt.style.opacity = '1';
@@ -2540,20 +2540,27 @@
             document.getElementById('assessSpinner').classList.add('visible');
             document.getElementById('assessSpinnerText').textContent = t('assessSpinnerText');
             document.getElementById('btnGetAssessment').disabled = true;
-            const qaList = S.answers.map(a => ({ question: a.question, answer: a.answer, original_answer: a.originalAnswer }));
+            const qaList = S.answers.map(a => ({ question: a.question, question_en: a.question_en || a.question, answer: a.answer, original_answer: a.originalAnswer }));
             try {
                 const r = await fetch(API + '/api/patient/assess', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         complaint: S.complaint, complaint_en: S.complaintEN, detected_language: S.detectedLang,
-                        questions: S.questions.map(q => q.question || q), answers: qaList, has_photo: S.photos.length > 0,
+                        questions: S.questions.map(q => q.question_en ? q : (q.question || q)), answers: qaList, has_photo: S.photos.length > 0,
                         photo_count: S.photos.length, photo_base64: S.photos.length ? S.photos.map(p => p.dataUrl) : null,
                         photo_mime: S.photos.length ? S.photos[0].mime : null,
                         media: S.photos.length ? S.photos.map(p => ({ dataUrl: p.dataUrl, mime: p.mime || 'image/jpeg', type: p.type || 'photo' })) : null
                     })
                 });
                 S.assessment = await r.json();
-            } catch (e) { S.assessment = buildFallbackAssessment(S.complaint || S.complaintEN || '', S.answers); }
+                if (S.assessment._qa_pairs && S.assessment._qa_pairs.length > 0) {
+                    S.answersEN = S.assessment._qa_pairs.map(p => ({
+                        question: p.question, question_en: p.question, answer: p.answer, original_answer: p.original_answer,
+                    }));
+                } else {
+                    S.answersEN = qaList;
+                }
+            } catch (e) { S.assessment = buildFallbackAssessment(S.complaint || S.complaintEN || '', S.answers); S.answersEN = qaList; }
             finally { document.getElementById('assessSpinner').classList.remove('visible'); document.getElementById('btnGetAssessment').disabled = false; }
             goToPage('triage'); renderTriageBanner(); requestGPS();
         }
@@ -2654,7 +2661,7 @@
             try {
                 const mediaArr = S.photos.length > 0 ? S.photos.map(p => ({ dataUrl: p.dataUrl, mime: p.mime || 'image/jpeg', type: p.type || 'photo' })) : null;
                 const photoBase64 = S.photos.length > 0 ? S.photos.map(p => p.dataUrl) : null;
-                const qaList = (S.answers || []).map(a => ({ question: a.question || '', answer: a.answer || '', original_answer: a.originalAnswer || a.answer || '' })).filter(a => a.question && a.answer);
+                const qaList = (S.answersEN || S.answers || []).map(a => ({ question: a.question || '', question_en: a.question_en || a.question || '', answer: a.answer || '', original_answer: a.original_answer || a.originalAnswer || a.answer || '' })).filter(a => a.question && a.answer);
                 await fetch(API + '/api/patient/submit', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2694,6 +2701,56 @@
             document.getElementById('rs_trackSub').textContent = t('rs_trackSub');
             document.getElementById('rs_newBtn').textContent = t('rs_newBtn');
             document.getElementById('rs_demo').textContent = t('rs_demo');
+            startLiveTracking();
+        }
+
+        let _trackingId = null;
+        function startLiveTracking() {
+            if (!navigator.geolocation || !S.selectedHospital || !S.regNumber) return;
+            if (_trackingId) navigator.geolocation.clearWatch(_trackingId);
+
+            // Extract hospital coordinates
+            const hl = String(S.selectedHospital.location || '');
+            let hLat = 0, hLon = 0;
+            if (hl.includes(',')) {
+                hLat = parseFloat(hl.split(',')[0]);
+                hLon = parseFloat(hl.split(',')[1]);
+            } else {
+                hLat = S.selectedHospital.lat || 0;
+                hLon = S.selectedHospital.lon || 0;
+            }
+            if (!hLat || !hLon) return;
+
+            const R = 6371; // km
+
+            _trackingId = navigator.geolocation.watchPosition(async (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                // Calculate straight-line distance (haversine)
+                const dLat = (hLat - lat) * Math.PI / 180;
+                const dLon = (hLon - lon) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat * Math.PI / 180) * Math.cos(hLat * Math.PI / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const d = R * c;
+
+                // Assume ~40km/h average in city -> 1.5 mins per km. Add 2 min for parking/walking.
+                let eta = Math.ceil((d * 1.5) + 2.0);
+                if (eta < 1) eta = 1;
+
+                try {
+                    await fetch(API + '/api/patient/' + S.regNumber + '/location', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ lat, lon, eta_minutes: eta })
+                    });
+                } catch (e) { }
+            }, (err) => { console.warn("Live tracking err:", err); }, {
+                enableHighAccuracy: true,
+                maximumAge: 10000,
+                timeout: 5000
+            });
         }
 
         // ═══════════════════════════════════════════════════════════

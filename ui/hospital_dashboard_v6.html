@@ -78,7 +78,7 @@
 
             --sidebar-w: 216px;
             --topbar-h: 58px;
-            --kpi-h: 68px;
+            --kpi-h: 82px;
             --r-xs: 4px;
             --r-sm: 6px;
             --r-md: 10px;
@@ -89,6 +89,50 @@
             --shadow-lg: 0 8px 30px rgba(0, 0, 0, .12), 0 4px 8px rgba(0, 0, 0, .08);
         }
 
+        /* --- DARK MODE & EDGE GLOW --- */
+        [data-theme="dark"] {
+            --bg: #0F172A;
+            --surface: #1E293B;
+            --surface2: #263348;
+            --surface3: #334155;
+            --border: #334155;
+            --border2: #475569;
+            --text: #F8FAFC;
+            --text2: #CBD5E1;
+            --text3: #94A3B8;
+            --text4: #64748B;
+            --navy: #0B1120;
+            --emg-light: rgba(185, 28, 28, 0.15);
+            --emg-text: #FCA5A5;
+            --urg-light: rgba(180, 83, 9, 0.15);
+            --urg-text: #FCD34D;
+            --rtn-light: rgba(4, 120, 87, 0.15);
+            --rtn-text: #6EE7B7;
+        }
+
+        @keyframes edgeGlow {
+            0% {
+                box-shadow: inset 0 0 0px var(--emg);
+            }
+
+            50% {
+                box-shadow: inset 0 0 45px var(--emg);
+            }
+
+            100% {
+                box-shadow: inset 0 0 0px var(--emg);
+            }
+        }
+
+        body {
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.emg-alert {
+            animation: edgeGlow 2s infinite;
+            border: 2px solid var(--emg);
+        }
+
         body {
             font-family: var(--font-sans);
             background: var(--bg);
@@ -97,7 +141,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            font-size: 14px;
+            font-size: 16px;
             -webkit-font-smoothing: antialiased;
         }
 
@@ -270,71 +314,215 @@
 
         /* ══ KPI BAR ═════════════════════════════════════════ */
         #kpi-bar {
-            background: var(--navy2);
+            background: var(--navy);
             border-bottom: 1px solid var(--navy-border);
             display: grid;
             grid-template-columns: repeat(6, 1fr);
             padding-left: var(--sidebar-w);
             flex-shrink: 0;
-            height: var(--kpi-h);
+            height: 110px;
+            position: relative;
+            gap: 0;
         }
 
         .kpi-cell {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 18px;
-            border-right: 1px solid var(--navy-border);
-            transition: background .15s;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 20px;
+            transition: all .25s ease;
             cursor: default;
+            position: relative;
+            border-right: 1px solid rgba(255, 255, 255, .06);
         }
 
         .kpi-cell:last-child {
-            border-right: none
+            border-right: none;
         }
 
         .kpi-cell:hover {
-            background: rgba(255, 255, 255, .03)
+            background: rgba(255, 255, 255, .05);
+            transform: translateY(-1px);
+        }
+
+        /* left accent bar — thicker, glowing */
+        .kpi-cell::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            bottom: 14px;
+            width: 4px;
+            border-radius: 0 4px 4px 0;
+            background: rgba(255, 255, 255, .12);
+            transition: all .25s;
+        }
+
+        .kpi-cell.kpi-emg::before {
+            background: #F87171;
+            box-shadow: 0 0 8px rgba(248, 113, 113, .4);
+        }
+
+        .kpi-cell.kpi-urg::before {
+            background: #FBBF24;
+            box-shadow: 0 0 8px rgba(251, 191, 36, .4);
+        }
+
+        .kpi-cell.kpi-rtn::before {
+            background: #34D399;
+            box-shadow: 0 0 8px rgba(52, 211, 153, .4);
+        }
+
+        .kpi-cell.kpi-enroute::before {
+            background: #60A5FA;
+            box-shadow: 0 0 8px rgba(96, 165, 250, .4);
+        }
+
+        .kpi-cell.kpi-done::before {
+            background: rgba(255, 255, 255, .30);
+        }
+
+        /* icon circle — bigger with gradient */
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.35rem;
+            background: rgba(255, 255, 255, .07);
+            border: 1px solid rgba(255, 255, 255, .12);
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .kpi-cell:hover .kpi-icon {
+            transform: scale(1.08);
+        }
+
+        .kpi-cell.kpi-emg .kpi-icon {
+            background: linear-gradient(135deg, rgba(248, 113, 113, .2), rgba(248, 113, 113, .08));
+            border-color: rgba(248, 113, 113, .35);
+            box-shadow: 0 0 16px rgba(248, 113, 113, .15);
+        }
+
+        .kpi-cell.kpi-urg .kpi-icon {
+            background: linear-gradient(135deg, rgba(251, 191, 36, .18), rgba(251, 191, 36, .07));
+            border-color: rgba(251, 191, 36, .32);
+            box-shadow: 0 0 16px rgba(251, 191, 36, .12);
+        }
+
+        .kpi-cell.kpi-rtn .kpi-icon {
+            background: linear-gradient(135deg, rgba(52, 211, 153, .18), rgba(52, 211, 153, .07));
+            border-color: rgba(52, 211, 153, .32);
+            box-shadow: 0 0 16px rgba(52, 211, 153, .12);
+        }
+
+        .kpi-cell.kpi-enroute .kpi-icon {
+            background: linear-gradient(135deg, rgba(96, 165, 250, .18), rgba(96, 165, 250, .07));
+            border-color: rgba(96, 165, 250, .32);
+            box-shadow: 0 0 16px rgba(96, 165, 250, .12);
+        }
+
+        .kpi-cell.kpi-done .kpi-icon {
+            background: rgba(255, 255, 255, .08);
+            border-color: rgba(255, 255, 255, .18);
+        }
+
+        .kpi-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
         }
 
         .kpi-label {
-            font-size: .58rem;
+            font-size: .72rem;
             font-weight: 700;
-            color: rgba(255, 255, 255, .38);
-            letter-spacing: .09em;
+            color: rgba(255, 255, 255, .50);
+            letter-spacing: .1em;
             text-transform: uppercase;
-            margin-bottom: 3px
+            white-space: nowrap;
         }
 
         .kpi-value {
             font-family: var(--font-display);
-            font-size: 1.55rem;
-            font-weight: 700;
+            font-size: 2.2rem;
+            font-weight: 800;
             color: #fff;
-            line-height: 1
+            line-height: 1;
+            letter-spacing: -.03em;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, .3);
         }
 
         .kpi-value.c-emg {
-            color: #FCA5A5
+            color: #FCA5A5;
+            text-shadow: 0 2px 12px rgba(252, 165, 165, .3);
         }
 
         .kpi-value.c-urg {
-            color: #FCD34D
+            color: #FCD34D;
+            text-shadow: 0 2px 12px rgba(252, 211, 77, .3);
         }
 
         .kpi-value.c-rtn {
-            color: #6EE7B7
+            color: #6EE7B7;
+            text-shadow: 0 2px 12px rgba(110, 231, 183, .3);
         }
 
         .kpi-value.c-blue {
-            color: #93C5FD
+            color: #93C5FD;
+            text-shadow: 0 2px 12px rgba(147, 197, 253, .3);
         }
 
         .kpi-sub {
-            font-size: .6rem;
-            color: rgba(255, 255, 255, .3);
-            margin-top: 2px
+            font-size: .68rem;
+            color: rgba(255, 255, 255, .30);
+            white-space: nowrap;
+            margin-top: 2px;
         }
+
+        /* pulse dot for live metrics */
+        .kpi-live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #34D399;
+            flex-shrink: 0;
+            animation: kpi-pulse 2.2s ease-in-out infinite;
+        }
+
+        .kpi-cell.kpi-emg .kpi-live-dot {
+            background: #F87171;
+            box-shadow: 0 0 6px rgba(248, 113, 113, .5);
+        }
+
+        .kpi-cell.kpi-urg .kpi-live-dot {
+            background: #FBBF24;
+            box-shadow: 0 0 6px rgba(251, 191, 36, .5);
+        }
+
+        .kpi-cell.kpi-enroute .kpi-live-dot {
+            background: #60A5FA;
+            box-shadow: 0 0 6px rgba(96, 165, 250, .5);
+        }
+
+        @keyframes kpi-pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: .35;
+                transform: scale(.7);
+            }
+        }
+
 
         /* ══ SHELL ═══════════════════════════════════════════ */
         #shell {
@@ -542,10 +730,10 @@
         /* Card summary */
         .pt-head {
             display: grid;
-            grid-template-columns: 52px 1fr 110px 110px;
+            grid-template-columns: 100px 1fr 140px 140px;
             align-items: center;
-            gap: 14px;
-            padding: 13px 16px;
+            gap: 20px;
+            padding: 18px 22px;
             cursor: pointer;
         }
 
@@ -555,17 +743,18 @@
 
         /* Avatar */
         .pt-ava {
-            width: 44px;
-            height: 44px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             background: var(--surface3);
-            border: 2px solid var(--border);
+            border: 3px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
+            font-size: 3rem;
             overflow: hidden;
             flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
         }
 
         .pt-ava img {
@@ -589,25 +778,25 @@
         }
 
         .pt-name {
-            font-size: .88rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: var(--text)
         }
 
         .pt-pid {
             font-family: var(--font-mono);
-            font-size: .62rem;
+            font-size: .85rem;
             color: var(--text4);
             background: var(--surface3);
-            padding: 1px 5px;
-            border-radius: 3px
+            padding: 3px 8px;
+            border-radius: 4px
         }
 
         /* Triage badge */
         .t-badge {
-            padding: 3px 9px;
+            padding: 5px 14px;
             border-radius: 99px;
-            font-size: .62rem;
+            font-size: .85rem;
             font-weight: 800;
             letter-spacing: .05em;
             text-transform: uppercase;
@@ -640,10 +829,10 @@
         }
 
         .chip {
-            font-size: .62rem;
+            font-size: .85rem;
             font-weight: 500;
-            padding: 2px 7px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
             background: var(--surface3);
             color: var(--text2);
             white-space: nowrap;
@@ -696,7 +885,7 @@
 
         .eta-num {
             font-family: var(--font-display);
-            font-size: 1.4rem;
+            font-size: 1.85rem;
             font-weight: 700;
             line-height: 1
         }
@@ -714,7 +903,7 @@
         }
 
         .eta-unit {
-            font-size: .6rem;
+            font-size: .85rem;
             color: var(--text3);
             font-weight: 500
         }
@@ -727,9 +916,9 @@
 
         .st-pill {
             display: inline-block;
-            font-size: .6rem;
+            font-size: .82rem;
             font-weight: 700;
-            padding: 3px 9px;
+            padding: 5px 14px;
             border-radius: 99px;
             letter-spacing: .04em;
             text-transform: uppercase;
@@ -776,7 +965,7 @@
         }
 
         .pt-cc-lbl {
-            font-size: .6rem;
+            font-size: .8rem;
             font-weight: 700;
             color: var(--text4);
             text-transform: uppercase;
@@ -785,14 +974,14 @@
         }
 
         .pt-cc-text {
-            font-size: .82rem;
+            font-size: 1.08rem;
             color: var(--text);
             font-weight: 500;
-            line-height: 1.45
+            line-height: 1.55
         }
 
         .pt-cc-orig {
-            font-size: .73rem;
+            font-size: .92rem;
             color: var(--text3);
             font-style: italic;
             margin-top: 3px
@@ -809,11 +998,11 @@
         }
 
         .pt-foot-meta {
-            font-size: .68rem;
+            font-size: .88rem;
             color: var(--text3);
             display: flex;
             align-items: center;
-            gap: 12px
+            gap: 14px
         }
 
         .pt-expand {
@@ -961,7 +1150,12 @@
             background: linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%);
             border: 1.5px solid #BFDBFE;
             border-radius: var(--r-lg);
-            padding: 14px 16px;
+            padding: 16px 18px;
+        }
+
+        [data-theme="dark"] .ai-block {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(5, 150, 105, 0.10) 100%);
+            border: 1.5px solid rgba(99, 149, 255, 0.3);
         }
 
         .ai-block-hdr {
@@ -980,20 +1174,29 @@
             font-size: .83rem;
             color: var(--text);
             line-height: 1.6;
-            margin-bottom: 12px
+            margin-bottom: 14px
         }
 
         .ai-meta-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 8px
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 8px;
         }
 
+
         .ai-meta-item {
-            background: rgba(255, 255, 255, .85);
+            background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--r-sm);
-            padding: 8px 10px
+            padding: 10px 12px;
+            min-height: 70px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        [data-theme="dark"] .ai-meta-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .ai-meta-label {
@@ -1023,6 +1226,7 @@
             color: var(--rtn)
         }
 
+
         /* Q&A */
         .qa-table {
             width: 100%;
@@ -1049,6 +1253,12 @@
             width: 52%
         }
 
+        .qa-q-native {
+            color: var(--text3);
+            font-style: italic
+        }
+
+        /* original language - no EN translation available */
         .qa-a {
             font-weight: 700;
             color: var(--text)
@@ -1108,6 +1318,13 @@
 
         .a-discharge:hover {
             background: var(--rtn-mid)
+        }
+
+        .status-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center
         }
 
         /* Prep checklist */
@@ -1596,7 +1813,7 @@
         /* Vitals boxes */
         .vitals-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
             gap: 8px
         }
 
@@ -1604,31 +1821,39 @@
             background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: var(--r-sm);
-            padding: 9px 11px;
-            text-align: center
+            padding: 10px 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
         }
 
         .vital-label {
-            font-size: .58rem;
+            font-size: .55rem;
             font-weight: 700;
             color: var(--text4);
             text-transform: uppercase;
-            letter-spacing: .06em;
-            margin-bottom: 5px
+            letter-spacing: .07em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%
         }
 
         .vital-value {
-            font-family: var(--font-display);
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--text)
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
 
         .vital-unit {
-            font-size: .65rem;
+            font-size: .6rem;
             color: var(--text3);
-            font-weight: 400;
-            margin-left: 2px
+            font-weight: 500
         }
 
         .vital-value.vital-warn {
@@ -1899,7 +2124,8 @@
                 <div class="live-dot"></div>Live
             </div>
             <button class="tb-refresh" onclick="doRefresh()">
-                <span class="r-icon">↻</span> Refresh
+                <span class="r-icon">↻</span> Refresh <button class="tb-refresh" onclick="toggleTheme()"
+                    style="margin-right:8px;">🌙 Theme</button>
             </button>
             <div class="tb-clock" id="topbar-clock"></div>
         </div>
@@ -1908,34 +2134,57 @@
     <!-- ══ KPI BAR ═════════════════════════════════════════════ -->
     <div id="kpi-bar">
         <div class="kpi-cell">
-            <div class="kpi-label">In Queue</div>
-            <div class="kpi-value" id="k-total">—</div>
-            <div class="kpi-sub">Active patients</div>
+            <div class="kpi-icon">🏥</div>
+            <div class="kpi-text">
+                <div class="kpi-label">In Queue</div>
+                <div class="kpi-value" id="k-total">—</div>
+                <div class="kpi-sub">Active patients</div>
+            </div>
+            <div class="kpi-live-dot"
+                style="background:#94A3B8;margin-left:auto;align-self:flex-start;margin-top:14px;"></div>
         </div>
-        <div class="kpi-cell">
-            <div class="kpi-label">🔴 Emergency</div>
-            <div class="kpi-value c-emg" id="k-emg">—</div>
-            <div class="kpi-sub">Immediate action</div>
+        <div class="kpi-cell kpi-emg">
+            <div class="kpi-icon">🚨</div>
+            <div class="kpi-text">
+                <div class="kpi-label">Emergency</div>
+                <div class="kpi-value c-emg" id="k-emg">—</div>
+                <div class="kpi-sub">Immediate action</div>
+            </div>
+            <div class="kpi-live-dot" style="margin-left:auto;align-self:flex-start;margin-top:14px;"></div>
         </div>
-        <div class="kpi-cell">
-            <div class="kpi-label">🟡 Urgent</div>
-            <div class="kpi-value c-urg" id="k-urg">—</div>
-            <div class="kpi-sub">Within 30 min</div>
+        <div class="kpi-cell kpi-urg">
+            <div class="kpi-icon">⚡</div>
+            <div class="kpi-text">
+                <div class="kpi-label">Urgent</div>
+                <div class="kpi-value c-urg" id="k-urg">—</div>
+                <div class="kpi-sub">Within 30 min</div>
+            </div>
+            <div class="kpi-live-dot" style="margin-left:auto;align-self:flex-start;margin-top:14px;"></div>
         </div>
-        <div class="kpi-cell">
-            <div class="kpi-label">🟢 Routine</div>
-            <div class="kpi-value c-rtn" id="k-rtn">—</div>
-            <div class="kpi-sub">Stable condition</div>
+        <div class="kpi-cell kpi-rtn">
+            <div class="kpi-icon">✅</div>
+            <div class="kpi-text">
+                <div class="kpi-label">Routine</div>
+                <div class="kpi-value c-rtn" id="k-rtn">—</div>
+                <div class="kpi-sub">Stable condition</div>
+            </div>
         </div>
-        <div class="kpi-cell">
-            <div class="kpi-label">🚗 En Route</div>
-            <div class="kpi-value c-blue" id="k-enroute">—</div>
-            <div class="kpi-sub">GPS tracked</div>
+        <div class="kpi-cell kpi-enroute">
+            <div class="kpi-icon">🚗</div>
+            <div class="kpi-text">
+                <div class="kpi-label">En Route</div>
+                <div class="kpi-value c-blue" id="k-enroute">—</div>
+                <div class="kpi-sub">GPS tracked</div>
+            </div>
+            <div class="kpi-live-dot" style="margin-left:auto;align-self:flex-start;margin-top:14px;"></div>
         </div>
-        <div class="kpi-cell">
-            <div class="kpi-label">✅ Treated Today</div>
-            <div class="kpi-value" id="k-done">—</div>
-            <div class="kpi-sub">Discharged</div>
+        <div class="kpi-cell kpi-done">
+            <div class="kpi-icon">📋</div>
+            <div class="kpi-text">
+                <div class="kpi-label">Treated Today</div>
+                <div class="kpi-value" id="k-done">—</div>
+                <div class="kpi-sub">Discharged</div>
+            </div>
         </div>
     </div>
 
@@ -2022,6 +2271,8 @@
                     <button class="stab" onclick="showSubtab('reports','weekly',this)">Weekly</button>
                     <button class="stab" onclick="showSubtab('reports','monthly',this)">Monthly</button>
                     <button class="stab" onclick="showSubtab('reports','yearly',this)">Yearly</button>
+                    <button class="sort-btn" style="background:var(--blue2);color:white;border-color:var(--blue2);">📥
+                        Export CSV</button>
                 </div>
                 <div style="padding:16px 20px">
                     <div id="reports-daily" class="stab-pane active">
@@ -2277,15 +2528,65 @@
                 el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No patients in queue</div></div>';
                 return;
             }
-            // Cache all patients for Medical History tab (so loadHRInCard can use enriched data)
+
+            // Update cache
             pts.forEach(p => { if (p.patient_id) _patientCache[p.patient_id] = p; });
-            el.innerHTML = pts.map(buildCard).join('');
-            el.querySelectorAll('[data-toggle]').forEach(t => {
-                t.addEventListener('click', () => toggleDet(t.dataset.toggle));
+
+            // --- Smart diff: never destroy an existing card (would reset data-auto-hr and lose open tabs) ---
+            const newIds = new Set(pts.map(p => p.patient_id).filter(Boolean));
+
+            // 1. Remove cards that left the queue
+            el.querySelectorAll('.pt-card[id^="card-"]').forEach(card => {
+                const pid = card.id.slice(5);
+                if (!newIds.has(pid)) card.remove();
             });
-            el.querySelectorAll('[data-dtab]').forEach(btn => {
-                btn.addEventListener('click', () => switchDtab(btn.dataset.pid, btn.dataset.dtab, btn));
+
+            // 2. For each incoming patient, add new card OR lightly update existing
+            pts.forEach(p => {
+                const pid = p.patient_id; if (!pid) return;
+                const existing = document.getElementById('card-' + pid);
+
+                if (existing) {
+                    // Existing card: only patch the status pill — do NOT touch innerHTML (preserves open tabs)
+                    const pill = existing.querySelector('.st-pill');
+                    if (pill) {
+                        pill.className = 'st-pill st-' + (p.status || 'incoming');
+                        pill.textContent = STATUS_MAP[p.status] || p.status || 'Incoming';
+                    }
+
+                    // Patch ETA and Progress Bar from live updates
+                    const etaEl = existing.querySelector('.pt-eta .eta-num');
+                    const progEl = existing.querySelector('.pt-prog-fill');
+                    if (etaEl) {
+                        const eta = p.eta_minutes;
+                        const etaTxt = eta ? (eta + ' min') : (p.arrival_time ? 'ARRIVED' : '—');
+                        const etaCls = eta && eta <= 5 ? 'crit' : eta && eta <= 15 ? 'urg' : 'ok';
+                        etaEl.className = 'eta-num ' + etaCls;
+                        etaEl.textContent = etaTxt;
+                    }
+                    if (progEl) {
+                        const eta = p.eta_minutes;
+                        const etaPct = eta ? Math.min(100, Math.max(3, 100 - (eta / 60) * 100)) : (p.arrival_time ? 100 : 0);
+                        progEl.style.width = etaPct + '%';
+                    }
+
+                    // Maintain sort order
+                    el.appendChild(existing);
+                } else {
+                    // New card: full render
+                    const wrap = document.createElement('div');
+                    wrap.innerHTML = buildCard(p);
+                    const card = wrap.firstElementChild;
+                    el.appendChild(card);
+                    card.querySelectorAll('[data-toggle]').forEach(t =>
+                        t.addEventListener('click', () => toggleDet(t.dataset.toggle)));
+                    card.querySelectorAll('[data-dtab]').forEach(btn =>
+                        btn.addEventListener('click', () => switchDtab(btn.dataset.pid, btn.dataset.dtab, btn)));
+                }
             });
+            // EMERGENCY ALERT EDGE GLOW
+            const hasEmergency = pts.some(p => p.triage_level === 'EMERGENCY' && p.status === 'incoming');
+            document.body.classList.toggle('emg-alert', hasEmergency);
         }
 
         function toggleDet(pid) {
@@ -2365,27 +2666,56 @@
             // Status pill
             const stPill = `<span class="st-pill st-${status}">${STATUS_MAP[status] || status}</span>`;
 
-            // Action buttons
+            // Action buttons — compact status dropdown so all states are reachable
+            const statusOpts = [
+                { val: 'incoming', label: '📋 Incoming' },
+                { val: 'arrived', label: '🏥 Arrived' },
+                { val: 'in_treatment', label: '💊 In Treatment' },
+                { val: 'discharged', label: '✅ Discharged' },
+            ];
             const aMap = {
-                incoming: `<button class="a-btn a-arrive" onclick="setStatus('${pid}','arrived')">Mark Arrived</button>
-                  <button class="a-btn a-treat"  onclick="setStatus('${pid}','in_treatment')">In Treatment</button>`,
-                arrived: `<button class="a-btn a-treat" onclick="setStatus('${pid}','in_treatment')">Start Treatment</button>`,
-                in_treatment: `<button class="a-btn a-discharge" onclick="setStatus('${pid}','discharged')">Discharge</button>`,
-                discharged: `<span style="color:var(--rtn-text);font-size:.75rem;font-weight:700">✅ Discharged</span>`,
+                incoming: `<div class="status-actions">
+                    <button class="a-btn a-arrive" onclick="setStatus('${pid}','arrived')">Mark Arrived</button>
+                    <button class="a-btn a-treat"  onclick="setStatus('${pid}','in_treatment')">In Treatment</button>
+                    <button class="a-btn a-discharge" onclick="setStatus('${pid}','discharged')" title="Mark as discharged">Discharge</button>
+                  </div>`,
+                arrived: `<div class="status-actions">
+                    <button class="a-btn a-treat" onclick="setStatus('${pid}','in_treatment')">Start Treatment</button>
+                    <button class="a-btn a-discharge" onclick="setStatus('${pid}','discharged')" title="Mark as discharged">Discharge</button>
+                  </div>`,
+                in_treatment: `<div class="status-actions">
+                    <button class="a-btn a-discharge" onclick="setStatus('${pid}','discharged')">✅ Discharge Patient</button>
+                  </div>`,
+                discharged: `<div class="status-actions">
+                    <span style="color:var(--rtn-text);font-size:.75rem;font-weight:700">✅ Discharged</span>
+                    <button class="a-btn" style="font-size:.7rem;padding:3px 8px;opacity:.7" onclick="setStatus('${pid}','in_treatment')" title="Re-admit to treatment">↩ Re-admit</button>
+                  </div>`,
             };
 
-            // Q&A HTML — always show English: q.question_en or q.question (EN), q.answer (EN translated)
-            // original_answer is shown below in small italic for reference
+            // Q&A — question_en = İngilizce soru (server'dan), question = orijinal dil
+            // answer = zaten İngilizce (server çeviriyor), original_answer = hasta dili
             const qaHTML = qa.length
                 ? `<table class="qa-table">${qa.map(q => {
-                    // question_en is the English version if available, fallback to q.question
-                    const qText = q.question_en || q.question || '';
-                    // answer is already translated to English by the server
-                    const enAnswer = q.answer || q.original_answer || '—';
-                    // original_answer is the patient's language answer — show small below
-                    const origAnswer = q.original_answer || '';
-                    const showOrig = origAnswer && origAnswer !== enAnswer;
-                    return `<tr><td class="qa-q">${h(qText)}</td><td class="qa-a"><strong>${h(enAnswer)}</strong>${showOrig ? `<span class="qa-orig">${h(origAnswer)}</span>` : ''}</td></tr>`;
+                    const qEn = (q.question_en || '').trim();
+                    const qOrig = (q.question || '').trim();
+                    // Gösterilecek soru: question_en varsa onu, yoksa question (Türkçe olabilir)
+                    const qDisplay = qEn || qOrig;
+                    // Cevap her zaman İngilizce (server çeviriyor)
+                    const enAns = (q.answer || '').trim() || '—';
+                    // Orijinal dil cevabı (hastanın yazdığı)
+                    const origAns = (q.original_answer || '').trim();
+                    const showOrigAns = origAns && origAns !== enAns;
+                    // question_en yoksa, sorunun orijinal dilde olduğunu belirt
+                    const qLabel = qEn
+                        ? `<span class="qa-q-text">${h(qDisplay)}</span>`
+                        : `<span class="qa-q-text qa-q-native" title="Original language — English translation unavailable">${h(qDisplay)}</span>`;
+                    return `<tr>
+              <td class="qa-q">${qLabel}</td>
+              <td class="qa-a">
+                <strong>${h(enAns)}</strong>
+                ${showOrigAns ? `<br><span class="qa-orig">${h(origAns)}</span>` : ''}
+              </td>
+            </tr>`;
                 }).join('')}</table>`
                 : '<p style="color:var(--text3);font-size:.78rem">No follow-up Q&A recorded.</p>';
 
@@ -2403,8 +2733,14 @@
   <!-- Summary row -->
   <div class="pt-head" data-toggle="${pid}">
     <div class="pt-ava">
-      ${hn ? `<img src="/api/patient_photo/${encodeURIComponent(hn)}" alt="" onerror="this.style.display='none';this.parentElement.textContent='${avIco}'">`
-                    : `${avIco}`}
+      ${p.profile_photo_url
+                    ? `<img src="${p.profile_photo_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"
+               onerror="this.parentElement.textContent='${avIco}'">`
+                    : hn
+                        ? `<img src="/api/patient_photo/${encodeURIComponent(hn)}" alt=""
+               style="width:100%;height:100%;object-fit:cover;border-radius:50%"
+               onerror="this.parentElement.textContent='${avIco}'">`
+                        : avIco}
     </div>
     <div class="pt-info">
       <div class="pt-name-row">
@@ -2421,7 +2757,7 @@
         ${hn ? `<span class="chip">🪪 ${h(hn)}</span>` : ''}
         ${weight ? `<span class="chip">⚖️ ${h(weight)}${height ? ' · ' + h(height) : ''}</span>` : ''}
         ${lang ? `<span class="chip lang">🌐 ${h(lang)}</span>` : ''}
-        ${p.photo_count > 0 ? `<span class="chip photo">📷 ${p.photo_count}</span>` : ''}
+        ${p.photo_count > 0 || p.illness_media_urls?.length > 0 ? `<span class="chip photo">📷 ${p.illness_media_urls?.length || p.photo_count}</span>` : ''}
       </div>
     </div>
     <div class="pt-eta">
@@ -2488,10 +2824,10 @@
         </div>
       </div>`: ''}
 
-      ${p.photo_count > 0 ? `<div class="ds">
-        <div class="ds-head">Patient Media (${p.photo_count})</div>
+      ${(p.illness_media_urls && p.illness_media_urls.length > 0) || p.photo_count > 0 ? `<div class="ds">
+        <div class="ds-head">Patient Media (${p.illness_media_urls && p.illness_media_urls.length > 0 ? p.illness_media_urls.length : p.photo_count})</div>
         <div class="media-row">
-          ${Array.from({ length: p.photo_count }, (_, i) => `
+          ${Array.from({ length: p.illness_media_urls && p.illness_media_urls.length > 0 ? p.illness_media_urls.length : p.photo_count }, (_, i) => `
           <div class="media-thumb" onclick="openMediaLightbox('/api/illness_photo/${pid}/${i}','${pid}',${i})" id="mt-${pid}-${i}">
             <img src="/api/illness_photo/${encodeURIComponent(pid)}/${i}" alt="Media ${i + 1}"
                  onerror="replaceWithVideoThumb('${pid}',${i},this.parentElement)"/>
@@ -2548,7 +2884,24 @@
                     ? `<div id="hr-inline-${pid}">
              <div style="color:var(--text3);padding:.5rem 0;font-size:.8rem">⏳ Loading medical history for ${h(hn)}…</div>
            </div>`
-                    : `<div class="empty-state"><div class="empty-icon">🪪</div><div class="empty-text">No health number on record</div></div>`}
+                    : `<div style="padding:8px 0">
+            <div class="empty-state" style="margin-bottom:12px">
+              <div class="empty-icon">🪪</div>
+              <div class="empty-text">No health number on record</div>
+              <div style="font-size:.75rem;color:var(--text4);margin-top:6px">
+                This patient has no linked health record.<br>
+                Medical history is only available for pre-registered patients.
+              </div>
+            </div>
+            ${(sex && sex !== '—') || age || blood ? `<div class="ds"><div class="ds-head">Patient Info (from registration)</div>
+            <div class="info-grid">
+              <div class="info-field"><div class="info-label">Patient ID</div><div class="info-value mono blue">${h(pid)}</div></div>
+              ${age && age !== '—' ? `<div class="info-field"><div class="info-label">Age</div><div class="info-value">${h(String(age))}</div></div>` : ''}
+              ${sex && sex !== '—' ? `<div class="info-field"><div class="info-label">Sex</div><div class="info-value">${h(sex)}</div></div>` : ''}
+              ${blood && blood !== '?' ? `<div class="info-field"><div class="info-label">Blood Type</div><div class="info-value emg">${h(blood)}</div></div>` : ''}
+              ${nat ? `<div class="info-field"><div class="info-label">Nationality</div><div class="info-value">${flag} ${h(nat)}</div></div>` : ''}
+            </div></div>`: ''}
+          </div>`}
     </div>
 
     <!-- PRE-ARRIVAL PREP -->
@@ -2581,14 +2934,25 @@
 
         // ── Status update ────────────────────────────────────────
         async function setStatus(pid, status) {
+            const labels = { incoming: 'Incoming', arrived: 'Arrived', in_treatment: 'In Treatment', discharged: 'Discharged' };
+            const icons = { incoming: '📋', arrived: '🏥', in_treatment: '💊', discharged: '✅' };
             try {
                 await api('/api/patient/' + pid + '/status', {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status }),
                 });
-                toast('✅ Status → ' + (STATUS_MAP[status] || status), 'ok');
-                loadPatients(); loadKPI();
-            } catch (e) { toast('❌ Update failed', 'err'); }
+                const icon = icons[status] || '✅';
+                const label = labels[status] || status;
+                if (status === 'discharged') {
+                    toast(`${icon} Patient discharged — Treated Today updated`, 'ok');
+                } else {
+                    toast(`${icon} Status → ${label}`, 'ok');
+                }
+                // Update cached patient status so UI reflects immediately
+                if (_patientCache[pid]) _patientCache[pid].status = status;
+                loadPatients();
+                loadKPI();  // Refresh KPI bar including "Treated Today"
+            } catch (e) { toast('❌ Status update failed', 'err'); }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -2597,15 +2961,27 @@
         function renderMedicalHistoryInline(rec, hn) {
             if (!rec || !rec.demographics) return '<div style="color:var(--text3);font-size:.8rem">No record found.</div>';
             const dm = rec.demographics;
+
+            // DEDUP helper
+            const dedup = (arr, keyFn) => {
+                const seen = new Set();
+                return (arr || []).filter(item => { const k = keyFn(item); if (seen.has(k)) return false; seen.add(k); return true; });
+            };
+
             const vitals = (rec.vitals || []).slice(0, 1)[0] || null;
-            const diags = rec.diagnoses || [];
-            const meds = (rec.medications || []).filter(m => m.status === 'active');
-            const allergy = rec.allergies || [];
-            const visits = (rec.visits || []).slice(0, 3);
+            const diags = dedup(rec.diagnoses || [], d => (d.id || d.icd_code || '') + '|' + (d.description || ''));
+            const meds = dedup((rec.medications || []).filter(m => m.status === 'active'), m => (m.id || m.name || '') + '|' + (m.dosage || ''));
+            const allergy = dedup(rec.allergies || [], a => a.allergen || String(a));
+            const visits = dedup((rec.visits || []).slice(0, 5), v => v.visit_date + '|' + (v.diagnosis || v.chief_complaint || ''));
+            const labs = dedup((rec.lab_results || []).slice(0, 15), l => l.test_name + '|' + l.test_date);
+
             const dob = dm.date_of_birth || '';
             const age = dob ? (new Date().getFullYear() - parseInt(dob.split('-')[0])) + 'y' : '—';
             const vRow = (label, val, unit = '') => val != null ? `<div class="info-field"><div class="info-label">${label}</div><div class="info-value">${val}${unit ? ' <span style="color:var(--text3);font-size:.7rem">' + unit + '</span>' : ''}</div></div>` : '';
             const bpVal = vitals && vitals.bp_systolic ? `${vitals.bp_systolic}/${vitals.bp_diastolic}` : null;
+
+            const labStatusColor = s => s === 'high' || s === 'low' || s === 'critical' ? 'color:var(--emg);font-weight:700' : s === 'borderline' ? 'color:var(--urg)' : 'color:var(--rtn-text)';
+
             return `
     <div class="ds"><div class="ds-head">Demographics</div>
     <div class="info-grid">
@@ -2617,22 +2993,45 @@
       ${dm.emergency_name ? `<div class="info-field"><div class="info-label">Emergency Contact</div><div class="info-value">${h(dm.emergency_name)} · ${h(dm.emergency_phone || '')}</div></div>` : ''}
     </div></div>
     ${vitals ? `<div class="ds"><div class="ds-head">Latest Vitals <span style="font-weight:400;font-size:.65rem;color:var(--text3)">${(vitals.recorded_at || '').slice(0, 10)}</span></div>
-    <div class="info-grid">${vRow('BP', bpVal, 'mmHg')}${vRow('Heart Rate', vitals.heart_rate, 'bpm')}${vRow('SpO₂', vitals.spo2, '%')}${vRow('Temp', vitals.temperature, '°C')}${vRow('BMI', vitals.bmi)}</div></div>` : ''}
+    <div class="vitals-grid">
+      ${bpVal ? `<div class="vital-box"><div class="vital-label">Blood Pressure</div><div class="vital-value ${vitals.bp_systolic > 140 ? 'vital-warn' : 'vital-normal'}">${bpVal}<div class="vital-unit">mmHg</div></div></div>` : ''}
+      ${vitals.heart_rate ? `<div class="vital-box"><div class="vital-label">Heart Rate</div><div class="vital-value vital-normal">${vitals.heart_rate}<div class="vital-unit">bpm</div></div></div>` : ''}
+      ${vitals.spo2 ? `<div class="vital-box"><div class="vital-label">SpO₂</div><div class="vital-value ${vitals.spo2 < 94 ? 'vital-crit' : 'vital-ok'}">${vitals.spo2}<div class="vital-unit">%</div></div></div>` : ''}
+      ${vitals.temperature ? `<div class="vital-box"><div class="vital-label">Temp</div><div class="vital-value ${vitals.temperature > 38 ? 'vital-warn' : 'vital-normal'}">${vitals.temperature}<div class="vital-unit">°C</div></div></div>` : ''}
+      ${vitals.bmi ? `<div class="vital-box"><div class="vital-label">BMI</div><div class="vital-value vital-normal">${vitals.bmi}</div></div>` : ''}
+      ${vitals.glucose ? `<div class="vital-box"><div class="vital-label">Glucose</div><div class="vital-value ${vitals.glucose > 7 ? 'vital-warn' : 'vital-normal'}">${vitals.glucose}<div class="vital-unit">mmol/L</div></div></div>` : ''}
+    </div></div>`: ''}
     ${allergy.length ? `<div class="ds"><div class="ds-head">Known Allergies</div>
     <div class="flag-row">${allergy.map(a => `<span class="flag-chip e">⚠ ${h(a.allergen || a)} ${a.severity ? '(' + h(a.severity) + ')' : ''}</span>`).join('')}</div></div>` : ''}
     ${diags.length ? `<div class="ds"><div class="ds-head">Active Diagnoses</div>
-    <div style="display:flex;flex-direction:column;gap:5px">${diags.map(d => `<div style="display:flex;gap:10px;padding:7px 10px;background:var(--surface2);border-radius:var(--r-sm);align-items:flex-start">
-      <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--blue2);flex-shrink:0">${h(d.icd_code || '')}</span>
-      <div><div style="font-size:.81rem;font-weight:600">${h(d.description || d.condition_name || '')}</div>${d.diagnosed_date ? `<div style="font-size:.7rem;color:var(--text3)">${h(d.diagnosed_date)}</div>` : ''}</div>
+    <div style="display:flex;flex-direction:column;gap:5px">${diags.map(d => `<div style="display:flex;gap:10px;padding:8px 11px;background:var(--surface2);border-radius:var(--r-sm);border-left:3px solid var(--blue-mid);align-items:flex-start">
+      ${d.icd_code ? `<span style="font-family:var(--font-mono);font-size:.68rem;color:var(--blue2);flex-shrink:0;padding-top:2px;min-width:42px">${h(d.icd_code)}</span>` : ''}
+      <div><div style="font-size:.81rem;font-weight:600">${h(d.description || d.condition_name || '')}</div>
+      <div style="font-size:.7rem;color:var(--text3)">${d.diagnosed_date ? h(d.diagnosed_date) : ''}${d.diagnosing_doctor ? ' · ' + h(d.diagnosing_doctor) : ''}${d.notes ? ' · ' + h(d.notes) : ''}</div></div>
     </div>`).join('')}</div></div>` : ''}
     ${meds.length ? `<div class="ds"><div class="ds-head">Active Medications</div>
-    <div style="display:flex;flex-direction:column;gap:5px">${meds.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface2);border-radius:var(--r-sm)">
-      <span style="font-size:.81rem;font-weight:700">${h(m.name || '')} ${m.dosage ? '<span style="font-weight:400;color:var(--text3)">' + h(m.dosage) + '</span>' : ''}</span>
+    <div style="display:flex;flex-direction:column;gap:5px">${meds.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 11px;background:var(--surface2);border-radius:var(--r-sm);border-left:3px solid var(--rtn-mid)">
+      <div><span style="font-size:.81rem;font-weight:700">${h(m.name || '')}</span>${m.dosage ? ` <span style="font-weight:400;color:var(--text3);font-size:.78rem">${h(m.dosage)}</span>` : ''}</div>
       <span style="font-size:.72rem;color:var(--text3)">${h(m.frequency || '')}</span></div>`).join('')}</div></div>` : ''}
+    ${labs.length ? `<div class="ds"><div class="ds-head">Lab Results</div>
+    <table style="width:100%;border-collapse:collapse;font-size:.78rem">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="text-align:left;padding:5px 8px;font-size:.65rem;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.06em">Test</th>
+        <th style="text-align:right;padding:5px 8px;font-size:.65rem;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.06em">Result</th>
+        <th style="text-align:right;padding:5px 8px;font-size:.65rem;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.06em">Ref. Range</th>
+        <th style="text-align:right;padding:5px 8px;font-size:.65rem;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.06em">Date</th>
+      </tr></thead>
+      <tbody>${labs.map(l => `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px 8px;font-weight:600">${h(l.test_name || '')}${l.lab_name ? `<div style="font-size:.65rem;color:var(--text4)">${h(l.lab_name)}</div>` : ''}</td>
+        <td style="padding:6px 8px;text-align:right;${labStatusColor(l.status)}">${h(l.value || '—')} <span style="font-weight:400;color:var(--text3)">${h(l.unit || '')}</span></td>
+        <td style="padding:6px 8px;text-align:right;color:var(--text3)">${h(l.reference_range || '—')}</td>
+        <td style="padding:6px 8px;text-align:right;color:var(--text3);font-family:var(--font-mono);font-size:.72rem">${h(l.test_date || '')}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`: ''}
     ${visits.length ? `<div class="ds"><div class="ds-head">Previous Visits</div>
-    <div style="display:flex;flex-direction:column;gap:5px">${visits.map(v => `<div style="padding:7px 10px;background:var(--surface2);border-radius:var(--r-sm);font-size:.8rem">
-      <span style="font-weight:600">${h(v.visit_date || '')}</span>
-      <span style="color:var(--text3);margin-left:8px">${h(v.diagnosis || v.reason || '')}</span>
+    <div style="display:flex;flex-direction:column;gap:5px">${visits.map(v => `<div style="padding:8px 11px;background:var(--surface2);border-radius:var(--r-sm);font-size:.8rem;display:flex;gap:12px;align-items:baseline">
+      <span style="font-family:var(--font-mono);font-size:.72rem;color:var(--text3);flex-shrink:0">${h(v.visit_date || '')}</span>
+      <div><span style="font-weight:600">${h(v.diagnosis || v.chief_complaint || v.reason || '')}</span>${v.department ? `<span style="color:var(--text3);margin-left:6px;font-size:.75rem">${h(v.department)}</span>` : ''}</div>
     </div>`).join('')}</div></div>` : ''}`;
         }
 
@@ -2688,31 +3087,57 @@
         // Render medical history from enriched patient object (no extra API call needed)
         function renderMedHistFromPatient(p, hn) {
             const vitals = p.vitals || {};
-            const diags = p.diagnoses || [];
-            const meds = p.medications || [];
-            const allergy = p.allergies || [];
-            const visits = (p.visits || []).slice(0, 3);
+            const allVitals = p.allVitals || [];  // full vitals history if available
+
+            // DEDUP: robust keys — works even if server-side dedup failed
+            const dedup = (arr, keyFn) => {
+                const seen = new Set();
+                return arr.filter(item => {
+                    const key = keyFn(item);
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+            };
+            // Use content-based keys (NOT id — id may differ for true duplicates)
+            const diags = dedup(p.diagnoses || [], d => ((d.icd_code || '').trim() + '|' + (d.description || '').trim().toLowerCase()));
+            const meds = dedup(p.medications || [], m => ((m.name || '').trim().toLowerCase() + '|' + (m.dosage || '').trim()));
+            const allergy = dedup(p.allergies || [], a => (a.allergen || String(a) || '').toLowerCase().trim());
+            const visits = dedup((p.visits || []).slice(0, 5), v => (v.visit_date || '') + '|' + (v.diagnosis || v.chief_complaint || '').trim().toLowerCase());
+            const labs = dedup((p.lab_results || []).slice(0, 15), l => (l.test_name || '').trim() + '|' + (l.test_date || ''));
+
             const vRow = (label, val, unit = '') => val != null ? `<div class="info-field"><div class="info-label">${label}</div><div class="info-value">${val}${unit ? ' <span style="color:var(--text3);font-size:.7rem">' + unit + '</span>' : ''}</div></div>` : '';
             const bpVal = vitals.bp_systolic ? `${vitals.bp_systolic}/${vitals.bp_diastolic}` : null;
 
             let out = '';
 
-            // Demographics (from patient record)
+            // Patient Info
+            const hasDemo = p.full_name && p.full_name !== p.patient_id;
             out += `<div class="ds"><div class="ds-head">Patient Info</div>
     <div class="info-grid">
       <div class="info-field"><div class="info-label">Health Number</div><div class="info-value mono blue">${h(hn)}</div></div>
-      <div class="info-field"><div class="info-label">Name</div><div class="info-value">${h(p.full_name || '—')}</div></div>
-      <div class="info-field"><div class="info-label">Age / Sex</div><div class="info-value">${h(p.age || '—')} / ${h(p.sex || '—')}</div></div>
-      <div class="info-field"><div class="info-label">Blood Type</div><div class="info-value emg">${h(p.blood_type || '?')}</div></div>
+      ${hasDemo ? `<div class="info-field"><div class="info-label">Name</div><div class="info-value">${h(p.full_name)}</div></div>` : ''}
+      ${p.age ? `<div class="info-field"><div class="info-label">Age / Sex</div><div class="info-value">${h(p.age || '—')} / ${h(p.sex || '—')}</div></div>` : ''}
+      ${p.blood_type ? `<div class="info-field"><div class="info-label">Blood Type</div><div class="info-value emg">${h(p.blood_type)}</div></div>` : ''}
       ${p.gp_name ? `<div class="info-field"><div class="info-label">GP</div><div class="info-value">${h(p.gp_name)}</div></div>` : ''}
       ${p.insurance_id ? `<div class="info-field"><div class="info-label">Insurance</div><div class="info-value mono">${h(p.insurance_id)}</div></div>` : ''}
-      ${p.emergency_name ? `<div class="info-field"><div class="info-label">Emergency Contact</div><div class="info-value">${h(p.emergency_name)} ${p.emergency_phone ? '· ' + h(p.emergency_phone) : ''}</div></div>` : ''}
+      ${p.emergency_name ? `<div class="info-field"><div class="info-label">Emergency Contact</div><div class="info-value">${h(p.emergency_name)}${p.emergency_phone ? ' · ' + h(p.emergency_phone) : ''}</div></div>` : ''}
     </div></div>`;
 
-            // Vitals
+            // Latest Vitals
             if (bpVal || vitals.heart_rate || vitals.spo2 || vitals.temperature) {
-                out += `<div class="ds"><div class="ds-head">Latest Vitals ${vitals.recorded_at ? '<span style="font-weight:400;font-size:.65rem;color:var(--text3)">' + vitals.recorded_at.slice(0, 10) + '</span>' : ''}</div>
-        <div class="info-grid">${vRow('Blood Pressure', bpVal, 'mmHg')}${vRow('Heart Rate', vitals.heart_rate, 'bpm')}${vRow('SpO₂', vitals.spo2, '%')}${vRow('Temp', vitals.temperature, '°C')}</div></div>`;
+                const bpClass = vitals.bp_systolic > 140 ? 'color:var(--emg)' : '';
+                const spo2Class = vitals.spo2 < 94 ? 'color:var(--emg)' : '';
+                const tempClass = vitals.temperature > 38 ? 'color:var(--urg)' : '';
+                out += `<div class="ds"><div class="ds-head">Latest Vitals${vitals.recorded_at ? ` <span style="font-weight:400;font-size:.65rem;color:var(--text3)">${vitals.recorded_at.slice(0, 10)}</span>` : ''}</div>
+        <div class="vitals-grid">
+          ${bpVal ? `<div class="vital-box"><div class="vital-label">Blood Pressure</div><div class="vital-value" style="${bpClass}">${bpVal}<div class="vital-unit">mmHg</div></div></div>` : ''}
+          ${vitals.heart_rate ? `<div class="vital-box"><div class="vital-label">Heart Rate</div><div class="vital-value">${vitals.heart_rate}<div class="vital-unit">bpm</div></div></div>` : ''}
+          ${vitals.spo2 ? `<div class="vital-box"><div class="vital-label">SpO₂</div><div class="vital-value" style="${spo2Class}">${vitals.spo2}<div class="vital-unit">%</div></div></div>` : ''}
+          ${vitals.temperature ? `<div class="vital-box"><div class="vital-label">Temp</div><div class="vital-value" style="${tempClass}">${vitals.temperature}<div class="vital-unit">°C</div></div></div>` : ''}
+          ${vitals.bmi ? `<div class="vital-box"><div class="vital-label">BMI</div><div class="vital-value">${vitals.bmi}</div></div>` : ''}
+          ${vitals.glucose ? `<div class="vital-box"><div class="vital-label">Glucose</div><div class="vital-value" style="${vitals.glucose > 7 ? 'color:var(--urg)' : ''}">${vitals.glucose}<div class="vital-unit">mmol/L</div></div></div>` : ''}
+        </div></div>`;
             }
 
             // Allergies
@@ -2724,30 +3149,53 @@
             // Diagnoses
             if (diags.length) {
                 out += `<div class="ds"><div class="ds-head">Active Diagnoses</div>
-        <div style="display:flex;flex-direction:column;gap:5px">${diags.map(d => `<div style="display:flex;gap:10px;padding:7px 10px;background:var(--surface2);border-radius:var(--r-sm);align-items:flex-start">
-          <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--blue2);flex-shrink:0">${h(d.icd_code || '')}</span>
-          <div><div style="font-size:.81rem;font-weight:600">${h(d.description || d.condition_name || '')}</div>${d.diagnosed_date ? `<div style="font-size:.7rem;color:var(--text3)">${h(d.diagnosed_date)}</div>` : ''}</div>
+        <div style="display:flex;flex-direction:column;gap:5px">${diags.map(d => `<div style="display:flex;gap:10px;padding:8px 11px;background:var(--surface2);border-radius:var(--r-sm);border-left:3px solid var(--blue-mid);align-items:flex-start">
+          ${d.icd_code ? `<span style="font-family:var(--font-mono);font-size:.68rem;color:var(--blue2);flex-shrink:0;padding-top:2px;min-width:42px">${h(d.icd_code)}</span>` : ''}
+          <div><div style="font-size:.81rem;font-weight:600">${h(d.description || d.condition_name || '')}</div>
+          <div style="font-size:.7rem;color:var(--text3)">${d.diagnosed_date ? h(d.diagnosed_date) : ''}${d.diagnosing_doctor ? ' · ' + h(d.diagnosing_doctor) : ''}${d.notes ? ' · ' + h(d.notes) : ''}</div></div>
         </div>`).join('')}</div></div>`;
             }
 
             // Medications
             if (meds.length) {
                 out += `<div class="ds"><div class="ds-head">Active Medications</div>
-        <div style="display:flex;flex-direction:column;gap:5px">${meds.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface2);border-radius:var(--r-sm)">
-          <span style="font-size:.81rem;font-weight:700">${h(m.name || '')} ${m.dosage ? '<span style="font-weight:400;color:var(--text3)">' + h(m.dosage) + '</span>' : ''}</span>
-          <span style="font-size:.72rem;color:var(--text3)">${h(m.frequency || '')}</span></div>`).join('')}</div></div>`;
+        <div style="display:flex;flex-direction:column;gap:5px">${meds.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 11px;background:var(--surface2);border-radius:var(--r-sm);border-left:3px solid var(--rtn-mid)">
+          <div><span style="font-size:.81rem;font-weight:700">${h(m.name || '')}</span>${m.dosage ? ` <span style="font-weight:400;color:var(--text3);font-size:.78rem">${h(m.dosage)}</span>` : ''}</div>
+          <span style="font-size:.72rem;color:var(--text3);flex-shrink:0">${h(m.frequency || '')}</span></div>`).join('')}</div></div>`;
+            }
+
+            // Lab Results (blood values etc.)
+            if (labs.length) {
+                const labStatusColor = s => s === 'high' || s === 'low' || s === 'critical' ? 'color:var(--emg);font-weight:700' : s === 'borderline' ? 'color:var(--urg)' : 'color:var(--rtn-text)';
+                out += `<div class="ds"><div class="ds-head">Lab Results</div>
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem">
+          <thead><tr style="border-bottom:2px solid var(--border)">
+            <th style="text-align:left;padding:5px 8px;font-size:.65rem;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.06em">Test</th>
+            <th style="text-align:right;padding:5px 8px;font-size:.65rem;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.06em">Result</th>
+            <th style="text-align:right;padding:5px 8px;font-size:.65rem;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.06em">Ref. Range</th>
+            <th style="text-align:right;padding:5px 8px;font-size:.65rem;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.06em">Date</th>
+          </tr></thead>
+          <tbody>${labs.map(l => `<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:6px 8px;font-weight:600">${h(l.test_name || '')}${l.lab_name ? `<div style="font-size:.65rem;color:var(--text4)">${h(l.lab_name)}</div>` : ''}</td>
+            <td style="padding:6px 8px;text-align:right;${labStatusColor(l.status)}">${h(l.value || '—')} <span style="font-weight:400;color:var(--text3)">${h(l.unit || '')}</span></td>
+            <td style="padding:6px 8px;text-align:right;color:var(--text3)">${h(l.reference_range || '—')}</td>
+            <td style="padding:6px 8px;text-align:right;color:var(--text3);font-family:var(--font-mono);font-size:.72rem">${h(l.test_date || '')}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`;
             }
 
             // Previous visits
             if (visits.length) {
                 out += `<div class="ds"><div class="ds-head">Previous Visits</div>
-        <div style="display:flex;flex-direction:column;gap:5px">${visits.map(v => `<div style="padding:7px 10px;background:var(--surface2);border-radius:var(--r-sm);font-size:.8rem">
-          <span style="font-weight:600">${h(v.visit_date || '')}</span>
-          <span style="color:var(--text3);margin-left:8px">${h(v.diagnosis || v.reason || v.chief_complaint || '')}</span>
+        <div style="display:flex;flex-direction:column;gap:5px">${visits.map(v => `<div style="padding:8px 11px;background:var(--surface2);border-radius:var(--r-sm);font-size:.8rem;display:flex;gap:12px;align-items:baseline">
+          <span style="font-family:var(--font-mono);font-size:.72rem;color:var(--text3);flex-shrink:0">${h(v.visit_date || '')}</span>
+          <div><span style="font-weight:600">${h(v.diagnosis || v.chief_complaint || v.reason || '')}</span>${v.department ? `<span style="color:var(--text3);margin-left:6px;font-size:.75rem">${h(v.department)}</span>` : ''}</div>
         </div>`).join('')}</div></div>`;
             }
 
-            if (!out) return '<div style="color:var(--text3);font-size:.8rem;padding:6px 0">No medical records found for this patient.</div>';
+            if (!out.includes('info-value') && !diags.length && !meds.length && !labs.length) {
+                return '<div style="color:var(--text3);font-size:.8rem;padding:8px 0">No medical records found for this patient.</div>';
+            }
             return out;
         }
 
@@ -2786,12 +3234,12 @@
                 const bpVal = v.bp_systolic ? `${v.bp_systolic}/${v.bp_diastolic}` : null;
                 o += `<div class="hr-section"><div class="hr-section-title">💓 Latest Vitals <span style="font-family:var(--font-mono);font-size:.62rem;color:var(--text3);font-weight:400">${(v.recorded_at || '').slice(0, 10)}</span></div>
       <div class="vitals-grid">
-        ${bpVal ? `<div class="vital-box"><div class="vital-label">Blood Pressure</div><div class="vital-value ${v.bp_systolic > 140 ? 'vital-warn' : 'vital-normal'}">${bpVal}<span class="vital-unit">mmHg</span></div></div>` : ''}
-        ${v.heart_rate ? `<div class="vital-box"><div class="vital-label">Heart Rate</div><div class="vital-value vital-normal">${v.heart_rate}<span class="vital-unit">bpm</span></div></div>` : ''}
-        ${v.spo2 ? `<div class="vital-box"><div class="vital-label">SpO₂</div><div class="vital-value ${v.spo2 < 94 ? 'vital-crit' : 'vital-ok'}">${v.spo2}<span class="vital-unit">%</span></div></div>` : ''}
-        ${v.temperature ? `<div class="vital-box"><div class="vital-label">Temp</div><div class="vital-value ${v.temperature > 38 ? 'vital-warn' : 'vital-normal'}">${v.temperature}<span class="vital-unit">°C</span></div></div>` : ''}
+        ${bpVal ? `<div class="vital-box"><div class="vital-label">Blood Pressure</div><div class="vital-value ${v.bp_systolic > 140 ? 'vital-warn' : 'vital-normal'}">${bpVal}<div class="vital-unit">mmHg</div></div></div>` : ''}
+        ${v.heart_rate ? `<div class="vital-box"><div class="vital-label">Heart Rate</div><div class="vital-value vital-normal">${v.heart_rate}<div class="vital-unit">bpm</div></div></div>` : ''}
+        ${v.spo2 ? `<div class="vital-box"><div class="vital-label">SpO₂</div><div class="vital-value ${v.spo2 < 94 ? 'vital-crit' : 'vital-ok'}">${v.spo2}<div class="vital-unit">%</div></div></div>` : ''}
+        ${v.temperature ? `<div class="vital-box"><div class="vital-label">Temp</div><div class="vital-value ${v.temperature > 38 ? 'vital-warn' : 'vital-normal'}">${v.temperature}<div class="vital-unit">°C</div></div></div>` : ''}
         ${v.bmi ? `<div class="vital-box"><div class="vital-label">BMI</div><div class="vital-value vital-normal">${v.bmi}</div></div>` : ''}
-        ${v.glucose ? `<div class="vital-box"><div class="vital-label">Glucose</div><div class="vital-value ${v.glucose > 7 ? 'vital-warn' : 'vital-normal'}">${v.glucose}<span class="vital-unit">mmol/L</span></div></div>` : ''}
+        ${v.glucose ? `<div class="vital-box"><div class="vital-label">Glucose</div><div class="vital-value ${v.glucose > 7 ? 'vital-warn' : 'vital-normal'}">${v.glucose}<div class="vital-unit">mmol/L</div></div></div>` : ''}
       </div></div>`;
             }
 
@@ -2845,12 +3293,16 @@
             }).addTo(mapInstance);
         }
 
+        // Store markers keyed by patient_id for click-to-focus
+        let _trackMarkerMap = {};
+
         async function refreshTracking() {
             if (!mapInstance) return;
             try {
                 const pts = await api('/api/tracking');
                 mapMarkers.forEach(m => mapInstance.removeLayer(m));
                 mapMarkers = [];
+                _trackMarkerMap = {};
                 const bounds = [HOSPITAL_COORDS];
                 pts.forEach(p => {
                     const lat = p.location?.lat, lon = p.location?.lon;
@@ -2863,14 +3315,39 @@
                         className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2],
                     });
                     const nm = p.full_name || p.patient_id;
+                    const pid = p.patient_id || '';
                     const marker = L.marker([lat, lon], { icon }).addTo(mapInstance);
-                    marker.bindPopup(`<div style="min-width:180px;font-family:sans-serif"><div style="font-weight:700;font-size:13px;margin-bottom:4px">${h(nm)}</div>${p.health_number ? `<div style="font-family:monospace;font-size:11px;color:#64748b;margin-bottom:4px">${p.health_number}</div>` : ''}<div style="margin-bottom:4px">${TRIAGE_BADGE[p.triage_level] || p.triage_level}</div>${p.eta_minutes ? `<div style="font-size:12px;margin-top:4px">⏱ <strong>${p.eta_minutes} min</strong> to arrival</div>` : ''}</div>`);
+                    const popupContent = `<div style="min-width:220px;font-family:'DM Sans',sans-serif;padding:4px">
+                        <div style="font-weight:800;font-size:15px;margin-bottom:6px;color:#1a202c">${h(nm)}</div>
+                        ${p.health_number ? `<div style="font-family:monospace;font-size:12px;color:#64748b;margin-bottom:6px">🪪 ${h(p.health_number)}</div>` : ''}
+                        <div style="margin-bottom:6px">${TRIAGE_BADGE[p.triage_level] || p.triage_level}</div>
+                        ${p.chief_complaint ? `<div style="font-size:13px;color:#334155;margin-bottom:6px;line-height:1.4">💬 ${h(p.chief_complaint)}</div>` : ''}
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                            ${p.eta_minutes ? `<div style="font-size:13px;font-weight:700;color:${p.eta_minutes <= 5 ? '#B91C1C' : col}">⏱ ${p.eta_minutes} min</div>` : '<div style="font-size:13px;font-weight:700;color:#047857">✅ ARRIVED</div>'}
+                            ${p.blood_type ? `<span style="font-size:12px;background:#FFF5F5;color:#9B2C2C;padding:2px 7px;border-radius:4px;border:1px solid #FED7D7">🩸 ${h(p.blood_type)}</span>` : ''}
+                            ${p.age ? `<span style="font-size:12px;color:#718096">🎂 ${h(p.age)}y</span>` : ''}
+                        </div>
+                    </div>`;
+                    marker.bindPopup(popupContent, { maxWidth: 300 });
                     mapMarkers.push(marker);
+                    if (pid) _trackMarkerMap[pid] = marker;
                     bounds.push([lat, lon]);
                 });
                 if (bounds.length > 1) mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
                 renderTrackingList(pts);
             } catch (e) { console.error('Tracking failed', e); }
+        }
+
+        function focusPatientOnMap(pid) {
+            const marker = _trackMarkerMap[pid];
+            if (!marker || !mapInstance) return;
+            const ll = marker.getLatLng();
+            mapInstance.flyTo(ll, 15, { duration: 0.8 });
+            marker.openPopup();
+            // Highlight selected card
+            document.querySelectorAll('.track-card').forEach(c => c.style.outline = 'none');
+            const card = document.getElementById('tc-' + pid);
+            if (card) card.style.outline = '2px solid var(--blue2)';
         }
 
         function renderTrackingList(pts) {
@@ -2883,13 +3360,15 @@
                 const eta = p.eta_minutes;
                 const pct = eta ? Math.min(100, Math.max(3, 100 - (eta / 60) * 100)) : 100;
                 const nm = p.full_name || p.patient_id;
-                return `<div class="track-card tc-${tc}">
+                const pid = p.patient_id || '';
+                const hasGPS = p.location?.lat && p.location?.lon;
+                return `<div class="track-card tc-${tc}" id="tc-${h(pid)}" onclick="focusPatientOnMap('${h(pid)}')" style="cursor:pointer" title="Click to locate on map">
           <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:.85rem;margin-bottom:4px">${h((FLAG[p.nationality] || '') + ' ' + nm)}</div>
-            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px">${TRIAGE_BADGE[p.triage_level] || ''}${p.blood_type ? `<span class="chip blood">🩸 ${h(p.blood_type)}</span>` : ''}</div>
+            <div style="font-weight:700;font-size:.92rem;margin-bottom:4px">${h((FLAG[p.nationality] || '') + ' ' + nm)}</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px">${TRIAGE_BADGE[p.triage_level] || ''}${p.blood_type ? `<span class="chip blood">🩸 ${h(p.blood_type)}</span>` : ''}${p.chief_complaint ? `<span class="chip" style="max-width:160px;overflow:hidden;text-overflow:ellipsis">💬 ${h(p.chief_complaint)}</span>` : ''}</div>
             <div class="track-prog"><div class="track-prog-fill" style="width:${pct}%;background:${col}"></div></div>
           </div>
-          <div class="track-eta" style="color:${eta && eta <= 5 ? 'var(--emg)' : col};margin-left:12px">${eta ? eta + ' min' : 'ARRIVED'}<div style="font-size:.58rem;color:var(--text3);font-weight:400">to arrival</div></div>
+          <div class="track-eta" style="color:${eta && eta <= 5 ? 'var(--emg)' : col};margin-left:12px">${eta ? eta + ' min' : 'ARRIVED'}<div style="font-size:.62rem;color:var(--text3);font-weight:400">to arrival</div></div>
         </div>`;
             }).join('');
         }
@@ -2921,7 +3400,7 @@
                 const maxV = Math.max(emg, urg, rtn, 1);
                 tEl.innerHTML = [['Emergency', emg, 'E'], ['Urgent', urg, 'U'], ['Routine', rtn, 'R']].map(([lbl, n, cls]) =>
                     `<div class="hbar-row"><div class="hbar-label">${lbl}</div>
-            <div class="hbar-track"><div class="hbar-fill ${cls}" style="width:${Math.max(4, (n / maxV) * 100)}%"><span class="hbar-fill-txt">${n}</span></div></div></div>`).join('');
+            <div class="hbar-track"><div class="hbar-fill ${cls}" style="width:${Math.max(4, (n / maxV) * 100)}%"><span class="hbar-fill-txt">${n}</div></div></div></div>`).join('');
             }
             // Avg risk
             const risks = pts.map(p => p.risk_score).filter(r => r > 0);
@@ -2942,7 +3421,7 @@
                 const maxV = sorted.length ? sorted[0][1] : 1;
                 lEl.innerHTML = sorted.map(([ln, n]) =>
                     `<div class="hbar-row"><div class="hbar-label">${ln}</div>
-            <div class="hbar-track"><div class="hbar-fill blue" style="width:${Math.max(4, (n / maxV) * 100)}%"><span class="hbar-fill-txt">${n}</span></div></div></div>`).join('');
+            <div class="hbar-track"><div class="hbar-fill blue" style="width:${Math.max(4, (n / maxV) * 100)}%"><span class="hbar-fill-txt">${n}</div></div></div></div>`).join('');
             }
             // Consent rate
             const cEl = document.getElementById('rpt-d-consent');
@@ -3002,7 +3481,7 @@
                 const maxV = top.length ? top[0][1] : 1;
                 cEl.innerHTML = top.length
                     ? top.map(([c, n]) => `<div class="hbar-row"><div class="hbar-label" style="min-width:120px;font-size:.7rem">${h(c)}</div>
-              <div class="hbar-track"><div class="hbar-fill blue" style="width:${Math.max(4, (n / maxV) * 100)}%"><span class="hbar-fill-txt">${n}</span></div></div></div>`).join('')
+              <div class="hbar-track"><div class="hbar-fill blue" style="width:${Math.max(4, (n / maxV) * 100)}%"><span class="hbar-fill-txt">${n}</div></div></div></div>`).join('')
                     : '<div style="color:var(--text3);font-size:.8rem">No condition data yet</div>';
             }
         }
@@ -3143,6 +3622,12 @@
             wrap.appendChild(el);
             setTimeout(() => el.remove(), 3000);
         }
+        // Live Tracking sekmesi açıksa haritayı her 10 saniyede bir otomatik günceller
+        setInterval(() => {
+            if (currentTab === 'tracking') {
+                refreshTracking();
+            }
+        }, 10000);
 
         // ── Boot ─────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
@@ -3268,6 +3753,50 @@
             if (e.key === 'ArrowRight') _navLightbox(1);
             if (e.key === 'ArrowLeft') _navLightbox(-1);
         });
+
+        // DARK MODE TOGGLE
+        function toggleTheme() {
+            const html = document.documentElement;
+            html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+        }
+
+        let selectedCardIdx = -1;
+        document.addEventListener('keydown', e => {
+            if (currentTab !== 'incoming') return;
+            const cards = Array.from(document.querySelectorAll('.pt-card'));
+            if (!cards.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (selectedCardIdx < cards.length - 1) selectedCardIdx++;
+                highlightCard(cards);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (selectedCardIdx > 0) selectedCardIdx--;
+                highlightCard(cards);
+            } else if (e.key === 'Enter' && selectedCardIdx > -1) {
+                e.preventDefault();
+                const pid = cards[selectedCardIdx].id.replace('card-', '');
+                toggleDet(pid);
+            } else if (e.key === 'Escape') {
+                document.querySelectorAll('.pt-det').forEach(d => d.classList.remove('open'));
+            }
+        });
+
+        function highlightCard(cards) {
+            cards.forEach((c, i) => {
+                if (i === selectedCardIdx) {
+                    c.style.transform = 'translateX(10px)';
+                    c.style.boxShadow = 'var(--shadow-md)';
+                    c.style.borderColor = 'var(--blue2)';
+                    c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    c.style.transform = 'none';
+                    c.style.boxShadow = 'var(--shadow-sm)';
+                    c.style.borderColor = 'var(--border)';
+                }
+            });
+        }
     </script>
 
 </body>
