@@ -1,0 +1,3498 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme:light)">
+    <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme:dark)">
+    <title>CodeZero — AI Emergency Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --primary: #2563EB;
+            --primary-d: #1D4ED8;
+            --primary-l: #EFF6FF;
+            --primary-m: #BFDBFE;
+            --primary-text: #1E40AF;
+            --success: #059669;
+            --success-l: #ECFDF5;
+            --success-m: #A7F3D0;
+            --success-text: #065F46;
+            --danger: #DC2626;
+            --danger-l: #FEF2F2;
+            --danger-m: #FECACA;
+            --danger-text: #991B1B;
+            --warning: #D97706;
+            --warning-l: #FFFBEB;
+            --warning-m: #FDE68A;
+            --warning-text: #92400E;
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --card-alt: #F1F5F9;
+            --border: #E2E8F0;
+            --border-h: #CBD5E1;
+            --text: #0F172A;
+            --text-2: #475569;
+            --text-3: #94A3B8;
+            --blue: var(--primary);
+            --blue-d: var(--primary-d);
+            --blue-l: var(--primary-l);
+            --blue-m: var(--primary-m);
+            --navy: var(--text);
+            --navy-m: #1E293B;
+            --navy-l: #334155;
+            --red: var(--danger);
+            --red-l: var(--danger-l);
+            --red-m: var(--danger-m);
+            --orange: var(--warning);
+            --orange-l: var(--warning-l);
+            --green: var(--success);
+            --green-l: var(--success-l);
+            --green-m: var(--success-m);
+            --teal: #0EA5E9;
+            --teal-l: #F0F9FF;
+            --white: #FFFFFF;
+            --s50: var(--bg);
+            --s100: var(--card-alt);
+            --s200: var(--border);
+            --s300: var(--border-h);
+            --s400: var(--text-3);
+            --s500: var(--text-2);
+            --s600: #475569;
+            --s700: #334155;
+            --s800: #1E293B;
+            --s900: var(--text);
+            --font: 'Inter', system-ui, -apple-system, sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+            --r-xs: 6px;
+            --r-sm: 8px;
+            --r: 14px;
+            --r-lg: 18px;
+            --r-xl: 24px;
+            --sh-sm: 0 1px 4px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .04);
+            --sh: 0 4px 16px rgba(15, 23, 42, .08), 0 2px 6px rgba(15, 23, 42, .04);
+            --sh-lg: 0 16px 48px rgba(15, 23, 42, .12), 0 4px 16px rgba(15, 23, 42, .06);
+            --sh-glow: 0 0 0 3px rgba(37, 99, 235, .12);
+            --sh-primary: 0 4px 20px rgba(37, 99, 235, .30);
+            --sh-danger: 0 4px 20px rgba(220, 38, 38, .35);
+            --tr: all .2s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        @media(prefers-color-scheme:dark) {
+            :root {
+                --scheme: dark
+            }
+        }
+
+        [data-theme="dark"] {
+            --primary: #3B82F6;
+            --primary-d: #2563EB;
+            --primary-l: rgba(59, 130, 246, .14);
+            --primary-m: rgba(59, 130, 246, .28);
+            --primary-text: #93C5FD;
+            --success: #10B981;
+            --success-l: rgba(16, 185, 129, .12);
+            --success-m: rgba(16, 185, 129, .28);
+            --success-text: #6EE7B7;
+            --danger: #F87171;
+            --danger-l: rgba(248, 113, 113, .12);
+            --danger-m: rgba(248, 113, 113, .28);
+            --danger-text: #FCA5A5;
+            --warning: #FBBF24;
+            --warning-l: rgba(251, 191, 36, .12);
+            --warning-m: rgba(251, 191, 36, .28);
+            --warning-text: #FDE68A;
+            --bg: #0F172A;
+            --card: #1E293B;
+            --card-alt: #162032;
+            --border: #334155;
+            --border-h: #475569;
+            --text: #F1F5F9;
+            --text-2: #94A3B8;
+            --text-3: #64748B;
+            --navy: var(--text);
+            --white: var(--text);
+            --sh-sm: 0 2px 8px rgba(0, 0, 0, .35);
+            --sh: 0 4px 20px rgba(0, 0, 0, .45);
+            --sh-lg: 0 20px 60px rgba(0, 0, 0, .6);
+        }
+
+        html,
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            -webkit-font-smoothing: antialiased;
+            font-size: 18px;
+            line-height: 1.6;
+            transition: background .3s, color .3s
+        }
+
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100dvh;
+            background: var(--bg);
+            position: relative;
+            overflow-x: hidden
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: rgba(248, 250, 252, .94);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            transition: background .3s, border-color .3s
+        }
+
+        [data-theme="dark"] .topbar {
+            background: rgba(15, 23, 42, .94)
+        }
+
+        .topbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            cursor: default
+        }
+
+        .topbar-logo-img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            object-fit: contain;
+            flex-shrink: 0
+        }
+
+        .topbar-logo-text {
+            font-size: .95rem;
+            font-weight: 800;
+            letter-spacing: -.04em;
+            line-height: 1;
+            color: var(--text)
+        }
+
+        .topbar-logo-text span {
+            color: var(--primary)
+        }
+
+        .topbar-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .topbar-badge {
+            background: var(--danger-l);
+            border: 1px solid var(--danger-m);
+            color: var(--danger-text);
+            border-radius: 99px;
+            padding: 4px 10px;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            display: flex;
+            align-items: center;
+            gap: 5px
+        }
+
+        .topbar-lang {
+            background: var(--primary-l);
+            border: 1px solid var(--primary-m);
+            color: var(--primary-text);
+            border-radius: 99px;
+            padding: 4px 10px;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            display: none
+        }
+
+        .topbar-theme {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--card-alt);
+            color: var(--text-2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--tr)
+        }
+
+        .topbar-theme:hover {
+            background: var(--primary-l);
+            color: var(--primary);
+            border-color: var(--primary-m)
+        }
+
+        .progress-bar {
+            padding: 10px 20px 8px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border)
+        }
+
+        .progress-track {
+            height: 4px;
+            background: var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-bottom: 6px
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #3B82F6);
+            border-radius: 99px;
+            transition: width .4s cubic-bezier(.4, 0, .2, 1);
+            width: 0%
+        }
+
+        .progress-label {
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-2)
+        }
+
+        .progress-step {
+            display: none
+        }
+
+        .page {
+            display: none;
+            padding: 24px 20px 48px;
+            animation: fadeUp .28s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .page.active {
+            display: block
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -.04em;
+            line-height: 1.2;
+            color: var(--text)
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -.03em;
+            color: var(--text);
+            margin-bottom: 6px
+        }
+
+        .sub {
+            font-size: .9rem;
+            color: var(--text-2);
+            line-height: 1.6;
+            margin-bottom: 18px
+        }
+
+        .label {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 8px
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 18px 20px;
+            margin-bottom: 14px;
+            box-shadow: var(--sh-sm)
+        }
+
+        .card.blue {
+            background: var(--primary-l);
+            border-color: var(--primary-m)
+        }
+
+        .card.green {
+            background: var(--success-l);
+            border-color: var(--success-m)
+        }
+
+        .card.red {
+            background: var(--danger-l);
+            border-color: var(--danger-m)
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            height: 56px;
+            padding: 0 24px;
+            border: none;
+            border-radius: var(--r);
+            font-family: var(--font);
+            font-size: .95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--tr);
+            text-decoration: none;
+            letter-spacing: -.01em;
+            user-select: none
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: var(--sh-primary)
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-d);
+            box-shadow: 0 6px 24px rgba(37, 99, 235, .4);
+            transform: translateY(-1px)
+        }
+
+        .btn-primary:active {
+            transform: translateY(0)
+        }
+
+        .btn-primary:disabled {
+            background: var(--border-h);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+            opacity: .8
+        }
+
+        .btn-secondary {
+            background: var(--card-alt);
+            color: var(--text-2);
+            border: 1.5px solid var(--border-h);
+            box-shadow: var(--sh-sm)
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+            color: var(--text)
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+            box-shadow: var(--sh-danger);
+            font-size: 1rem
+        }
+
+        .btn-danger:hover {
+            background: #B91C1C;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(220, 38, 38, .5)
+        }
+
+        .row {
+            display: flex;
+            gap: 10px
+        }
+
+        .row .btn {
+            flex: 1
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 18px 0
+        }
+
+        .lang-hero {
+            text-align: center;
+            padding: 30px 0 24px
+        }
+
+        .lang-hero-icon {
+            width: 88px;
+            height: 88px;
+            border-radius: 26px;
+            background: var(--primary-l);
+            border: 1.5px solid var(--primary-m);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(37, 99, 235, .15)
+        }
+
+        .lang-hero-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 22px
+        }
+
+        .lang-hero h1 {
+            font-size: 2rem;
+            margin-bottom: 5px
+        }
+
+        .lang-hero p {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .2em;
+            color: var(--primary)
+        }
+
+        .lang-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 22px
+        }
+
+        .lang-btn {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            width: 100%;
+            min-height: 64px;
+            padding: 16px 20px;
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-lg);
+            cursor: pointer;
+            text-align: left;
+            transition: var(--tr);
+            font-family: var(--font);
+            box-shadow: var(--sh-sm)
+        }
+
+        .lang-btn:hover {
+            border-color: var(--primary);
+            box-shadow: var(--sh), 0 0 0 3px rgba(37, 99, 235, .1);
+            transform: translateY(-1px)
+        }
+
+        .lang-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary-l);
+            box-shadow: var(--sh), 0 0 0 3px rgba(37, 99, 235, .12)
+        }
+
+        .lang-btn:active {
+            transform: scale(.99)
+        }
+
+        .lang-flag {
+            font-size: 2.1rem;
+            line-height: 1;
+            flex-shrink: 0
+        }
+
+        .lang-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -.02em;
+            display: block
+        }
+
+        .lang-sub {
+            font-size: .8rem;
+            color: var(--text-2);
+            margin-top: 2px;
+            display: block
+        }
+
+        .lang-arrow {
+            margin-left: auto;
+            color: var(--text-3);
+            transition: var(--tr);
+            display: flex;
+            align-items: center
+        }
+
+        .lang-btn:hover .lang-arrow,
+        .lang-btn.selected .lang-arrow {
+            color: var(--primary)
+        }
+
+        .lang-demo {
+            text-align: center;
+            font-size: .8rem;
+            color: var(--text-3);
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px
+        }
+
+        .ai-status-pill {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px
+        }
+
+        .ai-status-inner {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            padding: 6px 16px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-2);
+            box-shadow: var(--sh-sm)
+        }
+
+        .ai-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-h);
+            flex-shrink: 0;
+            transition: var(--tr)
+        }
+
+        .benefit-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .benefit-row:last-child {
+            border: none
+        }
+
+        .benefit-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+            background: var(--primary-l);
+            color: var(--primary)
+        }
+
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .7rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 3px
+        }
+
+        .hn-wrap {
+            margin-bottom: 18px;
+            position: relative
+        }
+
+        .hn-label {
+            font-size: .82rem;
+            color: var(--text-2);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px
+        }
+
+        .hn-label .req {
+            background: var(--primary);
+            color: #fff;
+            font-size: .62rem;
+            padding: 3px 8px;
+            border-radius: 99px;
+            font-weight: 700;
+            letter-spacing: .04em
+        }
+
+        .hn-select-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            padding: 14px 16px;
+            font-size: .9rem;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: var(--tr);
+            color: var(--text-2);
+            text-align: left;
+            min-height: 52px
+        }
+
+        .hn-select-btn:hover,
+        .hn-select-btn:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12)
+        }
+
+        .hn-select-btn .hn-val {
+            flex: 1;
+            font-weight: 600;
+            color: var(--text);
+            font-size: .9rem
+        }
+
+        .hn-select-btn .hn-val.placeholder {
+            font-weight: 400;
+            color: var(--text-3)
+        }
+
+        .hn-select-btn .hn-chevron {
+            transition: transform .2s;
+            color: var(--text-3);
+            display: flex;
+            align-items: center
+        }
+
+        .hn-select-btn.open .hn-chevron {
+            transform: rotate(180deg)
+        }
+
+        .hn-dropdown {
+            display: none;
+            background: var(--card);
+            border: 1.5px solid var(--primary-m);
+            border-radius: var(--r);
+            margin-top: 4px;
+            overflow: hidden;
+            box-shadow: var(--sh-lg);
+            max-height: 260px;
+            overflow-y: auto;
+            position: relative;
+            z-index: 50
+        }
+
+        .hn-dropdown.open {
+            display: block
+        }
+
+        .hn-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            cursor: pointer;
+            transition: background .15s;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .hn-item:last-child {
+            border: none
+        }
+
+        .hn-item:hover {
+            background: var(--primary-l)
+        }
+
+        .hn-item-num {
+            font-family: var(--mono);
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--primary);
+            min-width: 104px
+        }
+
+        .hn-item-name {
+            font-size: .88rem;
+            font-weight: 600;
+            color: var(--text)
+        }
+
+        .hn-item-detail {
+            font-size: .76rem;
+            color: var(--text-2)
+        }
+
+        .hn-hint {
+            font-size: .76rem;
+            color: var(--text-3);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .mic-area {
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-xl);
+            padding: 30px 20px 22px;
+            text-align: center;
+            margin-bottom: 18px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--sh-sm)
+        }
+
+        .mic-area::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(37, 99, 235, .05) 0%, transparent 70%);
+            pointer-events: none
+        }
+
+        .mic-btn {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            color: #fff;
+            transition: var(--tr);
+            box-shadow: var(--sh-primary);
+            position: relative
+        }
+
+        .mic-btn::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px solid rgba(37, 99, 235, .2);
+            transition: var(--tr)
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 32px rgba(37, 99, 235, .45)
+        }
+
+        .mic-btn:hover::after {
+            inset: -12px;
+            border-color: rgba(37, 99, 235, .12)
+        }
+
+        .mic-btn.recording {
+            background: var(--danger);
+            animation: pulseMic 1.5s ease-in-out infinite;
+            box-shadow: var(--sh-danger)
+        }
+
+        .mic-btn.recording::after {
+            border-color: rgba(220, 38, 38, .2);
+            animation: ringPulse 1.5s ease-in-out infinite
+        }
+
+        @keyframes pulseMic {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 20px rgba(220, 38, 38, .35), 0 0 0 0 rgba(220, 38, 38, .2)
+            }
+
+            50% {
+                box-shadow: 0 4px 20px rgba(220, 38, 38, .5), 0 0 0 18px rgba(220, 38, 38, 0)
+            }
+        }
+
+        @keyframes ringPulse {
+
+            0%,
+            100% {
+                inset: -6px;
+                opacity: 1
+            }
+
+            50% {
+                inset: -20px;
+                opacity: 0
+            }
+        }
+
+        .waveform {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 32px;
+            margin: 16px 0 12px
+        }
+
+        .waveform-bar {
+            width: 3px;
+            border-radius: 3px;
+            background: var(--primary);
+            opacity: .2;
+            transition: opacity .3s
+        }
+
+        .waveform.active .waveform-bar {
+            opacity: 1
+        }
+
+        .waveform-bar:nth-child(1) {
+            height: 7px;
+            animation: wv 1.2s ease-in-out infinite 0s
+        }
+
+        .waveform-bar:nth-child(2) {
+            height: 14px;
+            animation: wv 1.2s ease-in-out infinite .1s
+        }
+
+        .waveform-bar:nth-child(3) {
+            height: 22px;
+            animation: wv 1.2s ease-in-out infinite .05s
+        }
+
+        .waveform-bar:nth-child(4) {
+            height: 28px;
+            animation: wv 1.2s ease-in-out infinite .15s
+        }
+
+        .waveform-bar:nth-child(5) {
+            height: 20px;
+            animation: wv 1.2s ease-in-out infinite .08s
+        }
+
+        .waveform-bar:nth-child(6) {
+            height: 26px;
+            animation: wv 1.2s ease-in-out infinite .2s
+        }
+
+        .waveform-bar:nth-child(7) {
+            height: 18px;
+            animation: wv 1.2s ease-in-out infinite .12s
+        }
+
+        .waveform-bar:nth-child(8) {
+            height: 22px;
+            animation: wv 1.2s ease-in-out infinite .06s
+        }
+
+        .waveform-bar:nth-child(9) {
+            height: 14px;
+            animation: wv 1.2s ease-in-out infinite .18s
+        }
+
+        .waveform-bar:nth-child(10) {
+            height: 9px;
+            animation: wv 1.2s ease-in-out infinite .25s
+        }
+
+        @keyframes wv {
+
+            0%,
+            100% {
+                transform: scaleY(1)
+            }
+
+            50% {
+                transform: scaleY(2.4)
+            }
+        }
+
+        .mic-label {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px
+        }
+
+        .mic-sub {
+            font-size: .85rem;
+            color: var(--text-2)
+        }
+
+        .complaint-examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px
+        }
+
+        .complaint-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: 99px;
+            padding: 8px 14px;
+            font-size: .82rem;
+            color: var(--text-2);
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--tr);
+            min-height: 40px
+        }
+
+        .complaint-chip:hover {
+            background: var(--primary-l);
+            border-color: var(--primary-m);
+            color: var(--primary-text)
+        }
+
+        .transcript-box {
+            background: var(--success-l);
+            border: 1px solid var(--success-m);
+            border-radius: var(--r);
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            display: none
+        }
+
+        .transcript-box.visible {
+            display: block;
+            animation: fadeUp .2s ease
+        }
+
+        .transcript-label {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: var(--success-text);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .transcript-text {
+            font-size: .9rem;
+            color: var(--text);
+            line-height: 1.5
+        }
+
+        .divider-text {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 16px 0;
+            color: var(--text-3);
+            font-size: .85rem
+        }
+
+        .divider-text::before,
+        .divider-text::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        .field-wrap textarea {
+            width: 100%;
+            min-height: 96px;
+            padding: 14px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            font-family: var(--font);
+            font-size: .9rem;
+            resize: vertical;
+            outline: none;
+            transition: var(--tr);
+            color: var(--text);
+            line-height: 1.6;
+            background: var(--card)
+        }
+
+        .field-wrap textarea::placeholder {
+            color: var(--text-3)
+        }
+
+        .field-wrap textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12)
+        }
+
+        .spinner-wrap {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 24px 0
+        }
+
+        .spinner-wrap.visible {
+            display: flex
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin .75s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .spinner-text {
+            font-size: .9rem;
+            color: var(--text-2);
+            font-weight: 500;
+            text-align: center;
+            line-height: 1.5
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px
+        }
+
+        .media-thumb {
+            position: relative;
+            border-radius: var(--r);
+            overflow: hidden;
+            aspect-ratio: 1;
+            background: var(--card-alt);
+            border: 1.5px solid var(--border)
+        }
+
+        .media-thumb img,
+        .media-thumb video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block
+        }
+
+        .media-thumb .remove {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(15, 23, 42, .75);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            font-size: .7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px)
+        }
+
+        .media-thumb .vid-badge {
+            position: absolute;
+            bottom: 6px;
+            left: 6px;
+            background: rgba(15, 23, 42, .75);
+            color: #fff;
+            border-radius: 6px;
+            padding: 2px 7px;
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: .04em
+        }
+
+        .media-add-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px
+        }
+
+        .media-add-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 18px 10px;
+            background: var(--card);
+            border: 2px dashed var(--border-h);
+            border-radius: var(--r);
+            cursor: pointer;
+            transition: var(--tr);
+            color: var(--text-2);
+            font-size: .85rem;
+            font-weight: 600;
+            font-family: var(--font);
+            text-align: center;
+            min-height: 82px
+        }
+
+        .media-add-btn:hover {
+            border-color: var(--primary);
+            background: var(--primary-l);
+            color: var(--primary-text)
+        }
+
+        .media-add-btn .icon {
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .photo-guide {
+            background: var(--card-alt);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: .85rem;
+            color: var(--text-2)
+        }
+
+        .photo-guide-frame {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--r-sm);
+            border: 2px dashed var(--primary);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary)
+        }
+
+        .q-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px
+        }
+
+        .q-counter {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--text-2);
+            white-space: nowrap
+        }
+
+        .q-bar {
+            flex: 1;
+            height: 4px;
+            background: var(--border);
+            border-radius: 99px;
+            overflow: hidden
+        }
+
+        .q-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #3B82F6);
+            border-radius: 99px;
+            transition: width .4s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .chat-ai {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 18px
+        }
+
+        .chat-ai-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: var(--primary-l);
+            border: 1.5px solid var(--primary-m);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--primary)
+        }
+
+        .chat-ai-bubble {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 4px 18px 18px 18px;
+            padding: 14px 18px;
+            font-size: .95rem;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.55;
+            box-shadow: var(--sh-sm);
+            max-width: 88%
+        }
+
+        .chat-user {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 16px
+        }
+
+        .chat-user-bubble {
+            background: var(--primary);
+            color: #fff;
+            border-radius: 18px 18px 4px 18px;
+            padding: 11px 17px;
+            font-size: .9rem;
+            font-weight: 600;
+            line-height: 1.4;
+            max-width: 80%
+        }
+
+        .q-text {
+            font-size: .95rem;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.55;
+            margin-bottom: 16px
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 22px
+        }
+
+        .radio-pill {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 15px 18px;
+            min-height: 56px;
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            cursor: pointer;
+            transition: var(--tr);
+            font-size: .9rem;
+            font-weight: 500;
+            color: var(--text-2);
+            box-shadow: var(--sh-sm)
+        }
+
+        .radio-pill:hover {
+            border-color: var(--primary-m);
+            background: var(--primary-l);
+            color: var(--primary-text)
+        }
+
+        .radio-pill.selected {
+            border-color: var(--primary);
+            background: var(--primary-l);
+            color: var(--primary-text);
+            font-weight: 700;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .1)
+        }
+
+        .radio-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--border-h);
+            flex-shrink: 0;
+            transition: var(--tr);
+            position: relative
+        }
+
+        .radio-pill.selected .radio-dot {
+            border-color: var(--primary);
+            background: var(--primary)
+        }
+
+        .radio-pill.selected .radio-dot::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            background: #fff
+        }
+
+        .scale-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 8px
+        }
+
+        .scale-pill {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 52px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: .95rem;
+            transition: var(--tr);
+            background: var(--card);
+            color: var(--text-2)
+        }
+
+        .scale-pill:hover {
+            border-color: var(--primary-m);
+            background: var(--primary-l);
+            color: var(--primary-text)
+        }
+
+        .scale-pill.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 12px rgba(37, 99, 235, .3)
+        }
+
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            margin-bottom: 16px
+        }
+
+        .consent-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .consent-item:last-child {
+            border: none
+        }
+
+        .consent-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0
+        }
+
+        .consent-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            min-height: 60px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: var(--r);
+            cursor: pointer;
+            transition: var(--tr);
+            font-size: .95rem;
+            font-weight: 700;
+            font-family: var(--font);
+            width: 100%;
+            text-align: left;
+            color: var(--text);
+            box-shadow: var(--sh-sm)
+        }
+
+        .consent-btn:hover {
+            border-color: var(--border-h)
+        }
+
+        .consent-btn.yes.selected {
+            border-color: var(--success);
+            background: var(--success-l);
+            color: var(--success-text)
+        }
+
+        .consent-btn.no.selected {
+            border-color: var(--danger);
+            background: var(--danger-l);
+            color: var(--danger-text)
+        }
+
+        .consent-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid var(--border-h);
+            flex-shrink: 0;
+            transition: var(--tr)
+        }
+
+        .consent-btn.yes.selected .consent-dot {
+            border-color: var(--success);
+            background: var(--success)
+        }
+
+        .consent-btn.no.selected .consent-dot {
+            border-color: var(--danger);
+            background: var(--danger)
+        }
+
+        .consent-warning {
+            color: var(--danger-text);
+            font-size: .85rem;
+            font-weight: 600;
+            margin-top: 8px;
+            align-items: center;
+            gap: 6px;
+            display: none
+        }
+
+        .triage-banner {
+            border-radius: var(--r-lg);
+            padding: 20px 22px;
+            margin-bottom: 18px
+        }
+
+        .triage-banner.emg {
+            background: linear-gradient(135deg, var(--danger-l), #FEE2E2);
+            border: 2px solid var(--danger-m)
+        }
+
+        .triage-banner.urg {
+            background: linear-gradient(135deg, var(--warning-l), #FEF3C7);
+            border: 2px solid var(--warning-m)
+        }
+
+        .triage-banner.rtn {
+            background: linear-gradient(135deg, var(--success-l), #D1FAE5);
+            border: 2px solid var(--success-m)
+        }
+
+        .triage-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            letter-spacing: -.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .triage-sub {
+            font-size: .9rem;
+            opacity: .9;
+            line-height: 1.5
+        }
+
+        .triage-banner.emg .triage-title {
+            color: var(--danger-text)
+        }
+
+        .triage-banner.urg .triage-title {
+            color: var(--warning-text)
+        }
+
+        .triage-banner.rtn .triage-title {
+            color: var(--success-text)
+        }
+
+        .gps-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .8rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 99px;
+            margin-bottom: 14px
+        }
+
+        .gps-status.wait {
+            background: var(--primary-l);
+            color: var(--primary-text);
+            border: 1px solid var(--primary-m)
+        }
+
+        .gps-status.ok {
+            background: var(--success-l);
+            color: var(--success-text);
+            border: 1px solid var(--success-m)
+        }
+
+        .gps-status.err {
+            background: var(--danger-l);
+            color: var(--danger-text);
+            border: 1px solid var(--danger-m)
+        }
+
+        .hosp-label {
+            font-size: .7rem;
+            font-weight: 800;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .hosp-card {
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 18px 18px 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: var(--tr);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--sh-sm)
+        }
+
+        .hosp-card:hover {
+            border-color: var(--primary-m);
+            box-shadow: var(--sh), 0 0 0 3px rgba(37, 99, 235, .08);
+            transform: translateY(-1px)
+        }
+
+        .hosp-card.best {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary-l), var(--card));
+            box-shadow: var(--sh), 0 0 0 3px rgba(37, 99, 235, .1)
+        }
+
+        .best-badge {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: var(--primary);
+            color: #fff;
+            border-radius: 99px;
+            padding: 4px 12px;
+            font-size: .68rem;
+            font-weight: 800;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 5px
+        }
+
+        .hosp-name {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 10px;
+            padding-right: 90px;
+            letter-spacing: -.01em
+        }
+
+        .hosp-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-bottom: 8px
+        }
+
+        .hosp-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 99px;
+            font-size: .78rem;
+            font-weight: 600;
+            background: var(--card-alt);
+            color: var(--text-2);
+            border: 1px solid var(--border)
+        }
+
+        .hosp-chip.fast {
+            background: var(--primary-l);
+            color: var(--primary-text);
+            border-color: var(--primary-m)
+        }
+
+        .hosp-addr {
+            font-size: .8rem;
+            color: var(--text-2);
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .advice-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px
+        }
+
+        .advice-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: .88rem;
+            color: var(--text-2);
+            line-height: 1.5
+        }
+
+        .advice-list .icon {
+            flex-shrink: 0;
+            margin-top: 1px;
+            display: flex;
+            align-items: center
+        }
+
+        .reg-block {
+            text-align: center;
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 24px 20px;
+            margin-bottom: 18px;
+            box-shadow: var(--sh-sm)
+        }
+
+        .reg-label {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px
+        }
+
+        .reg-number {
+            font-family: var(--mono);
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            color: var(--primary)
+        }
+
+        .reg-hint {
+            font-size: .82rem;
+            color: var(--text-2);
+            margin-top: 8px;
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--text);
+            color: var(--bg);
+            padding: 12px 22px;
+            border-radius: var(--r);
+            font-size: .9rem;
+            font-weight: 600;
+            box-shadow: var(--sh-lg);
+            opacity: 0;
+            transition: all .3s cubic-bezier(.4, 0, .2, 1);
+            z-index: 9999;
+            white-space: nowrap;
+            max-width: 92vw;
+            text-align: center
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0)
+        }
+    </style>
+
+<body>
+    <div class="app">
+        <div class="topbar">
+            <div class="topbar-logo">
+                <img class="topbar-logo-img" id="topbarLogoImg" src="../docs/images/logo.png" alt="CodeZero"
+                    onerror="this.style.display='none';document.getElementById('topbarLogoFallback').style.display='flex'">
+                <div id="topbarLogoFallback"
+                    style="width:32px;height:32px;border-radius:8px;background:var(--primary-l);border:1px solid var(--primary-m);display:none;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    </svg>
+                </div>
+                <span class="topbar-logo-text">Code<span>Zero</span></span>
+            </div>
+            <div class="topbar-right">
+                <div id="topbarBadge" class="topbar-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    </svg>
+                    ER
+                </div>
+                <div id="topbarLangBadge" class="topbar-lang">EN</div>
+                <button class="topbar-theme" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle dark mode"
+                    title="Toggle dark/light mode">
+                    <svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" style="display:none">
+                        <circle cx="12" cy="12" r="4" />
+                        <path
+                            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+                    </svg>
+                    <svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="progress-bar" id="progressBarWrap">
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-label" id="progressLabel"></div>
+            <div class="progress-step" id="ps0"></div>
+            <div class="progress-step" id="ps1"></div>
+            <div class="progress-step" id="ps2"></div>
+            <div class="progress-step" id="ps3"></div>
+            <div class="progress-step" id="ps4"></div>
+        </div>
+
+        <!-- PAGE: LANGUAGE -->
+        <div class="page active" id="page-lang">
+            <div class="lang-hero">
+                <div class="lang-hero-icon">
+                    <img src="../docs/images/logo.png" alt="CodeZero"
+                        onerror="this.parentElement.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%232563EB\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M22 12h-4l-3 9L9 3l-3 9H2\'/></svg>'">
+                </div>
+                <h1>CodeZero</h1>
+                <p>AI Emergency Assistant</p>
+            </div>
+            <p style="font-size:.9rem;font-weight:600;color:var(--text-2);text-align:center;margin-bottom:18px">Select
+                your language / Sprache wählen / Dil seçin</p>
+            <div class="lang-grid">
+                <button class="lang-btn" onclick="selectLanguage('en')" id="langBtn_en">
+                    <span class="lang-flag">🇬🇧</span>
+                    <div><span class="lang-name">English</span><span class="lang-sub">Medical emergency assistant</span>
+                    </div>
+                    <span class="lang-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </span>
+                </button>
+                <button class="lang-btn" onclick="selectLanguage('de')" id="langBtn_de">
+                    <span class="lang-flag">🇩🇪</span>
+                    <div><span class="lang-name">Deutsch</span><span class="lang-sub">Medizinischer
+                            Notfallassistent</span></div>
+                    <span class="lang-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </span>
+                </button>
+                <button class="lang-btn" onclick="selectLanguage('tr')" id="langBtn_tr">
+                    <span class="lang-flag">🇹🇷</span>
+                    <div><span class="lang-name">Türkçe</span><span class="lang-sub">Tıbbi acil asistan</span></div>
+                    <span class="lang-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- PAGE: WELCOME -->
+        <div class="page" id="page-welcome">
+            <div class="ai-status-pill">
+                <div class="ai-status-inner">
+                    <div class="ai-dot" id="aiDot"></div>
+                    <span id="aiStatusText">Checking AI…</span>
+                </div>
+            </div>
+            <div class="card blue" style="margin-bottom:14px">
+                <div class="label" id="wl_whatLabel"></div>
+                <p id="wl_whatDesc"
+                    style="font-size:.88rem;color:var(--primary-text);line-height:1.6;margin-bottom:12px"></p>
+                <div>
+                    <div class="benefit-row">
+                        <div class="benefit-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
+                            </svg>
+                        </div>
+                        <span id="wl_b1" style="font-size:.88rem;color:var(--primary-text);line-height:1.5"></span>
+                    </div>
+                    <div class="benefit-row">
+                        <div class="benefit-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </div>
+                        <span id="wl_b2" style="font-size:.88rem;color:var(--primary-text);line-height:1.5"></span>
+                    </div>
+                    <div class="benefit-row">
+                        <div class="benefit-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </div>
+                        <span id="wl_b3" style="font-size:.88rem;color:var(--primary-text);line-height:1.5"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="margin-bottom:16px">
+                <div class="label" id="wl_howLabel"></div>
+                <div style="display:flex;flex-direction:column;gap:12px">
+                    <div style="display:flex;align-items:flex-start;gap:12px">
+                        <div class="step-num">1</div><span id="wl_s1"
+                            style="font-size:.88rem;color:var(--text-2);line-height:1.5"></span>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:12px">
+                        <div class="step-num">2</div><span id="wl_s2"
+                            style="font-size:.88rem;color:var(--text-2);line-height:1.5"></span>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:12px">
+                        <div class="step-num">3</div><span id="wl_s3"
+                            style="font-size:.88rem;color:var(--text-2);line-height:1.5"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="hn-wrap">
+                <div class="hn-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span id="wl_hnLabel"></span><span class="req" id="wl_hnReq"></span>
+                </div>
+                <button class="hn-select-btn" id="hnSelectBtn" onclick="toggleHnDropdown()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="color:var(--text-3);flex-shrink:0">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    <span class="hn-val placeholder" id="hnSelectVal" data-placeholder="true"></span>
+                    <span class="hn-chevron">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </span>
+                </button>
+                <div class="hn-dropdown" id="hnDropdown"></div>
+                <div class="hn-hint">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 8v4M12 16h.01" />
+                    </svg>
+                    <span id="wl_hnHintText"></span>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="btnStart" onclick="startApp()"></button>
+            <p id="wl_demo" style="text-align:center;font-size:.78rem;color:var(--text-3);margin-top:10px"></p>
+        </div>
+
+        <!-- PAGE: INPUT -->
+        <div class="page" id="page-input">
+            <h2 id="inp_title"></h2>
+            <p class="sub" id="inp_sub"></p>
+            <div class="mic-area">
+                <button class="mic-btn" id="micBtn" onclick="toggleRecording()" aria-label="Record voice">
+                    <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="22" />
+                        <line x1="8" y1="22" x2="16" y2="22" />
+                    </svg>
+                    <svg id="stopIcon" xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
+                        fill="currentColor" style="display:none">
+                        <rect x="6" y="6" width="12" height="12" rx="2.5" />
+                    </svg>
+                </button>
+                <div class="waveform" id="waveformBars">
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                </div>
+                <p class="mic-label" id="micLabel"></p>
+                <p class="mic-sub" id="micSub"></p>
+            </div>
+            <div id="exampleChips" class="complaint-examples"></div>
+            <div class="transcript-box" id="transcriptBox">
+                <div class="transcript-label" id="transcriptLang">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Recognised
+                </div>
+                <div class="transcript-text" id="transcriptText"></div>
+            </div>
+            <div class="spinner-wrap" id="inputSpinner">
+                <div class="spinner"></div>
+                <div class="spinner-text" id="inputSpinnerText"></div>
+            </div>
+            <div class="divider-text"><span id="inp_orType"></span></div>
+            <div class="field-wrap" style="margin-bottom:14px"><textarea id="complaintText" rows="4"
+                    oninput="onComplaintType()"></textarea></div>
+            <button class="btn btn-primary" id="btnContinueInput" onclick="submitComplaint()" disabled
+                style="opacity:.45"><span id="inp_continueTxt"></span></button>
+        </div>
+
+        <!-- PAGE: PHOTOS -->
+        <div class="page" id="page-photos">
+            <h2 id="ph_title"></h2>
+            <p class="sub" id="ph_sub"></p>
+            <div class="photo-guide">
+                <div class="photo-guide-frame">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M5 3H3a2 2 0 0 0-2 2v2M19 3h2a2 2 0 0 1 2 2v2M5 21H3a2 2 0 0 1-2-2v-2M19 21h2a2 2 0 0 0 2-2v-2" />
+                    </svg>
+                </div>
+                <span>Position the injury or symptom area within the guide frame for best AI analysis.</span>
+            </div>
+            <div class="media-grid" id="mediaGrid"></div>
+            <div class="media-add-row" id="mediaAddRow">
+                <label class="media-add-btn" style="cursor:pointer">
+                    <span class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                            <circle cx="12" cy="13" r="4" />
+                        </svg>
+                    </span>
+                    <span id="ph_addPhoto"></span>
+                    <input type="file" id="photoInput" accept="image/*" capture="environment"
+                        onchange="onMediaAdded(event,'photo')" style="display:none">
+                </label>
+                <label class="media-add-btn" style="cursor:pointer">
+                    <span class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="23 7 16 12 23 17 23 7" />
+                            <rect width="15" height="14" x="1" y="5" rx="2" ry="2" />
+                        </svg>
+                    </span>
+                    <span id="ph_addVideo"></span>
+                    <input type="file" id="videoInput" accept="video/*" capture="environment"
+                        onchange="onMediaAdded(event,'video')" style="display:none">
+                </label>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-3);text-align:center;margin-bottom:8px" id="mediaCount">0 / 3
+            </p>
+            <div class="divider"></div>
+            <div class="row">
+                <button class="btn btn-secondary" onclick="skipPhotos()" id="ph_skip"></button>
+                <button class="btn btn-primary" onclick="continueFromPhotos()" id="ph_continue"></button>
+            </div>
+        </div>
+
+        <!-- PAGE: QUESTIONS -->
+        <div class="page" id="page-questions">
+            <div class="card" style="margin-bottom:16px;background:var(--primary-l);border-color:var(--primary-m)"
+                id="qIntroCard">
+                <p id="qIntroText" style="font-size:.9rem;color:var(--primary-text);line-height:1.6;font-weight:500">
+                </p>
+            </div>
+            <div class="spinner-wrap visible" id="questionsSpinner" style="padding:28px 0">
+                <div class="spinner"></div>
+                <div class="spinner-text" id="questionsSpinnerText"></div>
+            </div>
+            <div id="aiModeBadge" style="display:none;margin-bottom:14px">
+                <div class="ai-badge" id="aiModeBadgeInner">
+                    <div id="aiBadgeDot" style="width:6px;height:6px;border-radius:50%;flex-shrink:0"></div>
+                    <span id="aiBadgeText"></span>
+                </div>
+            </div>
+            <!-- Chat-bubble question display area -->
+            <div id="chatAiQuestion" class="chat-ai" style="display:none">
+                <div class="chat-ai-avatar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2" />
+                        <path d="M12 8v4M12 16h.01" />
+                    </svg>
+                </div>
+                <div class="chat-ai-bubble" id="chatAiBubbleText"></div>
+            </div>
+            <div id="chatUserAnswer" class="chat-user" style="display:none">
+                <div class="chat-user-bubble" id="chatUserBubbleText"></div>
+            </div>
+            <div id="questionsContainer" style="display:none"></div>
+            <div id="questionNav" style="display:none">
+                <div class="row">
+                    <button class="btn btn-secondary" id="btnQBack" onclick="prevQuestion()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                        <span id="q_back"></span>
+                    </button>
+                    <button class="btn btn-primary" id="btnQNext" onclick="nextQuestion()" disabled style="opacity:.45">
+                        <span id="q_next"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: CONSENT -->
+        <div class="page" id="page-consent">
+            <div style="text-align:center;padding:8px 0 18px">
+                <div
+                    style="width:56px;height:56px;border-radius:18px;background:var(--primary-l);border:1.5px solid var(--primary-m);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--primary)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                </div>
+                <h2 id="cs_title"></h2>
+                <p class="sub" id="cs_sub"></p>
+            </div>
+            <div class="card" style="margin-bottom:16px">
+                <div class="label" id="cs_consentLabel"></div>
+                <p id="cs_consentDesc" style="font-size:.88rem;color:var(--text-2);margin-bottom:14px;line-height:1.5">
+                </p>
+                <div>
+                    <div class="consent-item">
+                        <div class="consent-icon" style="background:var(--primary-l);color:var(--primary)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                            </svg>
+                        </div>
+                        <span id="cs_line1" style="font-size:.88rem;color:var(--text-2)"></span>
+                    </div>
+                    <div class="consent-item">
+                        <div class="consent-icon" style="background:var(--success-l);color:var(--success-text)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                        </div>
+                        <span id="cs_photoLine" style="font-size:.88rem;color:var(--text-2)"></span>
+                    </div>
+                    <div class="consent-item">
+                        <div class="consent-icon" style="background:var(--warning-l);color:var(--warning-text)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2" />
+                                <path d="M12 8v4M12 16h.01" />
+                            </svg>
+                        </div>
+                        <span id="cs_line3" style="font-size:.88rem;color:var(--text-2)"></span>
+                    </div>
+                    <div class="consent-item">
+                        <div class="consent-icon" style="background:var(--danger-l);color:var(--danger-text)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                <circle cx="12" cy="10" r="3" />
+                            </svg>
+                        </div>
+                        <span id="cs_line4" style="font-size:.88rem;color:var(--text-2)"></span>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+                <button class="consent-btn yes" id="consentYes" onclick="setConsent(true)">
+                    <div class="consent-dot" id="consentYesDot"></div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                        style="color:var(--success)">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span id="cs_yesLabel"></span>
+                </button>
+                <button class="consent-btn no" id="consentNo" onclick="setConsent(false)">
+                    <div class="consent-dot" id="consentNoDot"></div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                        style="color:var(--danger)">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                    <span id="cs_noLabel"></span>
+                </button>
+            </div>
+            <p class="consent-warning" id="consentWarning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span id="consentWarning"></span>
+            </p>
+            <div class="spinner-wrap" id="assessSpinner">
+                <div class="spinner"></div>
+                <div class="spinner-text" id="assessSpinnerText"></div>
+            </div>
+            <button class="btn btn-primary" id="btnGetAssessment" onclick="submitConsent()" style="margin-top:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+                <span id="cs_submitLabel"></span>
+            </button>
+        </div>
+
+        <!-- PAGE: TRIAGE -->
+        <div class="page" id="page-triage">
+            <div id="triageBanner"></div>
+            <div id="triageAdviceSection" style="display:none">
+                <h2 id="tr_adviceLabel" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    </svg>
+                    <span></span>
+                </h2>
+                <div id="triageAdviceContent"></div>
+            </div>
+            <div class="divider"></div>
+            <h2 id="tr_nearestLabel" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                <span></span>
+            </h2>
+            <div class="gps-status wait" id="gpsStatusPill">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span id="gpsStatusTxt"></span>
+            </div>
+            <div id="gpsWaiting"
+                style="display:none;text-align:center;padding:16px 0;color:var(--text-3);font-size:.88rem">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin:0 auto 8px;display:block;animation:spin 2s linear infinite;color:var(--primary)">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span id="gps_waitText"></span>
+            </div>
+            <div id="gpsDenied" style="display:none">
+                <div class="card red">
+                    <p
+                        style="font-size:.95rem;font-weight:700;color:var(--danger-text);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        <span id="gps_deniedTitle"></span>
+                    </p>
+                    <p id="gps_deniedDesc"
+                        style="font-size:.85rem;color:var(--danger-text);margin-bottom:12px;opacity:.8"></p>
+                    <div id="gps_deniedSteps"
+                        style="font-size:.82rem;color:var(--danger-text);opacity:.8;margin-bottom:12px"></div>
+                    <button class="btn btn-secondary" onclick="retryGPS()" id="gps_retryBtn"
+                        style="height:44px"></button>
+                </div>
+            </div>
+            <div id="hospitalList"></div>
+        </div>
+
+        <!-- PAGE: RESULT -->
+        <div class="page" id="page-result">
+            <div id="resultBanner"></div>
+            <div id="resultEmergencyCall"></div>
+            <div class="reg-block">
+                <div class="reg-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span id="rs_regLabel"></span>
+                </div>
+                <div class="reg-number" id="regNumber">—</div>
+                <div class="reg-hint">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 8v4M12 16h.01" />
+                    </svg>
+                    <span id="rs_regHint"></span>
+                </div>
+            </div>
+            <div id="resultHospital"></div>
+            <div id="resultAdvice"></div>
+            <div class="card" style="margin-bottom:16px">
+                <h2 id="rs_trackTitle" style="margin-bottom:4px;display:flex;align-items:center;gap:8px">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <span></span>
+                </h2>
+                <p id="rs_trackSub" style="font-size:.88rem;color:var(--text-2)"></p>
+            </div>
+            <div class="divider"></div>
+            <button class="btn btn-primary" id="rs_newBtn" onclick="location.reload()"></button>
+            <p id="rs_demo" style="text-align:center;font-size:.78rem;color:var(--text-3);margin-top:10px"></p>
+        </div>
+
+    </div>
+    <div id="toast"></div>
+    <script>
+        // Auto-detect API base: same origin when served via hospital_server.py (ngrok or local)
+        // Falls back to localhost:8001 when opened as a standalone file
+        const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+            ? 'http://localhost:8001'
+            : location.origin;
+        // ═══════════════════════════════════════════════════════════
+        // DEMO PATIENTS per language
+        // ═══════════════════════════════════════════════════════════
+        const DEMO_PATIENTS = {
+            tr: [
+                { id: 'DEMO-TR-001', name: 'Ahmet Yılmaz', detail: 'E · 61y · B+ · T2DM, HT' },
+                { id: 'DEMO-TR-002', name: 'Fatma Kaya', detail: 'K · 48y · A+ · Romatoid Artrit' },
+                { id: 'DEMO-TR-003', name: 'Mustafa Demir', detail: 'E · 76y · O+ · KAH post-KABG' },
+                { id: 'DEMO-TR-004', name: 'Zeynep Şahin', detail: 'K · 36y · AB+ · Epilepsi' },
+                { id: 'DEMO-TR-005', name: 'Mehmet Çelik', detail: 'E · 54y · A- · KOAH' },
+                { id: 'DEMO-TR-006', name: 'Ayşe Arslan', detail: 'K · 41y · B- · Hashimoto' },
+                { id: 'DEMO-TR-007', name: 'Ali Doğan', detail: 'E · 68y · O- · Prostat Ca post-op' },
+                { id: 'DEMO-TR-008', name: 'Elif Yıldız', detail: 'K · 24y · A+ · Demir eksikliği anemisi' },
+                { id: 'DEMO-TR-009', name: 'İbrahim Koç', detail: 'E · 82y · AB+ · Parkinson' },
+                { id: 'DEMO-TR-010', name: 'Hatice Öztürk', detail: 'K · 58y · O+ · Osteoporoz' },
+            ],
+            de: [
+                { id: 'DEMO-DE-001', name: 'Klaus Müller', detail: 'M · 68y · A+ · KHK, Hypertonie' },
+                { id: 'DEMO-DE-002', name: 'Anna Schneider', detail: 'W · 41y · O+ · T1DM, Insulinpumpe' },
+                { id: 'DEMO-DE-003', name: 'Heinrich Weber', detail: 'M · 55y · B+ · COPD Grad 2' },
+                { id: 'DEMO-DE-004', name: 'Sophie Fischer', detail: 'W · 34y · AB+ · Migräne mit Aura' },
+                { id: 'DEMO-DE-005', name: 'Wolfgang Bauer', detail: 'M · 81y · O- · VHF, Schrittmacher' },
+                { id: 'DEMO-DE-006', name: 'Lena Wagner', detail: 'W · 26y · A- · Anaphylaxie (Biene)' },
+                { id: 'DEMO-DE-007', name: 'Thomas Becker', detail: 'M · 63y · B- · T2DM, Adipositas' },
+                { id: 'DEMO-DE-008', name: 'Mia Schmitt', detail: 'W · 28y · O+ · Asthma moderat' },
+                { id: 'DEMO-DE-009', name: 'Franz Kraus', detail: 'M · 74y · A+ · CKD Grad 3, Gicht' },
+                { id: 'DEMO-DE-010', name: 'Emma Zimmermann', detail: 'W · 51y · AB- · Hypothyreose' },
+            ],
+            en: [
+                { id: 'DEMO-UK-001', name: 'James Wilson', detail: 'M · 71y · O+ · IHD, Heart Failure EF40%' },
+                { id: 'DEMO-UK-002', name: 'Emily Clarke', detail: 'F · 38y · O- · Moderate Asthma' },
+                { id: 'DEMO-UK-003', name: 'Robert Johnson', detail: 'M · 81y · A+ · COPD+T2DM+HTN' },
+                { id: 'DEMO-UK-004', name: 'Charlotte Brown', detail: "F · 34y · B+ · Crohn's Disease" },
+                { id: 'DEMO-UK-005', name: 'William Taylor', detail: 'M · 66y · AB+ · HTN, Gout' },
+                { id: 'DEMO-UK-006', name: 'Olivia Martin', detail: 'F · 25y · A- · T1DM, Insulin Pump' },
+                { id: 'DEMO-UK-007', name: 'George White', detail: 'M · 56y · B- · Bipolar Disorder' },
+                { id: 'DEMO-UK-008', name: 'Isabella Davies', detail: 'F · 43y · O+ · Migraine, Endometriosis' },
+                { id: 'DEMO-UK-009', name: 'Henry Moore', detail: 'M · 88y · A+ · Aortic Stenosis, AF' },
+                { id: 'DEMO-UK-010', name: 'Amelia Garcia', detail: 'F · 49y · AB- · SLE' },
+            ],
+        };
+
+        // ═══════════════════════════════════════════════════════════
+        // TRANSLATIONS
+        // ═══════════════════════════════════════════════════════════
+        const TX = {
+            en: {
+                topbarLang: 'EN',
+                wl_whatLabel: 'What is CodeZero?',
+                wl_whatDesc: 'When you face a medical emergency, CodeZero uses AI to:',
+                wl_b1: 'Inform you and the hospital about your condition <strong>before you arrive</strong>',
+                wl_b2: 'Minimise your <strong>waiting time</strong> at the emergency room',
+                wl_b3: 'Direct you to the <strong>most appropriate hospital</strong> near you',
+                wl_howLabel: 'How to use',
+                wl_s1: '<strong style="color:var(--navy)">🎤 Speak</strong> — describe your symptoms clearly in your own words.',
+                wl_s2: '<strong style="color:var(--navy)">❓ Questions</strong> — answer a few short follow-up questions.',
+                wl_s3: '<strong style="color:var(--navy)">🏥 Hospital</strong> — the best hospital is selected and notified.',
+                wl_demo: '⚠️ Demo only. Call 112 for real emergencies.',
+                wl_hnLabel: 'Select your health record', wl_hnReq: 'REQUIRED',
+                wl_hnHintText: 'Your medical history will be linked to this visit',
+                btnStart: 'Start →',
+                inp_title: 'Describe your symptoms',
+                inp_sub: 'Tap the microphone and speak freely — or type below.',
+                micLabelIdle: 'Tap to record', micSubIdle: 'Speak clearly in your own language',
+                micLabelRec: 'Recording…', micSubRec: 'Tap again to stop',
+                micLabelDone: 'Tap to re-record', micSubDone: 'Or edit the text above',
+                transcriptLang: '✓ Captured',
+                inp_orType: 'or type instead',
+                inp_placeholder: 'e.g. Sudden chest pain, difficulty breathing, started 20 min ago…',
+                inp_continueTxt: 'Continue →',
+                inp_examples: ['Chest pain', 'Difficulty breathing', 'Severe headache', 'High fever', 'Dizziness', 'Abdominal pain'],
+                ph_title: 'Add photos or video',
+                ph_sub: 'Optional — wound, rash, swelling, or a short video clip. Helps the hospital prepare.',
+                ph_addPhoto: '📷 Photo', ph_addVideo: '🎥 Video', ph_skip: 'Skip →', ph_continue: 'Continue →',
+                questionsIntro: 'To assess your condition better, please answer the short questions in the next section.\n\nAI is generating personalised questions, please wait…',
+                questionsSpinnerText: 'Generating questions…',
+                aiMode_real: '🤖 AI-generated questions', aiMode_mock: '⚠️ Demo mode — AI offline',
+                fq_onset: 'When did your symptoms start?',
+                fq_onset_now: 'Just now (< 15 min)', fq_onset_1h: 'Within the last hour', fq_onset_6h: '1–6 hours ago', fq_onset_24h: '6–24 hours ago', fq_onset_days: 'More than a day ago',
+                fq_pain_scale: 'How would you rate your pain on a scale of 1–10?',
+                fq_breathing: 'Are you having difficulty breathing right now?',
+                fq_fever: 'What is your approximate temperature?',
+                fq_nausea: 'Are you experiencing nausea or vomiting?',
+                fq_conditions: 'Do you have any known medical conditions?',
+                fq_cond_none: 'None', fq_cond_heart: 'Heart disease', fq_cond_diab: 'Diabetes', fq_cond_bp: 'High blood pressure', fq_cond_other: 'Other',
+                fq_medications: 'Are you currently taking any medications?',
+                fq_allergies: 'Do you have any known drug allergies?',
+                fq_yes: 'Yes', fq_no: 'No', fq_unsure: 'Not sure',
+                q_back: 'Back', q_next: 'Next', q_of: 'of', q_done: 'Done →',
+                cs_title: 'Almost done', cs_sub: 'Review what will be shared with the hospital',
+                cs_consentLabel: 'Data sharing consent',
+                cs_consentDesc: 'Do you consent to sharing the following with the hospital?',
+                cs_line1: 'Symptom description and Q&A answers',
+                cs_photoLine: 'Media: {n} file(s) attached',
+                cs_line3: 'AI triage assessment and risk level',
+                cs_line4: 'Real-time location (live tracking)',
+                cs_yes: '✅ Yes — share my information', cs_no: '❌ No — do not share my data',
+                consentWarning: 'You must consent to proceed.',
+                assessSpinnerText: 'Analysing your symptoms with AI…',
+                cs_btnTxt: 'Get my assessment →',
+                gps_waitTitle: 'Detecting your location…',
+                gps_waitSub: 'Tap <strong>Allow</strong> when your browser asks.',
+                gps_deniedTitle: '🔒 Location access required',
+                gps_deniedDesc: 'We need your location to find the nearest hospital.',
+                gps_deniedSteps: '① Tap the 🔒 lock in your browser bar<br>② Site settings → Location → <strong>Allow</strong><br>③ Come back and tap Retry',
+                gps_retryBtn: '🔄 Retry',
+                gpsDetecting: 'Detecting location…', gpsOk: 'Location confirmed', gpsDenied: 'Location denied',
+                tr_nearestLabel: 'Recommended hospitals based on current traffic and ER occupancy',
+                tr_adviceLabel: 'Before you arrive', tr_fastest: '⭐ Best choice',
+                tr_hospSpinner: 'Finding best hospitals…', tr_noHosp: 'No hospitals found nearby.', tr_notifying: 'Notifying hospital…',
+                tr_emg_title: '🚨 Go to emergency immediately', tr_emg_sub: 'Your symptoms require urgent care — do not wait',
+                tr_urg_title: '⚠️ You need hospital care soon', tr_urg_sub: 'Please find a hospital within the next 30 minutes',
+                tr_rtn_title: 'ℹ️ You should see a doctor today', tr_rtn_sub: 'Your symptoms are not immediately life-threatening',
+                tr_orBelow: '— or select a hospital below —',
+                tr_doLabel: '✅ DO:', tr_dontLabel: "❌ DON'T:",
+                rs_regLabel: 'Your registration number', rs_regHint: 'Show this at hospital reception on arrival.',
+                rs_notified_emg: '🚨 Hospital notified — head there now!', rs_notified_sub_emg: 'They are preparing for your arrival',
+                rs_notified_urg: '✅ Hospital notified', rs_notified_sub_urg: 'Please follow the instructions below',
+                rs_notified_rtn: '✅ Your information has been sent', rs_notified_sub_rtn: 'See instructions below before leaving',
+                rs_trackTitle: 'Keep location enabled while travelling', rs_trackSub: 'Your care team tracks your arrival in real time.',
+                rs_newBtn: '🔄 New assessment', rs_demo: '⚠️ Demo only. Call 112 for real emergencies.',
+                aiChecking: 'Checking AI…', aiConnected: '🤖 AI connected — real-time analysis', aiDemo: '⚙️ Demo mode — AI not configured',
+                adv_call112: 'Call 112 immediately or have someone call for you', adv_sit_still: 'Sit or lie down and do not move', adv_stay_calm: 'Stay calm and breathe slowly', adv_rest: 'Rest and avoid physical exertion', adv_someone_with_you: 'Have someone accompany you to the hospital', adv_bring_meds: 'Bring all current medications with you', adv_bring_id: 'Bring your ID and insurance card', adv_no_drive: 'Do NOT drive yourself to the hospital', adv_no_eat: 'Do not eat or drink anything until examined', adv_chest_loose: 'Loosen tight clothing around your chest', adv_chest_no_stress: 'Avoid physical or emotional stress', adv_bleed_pressure: 'Apply firm pressure to the wound with a clean cloth', adv_bleed_no_remove: 'Do not remove any object embedded in a wound', adv_breath_upright: 'Sit upright — do not lie flat', adv_breath_no_lie: 'Do not lie flat — this worsens breathing', adv_head_dark: 'Rest in a quiet, dark room if possible', adv_head_no_screen: 'Avoid screens, bright lights and loud noise', adv_proceed_er: 'Go to the emergency room as soon as possible',
+                hnPlaceholder: 'Choose your health record…',
+            },
+            de: {
+                topbarLang: 'DE',
+                wl_whatLabel: 'Was ist CodeZero?',
+                wl_whatDesc: 'Bei einem medizinischen Notfall nutzt CodeZero KI, um:',
+                wl_b1: 'Sie und das Krankenhaus über Ihren Zustand <strong>vor Ihrer Ankunft</strong> zu informieren',
+                wl_b2: 'Ihre <strong>Wartezeit</strong> in der Notaufnahme zu minimieren',
+                wl_b3: 'Sie zum <strong>nächstgelegenen geeigneten Krankenhaus</strong> zu leiten',
+                wl_howLabel: 'So verwenden Sie die App',
+                wl_s1: '<strong style="color:var(--navy)">🎤 Sprechen</strong> — beschreiben Sie Ihre Symptome in Ihren eigenen Worten.',
+                wl_s2: '<strong style="color:var(--navy)">❓ Fragen</strong> — beantworten Sie kurze Folgefragen.',
+                wl_s3: '<strong style="color:var(--navy)">🏥 Krankenhaus</strong> — das beste Krankenhaus wird ausgewählt und benachrichtigt.',
+                wl_demo: '⚠️ Nur Demo. Im Notfall 112 anrufen.',
+                wl_hnLabel: 'Krankenakte auswählen', wl_hnReq: 'PFLICHTFELD',
+                wl_hnHintText: 'Ihre Krankengeschichte wird mit diesem Besuch verknüpft',
+                btnStart: 'Starten →',
+                inp_title: 'Beschreiben Sie Ihre Symptome',
+                inp_sub: 'Tippen Sie auf das Mikrofon und sprechen Sie frei — oder tippen Sie unten.',
+                micLabelIdle: 'Zum Aufnehmen tippen', micSubIdle: 'Sprechen Sie deutlich in Ihrer Sprache',
+                micLabelRec: 'Aufnahme läuft…', micSubRec: 'Zum Stoppen erneut tippen',
+                micLabelDone: 'Erneut aufnehmen', micSubDone: 'Oder Text oben bearbeiten',
+                transcriptLang: '✓ Aufgezeichnet',
+                inp_orType: 'oder stattdessen tippen',
+                inp_placeholder: 'z.B. Plötzliche Brustschmerzen, Atemnot, seit 20 Minuten…',
+                inp_continueTxt: 'Weiter →',
+                inp_examples: ['Brustschmerzen', 'Atemnot', 'Starke Kopfschmerzen', 'Hohes Fieber', 'Schwindel', 'Bauchschmerzen'],
+                ph_title: 'Fotos oder Video hinzufügen',
+                ph_sub: 'Optional — Wunde, Ausschlag, Schwellung oder ein kurzer Videoclip.',
+                ph_addPhoto: '📷 Foto', ph_addVideo: '🎥 Video', ph_skip: 'Überspringen →', ph_continue: 'Weiter →',
+                questionsIntro: 'Um Ihren Zustand besser beurteilen zu können, beantworten Sie bitte die kurzen Fragen im nächsten Abschnitt.\n\nKI generiert personalisierte Fragen, bitte warten…',
+                questionsSpinnerText: 'Fragen werden generiert…',
+                aiMode_real: '🤖 KI-generierte Fragen', aiMode_mock: '⚠️ Demo-Modus — KI offline',
+                fq_onset: 'Wann haben Ihre Beschwerden begonnen?',
+                fq_onset_now: 'Gerade eben (< 15 Min)', fq_onset_1h: 'Innerhalb der letzten Stunde', fq_onset_6h: 'Vor 1–6 Stunden', fq_onset_24h: 'Vor 6–24 Stunden', fq_onset_days: 'Vor mehr als einem Tag',
+                fq_pain_scale: 'Wie stark sind Ihre Schmerzen (Skala 1–10)?',
+                fq_breathing: 'Haben Sie gerade Atemschwierigkeiten?', fq_fever: 'Wie hoch ist Ihre ungefähre Körpertemperatur?',
+                fq_nausea: 'Leiden Sie unter Übelkeit oder Erbrechen?', fq_conditions: 'Haben Sie bekannte Vorerkrankungen?',
+                fq_cond_none: 'Keine', fq_cond_heart: 'Herzerkrankung', fq_cond_diab: 'Diabetes', fq_cond_bp: 'Bluthochdruck', fq_cond_other: 'Sonstiges',
+                fq_medications: 'Nehmen Sie derzeit Medikamente ein?', fq_allergies: 'Haben Sie bekannte Medikamentenallergien?',
+                fq_yes: 'Ja', fq_no: 'Nein', fq_unsure: 'Nicht sicher',
+                q_back: 'Zurück', q_next: 'Weiter', q_of: 'von', q_done: 'Fertig →',
+                cs_title: 'Fast fertig', cs_sub: 'Überprüfen Sie, was mit dem Krankenhaus geteilt wird',
+                cs_consentLabel: 'Einwilligung zur Datenweitergabe',
+                cs_consentDesc: 'Stimmen Sie zu, die folgenden Informationen zu teilen?',
+                cs_line1: 'Symptombeschreibung und Antworten', cs_photoLine: 'Medien: {n} Datei(en) beigefügt',
+                cs_line3: 'KI-Triage-Bewertung und Risikostufe', cs_line4: 'Echtzeit-Standort (Live-Tracking)',
+                cs_yes: '✅ Ja — Informationen teilen', cs_no: '❌ Nein — nicht teilen',
+                consentWarning: 'Sie müssen zustimmen, um fortzufahren.',
+                assessSpinnerText: 'Symptome werden mit KI analysiert…', cs_btnTxt: 'Bewertung erhalten →',
+                gps_waitTitle: 'Standort wird erkannt…', gps_waitSub: 'Tippen Sie auf <strong>Zulassen</strong>, wenn Ihr Browser danach fragt.',
+                gps_deniedTitle: '🔒 Standortzugriff erforderlich', gps_deniedDesc: 'Wir benötigen Ihren Standort, um das nächste Krankenhaus zu finden.',
+                gps_deniedSteps: '① Auf das 🔒-Symbol tippen<br>② Seiteneinstellungen → Standort → <strong>Zulassen</strong><br>③ Zurückkehren und Erneut versuchen tippen',
+                gps_retryBtn: '🔄 Erneut versuchen',
+                gpsDetecting: 'Standort wird erkannt…', gpsOk: 'Standort bestätigt', gpsDenied: 'Standort verweigert',
+                tr_nearestLabel: 'Empfohlene Krankenhäuser basierend auf aktuellem Verkehr und Notaufnahme-Auslastung',
+                tr_adviceLabel: 'Vor Ihrer Ankunft', tr_fastest: '⭐ Beste Wahl',
+                tr_hospSpinner: 'Beste Krankenhäuser werden gesucht…', tr_noHosp: 'Keine Krankenhäuser in der Nähe gefunden.', tr_notifying: 'Krankenhaus wird benachrichtigt…',
+                tr_emg_title: '🚨 Sofort in die Notaufnahme', tr_emg_sub: 'Ihre Symptome erfordern sofortige Versorgung — nicht warten',
+                tr_urg_title: '⚠️ Baldiger Krankenhausbesuch nötig', tr_urg_sub: 'Bitte innerhalb der nächsten 30 Minuten ein Krankenhaus aufsuchen',
+                tr_rtn_title: 'ℹ️ Heute einen Arzt aufsuchen', tr_rtn_sub: 'Ihre Symptome sind nicht unmittelbar lebensbedrohlich',
+                tr_orBelow: '— oder unten ein Krankenhaus auswählen —', tr_doLabel: '✅ TUN:', tr_dontLabel: '❌ NICHT TUN:',
+                rs_regLabel: 'Ihre Registrierungsnummer', rs_regHint: 'Zeigen Sie diese an der Krankenhausrezeption.',
+                rs_notified_emg: '🚨 Krankenhaus informiert — jetzt fahren!', rs_notified_sub_emg: 'Sie bereiten sich auf Ihre Ankunft vor',
+                rs_notified_urg: '✅ Krankenhaus informiert', rs_notified_sub_urg: 'Bitte folgen Sie den Anweisungen unten',
+                rs_notified_rtn: '✅ Ihre Informationen wurden gesendet', rs_notified_sub_rtn: 'Lesen Sie die Anweisungen vor der Abfahrt',
+                rs_trackTitle: 'Standort während der Fahrt aktiviert lassen', rs_trackSub: 'Ihr Pflegeteam verfolgt Ihre Ankunft in Echtzeit.',
+                rs_newBtn: '🔄 Neue Bewertung', rs_demo: '⚠️ Nur Demo. Im Notfall 112 anrufen.',
+                aiChecking: 'KI-Status wird geprüft…', aiConnected: '🤖 KI verbunden — Echtzeit-Analyse', aiDemo: '⚙️ Demo-Modus — KI nicht konfiguriert',
+                adv_call112: 'Rufen Sie sofort 112 an oder lassen Sie jemanden rufen', adv_sit_still: 'Setzen oder legen Sie sich hin und bewegen Sie sich nicht', adv_stay_calm: 'Bleiben Sie ruhig und atmen Sie langsam', adv_rest: 'Ruhen Sie sich aus und vermeiden Sie körperliche Anstrengung', adv_someone_with_you: 'Lassen Sie sich von jemandem ins Krankenhaus begleiten', adv_bring_meds: 'Bringen Sie alle aktuellen Medikamente mit', adv_bring_id: 'Bringen Sie Ausweis und Krankenversicherungskarte mit', adv_no_drive: 'Fahren Sie NICHT selbst ins Krankenhaus', adv_no_eat: 'Essen oder trinken Sie nichts bis zur Untersuchung', adv_chest_loose: 'Lockern Sie enge Kleidung um die Brust', adv_chest_no_stress: 'Vermeiden Sie körperlichen oder emotionalen Stress', adv_bleed_pressure: 'Drücken Sie mit einem sauberen Tuch fest auf die Wunde', adv_bleed_no_remove: 'Entfernen Sie keinen in der Wunde steckenden Gegenstand', adv_breath_upright: 'Sitzen Sie aufrecht — legen Sie sich nicht hin', adv_breath_no_lie: 'Legen Sie sich nicht flach hin — das verschlimmert die Atmung', adv_head_dark: 'Ruhen Sie sich in einem ruhigen, dunklen Raum aus', adv_head_no_screen: 'Vermeiden Sie Bildschirme, helles Licht und Lärm', adv_proceed_er: 'Gehen Sie so schnell wie möglich in die Notaufnahme',
+                hnPlaceholder: 'Krankenakte auswählen…',
+            },
+            tr: {
+                topbarLang: 'TR',
+                wl_whatLabel: 'CodeZero nedir?',
+                wl_whatDesc: 'Tıbbi bir acil durumda CodeZero yapay zekayı şunlar için kullanır:',
+                wl_b1: 'Sizi ve hastaneyi durumunuz hakkında <strong>varmadan önce</strong> bilgilendirmek',
+                wl_b2: 'Acil servisteki <strong>bekleme sürenizi</strong> en aza indirmek',
+                wl_b3: 'Sizi <strong>en uygun yakın hastaneye</strong> yönlendirmek',
+                wl_howLabel: 'Nasıl kullanılır',
+                wl_s1: '<strong style="color:var(--navy)">🎤 Konuşun</strong> — belirtilerinizi kendi kelimelerinizle açıkça anlatın.',
+                wl_s2: '<strong style="color:var(--navy)">❓ Sorular</strong> — birkaç kısa takip sorusunu yanıtlayın.',
+                wl_s3: '<strong style="color:var(--navy)">🏥 Hastane</strong> — en uygun hastane seçilir ve bilgilendirilir.',
+                wl_demo: "⚠️ Yalnızca demo. Gerçek acillerde 112'yi arayın.",
+                wl_hnLabel: 'Sağlık kaydınızı seçin', wl_hnReq: 'ZORUNLU',
+                wl_hnHintText: 'Tıbbi geçmişiniz bu ziyaretle ilişkilendirilecek',
+                btnStart: 'Başlayın →',
+                inp_title: 'Belirtilerinizi anlatın',
+                inp_sub: 'Mikrofona dokunun ve özgürce konuşun — ya da aşağıya yazın.',
+                micLabelIdle: 'Kaydetmek için dokunun', micSubIdle: 'Kendi dilinizde açıkça konuşun',
+                micLabelRec: 'Kaydediliyor…', micSubRec: 'Durdurmak için tekrar dokunun',
+                micLabelDone: 'Tekrar kaydedin', micSubDone: 'Ya da yukarıdaki metni düzenleyin',
+                transcriptLang: '✓ Kaydedildi',
+                inp_orType: 'veya yazarak girin',
+                inp_placeholder: 'Örn: Ani göğüs ağrısı, nefes darlığı, 20 dakika önce başladı…',
+                inp_continueTxt: 'Devam →',
+                inp_examples: ['Göğüs ağrısı', 'Nefes darlığı', 'Şiddetli baş ağrısı', 'Yüksek ateş', 'Baş dönmesi', 'Karın ağrısı'],
+                ph_title: 'Fotoğraf veya video ekleyin',
+                ph_sub: 'İsteğe bağlı — yara, döküntü, şişlik veya kısa bir video. Hastanenin hazırlık yapmasına yardımcı olur.',
+                ph_addPhoto: '📷 Fotoğraf', ph_addVideo: '🎥 Video', ph_skip: 'Atla →', ph_continue: 'Devam →',
+                questionsIntro: 'Durumunuzu daha iyi değerlendirebilmem için sonraki kısımdaki kısa sorulara lütfen cevap verin.\n\nYapay zeka tarafından sorular oluşturuluyor, lütfen bekleyin…',
+                questionsSpinnerText: 'Sorular oluşturuluyor…',
+                aiMode_real: '🤖 Yapay zeka soruları', aiMode_mock: '⚠️ Demo modu — YZ çevrimdışı',
+                fq_onset: 'Şikayetleriniz ne zaman başladı?',
+                fq_onset_now: 'Az önce (< 15 dk)', fq_onset_1h: 'Son bir saat içinde', fq_onset_6h: '1–6 saat önce', fq_onset_24h: '6–24 saat önce', fq_onset_days: 'Bir günden fazla önce',
+                fq_pain_scale: 'Ağrınızı 1-10 skalasında nasıl değerlendirirsiniz?',
+                fq_breathing: 'Şu anda nefes almakta güçlük çekiyor musunuz?', fq_fever: 'Yaklaşık ateşiniz nedir?',
+                fq_nausea: 'Bulantı veya kusma yaşıyor musunuz?', fq_conditions: 'Bilinen bir kronik hastalığınız var mı?',
+                fq_cond_none: 'Yok', fq_cond_heart: 'Kalp hastalığı', fq_cond_diab: 'Diyabet', fq_cond_bp: 'Yüksek tansiyon', fq_cond_other: 'Diğer',
+                fq_medications: 'Şu anda herhangi bir ilaç kullanıyor musunuz?', fq_allergies: 'Bilinen ilaç alerjiniz var mı?',
+                fq_yes: 'Evet', fq_no: 'Hayır', fq_unsure: 'Emin değilim',
+                q_back: 'Geri', q_next: 'İleri', q_of: '/', q_done: 'Bitti →',
+                cs_title: 'Neredeyse bitti', cs_sub: 'Hastaneyle paylaşılacakları inceleyin',
+                cs_consentLabel: 'Veri paylaşım onayı',
+                cs_consentDesc: 'Aşağıdaki bilgileri hastaneyle paylaşmayı onaylıyor musunuz?',
+                cs_line1: 'Semptom açıklaması ve soru yanıtları', cs_photoLine: 'Medya: {n} dosya eklendi',
+                cs_line3: 'Yapay zeka triaj değerlendirmesi ve risk düzeyi', cs_line4: 'Gerçek zamanlı konum (canlı takip)',
+                cs_yes: '✅ Evet — bilgilerimi paylaş', cs_no: '❌ Hayır — paylaşma',
+                consentWarning: 'Devam etmek için onay vermelisiniz.',
+                assessSpinnerText: 'Semptomlarınız yapay zeka ile analiz ediliyor…', cs_btnTxt: 'Değerlendirmemi al →',
+                gps_waitTitle: 'Konumunuz algılanıyor…', gps_waitSub: "Tarayıcınız sorduğunda <strong>İzin Ver</strong>'e dokunun.",
+                gps_deniedTitle: '🔒 Konum erişimi gerekli', gps_deniedDesc: 'En yakın hastaneyi bulmak için konumunuza ihtiyacımız var.',
+                gps_deniedSteps: "① Adres çubuğundaki 🔒 simgesine dokunun<br>② Site ayarları → Konum → <strong>İzin Ver</strong><br>③ Geri dönün ve Yeniden Dene'ye dokunun",
+                gps_retryBtn: '🔄 Yeniden dene',
+                gpsDetecting: 'Konum algılanıyor…', gpsOk: 'Konum doğrulandı', gpsDenied: 'Konum reddedildi',
+                tr_nearestLabel: 'Mevcut trafik durumu ve hastane acillerinin yoğunluk durumuna göre tavsiye edilen hastaneler',
+                tr_adviceLabel: 'Varmadan önce', tr_fastest: '⭐ En iyi seçim',
+                tr_hospSpinner: 'En iyi hastaneler aranıyor…', tr_noHosp: 'Yakında hastane bulunamadı.', tr_notifying: 'Hastane bilgilendiriliyor…',
+                tr_emg_title: '🚨 Hemen acile gidin', tr_emg_sub: 'Semptomlarınız acil bakım gerektiriyor — beklemeyin',
+                tr_urg_title: '⚠️ En kısa sürede hastaneye gitmelisiniz', tr_urg_sub: 'Lütfen 30 dakika içinde bir hastane bulun',
+                tr_rtn_title: 'ℹ️ Bugün bir doktora görünün', tr_rtn_sub: 'Semptomlarınız hemen hayati tehlike oluşturmuyor',
+                tr_orBelow: '— veya aşağıdan hastane seçin —', tr_doLabel: '✅ YAPILACAKLAR:', tr_dontLabel: '❌ YAPILMAYACAKLAR:',
+                rs_regLabel: 'Kayıt numaranız', rs_regHint: 'Varışta hastane resepsiyonunda gösterin.',
+                rs_notified_emg: '🚨 Hastane bildirildi — hemen yola çıkın!', rs_notified_sub_emg: 'Geliişinize hazırlanıyorlar',
+                rs_notified_urg: '✅ Hastane bilgilendirildi', rs_notified_sub_urg: 'Lütfen aşağıdaki talimatları izleyin',
+                rs_notified_rtn: '✅ Bilgileriniz gönderildi', rs_notified_sub_rtn: 'Ayrılmadan önce talimatları okuyun',
+                rs_trackTitle: 'Yolculuk sırasında konumu açık bırakın', rs_trackSub: 'Bakım ekibiniz varışınızı gerçek zamanlı takip eder.',
+                rs_newBtn: '🔄 Yeni değerlendirme', rs_demo: "⚠️ Yalnızca demo. Gerçek acillerde 112'yi arayın.",
+                aiChecking: 'Yapay zeka durumu kontrol ediliyor…', aiConnected: '🤖 Yapay zeka bağlı — gerçek zamanlı analiz', aiDemo: '⚙️ Demo modu — YZ yapılandırılmamış',
+                adv_call112: "Hemen 112'yi arayın veya birine aratın", adv_sit_still: 'Oturun ya da uzanın ve hareket etmeyin', adv_stay_calm: 'Sakin olun ve yavaş nefes alın', adv_rest: 'Dinlenin ve fiziksel efordan kaçının', adv_someone_with_you: 'Hastaneye birinin eşliğinde gidin', adv_bring_meds: 'Kullandığınız tüm ilaçları yanınıza alın', adv_bring_id: 'Kimliğinizi ve sigorta kartınızı getirin', adv_no_drive: 'Hastaneye KENDİNİZ araba kullanarak gitmeyin', adv_no_eat: 'Muayene edilene kadar hiçbir şey yemeyin ya da içmeyin', adv_chest_loose: 'Göğsünüzün etrafındaki dar giysileri gevşetin', adv_chest_no_stress: 'Fiziksel veya duygusal stresten kaçının', adv_bleed_pressure: 'Temiz bir bezle yaraya sıkıca bastırın', adv_bleed_no_remove: 'Yaraya saplanmış bir nesneyi çıkarmayın', adv_breath_upright: 'Dik oturun — yatmayın', adv_breath_no_lie: 'Düz yatmayın — solunumu kötüleştirir', adv_head_dark: 'Mümkünse sakin, karanlık bir odada dinlenin', adv_head_no_screen: 'Ekranlardan, parlak ışıktan ve gürültüden kaçının', adv_proceed_er: 'En kısa sürede acil servise gidin',
+                hnPlaceholder: 'Sağlık kaydınızı seçin…',
+            },
+        };
+
+        // ═══════════════════════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════════════════════
+        const S = {
+            lang: 'en', complaint: '', complaintEN: '', detectedLang: 'en-GB',
+            selectedLang: null, photos: [], questions: [], answers: [], qIdx: 0,
+            aiMode: null, dataConsent: null, assessment: null,
+            lat: null, lon: null, country: 'DE', hospitals: [], selectedHospital: null,
+            regNumber: null, healthNumber: null,
+        };
+
+        // ═══════════════════════════════════════════════════════════
+        // LANG HELPERS
+        // ═══════════════════════════════════════════════════════════
+        function t(key, vars) {
+            let s = (TX[S.lang] || TX.en)[key] || TX.en[key] || key;
+            if (vars) Object.keys(vars).forEach(k => { s = s.replace('{' + k + '}', vars[k]); });
+            return s;
+        }
+
+        function applyLang() {
+            const lb = document.getElementById('topbarLangBadge');
+            lb.textContent = t('topbarLang'); lb.style.display = '';
+            ['wl_whatLabel', 'wl_whatDesc', 'wl_b1', 'wl_b2', 'wl_b3', 'wl_howLabel', 'wl_s1', 'wl_s2', 'wl_s3', 'wl_demo',
+                'cs_title', 'cs_sub', 'cs_consentLabel', 'cs_consentDesc', 'cs_line1', 'cs_line3', 'cs_line4', 'cs_yes', 'cs_no',
+                'assessSpinnerText', 'cs_btnTxt', 'gps_waitTitle', 'gps_waitSub', 'gps_deniedTitle', 'gps_deniedDesc',
+                'gps_deniedSteps', 'gps_retryBtn', 'tr_nearestLabel', 'tr_adviceLabel', 'rs_regLabel', 'rs_regHint',
+                'rs_trackTitle', 'rs_trackSub', 'rs_newBtn', 'rs_demo'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.innerHTML = t(id);
+                });
+            ['inp_title', 'inp_sub', 'inp_orType', 'inp_continueTxt', 'ph_title', 'ph_sub',
+                'ph_addPhoto', 'ph_addVideo', 'ph_skip', 'ph_continue', 'wl_hnLabel', 'wl_hnReq',
+                'wl_hnHintText', 'btnStart'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.textContent = t(id);
+                });
+            const ct = document.getElementById('complaintText'); if (ct) ct.placeholder = t('inp_placeholder');
+            const ml = document.getElementById('micLabel'); if (ml) ml.textContent = t('micLabelIdle');
+            const ms = document.getElementById('micSub'); if (ms) ms.textContent = t('micSubIdle');
+            const qst = document.getElementById('questionsSpinnerText'); if (qst) qst.textContent = t('questionsSpinnerText');
+            const qi = document.getElementById('qIntroText'); if (qi) qi.innerHTML = t('questionsIntro').replace(/\n/g, '<br><br>');
+            renderHnDropdown();
+            const sp = document.getElementById('hnSelectVal');
+            if (sp && sp.dataset.placeholder === 'true') { sp.textContent = t('hnPlaceholder'); sp.classList.add('placeholder'); }
+            renderExampleChips();
+            updateConsentPage();
+            const qb = document.getElementById('q_back'); if (qb) qb.textContent = t('q_back');
+            const qn = document.getElementById('q_next'); if (qn) qn.textContent = t('q_next');
+        }
+
+        function selectLanguage(lang) {
+            S.lang = lang;
+            const map = { en: 'en-GB', de: 'de-DE', tr: 'tr-TR' };
+            S.detectedLang = map[lang] || 'en-GB';
+            S.selectedLang = S.detectedLang;
+            S.healthNumber = null;
+            ['en', 'de', 'tr'].forEach(l => document.getElementById('langBtn_' + l).classList.toggle('selected', l === lang));
+            applyLang();
+            setTimeout(() => { goToPage('welcome'); checkAIStatus(); }, 180);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // HEALTH NUMBER DROPDOWN
+        // ═══════════════════════════════════════════════════════════
+        function renderHnDropdown() {
+            const dd = document.getElementById('hnDropdown');
+            const patients = DEMO_PATIENTS[S.lang] || DEMO_PATIENTS.en;
+            dd.innerHTML = patients.map(p => `
+    <div class="hn-item" onclick="selectHn('${p.id}','${escHtml(p.name)}')">
+      <span class="hn-item-num">${p.id}</span>
+      <div><div class="hn-item-name">${escHtml(p.name)}</div><div class="hn-item-detail">${escHtml(p.detail)}</div></div>
+    </div>`).join('');
+        }
+        function toggleHnDropdown() {
+            const dd = document.getElementById('hnDropdown');
+            const btn = document.getElementById('hnSelectBtn');
+            const open = dd.classList.toggle('open');
+            btn.classList.toggle('open', open);
+        }
+        function selectHn(id, name) {
+            S.healthNumber = id;
+            const val = document.getElementById('hnSelectVal');
+            val.textContent = `${id} — ${name}`;
+            val.classList.remove('placeholder');
+            val.dataset.placeholder = 'false';
+            document.getElementById('hnDropdown').classList.remove('open');
+            document.getElementById('hnSelectBtn').classList.remove('open');
+        }
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.hn-wrap')) {
+                document.getElementById('hnDropdown')?.classList.remove('open');
+                document.getElementById('hnSelectBtn')?.classList.remove('open');
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // EXAMPLE CHIPS
+        // ═══════════════════════════════════════════════════════════
+        function renderExampleChips() {
+            const chips = document.getElementById('exampleChips');
+            const examples = t('inp_examples');
+            if (!chips || !Array.isArray(examples)) return;
+            chips.innerHTML = examples.map(ex =>
+                `<span class="complaint-chip" onclick="useExample('${escHtml(ex)}')">${escHtml(ex)}</span>`
+            ).join('');
+        }
+        function useExample(text) {
+            const ta = document.getElementById('complaintText');
+            ta.value = text; S.complaint = text;
+            document.getElementById('transcriptBox').classList.remove('visible');
+            enableContinue(true); ta.focus();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // NAVIGATION
+        // ═══════════════════════════════════════════════════════════
+        const STEP_MAP = { lang: -1, welcome: -1, input: 0, photos: 1, questions: 2, consent: 2, triage: 3, result: 4 };
+        function goToPage(name) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const el = document.getElementById('page-' + name); if (el) el.classList.add('active');
+            S.currentPage = name;
+            const idx = STEP_MAP[name] ?? -1;
+            for (let i = 0; i < 5; i++) {
+                const s = document.getElementById('ps' + i); if (!s) continue;
+                s.className = 'progress-step';
+                if (i < idx) s.classList.add('done');
+                else if (i === idx) s.classList.add('active');
+            }
+            window.scrollTo(0, 0);
+        }
+
+        function startApp() {
+            if (!S.healthNumber) {
+                const sp = document.getElementById('hnSelectBtn');
+                if (sp) {
+                    sp.style.borderColor = 'var(--red)'; sp.style.boxShadow = '0 0 0 3px rgba(239,68,68,.15)';
+                    setTimeout(() => { sp.style.borderColor = ''; sp.style.boxShadow = ''; }, 2000);
+                }
+                const warn = {
+                    en: 'Please select your health record to continue.',
+                    de: 'Bitte wählen Sie Ihre Krankenakte aus, um fortzufahren.',
+                    tr: 'Devam etmek için lütfen sağlık kaydınızı seçin.'
+                };
+                toast(warn[S.lang] || warn.en, 'warn'); return;
+            }
+            goToPage('input');
+        }
+
+        function startOver() {
+            Object.assign(S, {
+                complaint: '', complaintEN: '', detectedLang: S.selectedLang || 'en-GB', photos: [],
+                questions: [], answers: [], qIdx: 0, dataConsent: null, assessment: null, lat: null, lon: null,
+                hospitals: [], selectedHospital: null, regNumber: null, aiMode: null
+            });
+            const ct = document.getElementById('complaintText'); if (ct) ct.value = '';
+            document.getElementById('transcriptBox').classList.remove('visible');
+            enableContinue(false);
+            document.getElementById('mediaGrid').innerHTML = '';
+            updateMediaCount();
+            document.getElementById('mediaAddRow').style.display = '';
+            document.getElementById('photoInput').value = '';
+            document.getElementById('videoInput').value = '';
+            goToPage('input');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // AI STATUS
+        // ═══════════════════════════════════════════════════════════
+        async function checkAIStatus() {
+            const dot = document.getElementById('aiDot'), txt = document.getElementById('aiStatusText');
+            txt.textContent = t('aiChecking'); dot.style.background = 'var(--s300)';
+            try {
+                const r = await fetch(API + '/api/patient/questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ complaint: '__health_check__', detected_language: 'en-US' })
+                });
+                if (r.ok) { S.aiMode = 'real'; dot.style.background = 'var(--green)'; txt.textContent = t('aiConnected'); }
+                else throw new Error();
+            } catch (e) { S.aiMode = 'mock'; dot.style.background = 'var(--orange)'; txt.textContent = t('aiDemo'); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // MIC RECORDING
+        // ═══════════════════════════════════════════════════════════
+        let mediaRec = null, audioChunks = [], isRecording = false;
+        let webSpeechRec = null, webSpeechResult = '';
+
+        async function toggleRecording() { if (isRecording) stopRecording(); else await startRecording(); }
+
+        function startWebSpeech(langCode) {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return;
+            webSpeechRec = new SR();
+            webSpeechRec.continuous = true; webSpeechRec.interimResults = true;
+            webSpeechRec.lang = langCode || 'tr-TR';
+            // Do NOT reset webSpeechResult here — keep any previous result until confirmed done
+            webSpeechRec.onresult = e => {
+                let interim = '', final = '';
+                for (let i = 0; i < e.results.length; i++) {
+                    if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
+                    else interim += e.results[i][0].transcript;
+                }
+                // Update result: prefer final, fall back to interim display
+                if (final.trim()) webSpeechResult = final.trim();
+                const display = (final || interim).trim();
+                if (display) {
+                    document.getElementById('transcriptText').textContent = display;
+                    document.getElementById('transcriptBox').classList.add('visible');
+                    document.getElementById('transcriptLang').textContent = '🎤 ' + t('micLabelRec');
+                }
+            };
+            webSpeechRec.onerror = e => {
+                // 'no-speech' and 'aborted' are normal — don't clear result
+                if (e.error !== 'no-speech' && e.error !== 'aborted') {
+                    console.warn('Web Speech error:', e.error);
+                }
+            };
+            webSpeechRec.onend = () => {
+                // Auto-restart if still recording (some browsers stop after silence)
+                if (isRecording && webSpeechRec === null) return; // manually stopped
+                if (isRecording) {
+                    try { webSpeechRec.start(); } catch (_) { }
+                }
+            };
+            try { webSpeechRec.start(); } catch (e) { console.warn('WebSpeech start failed:', e); }
+        }
+        function stopWebSpeech() {
+            if (webSpeechRec) {
+                const r = webSpeechRec;
+                webSpeechRec = null; // set null first so onend doesn't restart
+                try { r.stop(); } catch (e) { }
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRec = new MediaRecorder(stream); audioChunks = [];
+                mediaRec.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+                mediaRec.onstop = processAudio; mediaRec.start(100); isRecording = true;
+                startWebSpeech(S.selectedLang || S.detectedLang || 'tr-TR');
+                setMicState('recording');
+            } catch (e) {
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SR) { isRecording = true; startWebSpeech(S.selectedLang || S.detectedLang || 'tr-TR'); setMicState('recording'); return; }
+                const msgs = {
+                    NotAllowedError: { en: 'Microphone access denied.', de: 'Mikrofonzugriff verweigert.', tr: 'Mikrofon erişimi reddedildi.' },
+                    NotFoundError: { en: 'No microphone found.', de: 'Kein Mikrofon gefunden.', tr: 'Mikrofon bulunamadı.' },
+                    NotReadableError: { en: 'Microphone is used by another app.', de: 'Mikrofon wird verwendet.', tr: 'Mikrofon başka uygulama tarafından kullanılıyor.' }
+                };
+                const m = msgs[e.name] || { en: 'Microphone unavailable — please type.', de: 'Mikrofon nicht verfügbar.', tr: 'Mikrofon kullanılamıyor — lütfen yazın.' };
+                toast(m[S.lang] || m.en, 'warn');
+            }
+        }
+        function stopRecording() {
+            // Snapshot Web Speech result BEFORE stopping (prevents race condition)
+            const wsr = webSpeechResult;
+
+            // Stop Web Speech first, then give it 400ms to fire final onresult
+            if (webSpeechRec) { try { webSpeechRec.stop(); } catch (e) { } webSpeechRec = null; }
+
+            if (mediaRec && mediaRec.state !== 'inactive') {
+                // mediaRec.onstop → processAudio handles the rest
+                mediaRec.stop();
+                mediaRec.stream.getTracks().forEach(tr => tr.stop());
+            } else if (isRecording && !mediaRec) {
+                // Web Speech only mode (no MediaRecorder)
+                isRecording = false; setMicState('idle');
+                // Wait briefly for any final Web Speech result
+                setTimeout(() => {
+                    const finalResult = (webSpeechResult || wsr || '').trim();
+                    if (finalResult) { setComplaintFromAudio(finalResult, S.selectedLang || S.detectedLang); }
+                    else { const m = { en: 'No audio captured — please type.', de: 'Keine Aufnahme.', tr: 'Ses alınamadı — lütfen yazın.' }; toast(m[S.lang] || m.en, 'warn'); }
+                    webSpeechResult = '';
+                }, 400);
+                return;
+            }
+            isRecording = false; setMicState('idle');
+        }
+        function setMicState(state) {
+            const btn = document.getElementById('micBtn');
+            const mi = document.getElementById('micIcon'); const si = document.getElementById('stopIcon');
+            if (state === 'recording') {
+                btn.classList.add('recording'); mi.style.display = 'none'; si.style.display = 'block';
+                document.getElementById('micLabel').textContent = t('micLabelRec');
+                document.getElementById('micSub').textContent = t('micSubRec');
+            } else {
+                btn.classList.remove('recording'); mi.style.display = 'block'; si.style.display = 'none';
+                const done = !!S.complaint;
+                document.getElementById('micLabel').textContent = t(done ? 'micLabelDone' : 'micLabelIdle');
+                document.getElementById('micSub').textContent = t(done ? 'micSubDone' : 'micSubIdle');
+            }
+        }
+        async function processAudio() {
+            // Wait briefly for Web Speech final result (fires after mediaRec.stop)
+            await new Promise(r => setTimeout(r, 350));
+
+            const wsr = (webSpeechResult || '').trim();
+            const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+
+            // If blob is too small but Web Speech has a result, use it immediately
+            if (blob.size < 500) {
+                if (wsr) { setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang); webSpeechResult = ''; return; }
+                const m = { en: 'Recording too short — please try again.', de: 'Aufnahme zu kurz — erneut versuchen.', tr: 'Kayıt çok kısa — tekrar deneyin.' };
+                toast(m[S.lang] || m.en, 'warn'); webSpeechResult = ''; return;
+            }
+
+            // If Web Speech already got a good result (≥ 3 words), use it directly
+            // and send audio to server in background for quality check only
+            if (wsr && wsr.split(' ').length >= 3) {
+                setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang);
+                webSpeechResult = '';
+                // Background: try server transcription and upgrade if better
+                try {
+                    const form = new FormData(); form.append('audio', blob, 'complaint.webm');
+                    const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
+                    const d = await r.json();
+                    if (d.text && d.text.trim() && d.text.trim().split(' ').length > wsr.split(' ').length) {
+                        setComplaintFromAudio(d.text.trim(), d.language || S.selectedLang);
+                    }
+                } catch (_) { }
+                return;
+            }
+
+            // Web Speech empty or very short — try server transcription (Whisper/Azure)
+            document.getElementById('inputSpinner').classList.add('visible');
+            const proc = { en: 'Processing audio…', de: 'Audio wird verarbeitet…', tr: 'Ses işleniyor…' };
+            document.getElementById('inputSpinnerText').textContent = proc[S.lang] || proc.en;
+            try {
+                const form = new FormData(); form.append('audio', blob, 'complaint.webm');
+                const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
+                const d = await r.json();
+                if (d.text && d.text.trim()) {
+                    S.detectedLang = d.language || S.selectedLang || 'en-GB';
+                    setComplaintFromAudio(d.text.trim(), d.language);
+                    webSpeechResult = '';
+                } else if (wsr) {
+                    // Last resort: use whatever Web Speech got
+                    setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang);
+                    webSpeechResult = '';
+                } else {
+                    const m = { en: 'Could not understand audio — please type.', de: 'Audio nicht verstanden — bitte tippen.', tr: 'Ses anlaşılamadı — lütfen yazın.' };
+                    toast(m[S.lang] || m.en, 'warn'); setMicState('idle');
+                }
+            } catch (e) {
+                if (wsr) { setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang); }
+                else { const m = { en: 'Could not process audio — please type.', de: 'Audio konnte nicht verarbeitet werden.', tr: 'Ses işlenemedi — lütfen yazın.' }; toast(m[S.lang] || m.en, 'warn'); setMicState('idle'); }
+                webSpeechResult = '';
+            } finally { document.getElementById('inputSpinner').classList.remove('visible'); }
+        }
+        const LANG_NAMES = { 'en-US': 'English', 'en-GB': 'English', 'de-DE': 'Deutsch', 'tr-TR': 'Türkçe', 'ar-SA': 'العربية', 'fr-FR': 'Français', 'es-ES': 'Español', 'it-IT': 'Italiano' };
+        function setComplaintFromAudio(text, langCode) {
+            S.complaint = text; S.detectedLang = langCode || S.selectedLang || 'en-GB';
+            const langName = LANG_NAMES[langCode] || langCode || '';
+            document.getElementById('transcriptLang').textContent = `${t('transcriptLang')} — ${langName}`;
+            document.getElementById('transcriptText').textContent = text;
+            document.getElementById('transcriptBox').classList.add('visible');
+            document.getElementById('complaintText').value = '';
+            enableContinue(true); setMicState('idle');
+        }
+        function onComplaintType() {
+            const val = document.getElementById('complaintText').value.trim();
+            if (val) { S.complaint = val; document.getElementById('transcriptBox').classList.remove('visible'); }
+            enableContinue(!!(val || S.complaint));
+        }
+        function enableContinue(on) {
+            const btn = document.getElementById('btnContinueInput');
+            btn.disabled = !on; btn.style.opacity = on ? '1' : '0.45';
+        }
+        function submitComplaint() {
+            if (!S.complaint.trim()) return;
+            S.photos = []; S.questions = []; S.answers = []; S.qIdx = 0; S.dataConsent = null; S.assessment = null;
+            document.getElementById('mediaGrid').innerHTML = ''; updateMediaCount();
+            document.getElementById('mediaAddRow').style.display = '';
+            goToPage('photos');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // MEDIA
+        // ═══════════════════════════════════════════════════════════
+        function onMediaAdded(evt, type) {
+            const file = evt.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                if (S.photos.length >= 3) return;
+                S.photos.push({ dataUrl: e.target.result, mime: file.type, type });
+                renderMediaGrid();
+            };
+            reader.readAsDataURL(file); evt.target.value = '';
+        }
+        function removeMedia(idx) { S.photos.splice(idx, 1); renderMediaGrid(); }
+        function renderMediaGrid() {
+            document.getElementById('mediaGrid').innerHTML = S.photos.map((m, i) => {
+                const isVid = m.type === 'video' || m.mime?.startsWith('video/');
+                return `<div class="media-thumb">
+      ${isVid ? `<video src="${m.dataUrl}" style="width:100%;height:100%;object-fit:cover"></video><span class="vid-badge">VIDEO</span>`
+                        : `<img src="${m.dataUrl}" alt="">`}
+      <button class="remove" onclick="removeMedia(${i})">✕</button>
+    </div>`;
+            }).join('');
+            updateMediaCount();
+            document.getElementById('mediaAddRow').style.display = S.photos.length >= 3 ? 'none' : '';
+        }
+        function updateMediaCount() { document.getElementById('mediaCount').textContent = `${S.photos.length} / 3`; }
+        function skipPhotos() { loadQuestions(); }
+        function continueFromPhotos() { loadQuestions(); }
+
+        // ═══════════════════════════════════════════════════════════
+        // FALLBACK QUESTIONS
+        // ═══════════════════════════════════════════════════════════
+        function generateFallbackQuestions(complaint) {
+            const c = complaint.toLowerCase(); const qs = [];
+            qs.push({ question: t('fq_onset'), type: 'multiple_choice', options: [t('fq_onset_now'), t('fq_onset_1h'), t('fq_onset_6h'), t('fq_onset_24h'), t('fq_onset_days')] });
+            if (/pain|ache|hurt|ağrı|schmerz/i.test(c)) qs.push({ question: t('fq_pain_scale'), type: 'scale', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] });
+            if (/breath|chest|lung|nefes|göğüs|atemlos|brust/i.test(c)) qs.push({ question: t('fq_breathing'), type: 'yes_no', options: [t('fq_yes'), t('fq_no'), t('fq_unsure')] });
+            if (/fever|ateş|fieber/i.test(c)) qs.push({ question: t('fq_fever'), type: 'multiple_choice', options: ['< 37.5°C', '37.5–38.5°C', '38.5–39.5°C', '> 39.5°C', t('fq_unsure')] });
+            if (/nause|vomit|dizzy|headache|baş|kopf|kusm/i.test(c)) qs.push({ question: t('fq_nausea'), type: 'yes_no', options: [t('fq_yes'), t('fq_no'), t('fq_unsure')] });
+            qs.push({ question: t('fq_conditions'), type: 'multiple_choice', options: [t('fq_cond_none'), t('fq_cond_heart'), t('fq_cond_diab'), t('fq_cond_bp'), t('fq_cond_other')] });
+            qs.push({ question: t('fq_medications'), type: 'yes_no', options: [t('fq_yes'), t('fq_no'), t('fq_unsure')] });
+            qs.push({ question: t('fq_allergies'), type: 'yes_no', options: [t('fq_yes'), t('fq_no'), t('fq_unsure')] });
+            return qs;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // LOAD QUESTIONS
+        // ═══════════════════════════════════════════════════════════
+        async function loadQuestions() {
+            goToPage('questions');
+            document.getElementById('questionsSpinner').classList.add('visible');
+            document.getElementById('questionsContainer').style.display = 'none';
+            document.getElementById('questionNav').style.display = 'none';
+            document.getElementById('aiModeBadge').style.display = 'none';
+            document.getElementById('qIntroCard').style.display = 'block';
+            const qi = document.getElementById('qIntroText');
+            if (qi) qi.innerHTML = t('questionsIntro').replace(/\n/g, '<br><br>');
+            try {
+                const r = await fetch(API + '/api/patient/questions', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ complaint: S.complaint, complaint_en: S.complaintEN, detected_language: S.detectedLang })
+                });
+                const d = await r.json();
+                S.questions = d.questions || []; S.complaintEN = d.complaint_en || S.complaint;
+                S.aiMode = S.questions.length >= 4 ? 'real' : 'mock';
+            } catch (e) { S.questions = []; S.complaintEN = S.complaint; S.aiMode = 'mock'; }
+            finally { document.getElementById('questionsSpinner').classList.remove('visible'); }
+            if (!S.questions.length) { S.questions = generateFallbackQuestions(S.complaint || ''); S.aiMode = 'mock'; }
+            if (!S.questions.length) { goToPage('consent'); updateConsentPage(); return; }
+            document.getElementById('qIntroCard').style.display = 'none';
+            const badge = document.getElementById('aiModeBadge');
+            const inner = document.getElementById('aiModeBadgeInner');
+            const dot = document.getElementById('aiBadgeDot');
+            const badgeTxt = document.getElementById('aiBadgeText');
+            if (S.aiMode === 'real') { inner.style.cssText = 'background:var(--green-l);border:1px solid var(--green-m)'; dot.style.background = 'var(--green)'; badgeTxt.style.color = 'var(--green)'; badgeTxt.textContent = t('aiMode_real'); }
+            else { inner.style.cssText = 'background:#fff7ed;border:1px solid #fed7aa'; dot.style.background = 'var(--orange)'; badgeTxt.style.color = 'var(--orange)'; badgeTxt.textContent = t('aiMode_mock'); }
+            badge.style.display = 'flex';
+            S.answers = []; S.qIdx = 0; renderQuestion();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // OPTION TRANSLATIONS
+        // ═══════════════════════════════════════════════════════════
+        const OPTION_TRANS = { 'just now': { tr: 'Az önce', de: 'Gerade eben' }, '< 1 hour ago': { tr: '< 1 saat önce', de: 'Vor < 1 Stunde' }, '1–6 hours ago': { tr: '1–6 saat önce', de: 'Vor 1–6 Stunden' }, '6–24 hours ago': { tr: '6–24 saat önce', de: 'Vor 6–24 Stunden' }, '> 1 day': { tr: '1 günden fazla', de: 'Mehr als 1 Tag' }, 'suddenly': { tr: 'Aniden', de: 'Plötzlich' }, 'gradually over minutes': { tr: 'Dakikalar içinde yavaşça', de: 'Langsam über Minuten' }, 'gradually over hours': { tr: 'Saatler içinde yavaşça', de: 'Langsam über Stunden' }, 'gradually over days': { tr: 'Günler içinde yavaşça', de: 'Langsam über Tage' }, 'yes': { tr: 'Evet', de: 'Ja' }, 'no': { tr: 'Hayır', de: 'Nein' }, 'not sure': { tr: 'Emin değilim', de: 'Nicht sicher' }, 'unsure': { tr: 'Emin değilim', de: 'Nicht sicher' }, 'maybe': { tr: 'Belki', de: 'Vielleicht' }, 'mild': { tr: 'Hafif', de: 'Leicht' }, 'moderate': { tr: 'Orta', de: 'Mäßig' }, 'severe': { tr: 'Şiddetli', de: 'Schwer' }, 'head/neck': { tr: 'Baş/boyun', de: 'Kopf/Hals' }, 'chest': { tr: 'Göğüs', de: 'Brust' }, 'abdomen': { tr: 'Karın', de: 'Bauch' }, 'back': { tr: 'Sırt', de: 'Rücken' }, 'arms': { tr: 'Kollar', de: 'Arme' }, 'legs': { tr: 'Bacaklar', de: 'Beine' }, 'whole body': { tr: 'Tüm vücut', de: 'Ganzer Körper' }, 'none': { tr: 'Hiçbiri', de: 'Keines' }, 'none of the above': { tr: 'Hiçbiri', de: 'Nichts davon' }, 'within the last hour': { tr: 'Son bir saat içinde', de: 'In der letzten Stunde' }, 'a few hours ago': { tr: 'Birkaç saat önce', de: 'Vor einigen Stunden' }, 'yesterday': { tr: 'Dün', de: 'Gestern' }, 'several days ago': { tr: 'Birkaç gün önce', de: 'Vor mehreren Tagen' } };
+
+        function translateOption(opt, langCode) {
+            if (!langCode || langCode.startsWith('en')) return opt;
+            const lk = langCode.startsWith('tr') ? 'tr' : langCode.startsWith('de') ? 'de' : null;
+            if (!lk) return opt;
+            const r = OPTION_TRANS[opt.toLowerCase().trim()];
+            return (r && r[lk]) ? r[lk] : opt;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // RENDER QUESTION
+        // ═══════════════════════════════════════════════════════════
+        function renderQuestion() {
+            let q = S.questions[S.qIdx];
+            if (typeof q === 'string') q = { question: q, type: 'yes_no', options: [] };
+            const total = S.questions.length;
+            let { question, type, options } = q;
+            if (type === 'free_text' || !options || !options.length) {
+                const ql = question.toLowerCase();
+                const _lang = S.detectedLang || S.selectedLang || 'en-GB';
+                const _to = o => translateOption(o, _lang);
+                if (/when|how long|since|start|began|wann|wie lange|başlad/.test(ql)) { type = 'multiple_choice'; options = ['Just now', '< 1 hour ago', '1–6 hours ago', '6–24 hours ago', '> 1 day'].map(_to); }
+                else if (/how|rate|scale|severity|pain|wie stark|schmerz|şiddet|ağrı/.test(ql)) { type = 'scale'; options = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']; }
+                else if (/where|location|wo |nerede/.test(ql)) { type = 'multiple_choice'; options = ['Head/neck', 'Chest', 'Abdomen', 'Back', 'Arms', 'Legs', 'Whole body'].map(_to); }
+                else { type = 'yes_no'; options = ['Yes', 'No', 'Not sure'].map(_to); }
+            }
+            const container = document.getElementById('questionsContainer');
+            container.style.display = 'block';
+            const prevAns = S.answers[S.qIdx]?.originalAnswer;
+            container.innerHTML = `
+    <div class="q-header">
+      <span class="q-counter">${S.qIdx + 1} ${t('q_of')} ${total}</span>
+      <div class="q-bar"><div class="q-fill" style="width:${Math.round(((S.qIdx + 1) / total) * 100)}%"></div></div>
+    </div>
+    <p class="q-text">${escHtml(question)}</p>
+    <div class="${type === 'scale' ? '' : 'radio-group'}" id="qOptions"></div>`;
+            const opts = document.getElementById('qOptions');
+            const _lc = S.detectedLang || S.selectedLang || 'en-GB';
+            const displayOpts = options.map(opt => ({ display: translateOption(opt, _lc), value: opt }));
+
+            if (type === 'scale') {
+                const grid1 = document.createElement('div'); grid1.className = 'scale-row';
+                const grid2 = document.createElement('div'); grid2.className = 'scale-row';
+                displayOpts.forEach(({ display, value }, idx) => {
+                    const pill = document.createElement('div');
+                    pill.className = 'scale-pill' + (prevAns === value || prevAns === display ? ' selected' : '');
+                    pill.textContent = display;
+                    pill.onclick = () => {
+                        S.answers[S.qIdx] = { question, question_en: q.question_en || q.question || question, answer: value, originalAnswer: display };
+                        document.querySelectorAll('.scale-pill').forEach(p => p.classList.remove('selected'));
+                        pill.classList.add('selected');
+                        const nxt = document.getElementById('btnQNext'); nxt.disabled = false; nxt.style.opacity = '1';
+                    };
+                    (idx < 5 ? grid1 : grid2).appendChild(pill);
+                });
+                opts.appendChild(grid1); opts.appendChild(grid2);
+            } else {
+                displayOpts.forEach(({ display, value }) => {
+                    const pill = document.createElement('label');
+                    pill.className = 'radio-pill' + (prevAns === value || prevAns === display ? ' selected' : '');
+                    pill.innerHTML = `<div class="radio-dot"></div><span>${escHtml(display)}</span>`;
+                    pill.onclick = () => {
+                        S.answers[S.qIdx] = { question, question_en: q.question_en || q.question || question, answer: value, originalAnswer: display };
+                        document.querySelectorAll('#qOptions .radio-pill').forEach(p => p.classList.remove('selected'));
+                        pill.classList.add('selected');
+                        const nxt = document.getElementById('btnQNext'); nxt.disabled = false; nxt.style.opacity = '1';
+                    };
+                    opts.appendChild(pill);
+                });
+            }
+
+            document.getElementById('questionNav').style.display = 'flex';
+            const btnBack = document.getElementById('btnQBack');
+            const btnNext = document.getElementById('btnQNext');
+            btnBack.style.display = S.qIdx === 0 ? 'none' : '';
+            const hasAns = !!S.answers[S.qIdx];
+            btnNext.disabled = !hasAns; btnNext.style.opacity = hasAns ? '1' : '0.45';
+            const isLast = S.qIdx === total - 1;
+            btnNext.querySelector('span').textContent = isLast ? t('q_done').replace('→', '').trim() : t('q_next');
+            if (btnBack.querySelector('span')) btnBack.querySelector('span').textContent = t('q_back');
+        }
+        function prevQuestion() { if (S.qIdx > 0) { S.qIdx--; renderQuestion(); } }
+        function nextQuestion() {
+            if (!S.answers[S.qIdx]) return;
+            if (S.qIdx < S.questions.length - 1) { S.qIdx++; renderQuestion(); }
+            else { goToPage('consent'); updateConsentPage(); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // CONSENT
+        // ═══════════════════════════════════════════════════════════
+        function updateConsentPage() {
+            const pl = document.getElementById('cs_photoLine');
+            if (pl) pl.textContent = t('cs_photoLine', { n: S.photos.length });
+        }
+        function setConsent(val) {
+            S.dataConsent = val;
+            document.getElementById('consentYes').classList.toggle('selected', val === true);
+            document.getElementById('consentNo').classList.toggle('selected', val === false);
+            ['consentYesDot', 'consentNoDot'].forEach((id, i) => {
+                const el = document.getElementById(id); const active = (i === 0 ? val === true : val === false);
+                el.style.background = active ? (i === 0 ? 'var(--green)' : 'var(--red)') : '';
+                el.style.borderColor = active ? (i === 0 ? 'var(--green)' : 'var(--red)') : '';
+            });
+            document.getElementById('consentWarning').style.display = 'none';
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // FALLBACK ASSESSMENT
+        // ═══════════════════════════════════════════════════════════
+        function buildFallbackAssessment(complaint, answers) {
+            const c = (complaint || '').toLowerCase(); const a = (answers || []).map(x => (x.answer || '').toLowerCase()).join(' '); const text = c + ' ' + a;
+            let level = 'ROUTINE', score = 3;
+            if (/chest pain|heart attack|stroke|unconscious|not breathing|anaphyla|severe bleeding|crushing|thunderclap|göğüs ağrısı|nefes alamıyorum|brustschmerz/i.test(text)) { level = 'EMERGENCY'; score = 9; }
+            else if (/vomit|fever|dizz|faint|headache|abdominal|shortness|severe|bleed|ateş|kusma|baş ağrısı|schmerz|fieber/i.test(text)) { level = 'URGENT'; score = 6; }
+            const doList = [], dontList = [];
+            if (level === 'EMERGENCY') { doList.push(t('adv_call112'), t('adv_sit_still'), t('adv_stay_calm')); dontList.push(t('adv_no_drive'), t('adv_no_eat')); }
+            else if (level === 'URGENT') { doList.push(t('adv_rest'), t('adv_someone_with_you'), t('adv_bring_meds')); dontList.push(t('adv_no_drive'), t('adv_no_eat')); }
+            else { doList.push(t('adv_rest'), t('adv_bring_meds'), t('adv_bring_id')); }
+            if (/chest|heart|brust|göğüs/i.test(text)) { doList.push(t('adv_chest_loose')); dontList.push(t('adv_chest_no_stress')); }
+            if (/bleed|kanama|blutung/i.test(text)) { doList.push(t('adv_bleed_pressure')); dontList.push(t('adv_bleed_no_remove')); }
+            if (/breath|nefes|atem/i.test(text)) { doList.push(t('adv_breath_upright')); dontList.push(t('adv_breath_no_lie')); }
+            if (/head|baş ağrı|kopfschmerz/i.test(text)) { doList.push(t('adv_head_dark')); dontList.push(t('adv_head_no_screen')); }
+            return { triage_level: level, risk_score: score, do_list: doList, dont_list: dontList, suspected_conditions: [], recommended_action: t('adv_proceed_er'), ai_mode: 'fallback' };
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // SUBMIT CONSENT → AI Assessment
+        // ═══════════════════════════════════════════════════════════
+        async function submitConsent() {
+            if (!S.dataConsent) {
+                document.getElementById('consentWarning').style.display = 'block';
+                document.getElementById('consentWarning').textContent = t('consentWarning'); return;
+            }
+            document.getElementById('assessSpinner').classList.add('visible');
+            document.getElementById('assessSpinnerText').textContent = t('assessSpinnerText');
+            document.getElementById('btnGetAssessment').disabled = true;
+            const qaList = S.answers.map(a => ({ question: a.question, question_en: a.question_en || a.question, answer: a.answer, original_answer: a.originalAnswer }));
+            try {
+                const r = await fetch(API + '/api/patient/assess', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        complaint: S.complaint, complaint_en: S.complaintEN, detected_language: S.detectedLang,
+                        questions: S.questions.map(q => q.question_en ? q : (q.question || q)), answers: qaList, has_photo: S.photos.length > 0,
+                        photo_count: S.photos.length, photo_base64: S.photos.length ? S.photos.map(p => p.dataUrl) : null,
+                        photo_mime: S.photos.length ? S.photos[0].mime : null,
+                        media: S.photos.length ? S.photos.map(p => ({ dataUrl: p.dataUrl, mime: p.mime || 'image/jpeg', type: p.type || 'photo' })) : null
+                    })
+                });
+                S.assessment = await r.json();
+                if (S.assessment._qa_pairs && S.assessment._qa_pairs.length > 0) {
+                    S.answersEN = S.assessment._qa_pairs.map(p => ({
+                        question: p.question, question_en: p.question, answer: p.answer, original_answer: p.original_answer,
+                    }));
+                } else {
+                    S.answersEN = qaList;
+                }
+            } catch (e) { S.assessment = buildFallbackAssessment(S.complaint || S.complaintEN || '', S.answers); S.answersEN = qaList; }
+            finally { document.getElementById('assessSpinner').classList.remove('visible'); document.getElementById('btnGetAssessment').disabled = false; }
+            goToPage('triage'); renderTriageBanner(); requestGPS();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // TRIAGE BANNER + ADVICE
+        // ═══════════════════════════════════════════════════════════
+        function renderTriageBanner() {
+            const a = S.assessment || {}; const lvl = (a.triage_level || 'URGENT').toUpperCase();
+            let cls, title, sub;
+            if (lvl === 'EMERGENCY') { cls = 'emg'; title = t('tr_emg_title'); sub = t('tr_emg_sub'); }
+            else if (lvl === 'URGENT') { cls = 'urg'; title = t('tr_urg_title'); sub = t('tr_urg_sub'); }
+            else { cls = 'rtn'; title = t('tr_rtn_title'); sub = t('tr_rtn_sub'); }
+            let html = `<div class="triage-banner ${cls}"><div class="triage-title">${title}</div><div class="triage-sub">${sub}</div></div>`;
+            if (lvl === 'EMERGENCY') html += `<a href="tel:112" class="btn btn-danger" style="margin-bottom:12px;font-size:1.1rem">📞 CALL 112</a><p style="text-align:center;font-size:.8rem;color:var(--s400);margin-bottom:12px">— ${t('tr_orBelow')} —</p>`;
+            document.getElementById('triageBanner').innerHTML = html;
+            let doList = a.do_list || [], dontList = a.dont_list || [];
+            if (!doList.length && !dontList.length) { const fb = buildFallbackAssessment(S.complaint || '', S.answers); doList = fb.do_list; dontList = fb.dont_list; }
+            renderAdviceBlock('triageAdviceContent', doList, dontList, lvl);
+            document.getElementById('triageAdviceSection').style.display = 'block';
+            document.getElementById('tr_adviceLabel').textContent = t('tr_adviceLabel');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // GPS
+        // ═══════════════════════════════════════════════════════════
+        function detectCountryFromCoords(lat, lon) {
+            if (lat >= 47.2 && lat <= 55.1 && lon >= 5.9 && lon <= 15.1) return 'DE';
+            if (lat >= 49.9 && lat <= 60.9 && lon >= -8.6 && lon <= 1.8) return 'UK';
+            if (lat >= 35.8 && lat <= 42.1 && lon >= 26.0 && lon <= 44.8) return 'TR';
+            return 'DE';
+        }
+        function setGPSStatus(state) {
+            const pill = document.getElementById('gpsStatusPill');
+            const txt = document.getElementById('gpsStatusTxt');
+            pill.className = 'gps-status ' + state;
+            txt.textContent = t(state === 'ok' ? 'gpsOk' : state === 'err' ? 'gpsDenied' : 'gpsDetecting');
+        }
+        function requestGPS() {
+            if (S.lat && S.lon) { fetchHospitals(); return; }
+            setGPSStatus('wait');
+            document.getElementById('gpsWaiting').style.display = 'block';
+            document.getElementById('gpsDenied').style.display = 'none';
+            document.getElementById('hospitalList').innerHTML = '';
+            if (!navigator.geolocation) { showGPSDenied(); return; }
+            navigator.geolocation.getCurrentPosition(
+                pos => { S.lat = pos.coords.latitude; S.lon = pos.coords.longitude; S.country = detectCountryFromCoords(S.lat, S.lon); document.getElementById('gpsWaiting').style.display = 'none'; setGPSStatus('ok'); fetchHospitals(); },
+                () => showGPSDenied(), { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
+            );
+        }
+        function showGPSDenied() {
+            setGPSStatus('err');
+            document.getElementById('gpsWaiting').style.display = 'none';
+            document.getElementById('gpsDenied').style.display = 'block';
+            ['gps_deniedTitle', 'gps_deniedDesc', 'gps_retryBtn'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = t(id); });
+            const st = document.getElementById('gps_deniedSteps'); if (st) st.innerHTML = t('gps_deniedSteps');
+        }
+        function retryGPS() { S.lat = null; S.lon = null; document.getElementById('gpsDenied').style.display = 'none'; requestGPS(); }
+
+        // ═══════════════════════════════════════════════════════════
+        // HOSPITALS
+        // ═══════════════════════════════════════════════════════════
+        async function fetchHospitals() {
+            const list = document.getElementById('hospitalList');
+            list.innerHTML = `<div class="spinner-wrap visible" style="padding:16px 0"><div class="spinner"></div><div class="spinner-text">${t('tr_hospSpinner')}</div></div>`;
+            try {
+                const r = await fetch(`${API}/api/patient/hospitals?lat=${S.lat}&lon=${S.lon}&country=${S.country}&n=3`);
+                if (!r.ok) throw new Error();
+                S.hospitals = await r.json(); if (!S.hospitals.length) throw new Error();
+                renderHospitals();
+            } catch (e) {
+                list.innerHTML = `<div class="card red" style="text-align:center"><p style="font-size:.95rem;font-weight:700;color:var(--red);margin-bottom:8px">⚠️ ${t('tr_noHosp')}</p><button class="btn btn-secondary" onclick="fetchHospitals()">🔄 Retry</button></div>`;
+            }
+        }
+        function renderHospitals() {
+            const hl = document.getElementById('hospitalList');
+            const label = document.getElementById('tr_nearestLabel');
+            if (label) label.textContent = t('tr_nearestLabel');
+            hl.innerHTML = S.hospitals.map((h, i) => `
+    <div class="hosp-card ${i === 0 ? 'best' : ''}" onclick="selectHospital(${i})">
+      ${i === 0 ? `<div class="best-badge">${t('tr_fastest')}</div>` : ''}
+      <div class="hosp-name">${escHtml(h.name)}</div>
+      <div class="hosp-meta">
+        <div class="hosp-chip ${i === 0 ? 'fast' : ''}">📏 ${h.distance_km} km</div>
+        <div class="hosp-chip ${i === 0 ? 'fast' : ''}">⏱ ~${h.eta_minutes} min</div>
+        <div class="hosp-chip">${escHtml(h.occupancy_label || h.occupancy || '')}</div>
+      </div>
+      <div class="hosp-addr">📍 ${escHtml(h.address || '')}</div>
+    </div>`).join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // SELECT HOSPITAL + SUBMIT
+        // ═══════════════════════════════════════════════════════════
+        async function selectHospital(idx) {
+            S.selectedHospital = S.hospitals[idx]; S.regNumber = genRegNumber();
+            document.getElementById('hospitalList').innerHTML = `<div class="spinner-wrap visible" style="padding:16px 0"><div class="spinner"></div><div class="spinner-text">${t('tr_notifying')}</div></div>`;
+            try {
+                const mediaArr = S.photos.length > 0 ? S.photos.map(p => ({ dataUrl: p.dataUrl, mime: p.mime || 'image/jpeg', type: p.type || 'photo' })) : null;
+                const photoBase64 = S.photos.length > 0 ? S.photos.map(p => p.dataUrl) : null;
+                const qaList = (S.answersEN || S.answers || []).map(a => ({ question: a.question || '', question_en: a.question_en || a.question || '', answer: a.answer || '', original_answer: a.original_answer || a.originalAnswer || a.answer || '' })).filter(a => a.question && a.answer);
+                await fetch(API + '/api/patient/submit', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        complaint: S.complaint, complaint_en: S.complaintEN || S.complaint, detected_language: S.detectedLang,
+                        assessment: S.assessment, hospital: S.selectedHospital, lat: S.lat, lon: S.lon, answers: qaList,
+                        has_photo: S.photos.length > 0, photo_count: S.photos.length, photo_base64: photoBase64,
+                        media: mediaArr, reg_number: S.regNumber, health_number: S.healthNumber || null, data_consent: S.dataConsent
+                    })
+                });
+            } catch (_) { }
+            renderResult(); goToPage('result');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // RESULT
+        // ═══════════════════════════════════════════════════════════
+        function renderResult() {
+            const a = S.assessment || {}; const ht = S.selectedHospital; const lvl = (a.triage_level || 'URGENT').toUpperCase();
+            let cls, title, sub;
+            if (lvl === 'EMERGENCY') { cls = 'emg'; title = t('rs_notified_emg'); sub = t('rs_notified_sub_emg'); }
+            else if (lvl === 'URGENT') { cls = 'urg'; title = t('rs_notified_urg'); sub = t('rs_notified_sub_urg'); }
+            else { cls = 'rtn'; title = t('rs_notified_rtn'); sub = t('rs_notified_sub_rtn'); }
+            document.getElementById('resultBanner').innerHTML = `<div class="triage-banner ${cls}"><div class="triage-title">${title}</div><div class="triage-sub">${sub}</div></div>`;
+            document.getElementById('regNumber').textContent = S.regNumber || '—';
+            document.getElementById('rs_regLabel').textContent = t('rs_regLabel');
+            document.getElementById('rs_regHint').textContent = t('rs_regHint');
+            if (ht) { document.getElementById('resultHospital').innerHTML = `<div class="card green" style="margin-bottom:14px"><p style="font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:4px">🏥 ${escHtml(ht.name)}</p><p style="font-size:.82rem;color:var(--s500);margin-bottom:6px">📍 ${escHtml(ht.address || '')}</p><div style="display:flex;gap:14px"><span style="color:var(--green);font-size:.88rem;font-weight:600">📏 ${ht.distance_km} km</span><span style="color:var(--green);font-size:.88rem;font-weight:600">⏱ ~${ht.eta_minutes} min</span><span style="color:var(--s500);font-size:.85rem">${escHtml(ht.occupancy_label || '')}</span></div></div>`; }
+            const callDiv = document.getElementById('resultEmergencyCall');
+            if (lvl === 'EMERGENCY') { callDiv.style.display = 'block'; callDiv.innerHTML = `<a href="tel:112" class="btn btn-danger" style="font-size:1.2rem;margin-bottom:14px">📞 CALL 112</a>`; }
+            else callDiv.style.display = 'none';
+            let doList = a.do_list || [], dontList = a.dont_list || [];
+            if (!doList.length && !dontList.length) { const fb = buildFallbackAssessment(S.complaint || '', S.answers); doList = fb.do_list; dontList = fb.dont_list; }
+            const advDiv = document.getElementById('resultAdvice');
+            advDiv.innerHTML = '<div id="resultAdviceBlock"></div>';
+            renderAdviceBlock('resultAdviceBlock', doList, dontList, lvl);
+            document.getElementById('rs_trackTitle').textContent = t('rs_trackTitle');
+            document.getElementById('rs_trackSub').textContent = t('rs_trackSub');
+            document.getElementById('rs_newBtn').textContent = t('rs_newBtn');
+            document.getElementById('rs_demo').textContent = t('rs_demo');
+            startLiveTracking();
+        }
+
+        let _trackingId = null;
+        function startLiveTracking() {
+            if (!navigator.geolocation || !S.selectedHospital || !S.regNumber) return;
+            if (_trackingId) navigator.geolocation.clearWatch(_trackingId);
+
+            // Extract hospital coordinates
+            const hl = String(S.selectedHospital.location || '');
+            let hLat = 0, hLon = 0;
+            if (hl.includes(',')) {
+                hLat = parseFloat(hl.split(',')[0]);
+                hLon = parseFloat(hl.split(',')[1]);
+            } else {
+                hLat = S.selectedHospital.lat || 0;
+                hLon = S.selectedHospital.lon || 0;
+            }
+            if (!hLat || !hLon) return;
+
+            const R = 6371; // km
+
+            _trackingId = navigator.geolocation.watchPosition(async (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                // Calculate straight-line distance (haversine)
+                const dLat = (hLat - lat) * Math.PI / 180;
+                const dLon = (hLon - lon) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat * Math.PI / 180) * Math.cos(hLat * Math.PI / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const d = R * c;
+
+                // Assume ~40km/h average in city -> 1.5 mins per km. Add 2 min for parking/walking.
+                let eta = Math.ceil((d * 1.5) + 2.0);
+                if (eta < 1) eta = 1;
+
+                try {
+                    await fetch(API + '/api/patient/' + S.regNumber + '/location', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ lat, lon, eta_minutes: eta })
+                    });
+                } catch (e) { }
+            }, (err) => { console.warn("Live tracking err:", err); }, {
+                enableHighAccuracy: true,
+                maximumAge: 10000,
+                timeout: 5000
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // ADVICE BLOCK
+        // ═══════════════════════════════════════════════════════════
+        function renderAdviceBlock(containerId, doList, dontList, level) {
+            const color = { EMERGENCY: 'var(--red)', URGENT: 'var(--orange)', ROUTINE: 'var(--green)' }[level] || 'var(--blue)';
+            let html = `<div style="border:1.5px solid ${color};border-radius:var(--r-lg);padding:16px;margin-bottom:14px">`;
+            if (doList.length) {
+                html += `<p style="font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px">${t('tr_doLabel')}</p>`;
+                html += `<ul class="advice-list">`;
+                doList.forEach(item => { html += `<li><span class="icon" style="color:var(--green)">✅</span>${escHtml(item)}</li>`; });
+                html += `</ul>`;
+            }
+            if (dontList.length) {
+                html += `<p style="font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin-top:12px;margin-bottom:8px">${t('tr_dontLabel')}</p>`;
+                html += `<ul class="advice-list">`;
+                dontList.forEach(item => { html += `<li><span class="icon" style="color:var(--red)">❌</span>${escHtml(item)}</li>`; });
+                html += `</ul>`;
+            }
+            html += `</div>`;
+            const container = document.getElementById(containerId);
+            if (container) container.innerHTML = html;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // UTILITIES
+        // ═══════════════════════════════════════════════════════════
+        function genRegNumber() {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            return `CZ-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${Math.floor(1000 + Math.random() * 9000)}`;
+        }
+        function escHtml(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        let _toastTimer = null;
+        function toast(msg, type) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.className = 'show';
+            if (type === 'warn') el.style.background = 'var(--orange)';
+            else el.style.background = 'var(--navy)';
+            clearTimeout(_toastTimer);
+            _toastTimer = setTimeout(() => { el.className = ''; }, 3200);
+        }
+
+        // === V3 ENHANCEMENTS ===
+        const _THEME_KEY = 'cz_theme';
+        function applyTheme(t) { document.documentElement.setAttribute('data-theme', t); const sun = document.getElementById('themeIconSun'); const moon = document.getElementById('themeIconMoon'); if (sun) sun.style.display = t === 'dark' ? 'block' : 'none'; if (moon) moon.style.display = t === 'dark' ? 'none' : 'block'; }
+        function toggleTheme() { const cur = document.documentElement.getAttribute('data-theme') || 'light'; const next = cur === 'dark' ? 'light' : 'dark'; localStorage.setItem(_THEME_KEY, next); applyTheme(next); }
+        (function initTheme() { const saved = localStorage.getItem(_THEME_KEY); const sys = window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'; applyTheme(saved || sys); })();
+        const PAGE_STEPS = { 'page-lang': 0, 'page-welcome': 1, 'page-input': 2, 'page-photos': 2, 'page-questions': 3, 'page-consent': 4, 'page-triage': 5, 'page-result': 5 };
+        const STEP_LBL = { en: ['', '', 'Step 2 of 5', 'Step 2 of 5', 'Step 3 of 5', 'Step 4 of 5', 'Step 5 of 5', 'Complete'], de: ['', '', 'Schritt 2/5', 'Schritt 2/5', 'Schritt 3/5', 'Schritt 4/5', 'Schritt 5/5', 'Fertig'], tr: ['', '', 'Adim 2/5', 'Adim 2/5', 'Adim 3/5', 'Adim 4/5', 'Adim 5/5', 'Tamam'] };
+        // goToPage wrapper — uses IIFE to capture original before override (avoids hoisting conflict)
+        window.goToPage = (function(){ var _o = goToPage; return function(p){ _o(p); var st=PAGE_STEPS[p]||0,f=document.getElementById('progressFill'),l=document.getElementById('progressLabel'),w=document.getElementById('progressBarWrap'); if(f)f.style.width=Math.round(st/5*100)+'%'; var lk=(S.selectedLang||'en').startsWith('tr')?'tr':(S.selectedLang||'en').startsWith('de')?'de':'en'; var si={'page-lang':0,'page-welcome':1,'page-input':2,'page-photos':2,'page-questions':3,'page-consent':4,'page-triage':6,'page-result':7}[p]||0; if(l)l.textContent=(STEP_LBL[lk]||STEP_LBL.en)[si]||''; if(w)w.style.display=st===0?'none':'block'; }; })();
+        document.getElementById('progressBarWrap') && (document.getElementById('progressBarWrap').style.display = 'none');
+        const _sms = typeof setMicState === 'function' ? setMicState : null;
+        window.setMicState = function (s) { if (_sms) _sms(s); const wf = document.getElementById('waveformBars'); if (wf) wf.classList.toggle('active', s === 'recording'); };
+        document.addEventListener('click', function (e) { const pill = e.target.closest('.radio-pill') || e.target.closest('.scale-pill'); if (!pill) return; const uw = document.getElementById('chatUserAnswer'); const ub = document.getElementById('chatUserBubbleText'); if (uw && ub) { const sp = pill.querySelector('span'); ub.textContent = (sp ? sp.textContent : pill.textContent).trim(); uw.style.display = 'flex'; } }, true);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    </script>
+</body>
+
+</html>

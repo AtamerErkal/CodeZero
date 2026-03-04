@@ -11,8 +11,9 @@ Azure Maps used when MAPS_SUBSCRIPTION_KEY is set; haversine fallback otherwise.
 """
 
 from __future__ import annotations
-import logging, math, os
+import logging, math, os, time
 import requests
+import random
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -568,116 +569,186 @@ class MapsHandler:
     def __init__(self) -> None:
         self.subscription_key: str = os.getenv("MAPS_SUBSCRIPTION_KEY", "")
         self._initialized = bool(self.subscription_key and self.subscription_key != "your-key")
-        if not self._initialized:
-            logger.warning("Azure Maps not configured — using hospital DB + estimated ETA.")
-        else:
-            logger.info("Azure Maps initialized.")
+        
+        # Dictionary to cache ETA requests. 
+        # Format: { "hospital_coords": { "p_lat": float, "p_lon": float, "timestamp": float, "data": dict } }
+        self._eta_cache: dict = {}
 
-    def find_nearest_hospitals(
-        self,
-        patient_lat: float,
-        patient_lon: float,
-        count: int = 3,
-        radius_km: int = 150,
-        country: str = "DE",
-    ) -> list[dict]:
+        if not self._initialized:
+            logger.warning("Azure Maps not configured. Using static DB and estimated ETA.")
+        else:
+            logger.info("Azure Maps initialized. Dynamic POI search and live traffic routing enabled.")
+
+    def _get_simulated_occupancy(self, hospital_name: str = "") -> str:
+        """Simulates real-time ER occupancy levels dynamically."""
+        levels = ["low", "medium", "high", "full"]
+        # Distribution: 30% Low, 40% Medium, 20% High, 10% Full
+        weights = [0.3, 0.4, 0.2, 0.1]
+        return random.choices(levels, weights=weights)[0]
+
+    def find_nearest_hospitals(self, patient_lat: float, patient_lon: float, count: int = 3, radius_km: int = 50, country: str = "DE") -> list[dict]:
+        """Hybrid search combining static DB and Azure Maps with dynamic occupancy."""
+        # 1. Get candidates using Hybrid Search (Static DB + Azure Fuzzy Search)
         candidates = self._search_hospitals(patient_lat, patient_lon, radius_km, country)
+        
         enriched: list[dict] = []
+        occ_labels = {"low": "🟢 Low", "medium": "🟡 Medium", "high": "🟠 High", "full": "🔴 Full"}
+        occ_penalties = {"low": 0, "medium": 15, "high": 45, "full": 120}
+
         for h in candidates:
-            eta       = self.calculate_eta_to_hospital(patient_lat, patient_lon, h["lat"], h["lon"])
-            occupancy = get_hospital_occupancy(h["name"])
-            penalty   = _OCCUPANCY_PENALTY.get(occupancy, 10)
+            # 2. Get Live Traffic ETA
+            eta_data = self.calculate_eta_to_hospital(patient_lat, patient_lon, h["lat"], h["lon"])
+            
+            # 3. Apply Simulated Occupancy
+            occ_level = self._get_simulated_occupancy(h["name"])
+            penalty = occ_penalties.get(occ_level, 15)
+
             enriched.append({
                 **h,
-                "eta_minutes":           eta["eta_minutes"],
-                "distance_km":           eta["distance_km"],
-                "traffic_delay_minutes": eta.get("traffic_delay_minutes", 0),
-                "route_summary":         eta["route_summary"],
-                "source":                eta["source"],
-                "occupancy":             occupancy,
-                "occupancy_label":       _OCCUPANCY_LABELS.get(occupancy, "🟡 Medium"),
-                "effective_eta":         eta["eta_minutes"] + penalty,
+                "eta_minutes": eta_data["eta_minutes"],
+                "distance_km": eta_data["distance_km"],
+                "occupancy": occ_level,
+                "occupancy_label": occ_labels.get(occ_level, "🟡 Medium"),
+                "effective_eta": eta_data["eta_minutes"] + penalty,
+                "source": h.get("source", "static") + " + " + eta_data.get("source", "math")
             })
+            
+        # 4. Smart Ranking: Travel Time + Wait Time
         enriched.sort(key=lambda x: x["effective_eta"])
-        result = enriched[:count]
+        return enriched[:count]
+        
         logger.info(
-            "Returning %d hospitals (country=%s). Nearest: %s (%s km)",
+            "Returning %d hospitals (country=%s). Nearest: %s (%s km, %s min)",
             len(result), country,
             result[0]["name"] if result else "N/A",
             result[0]["distance_km"] if result else "?",
+            result[0]["eta_minutes"] if result else "?"
         )
         return result
 
-    def calculate_eta_to_hospital(
-        self,
-        patient_lat: float,
-        patient_lon: float,
-        hospital_lat: float,
-        hospital_lon: float,
-    ) -> dict:
+    def calculate_eta_to_hospital(self, patient_lat: float, patient_lon: float, hospital_lat: float, hospital_lon: float) -> dict:
         if self._initialized:
             return self._azure_maps_eta(patient_lat, patient_lon, hospital_lat, hospital_lon)
         return self._fallback_eta(patient_lat, patient_lon, hospital_lat, hospital_lon)
 
-    def _search_hospitals(self, patient_lat: float, patient_lon: float, radius_km: int = 100, country: str = "DE") -> list[dict]:
-        """Search all hospitals for a given country within radius."""
-        pool = [h for h in ALL_HOSPITALS if h.get("country", "DE") == country]
-        if not pool:
-            pool = ALL_HOSPITALS  # fallback to all
-        scored = sorted(
-            [{**h, "distance_km": round(self._haversine_distance(patient_lat, patient_lon, h["lat"], h["lon"]), 1)}
-             for h in pool],
-            key=lambda x: x["distance_km"]
-        )
-        within = [h for h in scored if h["distance_km"] <= radius_km]
-        return (within[:10] if within else scored[:5])
+    def _search_hospitals(self, patient_lat: float, patient_lon: float, radius_km: int = 50, country: str = "DE") -> list[dict]:
+        all_candidates = []
+        
+        # A. TRUSTED STATIC LIST (Always include your core database)
+        # ALL_HOSPITALS listesinin en üstte tanımlı olduğundan emin ol
+        static_pool = [h for h in ALL_HOSPITALS if h.get("country", "DE") == country]
+        for h in static_pool:
+            dist = self._haversine_distance(patient_lat, patient_lon, h["lat"], h["lon"])
+            if dist <= radius_km:
+                all_candidates.append({**h, "distance_km": round(dist, 1), "source": "static_db"})
 
-    def _germany_search(self, patient_lat: float, patient_lon: float, radius_km: int = 100) -> list[dict]:
-        scored = sorted(
-            [{**h, "distance_km": round(self._haversine_distance(patient_lat, patient_lon, h["lat"], h["lon"]), 1)}
-             for h in GERMANY_HOSPITALS],
-            key=lambda x: x["distance_km"]
-        )
-        within = [h for h in scored if h["distance_km"] <= radius_km]
-        return (within[:10] if within else scored[:5])
+        # B. AZURE DYNAMIC SUPPLEMENT
+        if self._initialized:
+            try:
+                url = "https://atlas.microsoft.com/search/fuzzy/json"
+                params = {
+                    "api-version": "1.0", "query": "hospital", "categorySet": "7321",
+                    "lat": patient_lat, "lon": patient_lon, "radius": radius_km * 1000,
+                    "limit": 10, "subscription-key": self.subscription_key
+                }
+                resp = requests.get(url, params=params, timeout=5)
+                if resp.ok:
+                    for r in resp.json().get("results", []):
+                        name = r.get("poi", {}).get("name", "Hospital")
+                        # Deduplicate: Skip if already in static list
+                        if any(h['name'].lower() in name.lower() or name.lower() in h['name'].lower() for h in all_candidates):
+                            continue
+                        
+                        pos = r.get("position", {})
+                        all_candidates.append({
+                            "name": name, "lat": pos.get("lat"), "lon": pos.get("lon"),
+                            "address": r.get("address", {}).get("freeformAddress", ""),
+                            "country": country, "source": "azure_search",
+                            "distance_km": round(r.get("dist", 0) / 1000, 1)
+                        })
+            except Exception as e:
+                logger.warning(f"Azure search supplement failed: {e}")
 
-    def _azure_maps_eta(self, patient_lat, patient_lon, hospital_lat, hospital_lon) -> dict:
+        all_candidates.sort(key=lambda x: x["distance_km"])
+        return all_candidates[:10]
+
+    def _azure_maps_eta(self, patient_lat: float, patient_lon: float, hospital_lat: float, hospital_lon: float) -> dict:
+        cache_key = f"{hospital_lat:.5f},{hospital_lon:.5f}"
+        current_time = time.time()
+        
+        if cache_key in self._eta_cache:
+            cached = self._eta_cache[cache_key]
+            time_diff = current_time - cached["timestamp"]
+            if time_diff < 180:
+                dist_moved = self._haversine_distance(patient_lat, patient_lon, cached["p_lat"], cached["p_lon"])
+                if dist_moved < 0.1:
+                    return cached["data"]
+
         try:
-            resp = requests.get(
-                "https://atlas.microsoft.com/route/directions/json",
-                params={
-                    "subscription-key": self.subscription_key,
-                    "api-version": "1.0",
-                    "query": f"{patient_lat},{patient_lon}:{hospital_lat},{hospital_lon}",
-                    "traffic": "true", "departAt": "now", "travelMode": "car",
-                }, timeout=10)
+            # Fix: Azure Maps does NOT accept "now" for departAt. 
+            # By omitting departAt and setting traffic=true, it automatically uses current live traffic.
+            query_str = f"{patient_lat:.5f},{patient_lon:.5f}:{hospital_lat:.5f},{hospital_lon:.5f}"
+            
+            url = (
+                f"https://atlas.microsoft.com/route/directions/json"
+                f"?api-version=1.0"
+                f"&query={query_str}"
+                f"&traffic=true"
+                f"&computeTravelTimeFor=all"
+                f"&travelMode=car"
+                f"&subscription-key={self.subscription_key}"
+            )
+            
+            resp = requests.get(url, timeout=5)
             resp.raise_for_status()
+            
             routes = resp.json().get("routes", [])
             if not routes:
                 return self._fallback_eta(patient_lat, patient_lon, hospital_lat, hospital_lon)
+                
             s = routes[0]["summary"]
-            eta_min   = max(1, round(s.get("travelTimeInSeconds", 0) / 60))
-            dist_km   = round(s.get("lengthInMeters", 0) / 1000, 1)
+            
+            eta_min = max(1, round(s.get("travelTimeInSeconds", 0) / 60))
+            dist_km = round(s.get("lengthInMeters", 0) / 1000, 1)
+            
+            # Extract live traffic delay
             delay_min = round(s.get("trafficDelayInSeconds", 0) / 60)
-            note = f" (+{delay_min} min traffic)" if delay_min > 0 else ""
-            return {"eta_minutes": eta_min, "distance_km": dist_km,
-                    "traffic_delay_minutes": delay_min,
-                    "route_summary": f"{dist_km} km · ~{eta_min} min{note}",
-                    "source": "azure_maps"}
+            
+            note = f" (+{delay_min} min traffic delay)" if delay_min > 0 else ""
+            result = {
+                "eta_minutes": eta_min, 
+                "distance_km": dist_km,
+                "traffic_delay_minutes": delay_min,
+                "route_summary": f"{dist_km} km · ~{eta_min} min{note}",
+                "source": "azure_traffic"
+            }
+            
+            self._eta_cache[cache_key] = {
+                "p_lat": patient_lat,
+                "p_lon": patient_lon,
+                "timestamp": current_time,
+                "data": result
+            }
+            return result
+            
         except Exception as exc:
-            logger.error("Azure Maps error: %s", exc)
+            logger.error("Azure Maps routing error: %s. Using math fallback.", exc)
             return self._fallback_eta(patient_lat, patient_lon, hospital_lat, hospital_lon)
 
     def _fallback_eta(self, patient_lat, patient_lon, hospital_lat, hospital_lon) -> dict:
+        # Mathematical estimation without live traffic (Fallback)
         dist  = self._haversine_distance(patient_lat, patient_lon, hospital_lat, hospital_lon)
-        eta   = max(1, round((dist * 1.3 / 55) * 60))   # 55 km/h average (urban+highway mix)
-        return {"eta_minutes": eta, "distance_km": round(dist, 1),
-                "traffic_delay_minutes": 0,
-                "route_summary": f"{round(dist,1)} km · ~{eta} min (estimated)",
-                "source": "estimated"}
+        eta   = max(1, round((dist * 1.3 / 55) * 60))   # Assume 55 km/h average speed in urban areas
+        return {
+            "eta_minutes": eta, 
+            "distance_km": round(dist, 1),
+            "traffic_delay_minutes": 0,
+            "route_summary": f"{round(dist,1)} km · ~{eta} min (estimated without traffic)",
+            "source": "estimated_math"
+        }
 
     @staticmethod
-    def _haversine_distance(lat1, lon1, lat2, lon2) -> float:
+    def _haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         R = 6371
         dlat = math.radians(lat2 - lat1)
         dlon = math.radians(lon2 - lon1)
