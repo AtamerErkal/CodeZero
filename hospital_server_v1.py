@@ -79,6 +79,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.staticfiles import StaticFiles
+docs_dir = ROOT / "docs"
+if docs_dir.exists():
+    app.mount("/docs", StaticFiles(directory=str(docs_dir)), name="docs")
+
 NAT_FLAG = {"DE": "ðŸ‡©ðŸ‡ª", "TR": "ðŸ‡¹ðŸ‡·", "UK": "ðŸ‡¬ðŸ‡§", "GB": "ðŸ‡¬ðŸ‡§"}
 
 
@@ -1188,7 +1193,8 @@ def serve_dashboard():
 def serve_patient_app():
     # Try versioned and unversioned filenames in ui/ and root
     candidates = [
-        ROOT / "ui" / "patient_app_v5.html",
+        ROOT / "ui" / "patient_app_v9.html",
+        ROOT / "ui" / "patient_app_v7.html",
         ROOT / "ui" / "patient_app.html",
     ]
     for path in candidates:
@@ -1197,8 +1203,8 @@ def serve_patient_app():
     return HTMLResponse("<h1>Patient app HTML not found</h1>", status_code=404)
 
 
-@app.get("/patient_app_v5.html", response_class=HTMLResponse)
-def serve_patient_app_v1():
+@app.get("/patient_app_v9.html", response_class=HTMLResponse)
+def serve_patient_app_v9():
     """Direct filename access — ngrok/browser convenience."""
     return serve_patient_app()
 

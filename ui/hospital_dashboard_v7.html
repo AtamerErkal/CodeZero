@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
   <meta charset="UTF-8">
@@ -766,7 +766,7 @@
     .pt-ava {
       width: 100px;
       height: 100px;
-      border-radius: 50%;
+      border-radius: 12px;
       background: var(--surface3);
       border: 3px solid var(--border);
       display: flex;
@@ -775,14 +775,14 @@
       font-size: 3rem;
       overflow: hidden;
       flex-shrink: 0;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+      box-shadow: 0 4px 14px rgba(150, 64, 64, 0.18);
     }
 
     .pt-ava img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 50%
+      border-radius: 0
     }
 
     /* Info */
@@ -2230,44 +2230,50 @@
 <body>
 
   <!-- ══ TOPBAR ══════════════════════════════════════════════ -->
-  <div id="topbar">
-    <div class="tb-brand">
-      <div class="tb-brand-icon">🚑</div>
-      <div>
-        <div class="tb-brand-name">Code<em>Zero</em></div>
-        <div class="tb-brand-sub">Emergency Response</div>
+  <div id="topbar" style="grid-template-columns: var(--sidebar-w) 1fr auto;">
+    <div class="tb-left-spacer"></div>
+
+    <div class="tb-center"
+      style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+      <div class="tb-title"
+        style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; letter-spacing: 0.02em;">
+        <span style="color: #FF3B30;">Vital</span><span style="color: #5AC8FA;">Nav</span>
+        <em style="font-style: normal; color: var(--text4); font-weight: 500; margin-left: 8px; font-size: 0.9rem;">—
+          EMERGENCY COMMAND CENTER</em>
+      </div>
+      <div class="tb-subtitle"
+        style="font-size: 0.6rem; color: rgba(255,255,255,0.35); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px;">
+        Real-time AI Patient Triage & Navigation System
       </div>
     </div>
-    <div class="tb-center">
-      <div class="tb-title">Emergency Room <em>Command Center</em></div>
-      <div class="tb-subtitle">Real-time patient management system</div>
-    </div>
-    <!-- v7: Search + Language + Privacy + Utilities -->
-    <div class="tb-right">
+
+    <div class="tb-right" style="justify-content: flex-end; gap: 12px; padding-right: 20px;">
       <div class="tb-search-wrap">
         <span class="tb-search-ico">🔍</span>
-        <input type="text" id="globalSearch" placeholder="Search ID or symptom…" oninput="filterPatients(this.value)"
-          aria-label="Search patients">
+        <input type="text" id="globalSearch" placeholder="Search ID or symptom…" oninput="filterPatients(this.value)">
       </div>
       <div class="lang-grp">
-        <button class="lang-sw-btn active" id="lbEN" onclick="setLang('en')" title="English">EN</button>
-        <button class="lang-sw-btn" id="lbTR" onclick="setLang('tr')" title="Türkçe">TR</button>
-        <button class="lang-sw-btn" id="lbDE" onclick="setLang('de')" title="Deutsch">DE</button>
+        <button class="lang-sw-btn active" id="lbEN" onclick="setLang('en')">EN</button>
+        <button class="lang-sw-btn" id="lbTR" onclick="setLang('tr')">TR</button>
+        <button class="lang-sw-btn" id="lbDE" onclick="setLang('de')">DE</button>
       </div>
-      <button class="privacy-btn" id="privacyBtn" onclick="togglePrivacy()" title="Toggle PII blur">🔒 Privacy</button>
+      <button class="privacy-btn" id="privacyBtn" onclick="togglePrivacy()">🔒 Privacy</button>
       <div class="live-badge">
         <div class="live-dot"></div>Live
       </div>
-      <button class="tb-refresh" onclick="doRefresh()">
-        <span class="r-icon">↻</span> Refresh
-      </button>
-      <button class="tb-refresh" onclick="toggleTheme()" style="padding:6px 10px;">🌙 Theme</button>
-      <div class="tb-clock" id="topbar-clock"></div>
+      <button class="tb-refresh" onclick="doRefresh()">↻ Refresh</button>
+      <button class="tb-refresh" onclick="toggleTheme()">🌙</button>
+      <div class="tb-clock" id="topbar-clock" style="margin-left: 10px; opacity: 0.6;"></div>
     </div>
   </div>
 
   <!-- ══ KPI BAR ═════════════════════════════════════════════ -->
   <div id="kpi-bar">
+    <div
+      style="position: absolute; left: 0; top: 0; width: var(--sidebar-w); height: 100%; display: flex; align-items: center; justify-content: center; z-index: 10; pointer-events: none;">
+      <img src="docs/images/logo_v3.png" alt="VitalNav"
+        style="height: 110px; width: 150px; object-fit: contain; filter: drop-shadow(0 0 20px rgba(255,59,48,0.3));">
+    </div>
     <div class="kpi-cell">
       <div class="kpi-icon">🏥</div>
       <div class="kpi-text">
@@ -2371,7 +2377,7 @@
           <div class="ph-actions">
             <button class="sort-btn active" onclick="setSort('triage',this)">By Triage</button>
             <button class="sort-btn" onclick="setSort('eta',this)">By ETA</button>
-            <button class="sort-btn" onclick="setSort('time',this)">By Time</button>
+            <button class="sort-btn" onclick="setSort('risk',this)">By Risk</button>
             <button class="sort-btn" onclick="setSort('newest',this)">Newest</button>
           </div>
         </div>
@@ -2879,20 +2885,15 @@
                   </div>`,
       };
 
-      // Q&A — question_en = İngilizce soru (server'dan), question = orijinal dil
-      // answer = zaten İngilizce (server çeviriyor), original_answer = hasta dili
+
       const qaHTML = qa.length
         ? `<table class="qa-table">${qa.map(q => {
           const qEn = (q.question_en || '').trim();
           const qOrig = (q.question || '').trim();
-          // Gösterilecek soru: question_en varsa onu, yoksa question (Türkçe olabilir)
           const qDisplay = qEn || qOrig;
-          // Cevap her zaman İngilizce (server çeviriyor)
           const enAns = (q.answer || '').trim() || '—';
-          // Orijinal dil cevabı (hastanın yazdığı)
           const origAns = (q.original_answer || '').trim();
           const showOrigAns = origAns && origAns !== enAns;
-          // question_en yoksa, sorunun orijinal dilde olduğunu belirt
           const qLabel = qEn
             ? `<span class="qa-q-text">${h(qDisplay)}</span>`
             : `<span class="qa-q-text qa-q-native" title="Original language — English translation unavailable">${h(qDisplay)}</span>`;
@@ -2914,96 +2915,120 @@
       // Prep checklist
       const prep = buildPrep(p);
 
+
+      let allergyText = "None Identified";
+      if (p.allergies) {
+        if (Array.isArray(p.allergies)) {
+          allergyText = p.allergies.map(a => typeof a === 'object' ? (a.name || a.allergen || "Unknown") : a).join(', ');
+        } else if (typeof p.allergies === 'object') {
+          allergyText = p.allergies.name || p.allergies.allergen || "Record Found";
+        } else {
+          allergyText = p.allergies;
+        }
+      }
+
+      const bmi = (p.weight_kg && p.height_cm) ? (p.weight_kg / ((p.height_cm / 100) ** 2)).toFixed(1) : '—';
+      const photoImg = p.profile_photo_url
+        ? `<img src="${p.profile_photo_url}" style="width:100%; height:100%; object-fit:cover; display:block;">`
+        : `<div style="font-size:3rem; display:flex; align-items:center; justify-content:center; height:100%; background:var(--surface3);">${avIco}</div>`;
       return `
-<div class="pt-card tc-${tc}" id="card-${pid}">
-
-  <!-- Summary row -->
-  <div class="pt-head" data-toggle="${pid}">
-    <div class="pt-ava">
-      ${p.profile_photo_url
-          ? `<img src="${p.profile_photo_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"
-               onerror="this.parentElement.textContent='${avIco}'">`
-          : hn
-            ? `<img src="/api/patient_photo/${encodeURIComponent(hn)}" alt=""
-               style="width:100%;height:100%;object-fit:cover;border-radius:50%"
-               onerror="this.parentElement.textContent='${avIco}'">`
-            : avIco}
-    </div>
-    <div class="pt-info">
-      <div class="pt-name-row">
-        <span class="pt-name">${h(name)}</span>
-        <span class="pt-pid">${h(pid)}</span>
-        ${TRIAGE_BADGE[lvl] || ''}
-        ${riskChip}
-      </div>
-      <div class="pt-chips">
-        ${flag ? `<span class="chip">${flag} ${h(nat)}</span>` : ''}
-        <span class="chip">🎂 ${h(age)}</span>
-        <span class="chip">⚧ ${h(sex)}</span>
-        <span class="chip blood">🩸 ${h(blood)}</span>
-        ${hn ? `<span class="chip">🪪 ${h(hn)}</span>` : ''}
-        ${weight ? `<span class="chip">⚖️ ${h(weight)}${height ? ' · ' + h(height) : ''}</span>` : ''}
-        ${lang ? `<span class="chip lang">🌐 ${h(lang)}</span>` : ''}
-        ${p.photo_count > 0 || p.illness_media_urls?.length > 0 ? `<span class="chip photo">📷 ${p.illness_media_urls?.length || p.photo_count}</span>` : ''}
-      </div>
-    </div>
-    <div class="pt-eta">
-      <div class="eta-num ${etaCls}">${etaTxt}</div>
-      ${eta ? `<div class="eta-unit">min to arrival</div>` : ''}
-    </div>
-    <div class="pt-status">
-      ${stPill}
-      <div style="margin-top:6px;font-size:.65rem;color:var(--text3)">${h(ts)}</div>
-    </div>
-  </div>
-
-  <!-- Progress bar -->
-  <div class="pt-prog"><div class="pt-prog-fill" style="width:${etaPct}%;background:${col}"></div></div>
-
-  <!-- Complaint -->
-  <div class="pt-cc-row">
-    <div class="pt-cc-lbl">Chief Complaint</div>
-    <div>
-      <div class="pt-cc-text">${h(comp)}</div>
-      ${compO && compO !== comp ? `<div class="pt-cc-orig">"${h(compO)}"</div>` : ''}
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <div class="pt-foot">
-    <div class="pt-foot-meta">
-      ${dest ? `<span>🏥 ${h(dest)}</span>` : ''}
-      ${flagsHTML ? `<span style="color:var(--urg-text)">⚠ ${flags.length} flag${flags.length > 1 ? 's' : ''}</span>` : ''}
-    </div>
-    <button class="pt-expand" id="exp-lbl-${pid}">▼ Full record</button>
-  </div>
-
-  <!-- EXPANDED DETAIL -->
-  <div class="pt-det" id="det-${pid}">
-    <div class="det-tabs">
-      <button class="dtab active" data-dtab="visit" data-pid="${pid}">📋 This Visit</button>
-      <button class="dtab" data-dtab="ai" data-pid="${pid}">🤖 AI Assessment</button>
-      <button class="dtab" data-dtab="history" data-pid="${pid}">🗂 Medical History</button>
-      <button class="dtab" data-dtab="prep" data-pid="${pid}">⚡ Pre-Arrival Prep</button>
-    </div>
-
-    <!-- THIS VISIT -->
-    <div class="dpane active" id="dp-${pid}-visit" data-ppid="${pid}">
-      <div class="ds">
-        <div class="ds-head">Patient Details</div>
-        <div class="info-grid">
-          <div class="info-field"><div class="info-label">Full Name</div><div class="info-value">${h(name)}</div></div>
-          <div class="info-field"><div class="info-label">Age / Sex</div><div class="info-value">${h(age)} / ${h(sex)}</div></div>
-          <div class="info-field"><div class="info-label">Blood Type</div><div class="info-value emg">${h(blood)}</div></div>
-          ${hn ? `<div class="info-field"><div class="info-label">Health Number</div><div class="info-value blue mono">${h(hn)}</div></div>` : ''}
-          ${weight ? `<div class="info-field"><div class="info-label">Weight / Height</div><div class="info-value">${h(weight)}${height ? ' · ' + h(height) : ''}</div></div>` : ''}
-          <div class="info-field"><div class="info-label">Language</div><div class="info-value">${h(lang) || '—'}</div></div>
-          <div class="info-field"><div class="info-label">Data Consent</div><div class="info-value ${p.data_consent ? 'rtn' : 'emg'}">${p.data_consent ? '✅ Given' : '❌ Not given'}</div></div>
-          ${dest ? `<div class="info-field"><div class="info-label">Destination</div><div class="info-value">${h(dest)}</div></div>` : ''}
+  <div class="pt-card tc-${tc}" id="card-${pid}">
+    <div class="pt-head" data-toggle="${pid}" style="display: grid; grid-template-columns: 140px 240px 1fr 140px; gap: 24px; padding: 22px; align-items: flex-start;">
+      
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <div class="pt-ava" style="width: 130px; height: 130px; border-radius: 12px; border: 3px solid var(--border); overflow: hidden; box-shadow: var(--shadow-md);">
+          ${photoImg}
         </div>
+        <div style="font-size: 1.2rem; font-weight: 850; color: var(--text); text-align: center; line-height: 1.1;">${h(name)}</div>
       </div>
 
-      ${comp ? `<div class="ds">
+      <div style="display: flex; flex-direction: column; gap: 10px; border-right: 1px solid var(--border); padding-right: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div style="font-size: 0.8rem; color: var(--text-3); font-weight: 700;">AGE</div>
+              <div style="font-size: 1rem; color: var(--text); font-weight: 800; text-align: right;">${h(age)}</div>
+              
+              <div style="font-size: 0.8rem; color: var(--text-3); font-weight: 700;">BMI</div>
+              <div style="font-size: 1rem; color: var(--text); font-weight: 800; text-align: right;">${bmi}</div>
+              
+              <div style="font-size: 0.8rem; color: var(--text-3); font-weight: 700;">BLOOD</div>
+              <div style="font-size: 1rem; color: #D32F2F; font-weight: 900; text-align: right;">${h(blood)}</div>
+          </div>
+          
+          <div style="margin-top: 6px; padding: 10px; background: #FFF9E6; border-radius: 10px; border: 1.5px solid #FFE082;">
+              <div style="font-size: 0.7rem; font-weight: 900; color: #795548; text-transform: uppercase; margin-bottom: 4px;">⚠️ Allergies</div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: #5D4037; line-height: 1.2;">${h(allergyText)}</div>
+          </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+              ${TRIAGE_BADGE[lvl] || ''}
+              <span style="font-family: var(--font-mono); font-weight: 800; color: ${col}; background: ${col}10; padding: 5px 12px; border-radius: 6px; border: 1.5px solid ${col}40; font-size: 0.85rem;">
+                  AI RISK ASSESSMENT: ${risk}/10
+              </span>
+          </div>
+
+          ${flags.length > 0 ? `
+              <div style="background: linear-gradient(90deg, #B91C1C 0%, #E11D48 100%); color: white; padding: 10px 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(185, 28, 28, 0.25);">
+                  <div style="font-weight: 900; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 4px;">🚨 CRITICAL RED FLAGS (${flags.length})</div>
+                  <div style="font-size: 0.95rem; font-weight: 600; opacity: 0.95;">
+                      ${flags.join(' • ').replace(/_/g, ' ')}
+                  </div>
+              </div>
+          ` : ''}
+
+          <div style="font-size: 1.7rem; font-weight: 900; color: var(--text); line-height: 1.1;">
+              ${h(comp)}
+          </div>
+      </div>
+
+      <div style="text-align: right; display: flex; flex-direction: column; justify-content: center; height: 130px;">
+          <div style="display: flex; flex-direction: column; align-items: flex-end;">
+              <div class="eta-num ${etaCls}" style="font-size: 3.5rem; line-height: 0.9; font-weight: 900;">${p.eta_minutes || '—'}</div>
+              <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-2); margin-top: -5px;">min</div>
+          </div>
+          <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-4); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;">Arrival Time</div>
+          <div style="margin-top: 15px;">${stPill}</div>
+      </div>
+
+    </div>
+
+    <div class="pt-foot" style="padding: 10px 22px; background: rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-weight: 800; font-size: 0.8rem; color: var(--text-2);">
+          <i data-lucide="navigation" style="width:14px; height:14px; vertical-align:middle; margin-right:6px;"></i> 
+          DESTINATION: ${dest ? h(dest) : 'HOSPITAL ASSIGNMENT PENDING'}
+      </div>
+      <button class="pt-expand" id="exp-lbl-${pid}" style="font-weight: 900; letter-spacing: 0.5px; border: 2px solid var(--border); padding: 5px 15px; border-radius: 10px; background: white; cursor: pointer;">
+          OPEN CLINICAL DOSSIER ▼
+      </button>
+    </div>
+
+    <!-- EXPANDED DETAIL -->
+    <div class="pt-det" id="det-${pid}">
+      <div class="det-tabs">
+        <button class="dtab active" data-dtab="visit" data-pid="${pid}">📋 This Visit</button>
+        <button class="dtab" data-dtab="ai" data-pid="${pid}">🤖 AI Assessment</button>
+        <button class="dtab" data-dtab="history" data-pid="${pid}">🗂 Medical History</button>
+        <button class="dtab" data-dtab="prep" data-pid="${pid}">⚡ Pre-Arrival Prep</button>
+      </div>
+
+      <!-- THIS VISIT -->
+      <div class="dpane active" id="dp-${pid}-visit" data-ppid="${pid}">
+        <div class="ds">
+          <div class="ds-head">Patient Details</div>
+          <div class="info-grid">
+            <div class="info-field"><div class="info-label">Full Name</div><div class="info-value">${h(name)}</div></div>
+            <div class="info-field"><div class="info-label">Age / Sex</div><div class="info-value">${h(age)} / ${h(sex)}</div></div>
+            <div class="info-field"><div class="info-label">Blood Type</div><div class="info-value emg">${h(blood)}</div></div>
+            ${hn ? `<div class="info-field"><div class="info-label">Health Number</div><div class="info-value blue mono">${h(hn)}</div></div>` : ''}
+            ${weight ? `<div class="info-field"><div class="info-label">Weight / Height</div><div class="info-value">${h(weight)}${height ? ' · ' + h(height) : ''}</div></div>` : ''}
+            <div class="info-field"><div class="info-label">Language</div><div class="info-value">${h(lang) || '—'}</div></div>
+            <div class="info-field"><div class="info-label">Data Consent</div><div class="info-value ${p.data_consent ? 'rtn' : 'emg'}">${p.data_consent ? '✅ Given' : '❌ Not given'}</div></div>
+            ${dest ? `<div class="info-field"><div class="info-label">Destination</div><div class="info-value">${h(dest)}</div></div>` : ''}
+          </div>
+        </div>
+
+        ${comp ? `<div class="ds">
         <div class="ds-head">Voice Transcript</div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 13px;font-size:.82rem;color:var(--text2)">
           <div style="font-style:normal;font-weight:600;margin-bottom:${compO && compO !== comp ? '6px' : '0'}">"${h(comp)}"</div>
@@ -3011,7 +3036,7 @@
         </div>
       </div>`: ''}
 
-      ${(p.illness_media_urls && p.illness_media_urls.length > 0) || p.photo_count > 0 ? `<div class="ds">
+        ${(p.illness_media_urls && p.illness_media_urls.length > 0) || p.photo_count > 0 ? `<div class="ds">
         <div class="ds-head">Patient Media (${p.illness_media_urls && p.illness_media_urls.length > 0 ? p.illness_media_urls.length : p.photo_count})</div>
         <div class="media-row">
           ${Array.from({ length: p.illness_media_urls && p.illness_media_urls.length > 0 ? p.illness_media_urls.length : p.photo_count }, (_, i) => `
@@ -3022,52 +3047,52 @@
         </div>
       </div>`: ''}
 
-      <div class="ds">
-        <div class="ds-head">Follow-up Q&A</div>
-        ${qaHTML}
+        <div class="ds">
+          <div class="ds-head">Follow-up Q&A</div>
+          ${qaHTML}
+        </div>
+
+        <div class="ds">
+          <div class="ds-head">Update Status</div>
+          <div class="action-row">${aMap[status] || ''}</div>
+        </div>
       </div>
 
-      <div class="ds">
-        <div class="ds-head">Update Status</div>
-        <div class="action-row">${aMap[status] || ''}</div>
-      </div>
-    </div>
-
-    <!-- AI ASSESSMENT -->
-    <div class="dpane" id="dp-${pid}-ai" data-ppid="${pid}">
-      <div class="ds">
-        <div class="ai-block">
-          <div class="ai-block-hdr">🤖 AI Clinical Assessment</div>
-          <div class="ai-block-text">${h(asmt || 'No assessment available.')}</div>
-          <div class="ai-meta-grid">
-            <div class="ai-meta-item">
-              <div class="ai-meta-label">Suspected Conditions</div>
-              <div class="ai-meta-val blue">${h(conds || '—')}</div>
-            </div>
-            <div class="ai-meta-item">
-              <div class="ai-meta-label">Recommended Action</div>
-              <div class="ai-meta-val">${h(p.recommended_action || '—')}</div>
-            </div>
-            <div class="ai-meta-item">
-              <div class="ai-meta-label">Time Sensitivity</div>
-              <div class="ai-meta-val" style="color:${col}">${h(p.time_sensitivity || '—')}</div>
-            </div>
-            <div class="ai-meta-item">
-              <div class="ai-meta-label">Risk Score</div>
-              <div class="ai-meta-val" style="color:${col}">${risk != null ? risk + '/10' : '—'}</div>
+      <!-- AI ASSESSMENT -->
+      <div class="dpane" id="dp-${pid}-ai" data-ppid="${pid}">
+        <div class="ds">
+          <div class="ai-block">
+            <div class="ai-block-hdr">🤖 AI Clinical Assessment</div>
+            <div class="ai-block-text">${h(asmt || 'No assessment available.')}</div>
+            <div class="ai-meta-grid">
+              <div class="ai-meta-item">
+                <div class="ai-meta-label">Suspected Conditions</div>
+                <div class="ai-meta-val blue">${h(conds || '—')}</div>
+              </div>
+              <div class="ai-meta-item">
+                <div class="ai-meta-label">Recommended Action</div>
+                <div class="ai-meta-val">${h(p.recommended_action || '—')}</div>
+              </div>
+              <div class="ai-meta-item">
+                <div class="ai-meta-label">Time Sensitivity</div>
+                <div class="ai-meta-val" style="color:${col}">${h(p.time_sensitivity || '—')}</div>
+              </div>
+              <div class="ai-meta-item">
+                <div class="ai-meta-label">Risk Score</div>
+                <div class="ai-meta-val" style="color:${col}">${risk != null ? risk + '/10' : '—'}</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      ${flagsHTML ? `<div class="ds">
+        ${flagsHTML ? `<div class="ds">
         <div class="ds-head">Clinical Red Flags</div>
         <div class="flag-row">${flagsHTML}</div>
       </div>`: ''}
-    </div>
+      </div>
 
-    <!-- MEDICAL HISTORY — rendered directly from enriched patient data -->
-    <div class="dpane" id="dp-${pid}-history" data-ppid="${pid}" data-hn="${hn}" data-auto-hr="1">
-      ${hn
+      <!-- MEDICAL HISTORY — rendered directly from enriched patient data -->
+      <div class="dpane" id="dp-${pid}-history" data-ppid="${pid}" data-hn="${hn}" data-auto-hr="1">
+        ${hn
           ? `<div id="hr-inline-${pid}">
              <div style="color:var(--text3);padding:.5rem 0;font-size:.8rem">⏳ Loading medical history for ${h(hn)}…</div>
            </div>`
@@ -3089,21 +3114,21 @@
               ${nat ? `<div class="info-field"><div class="info-label">Nationality</div><div class="info-value">${flag} ${h(nat)}</div></div>` : ''}
             </div></div>`: ''}
           </div>`}
-    </div>
+      </div>
 
-    <!-- PRE-ARRIVAL PREP -->
-    <div class="dpane" id="dp-${pid}-prep" data-ppid="${pid}">
-      <div class="ds">
-        <div class="ds-head">Pre-Arrival Preparation Checklist</div>
-        ${prep.map(item => `
+      <!-- PRE-ARRIVAL PREP -->
+      <div class="dpane" id="dp-${pid}-prep" data-ppid="${pid}">
+        <div class="ds">
+          <div class="ds-head">Pre-Arrival Preparation Checklist</div>
+          ${prep.map(item => `
         <label class="prep-item">
           <input type="checkbox">
           <span>${h(item)}</span>
         </label>`).join('')}
+        </div>
       </div>
     </div>
-  </div>
-</div>`;
+</div > `;
     }
 
     function buildPrep(p) {
@@ -3133,7 +3158,7 @@
         if (status === 'discharged') {
           toast(`${icon} Patient discharged — Treated Today updated`, 'ok');
         } else {
-          toast(`${icon} Status → ${label}`, 'ok');
+          toast(`${icon} Status → ${label} `, 'ok');
         }
         // Update cached patient status so UI reflects immediately
         if (_patientCache[pid]) _patientCache[pid].status = status;
@@ -3164,7 +3189,7 @@
 
       const dob = dm.date_of_birth || '';
       const age = dob ? (new Date().getFullYear() - parseInt(dob.split('-')[0])) + 'y' : '—';
-      const vRow = (label, val, unit = '') => val != null ? `<div class="info-field"><div class="info-label">${label}</div><div class="info-value">${val}${unit ? ' <span style="color:var(--text3);font-size:.7rem">' + unit + '</span>' : ''}</div></div>` : '';
+      const vRow = (label, val, unit = '') => val != null ? `< div class="info-field" ><div class="info-label">${label}</div><div class="info-value">${val}${unit ? ' <span style="color:var(--text3);font-size:.7rem">' + unit + '</span>' : ''}</div></div > ` : '';
       const bpVal = vitals && vitals.bp_systolic ? `${vitals.bp_systolic}/${vitals.bp_diastolic}` : null;
 
       const labStatusColor = s => s === 'high' || s === 'low' || s === 'critical' ? 'color:var(--emg);font-weight:700' : s === 'borderline' ? 'color:var(--urg)' : 'color:var(--rtn-text)';

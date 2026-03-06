@@ -31,6 +31,7 @@
             }, 1500);
         }
     </script>
+    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
     <style>
         *,
         *::before,
@@ -41,73 +42,68 @@
         }
 
         :root {
-            --primary: #2563EB;
-            --primary-d: #1D4ED8;
-            --primary-l: #EFF6FF;
-            --primary-m: #BFDBFE;
-            --primary-text: #1E40AF;
-            --success: #059669;
-            --success-l: #ECFDF5;
-            --success-m: #A7F3D0;
-            --success-text: #065F46;
+            /* HEALTHCARE TRUST PALETTE - CLINICAL TEAL */
+            --primary: #0D9488;
+            /* Main Medical Teal */
+            --primary-d: #0F766E;
+            /* Darker Teal for interactions */
+            --primary-l: #F0FDFA;
+            /* Very soft mint background */
+            --primary-m: #CCFBF1;
+            /* Soft mint border */
+            --primary-text: #115E59;
+            /* Deep teal text for high accessibility */
+
+            --success: #16A34A;
+            /* Distinct Green for actual success */
+            --success-l: #DCFCE7;
+            --success-m: #86EFAC;
+            --success-text: #14532D;
+
             --danger: #DC2626;
+            /* Emergency Red */
             --danger-l: #FEF2F2;
             --danger-m: #FECACA;
             --danger-text: #991B1B;
+
             --warning: #D97706;
+            /* Urgent Orange */
             --warning-l: #FFFBEB;
             --warning-m: #FDE68A;
             --warning-text: #92400E;
+
             --bg: #F8FAFC;
+            /* Calming off-white/gray */
             --card: #FFFFFF;
             --card-alt: #F1F5F9;
+
             --border: #E2E8F0;
             --border-h: #CBD5E1;
+
             --text: #0F172A;
+            /* Near black for readability */
             --text-2: #475569;
             --text-3: #94A3B8;
-            --blue: var(--primary);
-            --blue-d: var(--primary-d);
-            --blue-l: var(--primary-l);
-            --blue-m: var(--primary-m);
-            --navy: var(--text);
-            --navy-m: #1E293B;
-            --navy-l: #334155;
-            --red: var(--danger);
-            --red-l: var(--danger-l);
-            --red-m: var(--danger-m);
-            --orange: var(--warning);
-            --orange-l: var(--warning-l);
-            --green: var(--success);
-            --green-l: var(--success-l);
-            --green-m: var(--success-m);
-            --teal: #0EA5E9;
-            --teal-l: #F0F9FF;
-            --white: #FFFFFF;
-            --s50: var(--bg);
-            --s100: var(--card-alt);
-            --s200: var(--border);
-            --s300: var(--border-h);
-            --s400: var(--text-3);
-            --s500: var(--text-2);
-            --s600: #475569;
-            --s700: #334155;
-            --s800: #1E293B;
-            --s900: var(--text);
+
+            /* Typography */
             --font: 'Inter', system-ui, -apple-system, sans-serif;
             --mono: 'JetBrains Mono', monospace;
+
+            /* Border Radii */
             --r-xs: 6px;
             --r-sm: 8px;
             --r: 14px;
-            --r-lg: 18px;
-            --r-xl: 24px;
-            --sh-sm: 0 1px 4px rgba(15, 23, 42, .06), 0 1px 2px rgba(15, 23, 42, .04);
-            --sh: 0 4px 16px rgba(15, 23, 42, .08), 0 2px 6px rgba(15, 23, 42, .04);
-            --sh-lg: 0 16px 48px rgba(15, 23, 42, .12), 0 4px 16px rgba(15, 23, 42, .06);
-            --sh-glow: 0 0 0 3px rgba(37, 99, 235, .12);
-            --sh-primary: 0 4px 20px rgba(37, 99, 235, .30);
-            --sh-danger: 0 4px 20px rgba(220, 38, 38, .35);
-            --tr: all .2s cubic-bezier(.4, 0, .2, 1);
+            --r-lg: 20px;
+            --r-xl: 28px;
+
+            /* Soft, diffuse shadows for a premium feel */
+            --sh-sm: 0 2px 8px rgba(13, 148, 136, 0.04), 0 1px 2px rgba(15, 23, 42, 0.04);
+            --sh: 0 8px 24px rgba(13, 148, 136, 0.06), 0 2px 6px rgba(15, 23, 42, 0.04);
+            --sh-lg: 0 16px 48px rgba(13, 148, 136, 0.08), 0 4px 16px rgba(15, 23, 42, 0.06);
+            --sh-primary: 0 8px 24px rgba(13, 148, 136, 0.25);
+            --sh-danger: 0 8px 24px rgba(220, 38, 38, 0.25);
+
+            --tr: all .25s cubic-bezier(.4, 0, .2, 1);
         }
 
         @media(prefers-color-scheme:dark) {
@@ -170,116 +166,123 @@
             overflow-x: hidden
         }
 
+        /* ══ PREMIUM TOPBAR (Elegant V6) ══ */
         .topbar {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 20px;
-            background: rgba(248, 250, 252, .94);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--border);
+            justify-content: space-between;
+            padding: 0 20px;
+            height: 72px;
+            /* Daha ferah bir yükseklik */
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            /* Modern cam etkisi */
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(13, 148, 136, 0.1);
             position: sticky;
             top: 0;
-            z-index: 100;
-            transition: background .3s, border-color .3s
+            z-index: 1000;
+            transition: all 0.3s ease;
         }
 
         [data-theme="dark"] .topbar {
-            background: rgba(15, 23, 42, .94)
+            background: rgba(11, 17, 32, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .spin {
-            animation: rotate 2s linear infinite;
-        }
-
-        @keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
+        /* Logo Alanı Tasarımı */
         .topbar-logo {
             display: flex;
             align-items: center;
-            gap: 9px;
-            cursor: default
-        }
-
-        .topbar-logo-img {
-            width: 45px;
-            height: 45px;
-            border-radius: 8px;
-            object-fit: contain;
-            flex-shrink: 0
-        }
-
-        .topbar-logo-text {
-            font-size: .95rem;
-            font-weight: 800;
-            letter-spacing: -.04em;
-            line-height: 1;
-            color: var(--text)
-        }
-
-        .topbar-logo-text span {
-            color: var(--primary)
-        }
-
-        .topbar-right {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 8px
-        }
-
-        .topbar-badge {
-            background: var(--danger-l);
-            border: 1px solid var(--danger-m);
-            color: var(--danger-text);
-            border-radius: 99px;
-            padding: 4px 10px;
-            font-size: .68rem;
-            font-weight: 700;
-            letter-spacing: .05em;
-            display: flex;
-            align-items: center;
-            gap: 5px
-        }
-
-        .topbar-lang {
-            background: var(--primary-l);
-            border: 1px solid var(--primary-m);
-            color: var(--primary-text);
-            border-radius: 99px;
-            padding: 4px 10px;
-            font-size: .68rem;
-            font-weight: 700;
-            letter-spacing: .04em;
-            display: none
-        }
-
-        .topbar-theme {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: var(--card-alt);
-            color: var(--text-2);
+            gap: 12px;
             cursor: pointer;
+        }
+
+        .logo-wrapper {
+            width: 42px;
+            height: 42px;
+            background: #FFFFFF;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: var(--tr)
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+            padding: 4px;
+            border: 1px solid rgba(13, 148, 136, 0.05);
         }
 
-        .topbar-theme:hover {
-            background: var(--primary-l);
-            color: var(--primary);
-            border-color: var(--primary-m)
+        .topbar-logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Marka Yazı Tipi ve Renkleri */
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+        }
+
+        .brand-name {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 850;
+            letter-spacing: -0.03em;
+        }
+
+        .brand-name span:nth-child(1) {
+            color: #b62727;
+        }
+
+        /* Vital */
+        .brand-name span:nth-child(2) {
+            color: var(--medical-primary);
+        }
+
+        /* Nav */
+        .brand-name span:nth-child(3) {
+            color: #10B981;
+        }
+
+        /* AI */
+
+        .brand-tagline {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 4px;
+        }
+
+        /* Sağ Taraf Butonları */
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .theme-toggle-v6 {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--ios-card);
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--sh-sm);
+        }
+
+        .theme-toggle-v6:hover {
+            transform: translateY(-2px);
+            border-color: var(--medical-primary);
+            color: var(--medical-primary);
+            box-shadow: var(--sh);
         }
 
         .progress-bar {
@@ -1535,22 +1538,22 @@
         .triage-banner {
             border-radius: var(--r-lg);
             padding: 20px 22px;
-            margin-bottom: 18px
+            margin-bottom: 18px;
         }
 
         .triage-banner.emg {
-            background: linear-gradient(135deg, var(--danger-l), #FEE2E2);
-            border: 2px solid var(--danger-m)
+            background: var(--danger-l) !important;
+            border: 2px solid var(--danger-m) !important;
         }
 
         .triage-banner.urg {
-            background: linear-gradient(135deg, var(--warning-l), #FEF3C7);
-            border: 2px solid var(--warning-m)
+            background: var(--warning-l) !important;
+            border: 2px solid var(--warning-m) !important;
         }
 
         .triage-banner.rtn {
-            background: linear-gradient(135deg, var(--success-l), #D1FAE5);
-            border: 2px solid var(--success-m)
+            background: var(--success-l) !important;
+            border: 2px solid var(--success-m) !important;
         }
 
         .triage-title {
@@ -1579,6 +1582,53 @@
 
         .triage-banner.rtn .triage-title {
             color: var(--success-text)
+        }
+
+        /* --- HOSPITAL CARD & BADGE OVERFLOW FIX --- */
+        .hosp-card {
+            border: 1px solid rgba(13, 148, 136, 0.05) !important;
+            background: var(--ios-card) !important;
+            box-shadow: var(--soft-shadow) !important;
+            border-radius: 24px !important;
+            padding: 24px !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s !important;
+            position: relative;
+            /* CRITICAL FIX: Allows the top badge to overflow visually */
+            overflow: visible !important;
+            margin-top: 15px;
+            /* Added margin so the badge doesn't hit elements above it */
+        }
+
+        .best-badge {
+            background: var(--warning) !important;
+            /* Changed to warning (orange/yellow) for better contrast */
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3) !important;
+            position: absolute;
+            top: -14px !important;
+            /* Placed exactly on the border */
+            left: 24px !important;
+            padding: 6px 14px !important;
+            font-size: 11px !important;
+            font-weight: 800 !important;
+            border-radius: 99px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+
+        /* --- AI ICON VISIBILITY FIX --- */
+        .ai-icon-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background-color: var(--medical-primary) !important;
+            border-radius: 10px;
+            color: #FFFFFF !important;
+            box-shadow: 0 4px 10px var(--accent-primary) !important;
+            flex-shrink: 0;
         }
 
         .gps-status {
@@ -1622,18 +1672,6 @@
             gap: 8px
         }
 
-        .hosp-card {
-            background: var(--card);
-            border: 1.5px solid var(--border);
-            border-radius: var(--r-lg);
-            padding: 18px 18px 16px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: var(--tr);
-            position: relative;
-            overflow: hidden;
-            box-shadow: var(--sh-sm)
-        }
 
         .hosp-card:hover {
             border-color: var(--primary-m);
@@ -1647,22 +1685,6 @@
             box-shadow: var(--sh), 0 0 0 3px rgba(37, 99, 235, .1)
         }
 
-        .best-badge {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            background: var(--primary);
-            color: #fff;
-            border-radius: 99px;
-            padding: 4px 12px;
-            font-size: .68rem;
-            font-weight: 800;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 5px
-        }
 
         .hosp-name {
             font-size: 1rem;
@@ -1904,43 +1926,55 @@
             box-shadow: var(--sh-primary);
         }
 
-        /* --- V5 MODERN MEDICAL UI ENHANCEMENTS --- */
+        /* ══ v5 ELEGANT CLINICAL UI ENHANCEMENTS ══ */
         :root {
-            --primary: #0A84FF;
-            /* iOS Medical Blue */
-            --success: #30D158;
-            --warning: #FF9F0A;
-            --danger: #FF453A;
-            --glass-card: rgba(255, 255, 255, 0.8);
+            --ios-bg: #F4F7F6;
+            /* Very subtle medical gray/green */
+            --ios-card: #FFFFFF;
+            --medical-primary: #0D9488;
+            /* Clinical Teal */
+            --accent-primary: rgba(13, 148, 136, 0.1);
+            --soft-shadow: 0 12px 40px rgba(13, 148, 136, 0.08);
+            --font-main: 'Inter', system-ui, sans-serif;
         }
 
         [data-theme="dark"] {
-            --glass-card: rgba(28, 28, 30, 0.8);
+            --ios-bg: #0B1120;
+            --ios-card: #162032;
+            --accent-primary: rgba(20, 184, 166, 0.15);
+            --soft-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            --medical-primary: #14B8A6;
+            /* Slightly brighter teal for dark mode */
         }
 
-        /* Enhanced Hospital Card */
-        .hosp-card {
+        body {
+            background-color: #E2E8F0 !important;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 480px !important;
+            min-height: 100dvh;
+            background-color: var(--ios-bg) !important;
+            font-family: var(--font-main) !important;
             position: relative;
-            border-radius: 24px !important;
-            padding: 24px !important;
-            border: 1px solid rgba(0, 0, 0, 0.05) !important;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06) !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            overflow-x: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.15) !important;
+            margin: 0 auto !important;
+        }
+
+        /* Elegant Cards */
+        .hosp-card:hover,
+        .card:hover {
+            box-shadow: 0 16px 50px rgba(13, 148, 136, 0.12) !important;
         }
 
         .hosp-card.best {
-            border: 2px solid var(--primary) !important;
-            background: linear-gradient(145deg, var(--card) 0%, rgba(10, 132, 255, 0.05) 100%) !important;
-        }
-
-        .best-badge {
-            position: absolute;
-            top: -12px;
-            left: 24px;
-            background: var(--primary) !important;
-            padding: 6px 14px !important;
-            font-size: 11px !important;
-            font-weight: 800 !important;
+            border: 2px solid var(--medical-primary) !important;
+            background: linear-gradient(145deg, var(--card) 0%, var(--primary-l) 100%) !important;
         }
 
         .hosp-stat-grid {
@@ -1957,68 +1991,70 @@
             text-align: center;
         }
 
-        /* Boarding Pass Design for Result Page */
+        /* Boarding Pass Ticket Effect */
         .digital-pass {
-            background: var(--card);
-            border-radius: 28px;
+            background: var(--ios-card);
+            border-radius: 32px;
+            position: relative;
             overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--soft-shadow);
+            border: 1px solid var(--accent-primary);
+            /* Perforation holes logic */
+            mask-image: radial-gradient(circle at 0 72%, transparent 12px, black 13px),
+                radial-gradient(circle at 100% 72%, transparent 12px, black 13px);
+            -webkit-mask-image: radial-gradient(circle at 0 72%, transparent 12px, black 13px),
+                radial-gradient(circle at 100% 72%, transparent 12px, black 13px);
             margin-bottom: 24px;
-            border: 1px solid rgba(10, 132, 255, 0.1);
         }
 
-        .pass-header {
-            background: var(--primary);
+        .digital-pass>div:first-child {
+            background: var(--medical-primary) !important;
             color: white;
             padding: 16px;
             text-align: center;
             font-weight: 800;
             font-size: 12px;
             letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
-        .pass-body {
-            padding: 32px 24px;
-            text-align: center;
+        /* Premium Buttons */
+        .btn-primary {
+            height: 64px !important;
+            border-radius: 20px !important;
+            font-weight: 800 !important;
+            font-size: 1.05rem !important;
+            background: var(--medical-primary) !important;
+            box-shadow: var(--sh-primary) !important;
+            letter-spacing: 0.5px !important;
         }
 
-        .pass-id {
-            font-family: var(--mono);
-            font-size: 2.4rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin: 16px 0;
-            letter-spacing: 2px;
+        .btn-primary:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 12px 30px rgba(13, 148, 136, 0.35) !important;
         }
 
-        .pass-footer {
-            background: var(--card-alt);
-            padding: 16px;
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-2);
-            border-top: 2px dashed var(--bg);
-        }
-
-        .live-indicator {
+        /* Pulsing Live Indicator */
+        .live-glow {
             width: 10px;
             height: 10px;
-            background: var(--success);
+            background: #30D158;
             border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            box-shadow: 0 0 12px var(--success);
-            animation: pulse-ring 2s infinite;
+            box-shadow: 0 0 12px #30D158;
+            animation: elegant-pulse 2s infinite ease-in-out;
         }
 
-        @keyframes pulse-ring {
+        @keyframes elegant-pulse {
             0% {
                 transform: scale(0.9);
                 opacity: 0.8;
             }
 
             50% {
-                transform: scale(1.2);
+                transform: scale(1.3);
                 opacity: 0.4;
             }
 
@@ -2028,7 +2064,46 @@
             }
         }
 
-        /* ═══ RESULT PAGE: TAB SYSTEM ═══ */
+        /* Symptom Grid UI Enhancement */
+        .symptom-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .symptom-card {
+            background: var(--ios-card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px 12px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 64px;
+            /* Slightly taller for easier tapping */
+            box-shadow: 0 2px 8px rgba(13, 148, 136, 0.02);
+        }
+
+        .symptom-card:hover {
+            border-color: var(--medical-primary);
+            background: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+
+        .symptom-card.selected {
+            background: var(--medical-primary);
+            color: white;
+            border-color: var(--medical-primary);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.3);
+        }
+
+        /* RESULT PAGE: TAB SYSTEM */
         .result-tabs {
             display: flex;
             gap: 4px;
@@ -2060,7 +2135,7 @@
 
         .result-tab-btn.active {
             background: var(--card);
-            color: var(--primary);
+            color: var(--medical-primary);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
@@ -2092,88 +2167,260 @@
             }
         }
 
-        /* ══ v5 ELEGANT UI ENHANCEMENTS ══ */
-        :root {
-            --ios-bg: #F2F2F7;
-            --ios-card: #FFFFFF;
-            --medical-blue: #0A84FF;
-            --accent-blue: rgba(10, 132, 255, 0.1);
-            --soft-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
-            --font-main: 'Inter', system-ui, sans-serif;
+        /* ══ WELCOME / LANGUAGE PAGE (Elegant V5) ══ */
+        #page-language {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 24px 60px;
+            min-height: 100dvh;
+            text-align: center;
         }
 
-        [data-theme="dark"] {
-            --ios-bg: #000000;
-            --ios-card: #1C1C1E;
-            --accent-blue: rgba(10, 132, 255, 0.15);
-            --soft-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        /* Hero Area */
+        .wl-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 50px;
+            width: 100%;
         }
 
-        .app {
-            background-color: var(--ios-bg) !important;
-            font-family: var(--font-main) !important;
-        }
-
-        /* Elegant Cards */
-        .hosp-card,
-        .card {
-            border: none !important;
-            background: var(--ios-card) !important;
-            box-shadow: var(--soft-shadow) !important;
-            border-radius: 28px !important;
-            padding: 24px !important;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        }
-
-        /* Boarding Pass Ticket Effect */
-        .digital-pass {
-            background: var(--ios-card);
-            border-radius: 32px;
+        /* ══ LOGO AREA WITH DANCING HALO (V5 Premium) ══ */
+        #logo-card {
+            width: 180px;
+            /* Genişlik artırıldı (Maksimum boyut için) */
+            height: 180px;
+            /* Yükseklik artırıldı (Maksimum boyut için) */
+            padding: 0;
+            /* İç boşluk tamamen sıfırlandı (Logoyu karta dayamak için) */
+            margin-bottom: 20px;
+            background: #FFFFFF;
+            border-radius: 36px;
+            /* Büyüyen karta uygun daha yumuşak köşe */
+            box-shadow: 0 10px 40px rgba(13, 148, 136, 0.12) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            overflow: hidden;
-            box-shadow: var(--soft-shadow);
-            /* Perforation holes logic */
-            mask-image: radial-gradient(circle at 0 72%, transparent 12px, black 13px),
-                radial-gradient(circle at 100% 72%, transparent 12px, black 13px);
-            -webkit-mask-image: radial-gradient(circle at 0 72%, transparent 12px, black 13px),
-                radial-gradient(circle at 100% 72%, transparent 12px, black 13px);
+            display: flex;
+            /* Logonun tam ortalanmasını garantiler */
+            align-items: center;
+            justify-content: center;
+            /* CRITICAL: Allows the background halo to overflow visually */
+            overflow: visible !important;
         }
 
-        /* Premium Buttons */
-        .btn-primary {
-            height: 64px !important;
-            border-radius: 20px !important;
-            font-weight: 700 !important;
-            font-size: 1.05rem !important;
-            background: var(--medical-blue) !important;
-            box-shadow: 0 12px 24px rgba(10, 132, 255, 0.3) !important;
+        #logo-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 15px 50px rgba(13, 148, 136, 0.18) !important;
         }
 
-        /* Pulsing Live Indicator */
-        .live-glow {
-            width: 10px;
-            height: 10px;
-            background: #30D158;
-            border-radius: 50%;
-            box-shadow: 0 0 12px #30D158;
-            animation: elegant-pulse 2s infinite ease-in-out;
+        #logo-card img {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+            /* Önceki sınırlamaları tamamen kaldır */
+            max-height: none !important;
+            /* CRITICAL: Logo fills the entire card area without distortion */
+            object-fit: cover !important;
+            border-radius: 30px;
+            /* Kutunun köşelerine tam uyması için */
         }
 
-        @keyframes elegant-pulse {
+        /* --- DANCING HALO EFFECT (New V5) --- */
+        #logo-card::before {
+            content: '';
+            position: absolute;
+            width: 180px;
+            /* Karttan daha büyük, haleyi oluşturmak için */
+            height: 180px;
+            top: -10px;
+            /* Haleyi kartın etrafına ortalar */
+            left: -10px;
+            border-radius: 40px;
+            /* Halenin köşeleri */
+
+            /* HALO BACKGROUND: Multi-layered soft, blurred clinical teal/mint */
+            background: radial-gradient(circle, rgba(204, 251, 241, 0.6) 30%, transparent 100%);
+            box-shadow:
+                0 0 20px rgba(13, 148, 136, 0.2),
+                0 0 40px rgba(13, 148, 136, 0.15),
+                0 0 60px rgba(13, 148, 136, 0.1);
+
+            z-index: -1;
+            /* Kartın arkasına yerleştirir */
+
+            /* DANCING ANIMATION: Rotates AND changes size/opacity for a "dancing" effect */
+            animation: halo-dance 10s ease-in-out infinite;
+        }
+
+        /* --- DANCING HALO ANIMATION KEYFRAMES (New V5) --- */
+        @keyframes halo-dance {
             0% {
-                transform: scale(0.9);
+                transform: scale(1) rotate(0deg);
                 opacity: 0.8;
+            }
+
+            25% {
+                transform: scale(1.05) rotate(90deg);
+                opacity: 1;
             }
 
             50% {
-                transform: scale(1.3);
-                opacity: 0.4;
+                transform: scale(1) rotate(180deg);
+                opacity: 0.8;
+            }
+
+            75% {
+                transform: scale(0.95) rotate(270deg);
+                opacity: 1;
             }
 
             100% {
-                transform: scale(0.9);
+                transform: scale(1) rotate(360deg);
                 opacity: 0.8;
             }
+        }
+
+
+        /* Extra Redundant Text removed via HTML but we refine the remaining tagline area */
+        #wl_langHeroSub {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--medical-primary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 10px;
+            background: var(--accent-primary);
+            padding: 6px 18px;
+            border-radius: 99px;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.1);
+        }
+
+        /* Unified Instruction Title */
+        .wl-instruction-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .wl-instruction-title {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .wl-instruction-sub {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-2);
+            line-height: 1.5;
+        }
+
+        /* Language Choice Cards */
+        .lang-list {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .lang-choice-card {
+            background: var(--ios-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: var(--sh-sm);
+            text-align: left;
+        }
+
+        .lang-choice-card:hover {
+            border-color: var(--medical-primary);
+            background: var(--accent-primary);
+            box-shadow: var(--sh);
+            transform: translateY(-2px);
+        }
+
+        .lang-choice-card.selected {
+            border-color: var(--medical-primary);
+            border-width: 2px;
+            box-shadow: 0 8px 24px rgba(13, 148, 136, 0.15);
+        }
+
+        /* Flag / Code Area */
+        .lang-code-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background-color: var(--ios-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            color: var(--medical-primary);
+            font-weight: 900;
+            font-size: 1.15rem;
+            font-family: var(--font-main);
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .lang-choice-card:hover .lang-code-box,
+        .lang-choice-card.selected .lang-code-box {
+            color: #FFFFFF;
+            background-color: var(--medical-primary);
+            border-color: var(--medical-primary);
+        }
+
+        /* Language Text Area */
+        .lang-texts {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .lang-main-name {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .lang-desc {
+            font-size: 0.85rem;
+            color: var(--text-2);
+            margin: 0;
+        }
+
+        .lang-choice-card .lucide-chevron-right {
+            width: 22px;
+            height: 22px;
+            color: var(--text-3);
+            transition: color 0.2s;
+        }
+
+        .lang-choice-card:hover .lucide-chevron-right,
+        .lang-choice-card.selected .lucide-chevron-right {
+            color: var(--medical-primary);
+        }
+
+        .page {
+            display: none !important;
+        }
+
+        .page.active {
+            display: block !important;
         }
     </style>
 
@@ -2181,36 +2428,31 @@
 <body>
     <div class="app">
         <div class="topbar">
-            <div class="topbar-logo">
-                <img class="topbar-logo-img" id="topbarLogoImg" src="/docs/images/logo_v2.png" alt="VitalNavAI"
-                    onerror="this.style.display='none';document.getElementById('topbarLogoFallback').style.display='flex'">
-                <div id="topbarLogoFallback"
-                    style="width:45px;height:45px;border-radius:8px;background:var(--primary-l);border:1px solid var(--primary-m);display:none;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                    </svg>
+            <div class="topbar-logo" onclick="location.reload()">
+                <div class="logo-wrapper">
+                    <img class="topbar-logo-img" src="/docs/images/logo_v2.png" alt="VitalNavAI"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                    <span
+                        style="display:none; font-weight:900; color:var(--medical-primary); font-size:1.2rem;">V</span>
                 </div>
-                <span style="font-weight:800;font-size:.95rem;letter-spacing:-.02em;margin-left:8px;"><span
-                        style="color:#DC2626">Vital</span><span style="color:#38BDF8">Nav</span><span
-                        style="color:#4ADE80">AI</span></span>
+
+                <div class="brand-text">
+                    <div class="brand-name">
+                        <span>Vital</span><span>Nav</span><span>AI</span>
+                    </div>
+                    <span class="brand-tagline">Clinical Excellence</span>
+                </div>
             </div>
+
             <div class="topbar-right">
-                <div id="topbarLangBadge" class="topbar-lang">EN</div>
-                <button class="topbar-theme" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle dark mode"
-                    title="Toggle dark/light mode">
-                    <svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" style="display:none">
-                        <circle cx="12" cy="12" r="4" />
-                        <path
-                            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-                    </svg>
-                    <svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                    </svg>
+                <div id="topbarLangBadge" class="topbar-lang"
+                    style="background:var(--accent-primary); color:var(--medical-primary); border:1px solid var(--medical-primary); font-weight:800; border-radius:8px; padding:6px 10px;">
+                    EN
+                </div>
+
+                <button class="theme-toggle-v6" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle Theme">
+                    <i data-lucide="sun" id="themeIconSun" style="width:20px; height:20px; display:none;"></i>
+                    <i data-lucide="moon" id="themeIconMoon" style="width:20px; height:20px;"></i>
                 </button>
             </div>
         </div>
@@ -2228,49 +2470,50 @@
 
         <!-- PAGE: LANGUAGE -->
         <div class="page active" id="page-lang">
-            <div class="lang-hero">
-                <div class="lang-hero-icon">
-                    <img src="/docs/images/logo_v2.png" alt="VitalNavAI"
-                        onerror="this.parentElement.innerHTML='<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%232563EB\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M22 12h-4l-3 9L9 3l-3 9H2\'/></svg>'">
+
+            <div class="wl-hero">
+                <div id="logo-card">
+                    <img src="/docs/images/logo_v3.png" alt="VitalNavAI"
+                        style="width:100%;height:100%;object-fit:contain"
+                        onerror="this.parentElement.innerHTML='<span style=\'font-size:2.5rem;font-weight:900;color:var(--medical-primary)\'>VN</span>'">
                 </div>
-                <p id="wl_langHeroSub">AI Emergency Assistant</p>
+                <div id="wl_langHeroSub">AI EMERGENCY ASSISTANT</div>
             </div>
-            <p style="font-size:.9rem;font-weight:600;color:var(--text-2);text-align:center;margin-bottom:18px">Select
-                your language / Sprache wählen / Dil seçin</p>
-            <div class="lang-grid">
-                <button class="lang-btn" onclick="selectLanguage('en')" id="langBtn_en">
-                    <span class="lang-flag">🇬🇧</span>
-                    <div><span class="lang-name">English</span><span class="lang-sub">Medical emergency assistant</span>
+
+            <div class="wl-instruction-box">
+                <div class="wl-instruction-title">Choose your language</div>
+                <div class="wl-instruction-sub">Sprache wählen / Dil seçin</div>
+            </div>
+
+            <div class="lang-list">
+                <div class="lang-choice-card" id="langBtn_en" onclick="selectLanguage('en')">
+                    <div class="lang-code-box">GB</div>
+                    <div class="lang-texts">
+                        <h4 class="lang-main-name">English</h4>
+                        <p class="lang-desc">Medical emergency assistant</p>
                     </div>
-                    <span class="lang-arrow">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 18l6-6-6-6" />
-                        </svg>
-                    </span>
-                </button>
-                <button class="lang-btn" onclick="selectLanguage('de')" id="langBtn_de">
-                    <span class="lang-flag">🇩🇪</span>
-                    <div><span class="lang-name">Deutsch</span><span class="lang-sub">Medizinischer
-                            Notfallassistent</span></div>
-                    <span class="lang-arrow">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 18l6-6-6-6" />
-                        </svg>
-                    </span>
-                </button>
-                <button class="lang-btn" onclick="selectLanguage('tr')" id="langBtn_tr">
-                    <span class="lang-flag">🇹🇷</span>
-                    <div><span class="lang-name">Türkçe</span><span class="lang-sub">Tıbbi acil asistan</span></div>
-                    <span class="lang-arrow">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 18l6-6-6-6" />
-                        </svg>
-                    </span>
-                </button>
+                    <i data-lucide="chevron-right"></i>
+                </div>
+
+                <div class="lang-choice-card" id="langBtn_de" onclick="selectLanguage('de')">
+                    <div class="lang-code-box">DE</div>
+                    <div class="lang-texts">
+                        <h4 class="lang-main-name">Deutsch</h4>
+                        <p class="lang-desc">Medizinischer Notfallassistent</p>
+                    </div>
+                    <i data-lucide="chevron-right"></i>
+                </div>
+
+                <div class="lang-choice-card" id="langBtn_tr" onclick="selectLanguage('tr')">
+                    <div class="lang-code-box">TR</div>
+                    <div class="lang-texts">
+                        <h4 class="lang-main-name">Türkçe</h4>
+                        <p class="lang-desc">Tıbbi acil asistan</p>
+                    </div>
+                    <i data-lucide="chevron-right"></i>
+                </div>
             </div>
+
         </div>
 
         <!-- PAGE: WELCOME -->
@@ -2373,136 +2616,110 @@
                     <span id="wl_hnHintText"></span>
                 </div>
             </div>
-            <button class="btn btn-primary" id="btnStart" onclick="startApp()"></button>`n <p
-                style="text-align:center;font-size:0.85rem;color:var(--text-2);margin-top:16px;">This system has been
-                developed to determine medical priorities.</p>
+            <button class="btn btn-primary" id="btnStart" onclick="startApp()"></button>
+            <p id="wl_system_notice" style="text-align:center;font-size:0.85rem;color:var(--text-2);margin-top:16px;">
+            </p>
             <p id="wl_demo" style="text-align:center;font-size:.78rem;color:var(--text-3);margin-top:10px"></p>
         </div>
 
         <!-- PAGE: INPUT -->
-        <div class="page" id="page-input">
-            <button class="btn btn-secondary" onclick="goToPage('welcome')" style="margin-bottom:16px;height:44px;"><svg
-                    xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M15 18l-6-6 6-6" />
-                </svg><span id="inp_backBtn">Back</span></button>
-            <h2 id="inp_title"></h2>
-            <p class="sub" id="inp_sub"></p>
-            <div class="mic-area"
-                style="background:var(--card-alt); border-radius:40px; border:1.5px solid var(--primary-mid); display:flex; align-items:center; justify-content:space-between; padding:12px 24px 12px 12px; box-shadow:var(--sh-primary); margin-bottom:24px;">
-                <button class="mic-btn" id="micBtn" onclick="toggleRecording()" aria-label="Record voice"
-                    style="width:64px; height:64px; border-radius:50%; background:var(--primary); box-shadow:0 0 16px rgba(37,99,235,0.4); margin:0; flex-shrink:0; outline:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#fff; transition:var(--tr); position:relative; overflow:hidden;">
-                    <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="12" y1="19" x2="12" y2="22" />
-                        <line x1="8" y1="22" x2="16" y2="22" />
-                    </svg>
-                    <svg id="stopIcon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                        fill="currentColor" style="display:none">
-                        <rect x="6" y="6" width="12" height="12" rx="2.5" />
-                    </svg>
-                </button>
-                <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding-left:16px;">
-                    <div class="waveform" id="waveformBars"
-                        style="display:flex; gap:3px; height:32px; align-items:center; justify-content:center; width:100%; margin-bottom:6px;">
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
-                        <div class="sf-bar"></div>
+        <div id="page-input" class="page">
+            <div style="margin-bottom: 30px; text-align: center; padding: 0 10px;">
+                <h2 id="inp_title" style="font-size: 1.6rem; font-weight: 800; margin-bottom: 8px;"></h2>
+                <p id="inp_sub" style="color: var(--text-2); font-size: 0.95rem; opacity: 0.8;"></p>
+            </div>
+
+            <div class="card"
+                style="padding: 30px 20px !important; margin-bottom: 30px !important; border: 2px solid var(--success) !important; background: var(--success-l) !important;">
+                <div id="voiceUI" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                    <button id="micBtn" class="mic-btn" onclick="toggleRecording()"
+                        style="width: 80px; height: 80px; border-radius: 50%; background: var(--success) !important; border: none; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(48, 209, 88, 0.4) !important; cursor: pointer; transition: transform 0.2s;">
+                        <i data-lucide="mic" style="width: 35px; height: 35px;"></i>
+                    </button>
+                    <div style="text-align: center;">
+                        <div id="micStatus" style="font-weight: 800; font-size: 1.2rem; color: var(--text);"></div>
+                        <div id="micSub"
+                            style="font-size: 0.85rem; color: var(--text-2); margin-top: 6px; opacity: 0.7;"></div>
                     </div>
-                    <p id="micLabel" style="color:var(--text); font-size:1rem; font-weight:600; margin:0 0 4px 0;"></p>
-                    <p id="micSub" style="color:var(--text-2); font-size:0.8rem; margin:0;"></p>
+                </div>
+
+                <div id="waveformBars" class="waveform"
+                    style="justify-content: center; align-items: center; gap: 5px; height: 40px; margin-top: 20px; display: none;">
+                    <div class="sf-bar" style="background: var(--success) !important;"></div>
+                    <div class="sf-bar" style="background: var(--success) !important;"></div>
+                    <div class="sf-bar" style="background: var(--success) !important;"></div>
+                    <div class="sf-bar" style="background: var(--success) !important;"></div>
+                    <div class="sf-bar" style="background: var(--success) !important;"></div>
+                </div>
+
+                <div id="transcriptBox"
+                    style="display:none; background:var(--card); padding:15px; border-radius:15px; margin-top:15px; border:1px dashed var(--success);">
+                    <div id="transcriptLang"
+                        style="font-size:0.7rem; font-weight:800; color:var(--success); text-transform:uppercase; margin-bottom:5px;">
+                    </div>
+                    <div id="transcriptText"
+                        style="font-size:0.95rem; font-weight:600; font-style: italic; color:var(--text);"></div>
                 </div>
             </div>
-            <div id="exampleChips" class="complaint-examples"></div>
-            <div class="transcript-box" id="transcriptBox">
-                <div class="transcript-label" id="transcriptLang">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    Recognised
-                </div>
-                <div class="transcript-text" id="transcriptText"></div>
-            </div>
-            <div class="spinner-wrap" id="inputSpinner">
+            <div class="spinner-wrap" id="inputSpinner" style="display:none; margin-bottom: 20px;">
                 <div class="spinner"></div>
                 <div class="spinner-text" id="inputSpinnerText"></div>
             </div>
-            <div class="divider-text"><span id="inp_orType"></span></div>
-            <div class="field-wrap" style="margin-bottom:14px"><textarea id="complaintText" rows="4"
-                    oninput="onComplaintType()"></textarea></div>
+
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; opacity: 0.5;">
+                <div style="flex: 1; height: 1px; background: var(--border);"></div>
+                <span id="inp_orSelect"
+                    style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;"></span>
+                <div style="flex: 1; height: 1px; background: var(--border);"></div>
+            </div>
+
+            <div class="symptom-grid" id="symptomGrid"></div>
+
             <button class="btn btn-primary" id="btnContinueInput" onclick="submitComplaint()" disabled
-                style="opacity:.45"><span id="inp_continueTxt"></span></button>
+                style="width: 100%; margin-top: 30px; opacity: 0.45;">
+                <span id="inp_continueTxt"></span>
+                <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+            </button>
         </div>
 
         <!-- PAGE: PHOTOS -->
         <div class="page" id="page-photos">
-            <h2 id="ph_title"></h2>
-            <p class="sub" id="ph_sub"></p>
-            <div class="photo-guide">
-                <div class="photo-guide-frame">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path
-                            d="M5 3H3a2 2 0 0 0-2 2v2M19 3h2a2 2 0 0 1 2 2v2M5 21H3a2 2 0 0 1-2-2v-2M19 21h2a2 2 0 0 0 2-2v-2" />
-                    </svg>
-                </div>
+            <h2 id="ph_title" style="font-size: 1.6rem; font-weight: 800; margin-bottom: 10px; text-align: center;">
+            </h2>
+            <div id="ph_sub" style="text-align: center; margin-bottom: 30px;"></div>
 
-            </div>
-            <button class="btn btn-secondary" onclick="goToPage('input')" style="margin-bottom:16px;height:44px;"><svg
-                    xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M15 18l-6-6 6-6" />
-                </svg><span id="ph_backBtn">Back</span></button>
             <div class="media-grid" id="mediaGrid"></div>
-            <div class="media-add-row" id="mediaAddRow">
-                <label class="media-add-btn" style="cursor:pointer">
-                    <span class="icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path
-                                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                            <circle cx="12" cy="13" r="4" />
-                        </svg>
+
+            <div class="media-add-row" id="mediaAddRow" style="flex-direction: column; gap: 15px;">
+                <label class="media-add-btn"
+                    style="cursor:pointer; min-height: 100px; border-radius: 20px; background: var(--ios-card); border: 2px dashed var(--medical-primary); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span class="icon" style="margin-bottom: 8px; color: var(--medical-primary);">
+                        <i data-lucide="camera" style="width: 32px; height: 32px;"></i>
                     </span>
-                    <span id="ph_addPhoto"></span>
+                    <span id="ph_addPhoto" style="font-size: 1.1rem; font-weight: 800; color: var(--text);"></span>
                     <input type="file" id="photoInput" accept="image/*" capture="environment"
                         onchange="onMediaAdded(event,'photo')" style="display:none">
                 </label>
-                <label class="media-add-btn" style="cursor:pointer">
-                    <span class="icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="23 7 16 12 23 17 23 7" />
-                            <rect width="15" height="14" x="1" y="5" rx="2" ry="2" />
-                        </svg>
+
+                <label class="media-add-btn"
+                    style="cursor:pointer; min-height: 100px; border-radius: 20px; background: var(--ios-card); border: 2px dashed var(--medical-primary); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span class="icon" style="margin-bottom: 8px; color: var(--medical-primary);">
+                        <i data-lucide="video" style="width: 32px; height: 32px;"></i>
                     </span>
-                    <span id="ph_addVideo"></span>
+                    <span id="ph_addVideo" style="font-size: 1.1rem; font-weight: 800; color: var(--text);"></span>
                     <input type="file" id="videoInput" accept="video/*" capture="environment"
                         onchange="onMediaAdded(event,'video')" style="display:none">
                 </label>
             </div>
-            <p style="font-size:.78rem;color:var(--text-3);text-align:center;margin-bottom:8px" id="mediaCount">0 / 3
-            </p>
-            <div class="divider"></div>
-            <div class="row">
-                <button class="btn btn-secondary" onclick="skipPhotos()" id="ph_skip"></button>
-                <button class="btn btn-primary" onclick="continueFromPhotos()" id="ph_continue"></button>
-            </div>
+
+            <p style="font-size:.85rem; color:var(--text-3); text-align:center; font-weight:700; margin-top:15px; margin-bottom:25px;"
+                id="mediaCount">0 / 3</p>
+
+            <button class="btn btn-primary" onclick="continueFromPhotos()" id="ph_continue"
+                style="width: 100%; height: 64px; border-radius: 20px; font-weight: 800; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                <span id="ph_continueTxt"></span>
+                <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
+            </button>
         </div>
 
         <!-- PAGE: QUESTIONS -->
@@ -2627,8 +2844,8 @@
                     </svg>
                     <span id="cs_yesLabel"></span>
                 </button>
-                <p style="text-align:center; font-size:0.85rem; color:var(--text-2); margin-top:8px;">Your data is
-                    processed securely.</p>
+                <p id="cs_data_secure"
+                    style="text-align:center; font-size:0.85rem; color:var(--text-2); margin-top:8px;"></p>
             </div>
             <p class="consent-warning" id="consentWarning">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -2656,68 +2873,74 @@
         <!-- PAGE: TRIAGE -->
         <div class="page" id="page-triage">
             <div id="triageBanner"></div>
-            <div id="triageAdviceSection" style="display:none">
-                <h2 id="tr_adviceLabel" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                    </svg>
-                    <span></span>
-                </h2>
-                <div id="triageAdviceContent"></div>
+
+            <div class="card"
+                style="background: linear-gradient(145deg, var(--ios-card) 0%, var(--accent-primary) 100%); border: 1.5px solid var(--medical-primary); border-radius: 20px; padding: 16px; margin-bottom: 25px; box-shadow: 0 8px 20px var(--accent-primary); overflow: visible;">
+                <div
+                    style="text-align: center; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <div
+                            style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background-color: var(--medical-primary); border-radius: 10px; color: #FFFFFF; box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3); flex-shrink: 0;">
+                            <i data-lucide="cpu" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <h3 id="tr_aiRoutingTitle"
+                            style="font-size: 1.05rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin: 0;">
+                        </h3>
+                    </div>
+                    <p id="tr_aiRoutingSub"
+                        style="font-size: 0.8rem; color: var(--text-2); line-height: 1.3; margin-top: 6px; padding: 0 10px;">
+                    </p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div
+                        style="background: var(--ios-bg); padding: 8px; border-radius: 12px; text-align: center; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i data-lucide="car" style="color: var(--medical-primary); width: 18px; height: 18px;"></i>
+                        <div id="tr_liveTraffic"
+                            style="font-size: 0.75rem; font-weight: 800; color: var(--text); text-transform: uppercase;">
+                        </div>
+                    </div>
+                    <div
+                        style="background: var(--ios-bg); padding: 8px; border-radius: 12px; text-align: center; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i data-lucide="activity" style="color: var(--medical-primary); width: 18px; height: 18px;"></i>
+                        <div id="tr_erCapacity"
+                            style="font-size: 0.75rem; font-weight: 800; color: var(--text); text-transform: uppercase;">
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="divider"></div>
-            <h2 id="tr_nearestLabel" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-                <span></span>
-            </h2>
-            <div class="gps-status wait" id="gpsStatusPill">
+
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;">
+                <div style="height: 3px; width: 25px; background: var(--medical-primary); border-radius: 2px;"></div>
+                <h2 id="tr_selectHospital"
+                    style="font-size: 1.25rem; font-weight: 900; text-align: center; color: var(--text); margin: 0;">
+                </h2>
+                <div style="height: 3px; width: 25px; background: var(--medical-primary); border-radius: 2px;"></div>
+            </div>
+
+            <div class="gps-status wait" id="gpsStatusPill"
+                style="margin: 0 auto 20px; display: flex; width: fit-content;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
                 <span id="gpsStatusTxt"></span>
             </div>
+
             <div id="gpsWaiting"
                 style="display:none;text-align:center;padding:16px 0;color:var(--text-3);font-size:.88rem">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin:0 auto 8px;display:block;animation:spin 2s linear infinite;color:var(--primary)">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
+                    style="margin:0 auto 8px;display:block;animation:spin 2s linear infinite;color:var(--medical-primary)">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
                 <span id="gps_waitText"></span>
-                <p id="gps_privacy"
-                    style="text-align:center; font-size:0.8rem; color:var(--text-3); margin-top:12px; padding:0 24px; line-height:1.4;">
-                    Your location is only used to find you the most suitable hospital and your identity
-                    is kept confidential.</p>
             </div>
-            <div id="gpsDenied" style="display:none">
-                <div class="card red">
-                    <p
-                        style="font-size:.95rem;font-weight:700;color:var(--danger-text);margin-bottom:8px;display:flex;align-items:center;gap:6px">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                        </svg>
-                        <span id="gps_deniedTitle"></span>
-                    </p>
-                    <p id="gps_deniedDesc"
-                        style="font-size:.85rem;color:var(--danger-text);margin-bottom:12px;opacity:.8">
-                    </p>
-                    <div id="gps_deniedSteps"
-                        style="font-size:.82rem;color:var(--danger-text);opacity:.8;margin-bottom:12px">
-                    </div>
-                    <button class="btn btn-secondary" onclick="retryGPS()" id="gps_retryBtn"
-                        style="height:44px"></button>
-                </div>
-            </div>
+
+            <div id="gpsDenied" style="display:none">...</div>
+
             <div id="hospitalList"></div>
         </div>
 
@@ -2776,6 +2999,62 @@
             ],
         };
 
+        const symptoms = [
+            { id: 'chest_pain' },
+            { id: 'shortness_breath' },
+            { id: 'headache' },
+            { id: 'fever' },
+            { id: 'dizziness' },
+            { id: 'abdominal_pain' },
+            { id: 'fainting' },
+            { id: 'severe_bleeding' },
+            { id: 'allergic_reaction' },
+            { id: 'vomiting_diarrhea' },
+            { id: 'numbness_weakness' },
+            { id: 'altered_consciousness' }
+        ];
+
+        function renderSymptoms() {
+            const grid = document.getElementById('symptomGrid');
+            if (!grid) return;
+            grid.innerHTML = symptoms.map(s => `
+                <div class="symptom-card" onclick="toggleSymptom(this, '${s.id}')">
+                    ${t('sym_' + s.id)}
+                </div>
+            `).join('');
+        }
+
+        function toggleSymptom(el, id) {
+            el.classList.toggle('selected');
+            const selectedNodes = document.querySelectorAll('.symptom-card.selected');
+
+            // Semptomları diziye al
+            const selectedTexts = Array.from(selectedNodes).map(node => node.textContent.trim());
+
+            // Eğer ses kaydı varsa, üzerine semptomları ekle
+            let finalComplaint = "";
+            if (S.voiceTranscript) {
+                finalComplaint = S.voiceTranscript + (selectedTexts.length > 0 ? ", " : "");
+            }
+            finalComplaint += selectedTexts.join(', ');
+
+            S.complaint = finalComplaint;
+            enableContinue(S.complaint.length > 0);
+        }
+
+        function enableContinue(on) {
+            const btn = document.getElementById('btnContinueInput');
+            if (btn) {
+                btn.disabled = !on;
+                btn.style.opacity = on ? '1' : '0.45';
+                btn.style.cursor = on ? 'pointer' : 'not-allowed';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSymptoms();
+            lucide.createIcons();
+        });
         // ═══════════════════════════════════════════════════════════
         // TRANSLATIONS
         // ═══════════════════════════════════════════════════════════
@@ -2791,23 +3070,39 @@
                 wl_s1: '<strong style="color:var(--navy)">🎤 Speak</strong> — describe your symptoms clearly in your own words.',
                 wl_s2: '<strong style="color:var(--navy)">❓ Questions</strong> — answer a few short follow-up questions.',
                 wl_s3: '<strong style="color:var(--navy)">🏥 Hospital</strong> — the best hospital is selected and notified.',
-                wl_demo: '⚠️ Demo only. Call 112 for real emergencies.',
-                wl_hnLabel: 'Select your health record', wl_hnReq: 'REQUIRED',
+                wl_demo: 'Demo only. Call 112 for real emergencies.',
+                wl_hnLabel: 'Select your health number for Demo', wl_hnReq: 'REQUIRED',
                 wl_hnHintText: 'Your medical history will be linked to this visit',
                 btnStart: 'Start →',
                 inp_title: 'Describe your symptoms',
-                inp_sub: 'Tap the microphone and speak freely — or type below.',
-                micLabelIdle: 'Tap to record', micSubIdle: 'Speak clearly in your own language',
-                micLabelRec: 'Recording…', micSubRec: 'Tap again to stop',
-                micLabelDone: 'Tap to re-record', micSubDone: 'Or edit the text above',
-                transcriptLang: '✓ Captured',
-                inp_orType: 'or type instead',
-                inp_placeholder: 'e.g. Sudden chest pain, difficulty breathing, started 20 min ago…',
-                inp_continueTxt: 'Continue →',
+                inp_sub: 'Use voice or select symptoms below.',
+                inp_orSelect: 'Or select symptoms',
+                micStatus: 'Tap to Speak',
+                sym_chest_pain: 'Chest Pain',
+                sym_shortness_breath: 'Shortness of Breath',
+                sym_headache: 'Severe Headache',
+                sym_fever: 'High Fever',
+                sym_dizziness: 'Dizziness',
+                sym_abdominal_pain: 'Abdominal Pain',
+                sym_fainting: 'Fainting',
+                sym_severe_bleeding: 'Severe/Unstoppable Bleeding',
+                sym_allergic_reaction: 'Severe Allergic Reaction',
+                sym_vomiting_diarrhea: 'Persistent Vomiting or Diarrhea',
+                sym_numbness_weakness: 'Body Numbness or Weakness',
+                sym_altered_consciousness: 'Altered Consciousness',
+                micSubIdle: 'Describe your condition clearly',
+                micLabelRec: 'Listening...',
+                micSubRec: 'Tap to stop',
+                micLabelDone: 'Recorded',
+                micSubDone: 'Tap to record again',
+                transcriptLang: 'AI Transcript',
+                inputSpinnerText: 'Processing voice...',
+                inp_continueTxt: 'Start Analysis',
                 inp_examples: ['Chest pain', 'Difficulty breathing', 'Severe headache', 'High fever', 'Dizziness', 'Abdominal pain', 'Nausea / vomiting', 'Leg swelling', 'Back pain', 'Fainting', 'Palpitations', 'Allergic reaction'],
                 ph_title: 'Add photos or video',
-                ph_sub: 'Optional — wound, rash, swelling, or a short video clip. Helps the hospital prepare.',
-                ph_addPhoto: '📷 Photo', ph_addVideo: '🎥 Video', ph_skip: 'Skip →', ph_continue: 'Continue →',
+                ph_sub: '<span style="color: var(--primary); font-weight: 900; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; background: rgba(10,132,255,0.1); padding: 4px 10px; border-radius: 8px;">Optional</span><br><span style="font-size: 1.05rem; color: var(--text-2); line-height: 1.5; display: block; margin-top: 12px;">If you have a visible wound, rash, swelling, or if a short video clip can help explain your condition, please upload it. This helps the medical team prepare before your arrival.</span>',
+                ph_continueTxt: 'Continue',
+                ph_addPhoto: 'Photo', ph_addVideo: 'Video', ph_skip: 'Skip →',
                 questionsIntro: 'To assess your condition better, please answer the short questions in the next section.\n\nAI is generating personalised questions, please wait…',
                 questionsSpinnerText: 'Generating questions…',
                 aiMode_real: '🤖 AI-generated questions', aiMode_mock: '⚠️ Demo mode — AI offline',
@@ -2855,13 +3150,28 @@
                 rs_notified_urg: '✅ Hospital notified', rs_notified_sub_urg: 'Please follow the instructions below',
                 rs_notified_rtn: '✅ Your information has been sent', rs_notified_sub_rtn: 'See instructions below before leaving',
                 rs_trackTitle: 'Keep location enabled while travelling', rs_trackSub: 'Your care team tracks your arrival in real time.',
-                rs_newBtn: '🔄 New assessment',
-                rs_tab_status: '🎫 Status', rs_tab_instructions: '📋 Instructions', rs_tab_contact: '👥 Contact',
+                rs_newBtn: 'New assessment',
+                rs_passFooter: 'Show this pass to the triage nurse or scan your QR code at the hospital entrance upon arrival.',
+                rs_tab_status: 'Check-in Auth',
+                rs_tab_instructions: 'Instructions',
+                rs_tab_contact: 'Emergency Contact',
                 rs_openNav: 'Open Navigation', rs_liveTrackingTitle: 'LIVE TRACKING ACTIVE', rs_liveTrackingSub: 'The medical team is monitoring your GPS for arrival.', rs_passFooter: 'Show this pass to the triage nurse immediately upon arrival.',
                 wl_langHeroSub: 'AI Emergency Assistant', inp_backBtn: 'Back', ph_backBtn: 'Back', gps_privacyText: 'Your location is only used to find the most suitable hospital. Your identity is kept confidential.', rs_contactTitle: 'Notify Contact Person', rs_contactDesc: 'The following will be sent to your emergency contact:', rs_contactItem1: 'Your triage status & registration number', rs_contactItem2: 'Assigned hospital name & address', rs_contactItem3: 'Your current location (one-time share)', rs_contactSendBtn: 'Send notification now', rs_demo: '⚠️ Demo only. Call 112 for real emergencies.', rs_prelimNotice: '⚠️ This is a preliminary assessment. The final decision rests with healthcare personnel.',
                 aiChecking: 'Checking AI…', aiConnected: '🤖 AI connected — real-time analysis', aiDemo: '⚙️ Demo mode — AI not configured',
                 adv_call112: 'Call 112 immediately or have someone call for you', adv_sit_still: 'Sit or lie down and do not move', adv_stay_calm: 'Stay calm and breathe slowly', adv_rest: 'Rest and avoid physical exertion', adv_someone_with_you: 'Have someone accompany you to the hospital', adv_bring_meds: 'Bring all current medications with you', adv_bring_id: 'Bring your ID and insurance card', adv_no_drive: 'Do NOT drive yourself to the hospital', adv_no_eat: 'Do not eat or drink anything until examined', adv_chest_loose: 'Loosen tight clothing around your chest', adv_chest_no_stress: 'Avoid physical or emotional stress', adv_bleed_pressure: 'Apply firm pressure to the wound with a clean cloth', adv_bleed_no_remove: 'Do not remove any object embedded in a wound', adv_breath_upright: 'Sit upright — do not lie flat', adv_breath_no_lie: 'Do not lie flat — this worsens breathing', adv_head_dark: 'Rest in a quiet, dark room if possible', adv_head_no_screen: 'Avoid screens, bright lights and loud noise', adv_proceed_er: 'Go to the emergency room as soon as possible',
                 hnPlaceholder: 'Choose your health record…',
+                tr_aiRoutingTitle: 'AI Smart Routing',
+                tr_aiRoutingSub: 'We route you based on real-time data.',
+                tr_liveTraffic: 'Traffic',
+                tr_erCapacity: 'ER Density',
+                tr_selectHospital: 'Select a Recommended Hospital',
+                tr_traffic_clear: 'Clear', tr_traffic_medium: 'Moderate', tr_traffic_heavy: 'Heavy',
+                tr_er_low: 'Low', tr_er_medium: 'Medium', tr_er_high: 'High', tr_er_full: 'Full',
+                wl_system_notice: 'This system has been developed to determine medical priorities.',
+                cs_data_secure: 'Your data is processed securely.',
+                rs_patientId: 'Patient Identifier',
+                rs_checkinAuth: 'CHECK-IN AUTHORIZATION'
+
             },
             de: {
                 topbarLang: 'DE',
@@ -2874,23 +3184,39 @@
                 wl_s1: '<strong style="color:var(--navy)">🎤 Sprechen</strong> — beschreiben Sie Ihre Symptome in Ihren eigenen Worten.',
                 wl_s2: '<strong style="color:var(--navy)">❓ Fragen</strong> — beantworten Sie kurze Folgefragen.',
                 wl_s3: '<strong style="color:var(--navy)">🏥 Krankenhaus</strong> — das beste Krankenhaus wird ausgewählt und benachrichtigt.',
-                wl_demo: '⚠️ Nur Demo. Im Notfall 112 anrufen.',
+                wl_demo: 'Nur Demo. Im Notfall 112 anrufen.',
                 wl_hnLabel: 'Krankenakte auswählen', wl_hnReq: 'PFLICHTFELD',
                 wl_hnHintText: 'Ihre Krankengeschichte wird mit diesem Besuch verknüpft',
                 btnStart: 'Starten →',
                 inp_title: 'Beschreiben Sie Ihre Symptome',
-                inp_sub: 'Tippen Sie auf das Mikrofon und sprechen Sie frei — oder tippen Sie unten.',
-                micLabelIdle: 'Zum Aufnehmen tippen', micSubIdle: 'Sprechen Sie deutlich in Ihrer Sprache',
-                micLabelRec: 'Aufnahme läuft…', micSubRec: 'Zum Stoppen erneut tippen',
-                micLabelDone: 'Erneut aufnehmen', micSubDone: 'Oder Text oben bearbeiten',
-                transcriptLang: '✓ Aufgezeichnet',
-                inp_orType: 'oder stattdessen tippen',
-                inp_placeholder: 'z.B. Plötzliche Brustschmerzen, Atemnot, seit 20 Minuten…',
-                inp_continueTxt: 'Weiter →',
+                inp_sub: 'Sprechen Sie oder wählen Sie Symptome.',
+                inp_orSelect: 'Oder Symptome wählen',
+                micLabelIdle: 'Tippen zum Sprechen',
+                micSub: 'Beschreiben Sie Ihre Beschwerden',
+                sym_chest_pain: 'Brustschmerzen',
+                sym_shortness_breath: 'Atemnot',
+                sym_headache: 'Starke Kopfschmerzen',
+                sym_fever: 'Hohes Fieber',
+                sym_dizziness: 'Schwindel',
+                sym_abdominal_pain: 'Bauchschmerzen',
+                sym_fainting: 'Ohnmacht',
+                sym_severe_bleeding: 'Unstillbare Blutung',
+                sym_allergic_reaction: 'Schwere allergische Reaktion',
+                sym_vomiting_diarrhea: 'Anhaltendes Erbrechen/Durchfall',
+                sym_numbness_weakness: 'Taubheitsgefühl oder Schwäche',
+                sym_altered_consciousness: 'Bewusstseinsveränderung',
+                micLabelRec: 'Hören zu...',
+                micSubRec: 'Stoppen tippen',
+                micLabelDone: 'Aufgezeichnet',
+                micSubDone: 'Erneut aufnehmen tippen',
+                transcriptLang: 'KI-Transkript',
+                inputSpinnerText: 'Stimme wird verarbeitet...',
+                inp_continueTxt: 'Analyse starten',
                 inp_examples: ['Brustschmerzen', 'Atemnot', 'Starke Kopfschmerzen', 'Hohes Fieber', 'Schwindel', 'Bauchschmerzen'],
                 ph_title: 'Fotos oder Video hinzufügen',
-                ph_sub: 'Optional — Wunde, Ausschlag, Schwellung oder ein kurzer Videoclip.',
-                ph_addPhoto: '📷 Foto', ph_addVideo: '🎥 Video', ph_skip: 'Überspringen →', ph_continue: 'Weiter →',
+                ph_sub: '<span style="color: var(--primary); font-weight: 900; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; background: rgba(10,132,255,0.1); padding: 4px 10px; border-radius: 8px;">Optional</span><br><span style="font-size: 1.05rem; color: var(--text-2); line-height: 1.5; display: block; margin-top: 12px;">Wenn Sie eine sichtbare Wunde, einen Ausschlag oder eine Schwellung haben oder ein kurzes Video Ihren Zustand besser erklären kann, laden Sie es bitte hoch. Dies hilft dem medizinischen Team bei der Vorbereitung.</span>',
+                ph_continueTxt: 'Weiter',
+                ph_addPhoto: 'Foto', ph_addVideo: 'Video', ph_skip: 'Überspringen →',
                 questionsIntro: 'Um Ihren Zustand besser beurteilen zu können, beantworten Sie bitte die kurzen Fragen im nächsten Abschnitt.\n\nKI generiert personalisierte Fragen, bitte warten…',
                 questionsSpinnerText: 'Fragen werden generiert…',
                 aiMode_real: '🤖 KI-generierte Fragen', aiMode_mock: '⚠️ Demo-Modus — KI offline',
@@ -2929,13 +3255,27 @@
                 rs_notified_urg: '✅ Krankenhaus informiert', rs_notified_sub_urg: 'Bitte folgen Sie den Anweisungen unten',
                 rs_notified_rtn: '✅ Ihre Informationen wurden gesendet', rs_notified_sub_rtn: 'Lesen Sie die Anweisungen vor der Abfahrt',
                 rs_trackTitle: 'Standort während der Fahrt aktiviert lassen', rs_trackSub: 'Ihr Pflegeteam verfolgt Ihre Ankunft in Echtzeit.',
-                rs_newBtn: '🔄 Neue Bewertung',
-                rs_tab_status: '🎫 Status', rs_tab_instructions: '📋 Anweisungen', rs_tab_contact: '👥 Kontakt',
+                rs_newBtn: 'Neue Bewertung',
+                rs_passFooter: 'Zeigen Sie diesen Pass der Triage-Schwester oder scannen Sie den QR-Code am Krankenhauseingang.',
+                rs_tab_status: 'Check-in Erlaubnis',
+                rs_tab_instructions: 'Anweisungen',
+                rs_tab_contact: 'Notfallkontakt',
                 rs_openNav: 'Navigation öffnen', rs_liveTrackingTitle: 'LIVE-TRACKING AKTIV', rs_liveTrackingSub: 'Das Team überwacht Ihre GPS-Position für die Ankunft.', rs_passFooter: 'Zeigen Sie diesen Pass sofort der Triage-Schwester bei Ankunft.',
                 wl_langHeroSub: 'KI-Notfallassistent', inp_backBtn: 'Zurück', ph_backBtn: 'Zurück', gps_privacyText: 'Ihr Standort wird nur verwendet, um das geeignetste Krankenhaus zu finden. Ihre Identität bleibt vertraulich.', rs_contactTitle: 'Kontaktperson benachrichtigen', rs_contactDesc: 'Folgendes wird an Ihren Notfallkontakt gesendet:', rs_contactItem1: 'Ihr Triagstatus & Registrierungsnummer', rs_contactItem2: 'Name & Adresse des Krankenhauses', rs_contactItem3: 'Ihr aktueller Standort (einmalig)', rs_contactSendBtn: 'Benachrichtigung senden', rs_demo: '⚠️ Nur Demo. Im Notfall 112 anrufen.',
                 aiChecking: 'KI-Status wird geprüft…', aiConnected: '🤖 KI verbunden — Echtzeit-Analyse', aiDemo: '⚙️ Demo-Modus — KI nicht konfiguriert',
                 adv_call112: 'Rufen Sie sofort 112 an oder lassen Sie jemanden rufen', adv_sit_still: 'Setzen oder legen Sie sich hin und bewegen Sie sich nicht', adv_stay_calm: 'Bleiben Sie ruhig und atmen Sie langsam', adv_rest: 'Ruhen Sie sich aus und vermeiden Sie körperliche Anstrengung', adv_someone_with_you: 'Lassen Sie sich von jemandem ins Krankenhaus begleiten', adv_bring_meds: 'Bringen Sie alle aktuellen Medikamente mit', adv_bring_id: 'Bringen Sie Ausweis und Krankenversicherungskarte mit', adv_no_drive: 'Fahren Sie NICHT selbst ins Krankenhaus', adv_no_eat: 'Essen oder trinken Sie nichts bis zur Untersuchung', adv_chest_loose: 'Lockern Sie enge Kleidung um die Brust', adv_chest_no_stress: 'Vermeiden Sie körperlichen oder emotionalen Stress', adv_bleed_pressure: 'Drücken Sie mit einem sauberen Tuch fest auf die Wunde', adv_bleed_no_remove: 'Entfernen Sie keinen in der Wunde steckenden Gegenstand', adv_breath_upright: 'Sitzen Sie aufrecht — legen Sie sich nicht hin', adv_breath_no_lie: 'Legen Sie sich nicht flach hin — das verschlimmert die Atmung', adv_head_dark: 'Ruhen Sie sich in einem ruhigen, dunklen Raum aus', adv_head_no_screen: 'Vermeiden Sie Bildschirme, helles Licht und Lärm', adv_proceed_er: 'Gehen Sie so schnell wie möglich in die Notaufnahme',
                 hnPlaceholder: 'Krankenakte auswählen…',
+                tr_aiRoutingTitle: 'KI Smart Routing',
+                tr_aiRoutingSub: 'Wir leiten Sie basierend auf Echtzeitdaten weiter.',
+                tr_liveTraffic: 'Verkehr',
+                tr_erCapacity: 'ER Auslastung',
+                tr_selectHospital: 'Wählen Sie ein Krankenhaus',
+                tr_traffic_clear: 'Frei', tr_traffic_medium: 'Mäßig', tr_traffic_heavy: 'Viel',
+                tr_er_low: 'Wenig', tr_er_medium: 'Mittel', tr_er_high: 'Hoch', tr_er_full: 'Voll',
+                wl_system_notice: 'Dieses System wurde entwickelt, um medizinische Prioritäten zu bestimmen.',
+                cs_data_secure: 'Ihre Daten werden sicher verarbeitet.',
+                rs_patientId: 'Patientenkennung',
+                rs_checkinAuth: 'CHECK-IN ERLAUBNIS'
             },
             tr: {
                 topbarLang: 'TR',
@@ -2948,23 +3288,39 @@
                 wl_s1: '<strong style="color:var(--navy)">🎤 Konuşun</strong> — belirtilerinizi kendi kelimelerinizle açıkça anlatın.',
                 wl_s2: '<strong style="color:var(--navy)">❓ Sorular</strong> — birkaç kısa takip sorusunu yanıtlayın.',
                 wl_s3: '<strong style="color:var(--navy)">🏥 Hastane</strong> — en uygun hastane seçilir ve bilgilendirilir.',
-                wl_demo: "⚠️ Yalnızca demo. Gerçek acillerde 112'yi arayın.",
+                wl_demo: "Yalnızca demo. Gerçek acillerde 112'yi arayın.",
                 wl_hnLabel: 'Sağlık kaydınızı seçin', wl_hnReq: 'ZORUNLU',
                 wl_hnHintText: 'Tıbbi geçmişiniz bu ziyaretle ilişkilendirilecek',
                 btnStart: 'Başlayın →',
-                inp_title: 'Belirtilerinizi anlatın',
-                inp_sub: 'Mikrofona dokunun ve özgürce konuşun — ya da aşağıya yazın.',
-                micLabelIdle: 'Kaydetmek için dokunun', micSubIdle: 'Kendi dilinizde açıkça konuşun',
-                micLabelRec: 'Kaydediliyor…', micSubRec: 'Durdurmak için tekrar dokunun',
-                micLabelDone: 'Tekrar kaydedin', micSubDone: 'Ya da yukarıdaki metni düzenleyin',
-                transcriptLang: '✓ Kaydedildi',
-                inp_orType: 'veya yazarak girin',
-                inp_placeholder: 'Örn: Ani göğüs ağrısı, nefes darlığı, 20 dakika önce başladı…',
-                inp_continueTxt: 'Devam →',
+                inp_title: 'Rahatsızlığınızı anlatın',
+                inp_sub: 'Sesli olarak anlatın veya rahatsızlığınızı seçin.',
+                inp_orSelect: 'Veya rahatsızlığınızı seçin',
+                micStatus: 'Dokunun ve Konuşun',
+                micSub: 'Şikayetinizi açıkça anlatın',
+                sym_chest_pain: 'Göğüs Ağrısı',
+                sym_shortness_breath: 'Nefes Darlığı',
+                sym_headache: 'Şiddetli Baş Ağrısı',
+                sym_fever: 'Yüksek Ateş',
+                sym_dizziness: 'Baş Dönmesi',
+                sym_abdominal_pain: 'Karın Ağrısı',
+                sym_fainting: 'Bayılma',
+                sym_severe_bleeding: 'Durdurulamayan Kanama',
+                sym_allergic_reaction: 'Şiddetli Alerjik Reaksiyon',
+                sym_vomiting_diarrhea: 'Sürekli Kusma veya İshal',
+                sym_numbness_weakness: 'Uyuşma veya Güçsüzlük',
+                sym_altered_consciousness: 'Bilinç Değişikliği',
+                micLabelRec: 'Dinleniyor...',
+                micSubRec: 'Durdurmak için dokunun',
+                micLabelDone: 'Kaydedildi',
+                micSubDone: 'Yeniden kaydetmek için dokunun',
+                transcriptLang: 'Ses Metne Dönüştürme',
+                inputSpinnerText: 'Ses işleniyor...',
+                inp_continueTxt: 'Analizi Başlat',
                 inp_examples: ['Göğüs ağrısı', 'Nefes darlığı', 'Şiddetli baş ağrısı', 'Yüksek ateş', 'Baş dönmesi', 'Karın ağrısı', 'Bulantı / kusma', 'Bacak şişliği', 'Sırt ağrısı', 'Bayılma', 'Çarpıntı', 'Alerjik reaksiyon'],
                 ph_title: 'Fotoğraf veya video ekleyin',
-                ph_sub: 'İsteğe bağlı — yara, döküntü, şişlik veya kısa bir video. Hastanenin hazırlık yapmasına yardımcı olur.',
-                ph_addPhoto: '📷 Fotoğraf', ph_addVideo: '🎥 Video', ph_skip: 'Atla →', ph_continue: 'Devam →',
+                ph_sub: '<span style="color: var(--primary); font-weight: 900; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; background: rgba(10,132,255,0.1); padding: 4px 10px; border-radius: 8px;">İsteğe Bağlı</span><br><span style="font-size: 1.05rem; color: var(--text-2); line-height: 1.5; display: block; margin-top: 12px;">Görünür bir yara, döküntü, şişlik varsa veya kısa bir video durumunuzu daha iyi açıklayacaksa lütfen yükleyin. Bu, sağlık ekibinin siz gelmeden önce hazırlık yapmasına yardımcı olur.</span>',
+                ph_continueTxt: 'Devam Et',
+                ph_addPhoto: 'Fotoğraf', ph_addVideo: 'Video', ph_skip: 'Atla →',
                 questionsIntro: 'Durumunuzu daha iyi değerlendirebilmem için sonraki kısımdaki kısa sorulara lütfen cevap verin.\n\nYapay zeka tarafından sorular oluşturuluyor, lütfen bekleyin…',
                 questionsSpinnerText: 'Sorular oluşturuluyor…',
                 aiMode_real: '🤖 Yapay zeka soruları', aiMode_mock: '⚠️ Demo modu — YZ çevrimdışı',
@@ -3003,13 +3359,27 @@
                 rs_notified_urg: '✅ Hastane bilgilendirildi', rs_notified_sub_urg: 'Lütfen aşağıdaki talimatları izleyin',
                 rs_notified_rtn: '✅ Bilgileriniz gönderildi', rs_notified_sub_rtn: 'Ayrılmadan önce talimatları okuyun',
                 rs_trackTitle: 'Yolculuk sırasında konumu açık bırakın', rs_trackSub: 'Bakım ekibiniz varışınızı gerçek zamanlı takip eder.',
-                rs_newBtn: '🔄 Yeni değerlendirme',
-                rs_tab_status: '🎫 Durum', rs_tab_instructions: '📋 Talimatlar', rs_tab_contact: '👥 İletişim',
-                rs_openNav: 'Navigasyonu Aç', rs_liveTrackingTitle: 'CANLI TAKİP AKTİF', rs_liveTrackingSub: 'Sağlık ekibi varışınızı GPS ile izliyor.', rs_passFooter: 'Varışta bu kartı triyaj hemşiresine derhal gösterin.',
+                rs_newBtn: 'Yeni değerlendirme',
+                rs_passFooter: 'Varışta bu kartı görevliye gösterin veya girişteki cihaza QR kodunuzu okutun.',
+                rs_tab_status: 'Giriş İzni',
+                rs_tab_instructions: 'Talimatlar',
+                rs_tab_contact: 'Acil Kişisi',
+                rs_openNav: 'Navigasyonu Aç', rs_liveTrackingTitle: 'CANLI TAKİP AKTİF', rs_liveTrackingSub: 'Sağlık ekibi varışınızı GPS ile izliyor.', rs_passFooter: 'Varışta bu kartı görevliye gösterin veya girişteki cihaza QR kodunuzu okutun.',
                 wl_langHeroSub: 'YZ Acil Asistanı', inp_backBtn: 'Geri', ph_backBtn: 'Geri', gps_privacyText: 'Konumunuz yalnızca en uygun hastaneyi bulmak için kullanılmaktadır. Kimliğiniz gizli tutulmaktadır.', rs_contactTitle: 'Bu bilgiler kayıtlı ACİL kişinize gönderilecek', rs_contactDesc: 'Acil kişinize şunlar gönderilecek:', rs_contactItem1: 'Triyaj durumunuz ve kayıt numarası', rs_contactItem2: 'Atanan hastane adı ve adresi', rs_contactItem3: 'Mevcut konumunuz (tek seferlik)', rs_contactSendBtn: 'Bildirimi gönder', rs_demo: "⚠️ Yalnızca demo. Gerçek acillerde 112'yi arayın.",
                 aiChecking: 'Yapay zeka durumu kontrol ediliyor…', aiConnected: '🤖 Yapay zeka bağlı — gerçek zamanlı analiz', aiDemo: '⚙️ Demo modu — YZ yapılandırılmamış',
                 adv_call112: "Hemen 112'yi arayın veya birine aratın", adv_sit_still: 'Oturun ya da uzanın ve hareket etmeyin', adv_stay_calm: 'Sakin olun ve yavaş nefes alın', adv_rest: 'Dinlenin ve fiziksel efordan kaçının', adv_someone_with_you: 'Hastaneye birinin eşliğinde gidin', adv_bring_meds: 'Kullandığınız tüm ilaçları yanınıza alın', adv_bring_id: 'Kimliğinizi ve sigorta kartınızı getirin', adv_no_drive: 'Hastaneye KENDİNİZ araba kullanarak gitmeyin', adv_no_eat: 'Muayene edilene kadar hiçbir şey yemeyin ya da içmeyin', adv_chest_loose: 'Göğsünüzün etrafındaki dar giysileri gevşetin', adv_chest_no_stress: 'Fiziksel veya duygusal stresten kaçının', adv_bleed_pressure: 'Temiz bir bezle yaraya sıkıca bastırın', adv_bleed_no_remove: 'Yaraya saplanmış bir nesneyi çıkarmayın', adv_breath_upright: 'Dik oturun — yatmayın', adv_breath_no_lie: 'Düz yatmayın — solunumu kötüleştirir', adv_head_dark: 'Mümkünse sakin, karanlık bir odada dinlenin', adv_head_no_screen: 'Ekranlardan, parlak ışıktan ve gürültüden kaçının', adv_proceed_er: 'En kısa sürede acil servise gidin',
                 hnPlaceholder: 'Sağlık kaydınızı seçin…',
+                tr_aiRoutingTitle: 'Akıllı Yönlendirme',
+                tr_aiRoutingSub: 'Gerçek zamanlı verilere dayanarak en uygun hastaneyi belirliyoruz.',
+                tr_liveTraffic: 'Trafik',
+                tr_erCapacity: 'Acil Yoğunluğu',
+                tr_selectHospital: 'Önerilen Hastanelerden Birini Seçin',
+                tr_traffic_clear: 'Açık', tr_traffic_medium: 'Yoğun', tr_traffic_heavy: 'Çok Yoğun',
+                tr_er_low: 'Az', tr_er_medium: 'Orta', tr_er_high: 'Fazla', tr_er_full: 'Dolu',
+                wl_system_notice: 'Bu sistem tıbbi öncelikleri belirlemek amacıyla geliştirilmiştir.',
+                cs_data_secure: 'Verileriniz güvenli bir şekilde işlenmektedir.',
+                rs_patientId: 'Hasta Kimlik Numarası',
+                rs_checkinAuth: 'GİRİŞ YETKİSİ'
             },
         };
 
@@ -3036,36 +3406,28 @@
         function applyLang() {
             const lb = document.getElementById('topbarLangBadge');
             lb.textContent = t('topbarLang'); lb.style.display = '';
-            // innerHTML elements (support HTML tags inside translations)
+
+            // innerHTML elements
             ['wl_whatLabel', 'wl_whatDesc', 'wl_b1', 'wl_b2', 'wl_b3', 'wl_howLabel', 'wl_s1', 'wl_s2', 'wl_s3', 'wl_demo',
                 'cs_title', 'cs_sub', 'cs_consentLabel', 'cs_consentDesc', 'cs_line1', 'cs_line3', 'cs_line4', 'cs_yes', 'cs_no',
                 'assessSpinnerText', 'cs_btnTxt', 'gps_waitTitle', 'gps_waitSub', 'gps_deniedTitle', 'gps_deniedDesc',
                 'gps_deniedSteps', 'gps_retryBtn', 'tr_nearestLabel', 'tr_adviceLabel', 'rs_regLabel', 'rs_regHint',
-                'rs_trackTitle', 'rs_trackSub', 'rs_newBtn', 'rs_demo'].forEach(id => {
+                'rs_trackTitle', 'rs_trackSub', 'rs_newBtn', 'rs_demo', 'ph_sub'].forEach(id => {
                     const el = document.getElementById(id); if (el) el.innerHTML = t(id);
                 });
-            // textContent elements
-            ['inp_title', 'inp_sub', 'inp_orType', 'inp_continueTxt', 'ph_title', 'ph_sub',
-                'ph_addPhoto', 'ph_addVideo', 'ph_skip', 'ph_continue', 'wl_hnLabel', 'wl_hnReq',
-                'wl_hnHintText', 'btnStart',
-                // Back buttons
-                'inp_backBtn', 'ph_backBtn',
-                // Language page hero sub
-                'wl_langHeroSub',
-                // GPS privacy note
-                'gps_privacy',
-                // Result page: preliminary notice
-                'rs_prelimNotice',
-                // Result page: contact person card
-                'rs_contactTitle', 'rs_contactDesc',
-                'rs_contactItem1', 'rs_contactItem2', 'rs_contactItem3',
-                'rs_contactSendBtn',
-                // Consent page: secure text
-                'cs_secureText'
+
+            // Text content elements (Added wl_system_notice here)
+            ['inp_title', 'inp_sub', 'inp_orSelect', 'inp_continueTxt', 'micStatus', 'micSub', 'inputSpinnerText', 'ph_title',
+                'ph_addPhoto', 'ph_addVideo', 'ph_continueTxt', 'wl_hnLabel', 'wl_hnReq',
+                'wl_hnHintText', 'btnStart', 'wl_langHeroSub', 'gps_privacy', 'rs_prelimNotice',
+                'rs_contactTitle', 'rs_contactDesc', 'rs_contactItem1', 'rs_contactItem2', 'rs_contactItem3',
+                'rs_contactSendBtn', 'cs_secureText',
+                'tr_aiRoutingTitle', 'tr_aiRoutingSub', 'tr_liveTraffic', 'tr_erCapacity', 'tr_selectHospital',
+                'wl_system_notice', 'cs_data_secure'
             ].forEach(id => {
                 const el = document.getElementById(id); if (el) el.textContent = t(id);
             });
-            // GPS privacy note uses different key name
+
             const gpsPri = document.getElementById('gps_privacy'); if (gpsPri) gpsPri.textContent = t('gps_privacyText');
             const ct = document.getElementById('complaintText'); if (ct) ct.placeholder = t('inp_placeholder');
             const ml = document.getElementById('micLabel'); if (ml) ml.textContent = t('micLabelIdle');
@@ -3075,8 +3437,13 @@
             renderHnDropdown();
             const sp = document.getElementById('hnSelectVal');
             if (sp && sp.dataset.placeholder === 'true') { sp.textContent = t('hnPlaceholder'); sp.classList.add('placeholder'); }
+
             renderExampleChips();
             updateConsentPage();
+
+            // FIX: Re-render symptom grid when language changes
+            renderSymptoms();
+
             const qb = document.getElementById('q_back'); if (qb) qb.textContent = t('q_back');
             const qn = document.getElementById('q_next'); if (qn) qn.textContent = t('q_next');
         }
@@ -3087,9 +3454,19 @@
             S.detectedLang = map[lang] || 'en-GB';
             S.selectedLang = S.detectedLang;
             S.healthNumber = null;
-            ['en', 'de', 'tr'].forEach(l => document.getElementById('langBtn_' + l).classList.toggle('selected', l === lang));
+
+            ['en', 'de', 'tr'].forEach(l => {
+                const btn = document.getElementById('langBtn_' + l);
+                if (btn) btn.classList.toggle('selected', l === lang);
+            });
+
             applyLang();
-            setTimeout(() => { goToPage('welcome'); checkAIStatus(); }, 180);
+
+            setTimeout(() => {
+                document.getElementById('page-lang').classList.remove('active');
+                goToPage('welcome');
+                checkAIStatus();
+            }, 200);
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -3245,7 +3622,13 @@
         let mediaRec = null, audioChunks = [], isRecording = false;
         let webSpeechRec = null, webSpeechResult = '';
 
-        async function toggleRecording() { if (isRecording) stopRecording(); else await startRecording(); }
+        async function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        }
 
         function startWebSpeech(langCode) {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return;
@@ -3338,96 +3721,117 @@
         }
         function setMicState(state) {
             const wf = document.getElementById('waveformBars');
-            if (wf) wf.classList.toggle('active', state === 'recording');
             const btn = document.getElementById('micBtn');
-            const mi = document.getElementById('micIcon'); const si = document.getElementById('stopIcon');
+            const statusTxt = document.getElementById('micStatus');
+            const subTxt = document.querySelector('#voiceUI div div:last-child'); // Alt metin
+
             if (state === 'recording') {
-                btn.classList.add('recording'); mi.style.display = 'none'; si.style.display = 'block';
-                document.getElementById('micLabel').textContent = t('micLabelRec');
-                document.getElementById('micSub').textContent = t('micSubRec');
+                if (wf) wf.style.display = 'flex';
+                if (btn) btn.classList.add('recording');
+                if (statusTxt) statusTxt.textContent = t('micLabelRec');
+                if (subTxt) subTxt.textContent = t('micSubRec');
             } else {
-                btn.classList.remove('recording'); mi.style.display = 'block'; si.style.display = 'none';
-                const done = !!S.complaint;
-                document.getElementById('micLabel').textContent = t(done ? 'micLabelDone' : 'micLabelIdle');
-                document.getElementById('micSub').textContent = t(done ? 'micSubDone' : 'micSubIdle');
+                if (wf) wf.style.display = 'none';
+                if (btn) btn.classList.remove('recording');
+                // Eğer şikayet varsa "Tekrar kaydedin", yoksa "Dokun ve Konuş" yazsın
+                if (statusTxt) statusTxt.textContent = S.complaint ? t('micLabelDone') : t('micLabelIdle');
+                if (subTxt) subTxt.textContent = S.complaint ? t('micSubDone') : t('micSubIdle');
             }
         }
         async function processAudio() {
-            // Wait briefly for Web Speech final result (fires after mediaRec.stop)
             await new Promise(r => setTimeout(r, 350));
-
             const wsr = (webSpeechResult || '').trim();
             const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
 
-            // If blob is too small but Web Speech has a result, use it immediately
-            if (blob.size < 500) {
-                if (wsr) { setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang); webSpeechResult = ''; return; }
-                const m = { en: 'Recording too short — please try again.', de: 'Aufnahme zu kurz — erneut versuchen.', tr: 'Kayıt çok kısa — tekrar deneyin.' };
-                toast(m[S.lang] || m.en, 'warn'); webSpeechResult = ''; return;
-            }
+            const spinner = document.getElementById('inputSpinner');
+            const spinnerText = document.getElementById('inputSpinnerText');
 
-            // If Web Speech already got a good result (≥ 3 words), use it directly
-            // and send audio to server in background for quality check only
-            if (wsr && wsr.split(' ').length >= 3) {
-                setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang);
-                webSpeechResult = '';
-                // Background: try server transcription and upgrade if better
-                try {
-                    const form = new FormData(); form.append('audio', blob, 'complaint.webm');
+            if (spinner) spinner.classList.add('visible');
+
+            const procMessages = { en: 'Processing audio…', de: 'Audio wird verarbeitet…', tr: 'Ses işleniyor…' };
+            if (spinnerText) spinnerText.textContent = procMessages[S.lang] || procMessages.en;
+
+            try {
+                if (blob.size > 500) {
+                    const form = new FormData();
+                    form.append('audio', blob, 'complaint.webm');
+
                     const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
                     const d = await r.json();
-                    if (d.text && d.text.trim() && d.text.trim().split(' ').length > wsr.split(' ').length) {
-                        setComplaintFromAudio(d.text.trim(), d.language || S.selectedLang);
-                    }
-                } catch (_) { }
-                return;
-            }
 
-            // Web Speech empty or very short — try server transcription (Whisper/Azure)
-            document.getElementById('inputSpinner').classList.add('visible');
-            const proc = { en: 'Processing audio…', de: 'Audio wird verarbeitet…', tr: 'Ses işleniyor…' };
-            document.getElementById('inputSpinnerText').textContent = proc[S.lang] || proc.en;
-            try {
-                const form = new FormData(); form.append('audio', blob, 'complaint.webm');
-                const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
-                const d = await r.json();
-                if (d.text && d.text.trim()) {
-                    S.detectedLang = d.language || S.selectedLang || 'en-GB';
-                    setComplaintFromAudio(d.text.trim(), d.language);
-                    webSpeechResult = '';
-                } else if (wsr) {
-                    // Last resort: use whatever Web Speech got
+                    if (d.text && d.text.trim()) {
+                        S.detectedLang = d.language || S.selectedLang || 'en-GB';
+                        setComplaintFromAudio(d.text.trim(), d.language);
+                        webSpeechResult = '';
+                        return;
+                    }
+                }
+
+                if (wsr) {
                     setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang);
                     webSpeechResult = '';
                 } else {
-                    const m = { en: 'Could not understand audio — please type.', de: 'Audio nicht verstanden — bitte tippen.', tr: 'Ses anlaşılamadı — lütfen yazın.' };
-                    toast(m[S.lang] || m.en, 'warn'); setMicState('idle');
+                    const m = { en: 'Could not understand audio — please type.', de: 'Audio nicht verstanden.', tr: 'Ses anlaşılamadı — lütfen yazın.' };
+                    toast(m[S.lang] || m.en, 'warn');
+                    setMicState('idle');
                 }
             } catch (e) {
-                if (wsr) { setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang); }
-                else { const m = { en: 'Could not process audio — please type.', de: 'Audio konnte nicht verarbeitet werden.', tr: 'Ses işlenemedi — lütfen yazın.' }; toast(m[S.lang] || m.en, 'warn'); setMicState('idle'); }
-                webSpeechResult = '';
-            } finally { document.getElementById('inputSpinner').classList.remove('visible'); }
+                console.error("Transcription Error:", e);
+                if (wsr) {
+                    setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang);
+                } else {
+                    const m = { en: 'Network error — please type.', de: 'Netzwerkfehler.', tr: 'Bağlantı hatası — lütfen yazın.' };
+                    toast(m[S.lang] || m.en, 'warn');
+                    setMicState('idle');
+                }
+            } finally {
+                if (spinner) spinner.classList.remove('visible');
+            }
         }
+
         const LANG_NAMES = { 'en-US': 'English', 'en-GB': 'English', 'de-DE': 'Deutsch', 'tr-TR': 'Türkçe', 'ar-SA': 'العربية', 'fr-FR': 'Français', 'es-ES': 'Español', 'it-IT': 'Italiano' };
+
         function setComplaintFromAudio(text, langCode) {
-            S.complaint = text; S.detectedLang = langCode || S.selectedLang || 'en-GB';
-            const langName = LANG_NAMES[langCode] || langCode || '';
-            document.getElementById('transcriptLang').textContent = `${t('transcriptLang')} — ${langName}`;
-            document.getElementById('transcriptText').textContent = text;
-            document.getElementById('transcriptBox').classList.add('visible');
-            document.getElementById('complaintText').value = '';
-            enableContinue(true); setMicState('idle');
+            if (!text || text.trim().length === 0) return;
+
+            S.voiceTranscript = text.trim();
+
+            updateFinalComplaint();
+
+            const tText = document.getElementById('transcriptText');
+            const tBox = document.getElementById('transcriptBox');
+            const tLang = document.getElementById('transcriptLang');
+
+            if (tText) tText.textContent = `"${S.voiceTranscript}"`;
+            if (tBox) tBox.style.display = 'block';
+            if (tLang) tLang.textContent = '✓ ' + t('transcriptLang');
+
+            enableContinue(true);
+            setMicState('idle');
         }
+
+        function updateFinalComplaint() {
+            const selectedNodes = document.querySelectorAll('.symptom-card.selected');
+            const selectedTexts = Array.from(selectedNodes).map(node => node.textContent.trim());
+
+            let combined = S.voiceTranscript || "";
+            if (selectedTexts.length > 0) {
+                combined += (combined ? ", " : "") + selectedTexts.join(', ');
+            }
+            S.complaint = combined;
+        }
+
         function onComplaintType() {
             const val = document.getElementById('complaintText').value.trim();
             if (val) { S.complaint = val; document.getElementById('transcriptBox').classList.remove('visible'); }
             enableContinue(!!(val || S.complaint));
         }
+
         function enableContinue(on) {
             const btn = document.getElementById('btnContinueInput');
             btn.disabled = !on; btn.style.opacity = on ? '1' : '0.45';
         }
+
         function submitComplaint() {
             if (!S.complaint.trim()) return;
             S.photos = []; S.questions = []; S.answers = []; S.qIdx = 0; S.dataConsent = null; S.assessment = null;
@@ -3693,14 +4097,11 @@
             if (lvl === 'EMERGENCY') { cls = 'emg'; title = t('tr_emg_title'); sub = t('tr_emg_sub'); }
             else if (lvl === 'URGENT') { cls = 'urg'; title = t('tr_urg_title'); sub = t('tr_urg_sub'); }
             else { cls = 'rtn'; title = t('tr_rtn_title'); sub = t('tr_rtn_sub'); }
+
             let html = `<div class="triage-banner ${cls}"><div class="triage-title">${title}</div><div class="triage-sub">${sub}</div></div>`;
-            if (lvl === 'EMERGENCY') html += `<a href="tel:112" class="btn btn-danger" style="margin-bottom:12px;font-size:1.1rem">📞 CALL 112</a><p style="text-align:center;font-size:.8rem;color:var(--s400);margin-bottom:12px">— ${t('tr_orBelow')} —</p>`;
+
             document.getElementById('triageBanner').innerHTML = html;
-            let doList = a.do_list || [], dontList = a.dont_list || [];
-            if (!doList.length && !dontList.length) { const fb = buildFallbackAssessment(S.complaint || '', S.answers); doList = fb.do_list; dontList = fb.dont_list; }
-            renderAdviceBlock('triageAdviceContent', doList, dontList, lvl);
-            document.getElementById('triageAdviceSection').style.display = 'block';
-            document.getElementById('tr_adviceLabel').textContent = t('tr_adviceLabel');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -3759,37 +4160,65 @@
             if (!hl) return;
 
             hl.innerHTML = S.hospitals.map((h, i) => {
-                const isLive = h.source && h.source.includes('azure');
                 const colors = { low: '#30D158', medium: '#FF9F0A', high: '#FF453A', full: '#8E8E93' };
-                const dotColor = colors[h.occupancy] || colors.medium;
+
+                // Acil Yoğunluğu Çevirisi
+                const occValue = (h.occupancy || 'medium').toLowerCase();
+                const dotColor = colors[occValue] || colors.medium;
+                const occText = t('tr_er_' + occValue) || h.occupancy_label || occValue;
+
+                // Trafik Yoğunluğu Hesaplaması (Basit Hız Formülü)
+                let speed = h.distance_km / (h.eta_minutes / 60);
+                let trafficLevel = 'clear';
+                if (speed < 20) trafficLevel = 'heavy';
+                else if (speed < 35) trafficLevel = 'medium';
+
+                const trafficColors = { clear: '#30D158', medium: '#FF9F0A', heavy: '#FF453A' };
+                const tColor = trafficColors[trafficLevel];
+                const tText = t('tr_traffic_' + trafficLevel);
 
                 return `
-                <div class="hosp-card ${i === 0 ? 'best' : ''}" onclick="selectHospital(${i})">
-                    ${i === 0 ? `<div class="best-badge">BEST CHOICE</div>` : ''}
-                    <div class="hosp-name">${h.name}</div>
-                    <div class="hosp-meta">
-                        <div class="hosp-chip">
-                            <i data-lucide="ruler" style="width:14px; height:14px; margin-right:4px;"></i> 
-                            ${h.distance_km} km
-                        </div>
-                        <div class="hosp-chip" style="${i === 0 ? 'color:var(--medical-blue); font-weight:800;' : ''}">
-                            <i data-lucide="clock" style="width:14px; height:14px; margin-right:4px;"></i> 
-                            ~${h.eta_minutes} min
-                        </div>
-                        <div class="hosp-chip">
-                            <span style="width:8px; height:8px; background:${dotColor}; border-radius:50%; display:inline-block; margin-right:5px; box-shadow: 0 0 5px ${dotColor}"></span>
-                            ${h.occupancy_label}
-                        </div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-                        <div class="hosp-addr" style="display:flex; align-items:center; gap:4px; font-size:0.75rem;">
+                <div class="hosp-card ${i === 0 ? 'best' : ''}" onclick="selectHospital(${i})" style="display:flex; justify-content:space-between; align-items:center; gap: 10px; padding: 20px !important;">
+                    ${i === 0 ? `<div class="best-badge" style="top: -10px; left: 20px;">⭐ ${t('tr_fastest') || 'BEST CHOICE'}</div>` : ''}
+                    
+                    <div style="flex: 1; padding-right: 10px;">
+                        <div class="hosp-name" style="padding-right:0; margin-bottom: 8px; font-size: 1.05rem; line-height: 1.2;">${h.name}</div>
+                        <div class="hosp-addr" style="font-size: 0.75rem; margin-bottom: 10px;">
                             <i data-lucide="map-pin" style="width:12px; height:12px; color:var(--medical-blue)"></i>
                             ${h.address || ''}
                         </div>
-                        <div style="font-size:0.65rem; font-weight:700; display:flex; align-items:center; gap:4px;">
-                            <i data-lucide="${isLive ? 'zap' : 'calculator'}" style="width:10px; height:10px;"></i>
-                            ${isLive ? 'LIVE TRAFFIC' : 'ESTIMATED'}
+                        <div style="display:flex; gap: 8px; flex-wrap: wrap;">
+                            <div class="hosp-chip" style="font-size: 0.7rem; padding: 4px 10px;">
+                                <i data-lucide="navigation" style="width:12px; height:12px;"></i> ${h.distance_km} km
+                            </div>
+                            <div class="hosp-chip" style="font-size: 0.7rem; padding: 4px 10px; color:var(--medical-blue); font-weight:800; background: var(--primary-l); border-color: var(--primary-m);">
+                                <i data-lucide="timer" style="width:12px; height:12px;"></i> ~${h.eta_minutes} dk
+                            </div>
                         </div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 10px; text-align:right; min-width: 100px; border-left: 1.5px dashed var(--border); padding-left: 15px;">
+                        
+                        <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                            <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                                <span style="font-size:0.55rem; color:var(--text-3); font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">${t('tr_liveTraffic')}</span>
+                                <span style="font-size:0.8rem; font-weight:800; color:${tColor}">${tText}</span>
+                            </div>
+                            <div style="background: ${tColor}15; border: 1px solid ${tColor}40; padding: 6px; border-radius: 10px; color: ${tColor}; display:flex;">
+                                <i data-lucide="car" style="width:16px; height:16px;"></i>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                            <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                                <span style="font-size:0.55rem; color:var(--text-3); font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">${t('tr_erCapacity')}</span>
+                                <span style="font-size:0.8rem; font-weight:800; color:${dotColor}">${occText}</span>
+                            </div>
+                            <div style="background: ${dotColor}15; border: 1px solid ${dotColor}40; padding: 6px; border-radius: 10px; color: ${dotColor}; display:flex;">
+                                <i data-lucide="activity" style="width:16px; height:16px;"></i>
+                            </div>
+                        </div>
+                        
                     </div>
                 </div>`;
             }).join('');
@@ -3860,11 +4289,11 @@
         // RESULT (Updated with Elegant UI & Lucide Icons)
         // ═══════════════════════════════════════════════════════════
         function renderResult() {
-            const a = S.assessment || {};
-            const ht = S.selectedHospital;
-            if (!ht) return;
+            const assessmentData = S.assessment || {};
+            const selectedHosp = S.selectedHospital;
+            if (!selectedHosp) return;
 
-            const lvl = (a.triage_level || 'URGENT').toUpperCase();
+            const triageLevel = (assessmentData.triage_level || 'URGENT').toUpperCase();
             const resultPage = document.getElementById('page-result');
             if (!resultPage) return;
 
@@ -3874,74 +4303,72 @@
                 <div id="resultEmergencyCall"></div>
                 <div id="resultBanner" style="margin-bottom:14px;"></div>
 
+                <div class="card" style="margin-bottom:16px; border-left: 6px solid var(--success) !important;">
+                    <p style="font-size:1.1rem; font-weight:800; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                        <i data-lucide="hospital" style="width:18px; height:18px; color:var(--medical-blue)"></i>
+                        ${escHtml(selectedHosp.name)}
+                    </p>
+                    <p style="font-size:.8rem; color:var(--text-2); margin-bottom:12px; padding-left: 26px;">
+                        ${escHtml(selectedHosp.address || '')}
+                    </p>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; padding-left: 26px;">
+                        <span class="hosp-chip" style="display:flex; align-items:center; gap:4px;">
+                            <i data-lucide="navigation" style="width:12px; height:12px;"></i> ${selectedHosp.distance_km} km
+                        </span>
+                        <span class="hosp-chip" style="display:flex; align-items:center; gap:4px; color:var(--medical-blue); font-weight:700;">
+                            <i data-lucide="timer" style="width:12px; height:12px;"></i> ~${selectedHosp.eta_minutes} min
+                        </span>
+                        <span class="hosp-chip" style="display:flex; align-items:center; gap:4px;">
+                            <i data-lucide="info" style="width:12px; height:12px;"></i> ${escHtml(selectedHosp.occupancy_label || '')}
+                        </span>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${selectedHosp.lat},${selectedHosp.lon}')" style="margin-bottom:24px; gap:8px; border-color:var(--medical-primary); color:var(--medical-primary); font-weight:700;">
+                    <i data-lucide="map-pin" style="width:18px; height:18px;"></i>
+                    ${t('rs_openNav')}
+                </button>
                 <div class="result-tabs">
                     <button class="result-tab-btn active" onclick="switchResultTab(0)">
-                        <i data-lucide="activity" style="width:14px; height:14px; margin-right:6px; color:var(--primary);"></i>
+                        <i data-lucide="shield-check" style="width:14px; height:14px; margin-right:4px; color:var(--primary);"></i>
                         ${t('rs_tab_status')}
                     </button>
                     <button class="result-tab-btn" onclick="switchResultTab(1)">
-                        <i data-lucide="clipboard-list" style="width:14px; height:14px; margin-right:6px; color:var(--orange);"></i>
+                        <i data-lucide="clipboard-list" style="width:14px; height:14px; margin-right:4px; color:var(--orange);"></i>
                         ${t('rs_tab_instructions')}
                     </button>
                     <button class="result-tab-btn" onclick="switchResultTab(2)">
-                        <i data-lucide="users" style="width:14px; height:14px; margin-right:6px; color:var(--success);"></i>
+                        <i data-lucide="users" style="width:14px; height:14px; margin-right:4px; color:var(--success);"></i>
                         ${t('rs_tab_contact')}
                     </button>
                 </div>
 
                 <div class="result-tab-panel active" id="resultTab0">
-                    
-                    <div class="digital-pass" style="margin-bottom: 24px;">
+                    <div class="digital-pass" style="margin-bottom: 16px;">
                         <div style="background: var(--medical-blue); color: white; padding: 14px; text-align: center; font-weight: 800; font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 6px;">
                             <i data-lucide="shield-check" style="width:14px; height:14px;"></i>
-                            Check-in Authorization
+                            ${t('rs_checkinAuth')}
                         </div>
                         <div style="padding: 24px 20px; text-align: center;">
                             <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 16px;">
                                 <i data-lucide="fingerprint" style="width:20px; height:20px; color:var(--text-3); margin-bottom:6px;"></i>
-                                <div style="font-size: 0.65rem; color: var(--text-2); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Patient Identifier</div>
+                                <div style="font-size: 0.65rem; color: var(--text-2); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">${t('rs_patientId')}</div>
                                 <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: var(--medical-blue);">${S.regNumber}</div>
                             </div>
                             
                             <div style="background: var(--ios-bg); display: inline-block; padding: 12px; border-radius: 18px; margin-bottom: 20px; border: 1px solid var(--border);">
-                                <img src="${qrUrl}" alt="QR" style="width:130px; height:130px; border-radius:8px; display: block;">
+                                <img src="${qrUrl}" alt="QR Code" style="width:130px; height:130px; border-radius:8px; display: block;">
                             </div>
 
                             <div style="border-top: 2px dashed var(--ios-bg); margin: 0 -20px 20px; position: relative;"></div>
 
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-2); font-size: 0.8rem; font-weight: 600;">
-                                <i data-lucide="scan-face" style="width:16px; height:16px; color:var(--medical-blue)"></i>
-                                ${t('rs_passFooter')}
+                            <div style="display: flex; align-items: center; justify-content: center; text-align:center; gap: 8px; color: var(--text-2); font-size: 0.8rem; font-weight: 600; line-height: 1.4;">
+                                <i data-lucide="scan-face" style="width:16px; height:16px; color:var(--medical-blue); flex-shrink:0;"></i>
+                                <span>${t('rs_passFooter')}</span>
                             </div>
                         </div>
                     </div>
-
-                    <div class="card" style="margin-bottom:16px; border-left: 6px solid var(--success) !important;">
-                        <p style="font-size:1.1rem; font-weight:800; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
-                            <i data-lucide="hospital" style="width:18px; height:18px; color:var(--medical-blue)"></i>
-                            ${escHtml(ht.name)}
-                        </p>
-                        <p style="font-size:.8rem; color:var(--text-2); margin-bottom:12px; padding-left: 26px;">
-                            ${escHtml(ht.address || '')}
-                        </p>
-                        <div style="display:flex; gap:8px; flex-wrap:wrap; padding-left: 26px;">
-                            <span class="hosp-chip" style="display:flex; align-items:center; gap:4px;">
-                                <i data-lucide="navigation" style="width:12px; height:12px;"></i> ${ht.distance_km} km
-                            </span>
-                            <span class="hosp-chip" style="display:flex; align-items:center; gap:4px; color:var(--medical-blue); font-weight:700;">
-                                <i data-lucide="timer" style="width:12px; height:12px;"></i> ~${ht.eta_minutes} min
-                            </span>
-                            <span class="hosp-chip" style="display:flex; align-items:center; gap:4px;">
-                                <i data-lucide="info" style="width:12px; height:12px;"></i> ${escHtml(ht.occupancy_label || '')}
-                            </span>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-secondary" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${ht.lat},${ht.lon}')" style="margin-bottom:16px; gap:8px; border-color:var(--medical-blue); color:var(--medical-blue); font-weight:700;">
-                        <i data-lucide="map-pin" style="width:18px; height:18px;"></i>
-                        ${t('rs_openNav')}
-                    </button>
-
+                    
                     <div class="card" style="background:var(--accent-blue) !important; border:none; text-align:center; padding:15px !important;">
                         <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
                             <div class="live-glow"></div>
@@ -3990,27 +4417,30 @@
                             ${t('rs_contactSendBtn')}
                         </button>
                     </div>
-
-                    <div class="divider"></div>
-                    <button class="btn btn-secondary" onclick="location.reload()" style="margin-bottom:8px; font-weight:700;">
-                        <i data-lucide="refresh-cw" style="width:16px; height:16px; margin-right:6px;"></i>
-                        ${t('rs_newBtn')}
-                    </button>
-                    <p style="text-align:center; font-size:.7rem; color:var(--text-4); margin-top:10px;">
-                        <i data-lucide="info" style="width:12px; height:12px; vertical-align:middle; margin-right:2px;"></i>
-                        ${t('rs_demo')}
-                    </p>
                 </div>
+                
+                <div class="divider"></div>
+                <button class="btn btn-secondary" onclick="location.reload()" style="margin-bottom:8px; font-weight:700;">
+                    <i data-lucide="refresh-cw" style="width:16px; height:16px; margin-right:6px;"></i>
+                    ${t('rs_newBtn')}
+                </button>
+                <p style="text-align:center; font-size:.7rem; color:var(--text-4); margin-top:10px;">
+                    <i data-lucide="info" style="width:12px; height:12px; vertical-align:middle; margin-right:2px;"></i>
+                    ${t('rs_demo')}
+                </p>
             `;
 
-            renderTriageBannerInternal(lvl);
+            renderTriageBannerInternal(triageLevel);
 
-            let doList = a.do_list || [], dontList = a.dont_list || [];
-            renderAdviceBlock('resultAdvice', doList, dontList, lvl);
+            let doList = assessmentData.do_list || [];
+            let dontList = assessmentData.dont_list || [];
+            renderAdviceBlock('resultAdvice', doList, dontList, triageLevel);
 
             lucide.createIcons();
 
-            if (typeof startLiveTracking === 'function') startLiveTracking();
+            if (typeof startLiveTracking === 'function') {
+                startLiveTracking();
+            }
         }
 
         function switchResultTab(idx) {
@@ -4051,7 +4481,7 @@
         function genRegNumber() {
             const now = new Date();
             const pad = n => String(n).padStart(2, '0');
-            return `CZ-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${Math.floor(1000 + Math.random() * 9000)}`;
+            return `VN-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${Math.floor(1000 + Math.random() * 9000)}`;
         }
         function escHtml(s) {
             return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -4065,6 +4495,57 @@
             else el.style.background = 'var(--navy)';
             clearTimeout(_toastTimer);
             _toastTimer = setTimeout(() => { el.className = ''; }, 3200);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // LIVE GPS TRACKING (Client-side)
+        // ═══════════════════════════════════════════════════════════
+        let _trackingWatchId = null;
+
+        function startLiveTracking() {
+            if (!navigator.geolocation) {
+                console.warn("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            // Clear any existing tracker to prevent duplicates
+            if (_trackingWatchId !== null) {
+                navigator.geolocation.clearWatch(_trackingWatchId);
+            }
+
+            // Start continuously watching the patient's position
+            _trackingWatchId = navigator.geolocation.watchPosition(
+                async (position) => {
+                    const currentLat = position.coords.latitude;
+                    const currentLon = position.coords.longitude;
+
+                    // We need the registration number (patient_id) to update the backend
+                    if (!S.regNumber) return;
+
+                    try {
+                        // Send the new coordinates to the FastAPI backend
+                        await fetch(`${API}/api/patient/${S.regNumber}/location`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                lat: currentLat,
+                                lon: currentLon
+                            })
+                        });
+                        console.log("Live location synced:", currentLat, currentLon);
+                    } catch (error) {
+                        console.error("Failed to sync live location:", error);
+                    }
+                },
+                (error) => {
+                    console.warn("Live tracking error or permission denied:", error);
+                },
+                {
+                    enableHighAccuracy: true, // Use GPS chip for precise tracking
+                    maximumAge: 5000,         // Accept cached positions up to 5 seconds old
+                    timeout: 10000            // Timeout if no location is found
+                }
+            );
         }
 
         // === V3 ENHANCEMENTS ===
@@ -4098,14 +4579,11 @@
          * Renders the triage status banner on the final result page.
          * Fixes the ReferenceError: renderTriageBannerInternal is not defined.
          */
-        function renderTriageBannerInternal(lvl) {
+        function renderTriageBannerInternal(level) {
             const banner = document.getElementById('resultBanner');
             if (!banner) return;
 
-            let cls = lvl === 'EMERGENCY' ? 'emg' : lvl === 'URGENT' ? 'urg' : 'rtn';
-
-            // Get the translated title from our TX object
-            // rs_notified_emg, rs_notified_urg, rs_notified_rtn
+            let cls = level === 'EMERGENCY' ? 'emg' : level === 'URGENT' ? 'urg' : 'rtn';
             let title = t('rs_notified_' + cls.toLowerCase());
 
             banner.innerHTML = `
@@ -4114,20 +4592,14 @@
                         ${title}
                     </div>
                     <div style="font-size:0.9rem; opacity:0.9;">
-                        ${lvl === 'EMERGENCY' ? 'Medical team has been alerted for your immediate arrival.' : 'Your information has been securely transmitted to the clinical team.'}
+                        ${level === 'EMERGENCY' ? 'Medical team has been alerted for your immediate arrival.' : 'Your information has been securely transmitted to the clinical team.'}
                     </div>
                 </div>`;
 
-            // If it's an emergency, also ensure the call button is visible
-            if (lvl === 'EMERGENCY') {
-                const callDiv = document.getElementById('resultEmergencyCall');
-                if (callDiv) {
-                    callDiv.innerHTML = `
-                        <button class="btn btn-danger" style="height:70px; width:100%; margin-bottom:16px; font-weight:900; font-size:1.2rem; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="location.href='tel:112'">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                            CALL 112 NOW
-                        </button>`;
-                }
+            // Removed the "Call 112" button logic completely as requested.
+            const callDiv = document.getElementById('resultEmergencyCall');
+            if (callDiv) {
+                callDiv.innerHTML = '';
             }
         }
     </script>
