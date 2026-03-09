@@ -71,6 +71,7 @@ e_temp*.js
 e_temp*.py
 temp_test*.js
 e_err.log
+take_screenshots.js
 
 # ── Claude Code local settings ────────────────────────────────────
 .claude/

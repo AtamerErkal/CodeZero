@@ -283,6 +283,26 @@ The ER Leaflet map refreshes the pin positions every 5 seconds — giving staff 
 
 ## 🏥 ER Command Center — Dashboard Features
 
+### Screenshots
+
+<div align="center">
+
+**Incoming Patients — Emergency Alert + Triage Cards**
+<img src="docs/images/ss_dashboard_1_incoming.png" width="85%" alt="ER Command Center — Incoming patient list with emergency alert banner"/>
+
+<br/>
+
+**Patient Detail — Clinical Dossier (This Visit tab)**
+<img src="docs/images/ss_dashboard_2_detail.png" width="85%" alt="Expanded patient card with clinical details, voice transcript, and AI risk flags"/>
+
+<br/>
+
+| Live GPS Tracking Map | Real-Time Statistics |
+|:---:|:---:|
+| <img src="docs/images/ss_dashboard_3_tracking.png" width="420" alt="Leaflet map with triage-coloured patient pins and ETA sidebar"/> | <img src="docs/images/ss_dashboard_4_stats.png" width="420" alt="Live statistics — triage breakdown, avg risk, GPS tracked count"/> |
+
+</div>
+
 ### Patient Card System
 - Smart diff rendering — cards update in-place (no flicker on refresh)
 - Expandable detail panel with 4 tabs: **Overview**, **Q&A Transcript**, **Clinical AI Report**, **Media**
@@ -317,6 +337,24 @@ When a new EMERGENCY-level patient registers, the dashboard triggers:
 <br/>
 
 ## 📱 Patient App — VitalNavAI
+
+### Screenshots
+
+<div align="center">
+
+| Language Selection | Welcome Screen |
+|:---:|:---:|
+| <img src="docs/images/ss_patient_1_lang.png" width="220" alt="Language selection — EN / DE / TR"/> | <img src="docs/images/ss_patient_2_welcome.png" width="220" alt="Welcome screen with AI status"/> |
+
+| Symptom Grid | Chest Pain Selected |
+|:---:|:---:|
+| <img src="docs/images/ss_patient_3_input.png" width="220" alt="Voice mic + symptom grid"/> | <img src="docs/images/ss_patient_3b_selected.png" width="220" alt="Chest Pain symptom highlighted"/> |
+
+| Photo Upload | AI Question Engine |
+|:---:|:---:|
+| <img src="docs/images/ss_patient_4_photos.png" width="220" alt="Optional photo/video upload"/> | <img src="docs/images/ss_patient_5_questions.png" width="220" alt="AiVoN generating personalised questions"/> |
+
+</div>
 
 ### Design Principles
 - **Zero friction** — voice-first; patients in distress don't type
