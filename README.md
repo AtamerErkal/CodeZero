@@ -330,13 +330,6 @@ When a new EMERGENCY-level patient registers, the dashboard triggers:
 | English | `en` | LTR |
 | German / Deutsch | `de` | LTR |
 | Turkish / Türkçe | `tr` | LTR |
-| Arabic / عربي | `ar` | **RTL** |
-| French / Français | `fr` | LTR |
-| Spanish / Español | `es` | LTR |
-| Russian / Русский | `ru` | LTR |
-| Polish / Polski | `pl` | LTR |
-| Chinese / 中文 | `zh` | LTR |
-| Dutch / Nederlands | `nl` | LTR |
 
 ### Photo Upload
 Patients can upload images or videos of their injury, rash, or affected area. Media is stored server-side and accessible in the dashboard's media tab with a lightbox viewer (keyboard navigation: ←→ arrows, Escape to close).
