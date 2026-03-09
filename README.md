@@ -34,11 +34,6 @@
 - **VitalNavAI** — a mobile-first patient app where anyone can describe their emergency, answer AI-guided clinical questions, and be routed to the best available hospital.
 - **ER Command Center** — a real-time hospital dashboard where ER staff see incoming patients, their AI-assessed triage level, live GPS location, estimated arrival time, and full medical history — *before* the patient arrives.
 
-<div align="center">
-<img src="docs/images/demo_preview.png" alt="VitalNavAI Patient App + ER Command Center Dashboard" width="90%"/>
-<br/><br/>
-</div>
-
 Unlike symptom checkers that end with a generic recommendation, CodeZero creates a **live two-sided connection**: the patient gets routed to the right hospital, and the ER gets the right preparation time.
 
 <br/>
