@@ -33,9 +33,8 @@ ILLNESS_PHOTOS_DIR = ROOT / "data" / "illness_photos"
 ILLNESS_PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
 
 from src.hospital_queue import HospitalQueue
-from src.health_db import (
-    init_db, get_patient, get_age, get_full_record,
-    list_demo_health_numbers,
+from src.health_db_v1 import (
+    get_patient, get_full_record, get_age, list_demo_health_numbers
 )
 from src.triage_engine import TRIAGE_EMERGENCY, TRIAGE_URGENT, TRIAGE_ROUTINE
 
@@ -43,7 +42,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # â”€â”€ init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-init_db()
+# init_db() # Removed as per new health_db_v1 import
 hq = HospitalQueue()
 
 # â”€â”€ Migrate existing DB: add missing columns if not present â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -113,10 +112,24 @@ class AssessRequest(_BM):
     questions:          list = []   # list of str or dict (with question_en)
     answers:            list = []
     demographics:       _Opt[dict] = None
+    health_number:      _Opt[str] = None
     has_photo:          bool = False
     photo_count:        int = 0
     photo_base64:       _Opt[str] = None
     photo_mime:         _Opt[str] = None
+
+class NextQuestionRequest(_BM):
+    complaint:          str
+    complaint_en:       _Opt[str] = None
+    detected_language:  _Opt[str] = None
+    previous_answers:   list = []
+    demographics:       _Opt[dict] = None
+    health_number:      _Opt[str] = None
+
+class NextQuestionResponse(_BM):
+    done:         bool
+    question:     _Opt[dict] = None
+    complaint_en: str
 
 class MediaItem(_BM):
     dataUrl: str
@@ -201,49 +214,101 @@ def _enrich_patient(p: dict) -> dict:
                     lambda m: (m.get("name") or "") + "|" + (m.get("dosage") or "")
                 )
 
-                # Latest vitals (most recent)
+                # Latest vitals (most recent) - include bmi, glucose and full history
                 vitals_list = full_record.get("vitals", [])
                 if vitals_list:
                     latest = vitals_list[0]  # Already sorted by recorded_at DESC
+                    bmi_val = latest.get("bmi")
+                    if not bmi_val and db and db.get("weight_kg") and db.get("height_cm"):
+                        try:
+                            h_m = db["height_cm"] / 100
+                            bmi_val = round(db["weight_kg"] / (h_m ** 2), 1)
+                        except Exception:
+                            bmi_val = None
                     p["vitals"] = {
-                        "bp_systolic": latest.get("bp_systolic"),
+                        "bp_systolic":  latest.get("bp_systolic"),
                         "bp_diastolic": latest.get("bp_diastolic"),
-                        "heart_rate": latest.get("heart_rate"),
-                        "spo2": latest.get("spo2"),
-                        "temperature": latest.get("temperature"),
-                        "recorded_at": latest.get("recorded_at"),
+                        "heart_rate":   latest.get("heart_rate"),
+                        "spo2":         latest.get("spo2"),
+                        "temperature":  latest.get("temperature"),
+                        "glucose":      latest.get("glucose"),
+                        "bmi":          bmi_val,
+                        "recorded_at":  latest.get("recorded_at"),
                     }
+                    p["allVitals"] = _dedup(vitals_list[:10], lambda v: v.get("recorded_at", ""))
                 else:
-                    p["vitals"] = {}
+                    p["vitals"]    = {}
+                    p["allVitals"] = []
 
-                # Allergies â€” deduplicated by allergen name
+                # Allergies - deduplicated by allergen name
                 raw_allergy = full_record.get("allergies", [])
                 p["allergies"] = _dedup(
                     raw_allergy,
                     lambda a: (a.get("allergen") or "").lower()
                 )
 
-                # Lab results (latest 5, deduplicated by test_name+test_date)
+                # Lab results (latest 15, deduplicated by test_name+test_date)
                 raw_labs = full_record.get("lab_results", [])
                 p["lab_results"] = _dedup(
                     raw_labs,
                     lambda l: (l.get("test_name") or "") + "|" + (l.get("test_date") or "")
-                )[:5]
+                )[:15]
 
-                # Past visits (latest 3, deduplicated by visit_date+chief_complaint)
+                # Past visits (latest 5, deduplicated by visit_date+chief_complaint)
                 raw_visits = full_record.get("visits", [])
                 p["visits"] = _dedup(
                     raw_visits,
                     lambda v: (v.get("visit_date") or "") + "|" + (v.get("chief_complaint") or v.get("diagnosis") or "")
+                )[:5]
+
+                # Doctor notes (latest 3) - critical for AI context and dashboard display
+                raw_notes = full_record.get("doctor_notes", [])
+                p["doctor_notes"] = _dedup(
+                    raw_notes,
+                    lambda n: (n.get("note_date") or "") + "|" + (n.get("assessment") or "")
+                )[:3]
+
+                # Imaging & diagnostics (latest 5)
+                raw_imaging = full_record.get("imaging", [])
+                p["imaging"] = _dedup(
+                    raw_imaging,
+                    lambda i: (i.get("study_date") or "") + "|" + (i.get("modality") or "") + "|" + (i.get("body_region") or "")
+                )[:5]
+
+                # Surgical history (latest 5)
+                raw_surgeries = full_record.get("surgeries", [])
+                p["surgeries"] = _dedup(
+                    raw_surgeries,
+                    lambda s: (s.get("surgery_date") or "") + "|" + (s.get("procedure_name") or "")
+                )[:5]
+
+                # Specialist consultations (latest 5)
+                raw_consults = full_record.get("consultations", [])
+                p["consultations"] = _dedup(
+                    raw_consults,
+                    lambda c: (c.get("consult_date") or "") + "|" + (c.get("specialty") or "")
+                )[:5]
+
+                # Upcoming / recent appointments (latest 3)
+                raw_appts = full_record.get("appointments", [])
+                p["appointments"] = _dedup(
+                    raw_appts,
+                    lambda a: (a.get("appointment_date") or "") + "|" + (a.get("department") or "")
                 )[:3]
         except Exception as e:
             logger.error("Health record enrich FAILED for %s: %s", hn, e, exc_info=True)
-            p["diagnoses"] = []
-            p["medications"] = []
-            p["vitals"] = {}
-            p["allergies"] = []
-            p["lab_results"] = []
-            p["visits"] = []
+            p["diagnoses"]      = []
+            p["medications"]    = []
+            p["vitals"]         = {}
+            p["allVitals"]      = []
+            p["allergies"]      = []
+            p["lab_results"]    = []
+            p["visits"]         = []
+            p["doctor_notes"]   = []
+            p["imaging"]        = []
+            p["surgeries"]      = []
+            p["consultations"]  = []
+            p["appointments"]   = []
     else:
         # No health_number â€” use patient_id but keep visit-specific data from DB
         p["full_name"]   = p.get("patient_id", "Unknown Patient")
@@ -312,40 +377,69 @@ def _enrich_patient(p: dict) -> dict:
 def api_stats():
     """KPI bar data."""
     stats = hq.get_queue_stats()
-    lvl   = stats.get("by_level", {})
     sts   = stats.get("by_status", {})
 
-    en_route = sum(
-        1 for p in hq.get_incoming_patients(limit=200)
-        if p.get("eta_minutes") or p.get("arrival_time")
-    )
+    # Active = incoming + arrived (both are "on their way / at the door")
+    incoming_count = sts.get("incoming", 0)
+    arrived_count  = sts.get("arrived", 0)
+    en_route = incoming_count + arrived_count
+
+    # Count triage levels across all active patients (incoming + arrived)
+    active_pts = [
+        p for p in hq.get_all_patients(limit=500)
+        if (p.get("status") or "incoming") in ("incoming", "arrived")
+    ]
+    from collections import Counter
+    triage_counts = Counter(p.get("triage_level", TRIAGE_ROUTINE) for p in active_pts)
 
     return {
-        "total":      sum(sts.values()),
-        "incoming":   sts.get("incoming", 0),
-        "emergencies": lvl.get(TRIAGE_EMERGENCY, 0),
-        "urgents":    lvl.get(TRIAGE_URGENT, 0),
-        "routines":   lvl.get(TRIAGE_ROUTINE, 0),
-        "en_route":   en_route,
-        "treated":    sts.get("discharged", 0),
+        "total":        sum(sts.values()),
+        "incoming":     incoming_count,
+        "emergencies":  triage_counts.get(TRIAGE_EMERGENCY, 0),
+        "urgents":      triage_counts.get(TRIAGE_URGENT, 0),
+        "routines":     triage_counts.get(TRIAGE_ROUTINE, 0),
+        "en_route":     en_route,
+        "treated":      sts.get("discharged", 0),
         "in_treatment": sts.get("in_treatment", 0),
     }
 
 
 @app.get("/api/patients")
-def api_patients(sort: str = "triage", limit: int = 50):
-    """Incoming patient list, enriched with health DB data."""
-    patients = hq.get_incoming_patients(limit=limit)
+def api_patients(sort: str = "triage", limit: int = 50, status: str = None):
+    """Patient list, enriched with health DB data.
+
+    If status is provided (e.g. 'discharged', 'in_treatment', 'arrived', 'incoming'),
+    returns all patients matching that status using get_all_patients().
+    Otherwise returns only incoming patients (default behaviour).
+    """
+    if status == "all":
+        patients = hq.get_all_patients(limit=limit)
+    elif status:
+        all_pts = hq.get_all_patients(limit=limit)
+        patients = [p for p in all_pts if (p.get("status") or "").lower() == status.lower()]
+    else:
+        patients = hq.get_incoming_patients(limit=limit)
     enriched = [_enrich_patient(p) for p in patients]
 
     if sort == "eta":
         enriched.sort(key=lambda p: p.get("eta_minutes") or 9999)
+    elif sort == "risk":
+        enriched.sort(key=lambda p: p.get("risk_score", 0) or 0, reverse=True)
     elif sort == "newest":
         enriched.sort(key=lambda p: p.get("timestamp", ""), reverse=True)
     elif sort == "oldest":
         enriched.sort(key=lambda p: p.get("timestamp", ""))
     # default: triage (already ordered by DB query)
 
+    return enriched
+
+
+@app.get("/api/tracking")
+def api_tracking():
+    """Live tracking data for active patients."""
+    patients = hq.get_incoming_patients(limit=200)
+    enriched = [_enrich_patient(p) for p in patients]
+    # Return all incoming patients; dashboard will filter those with location data
     return enriched
 
 
@@ -467,8 +561,14 @@ def patient_submit(body: SubmitRequest):
             if rec:     parts.append(f"Action: {rec}")
             asmt_text = " ".join(parts)
 
-        if asmt_text:
+        if asmt_text and not record.get("assessment"):
             record["assessment"] = asmt_text
+            
+        # If it's a dict, store the entire dict to preserve clinical_report
+        # so the dashboard can read assessment.clinical_report
+        if asmt_obj:
+            record["assessment"] = asmt_obj
+            
         if asmt_obj.get("suspected_conditions"):
             record["suspected_conditions"] = asmt_obj["suspected_conditions"]
         if asmt_obj.get("recommended_action"):
@@ -782,6 +882,92 @@ def patient_questions(body: QuestionsRequest):
     return QuestionsResponse(questions=questions, complaint_en=complaint_en)
 
 
+@app.post("/api/patient/questions/next", response_model=NextQuestionResponse)
+def patient_questions_next(body: NextQuestionRequest):
+    """
+    V10 Feature: Step-by-step adaptive questioning with Medical History and Vision support.
+    """
+    triage, translator = _get_triage_engine()
+
+    complaint_en = body.complaint_en or body.complaint
+    lang_hint = body.detected_language or "en-US"
+
+    _lang_map  = {
+        "tr": "Turkish", "de": "German",  "fr": "French",
+        "es": "Spanish", "ar": "Arabic",  "nl": "Dutch",
+        "it": "Italian", "pl": "Polish",  "pt": "Portuguese",
+        "ru": "Russian", "zh": "Chinese",
+    }
+    lang_name = next((v for k, v in _lang_map.items() if lang_hint.lower().startswith(k)), None)
+
+    # 1. Translate answers to English
+    qa_pairs = []
+    for item in body.previous_answers:
+        q_en = item.get("question_en", item.get("question", ""))
+        q_orig = item.get("question", "")
+        ans = item.get("answer", "")
+        img = item.get("image", None)
+
+        ans_en = str(ans)
+        if ans and lang_hint and not lang_hint.lower().startswith("en"):
+            if translator:
+                try:
+                    translated = translator.translate_to_english(str(ans), source_language=lang_hint)
+                    if translated: ans_en = translated
+                except:
+                    pass
+
+        qa_pairs.append({
+            "question": q_en,
+            "question_orig": q_orig,
+            "answer": ans_en,
+            "original_answer": str(ans),
+            "image": img
+        })
+
+    # 2. Get medical history if provided
+    medical_history = None
+    if body.health_number:
+        medical_history = get_full_record(body.health_number)
+
+    # 3. Generate Next Question
+    result = triage.generate_next_question(
+        chief_complaint=complaint_en,
+        previous_answers=qa_pairs,
+        demographics=body.demographics,
+        medical_history=medical_history
+    )
+
+    is_done = result.get("done", False)
+    q = result.get("question", None)
+
+    if q:
+        q["question_en"] = q.get("question", "")
+        if lang_name and not lang_hint.lower().startswith("en") and translator:
+            try:
+                translated_q = translator.translate_from_english(q["question"], lang_hint)
+                if translated_q:
+                    q["question"] = translated_q
+            except Exception as e:
+                logger.warning("Next question translation failed: %s", e)
+
+            if "options" in q and q["options"]:
+                translated_opts = []
+                for opt in q["options"]:
+                    try:
+                        translated_opt = translator.translate_from_english(opt, lang_hint)
+                        translated_opts.append(translated_opt if translated_opt else opt)
+                    except:
+                        translated_opts.append(opt)
+                q["options"] = translated_opts
+
+    return NextQuestionResponse(
+        done=is_done,
+        question=q,
+        complaint_en=complaint_en
+    )
+
+
 @app.post("/api/patient/assess")
 def patient_assess(body: AssessRequest):
     """Translate patient answers to English, run GPT-4 triage assessment,
@@ -873,9 +1059,15 @@ def patient_assess(body: AssessRequest):
     )
 
     # â”€â”€ Step 2: GPT-4 triage assessment (TriageEngine) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    medical_history = None
+    if getattr(body, "health_number", None):
+        medical_history = get_full_record(body.health_number)
+
     assessment = triage.assess_triage(
         chief_complaint=complaint_en,
         answers=qa_pairs,
+        medical_history=medical_history,
+        language=body.detected_language or "en-US",
     )
 
     # â”€â”€ Step 3: Generate pre-arrival DO/DON'T advice (GPT-4 + RAG) â”€â”€â”€â”€
@@ -1134,11 +1326,13 @@ def api_seed():
 
 
 
-@app.get("/api/debug/health")
+@app.get("/api/debug/health_db")
 def debug_health_db():
     """Debug: show health_records.db status. Visit /api/debug/health in browser."""
     try:
-        from src.health_db import _conn as hdb_conn, DB_PATH as HDB_PATH
+        from src.health_db_v1 import _conn as hdb_conn, DB_PATH as HDB_PATH
+        import sqlite3
+        import os
         with hdb_conn() as con:
             patients = con.execute("SELECT COUNT(*) FROM patients").fetchone()[0]
             vitals   = con.execute("SELECT COUNT(*) FROM vitals").fetchone()[0]
@@ -1154,11 +1348,11 @@ def debug_health_db():
     except Exception as e:
         return {"error": str(e), "status": "ERROR"}
 
-@app.post("/api/admin/reseed_health")
-def api_reseed_health():
+@app.post("/api/debug/health_db/reset")
+def reset_health_db():
     """Force re-seed vitals/diagnoses/medications if they were empty."""
     try:
-        from src.health_db import _conn as hdb_conn, _seed as hdb_seed
+        from src.health_db_v1 import _conn as hdb_conn, _seed as hdb_seed
         with hdb_conn() as con:
             for tbl in ("vitals","diagnoses","medications","lab_results","allergies","visits"):
                 con.execute(f"DELETE FROM {tbl}")
@@ -1169,49 +1363,31 @@ def api_reseed_health():
 
 # â”€â”€ Serve the dashboard HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-@app.get("/dashboard_v7", response_class=HTMLResponse)
-def serve_dashboard_v7():
-    path = ROOT / "ui" / "hospital_dashboard_v7.html"
+@app.get("/", response_class=HTMLResponse)
+def serve_dashboard():
+    path = ROOT / "ui" / "hospital_dashboard_v9.html"
     if path.exists():
         return HTMLResponse(path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Dashboard HTML not found</h1>", status_code=404)
 
-@app.get("/", response_class=HTMLResponse)
-def serve_dashboard():
-    # Support both legacy and modern dashboard names, in multiple locations
-    for candidate in [
-        ROOT / "ui" / "hospital_dashboard_v7.html",
-        ROOT / "ui" / "hospital_dashboard_v3.html",
-        ROOT / "ui" / "hospital_dashboard.html",
-    ]:
-        if candidate.exists():
-            return HTMLResponse(candidate.read_text(encoding="utf-8"))
-    return HTMLResponse("<h1>Dashboard HTML not found</h1><p>Run the build step first.</p>", status_code=404)
-
 
 @app.get("/patient", response_class=HTMLResponse)
 def serve_patient_app():
-    # Try versioned and unversioned filenames in ui/ and root
-    candidates = [
-        ROOT / "ui" / "patient_app_v9.html",
-        ROOT / "ui" / "patient_app_v7.html",
-        ROOT / "ui" / "patient_app.html",
-    ]
-    for path in candidates:
-        if path.exists():
-            return HTMLResponse(path.read_text(encoding="utf-8"))
+    path = ROOT / "ui" / "patient_app_v12.html"
+    if path.exists():
+        return HTMLResponse(path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Patient app HTML not found</h1>", status_code=404)
 
 
-@app.get("/patient_app_v9.html", response_class=HTMLResponse)
-def serve_patient_app_v9():
-    """Direct filename access — ngrok/browser convenience."""
+@app.get("/patient_app_12.html", response_class=HTMLResponse)
+def serve_patient_app_plain():
+    """Direct filename access — convenience alias."""
     return serve_patient_app()
 
 
-@app.get("/patient_app.html", response_class=HTMLResponse)
-def serve_patient_app_plain():
-    """Direct filename access — ngrok/browser convenience."""
+@app.get("/patient_app_v12.html", response_class=HTMLResponse)
+def serve_patient_app_v12():
+    """Direct filename access — convenience alias."""
     return serve_patient_app()
 
 
@@ -1233,6 +1409,50 @@ def serve_docs_image(filename: str):
 
 # Lazy-init services (only when first patient API call arrives)
 _patient_services: dict = {}
+
+@app.get("/api/ai-status")
+def api_ai_status():
+    """Expose AI engine initialization state and deployment validity.
+    Called by the frontend on load to detect mock/real mode and surface
+    configuration errors (wrong deployment name, bad API key, etc.)."""
+    import os as _os
+    azure_key  = bool(_os.getenv("AZURE_OPENAI_KEY", "").strip()) and _os.getenv("AZURE_OPENAI_KEY") != "your-key"
+    azure_ep   = bool(_os.getenv("AZURE_OPENAI_ENDPOINT", "").strip())
+    openai_key = bool(_os.getenv("OPENAI_API_KEY", "").strip()) and _os.getenv("OPENAI_API_KEY") != "your-key"
+    deployment = _os.getenv("GPT_DEPLOYMENT", "gpt-4")
+
+    init_error = ""
+    if "triage" in _patient_services:
+        engine = _patient_services["triage"]
+        initialized = engine._initialized
+        model = engine.deployment if initialized else deployment
+        init_error = getattr(engine, "_init_error", "")
+    else:
+        initialized = (azure_key and azure_ep) or openai_key
+        model = deployment
+
+    if not initialized and not init_error:
+        if not azure_key and not openai_key:
+            init_error = "No API keys found. Set AZURE_OPENAI_KEY or OPENAI_API_KEY in .env."
+        elif azure_key and azure_ep and not init_error:
+            init_error = (
+                f"Azure credentials present but engine not yet started, or deployment "
+                f"'{deployment}' failed validation. Check server logs."
+            )
+
+    return {
+        "ai_initialized": initialized,
+        "model": model,
+        "mode": "real" if initialized else "mock",
+        "azure_configured": azure_key and azure_ep,
+        "openai_configured": openai_key,
+        "deployment": deployment,
+        "error": init_error or None,
+        "warning": (
+            f"Running in MOCK mode — {init_error}" if not initialized and init_error
+            else ("Running in MOCK mode — no AI credentials configured." if not initialized else None)
+        ),
+    }
 
 
 def _get_triage_engine():
@@ -1281,22 +1501,6 @@ if __name__ == "__main__":
     except Exception:
         ffmpeg_ok = False
 
-    def _status(ok): return "âœ…" if ok else "âŒ"
+    print("VitalNavAI ER Command Center running on http://localhost:8001")
 
-    print("\n" + "â•" * 58)
-    print("  ðŸ¥  VitalNavAI â€” ER Command Center")
-    print("â•" * 58)
-    print(f"  âžœ  Dashboard :  http://localhost:8001")
-    print(f"  âžœ  Patient   :  http://localhost:8001/patient")
-    print(f"  âžœ  API docs  :  http://localhost:8001/docs")
-    print(f"  âžœ  DB path   :  {hq.db_path}")
-    print("â”€" * 58)
-    print("  ðŸŽ™ï¸  Transcription pipeline:")
-    print(f"    {_status(bool(speech_key))} Azure Speech  (SPEECH_KEY {'set' if speech_key else 'NOT SET'})")
-    print(f"    {_status(ffmpeg_ok)} ffmpeg       ({'found' if ffmpeg_ok else 'NOT FOUND â€” audio conversion will fail'})")
-    print(f"    {_status(bool(openai_key))} Whisper      (OPENAI_API_KEY {'set' if openai_key else 'NOT SET'})")
-    if not speech_key and not openai_key:
-        print("    âš ï¸  No transcription backend configured!")
-        print("    âš ï¸  Set SPEECH_KEY or OPENAI_API_KEY in .env")
-    print("â•" * 58 + "\n")
     uvicorn.run(app, host="0.0.0.0", port=8001, reload=False, log_level="info")

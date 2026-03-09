@@ -98,6 +98,7 @@ class TriageEngine:
         self.knowledge_indexer = knowledge_indexer
         self.translator = translator
         self._initialized = False
+        self._init_error: str = ""
         self._init_openai()
 
     def _init_openai(self) -> None:
@@ -111,19 +112,24 @@ class TriageEngine:
         api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
 
         if not endpoint or not key or key == "your-key":
-            logger.warning(
-                "Azure OpenAI credentials not configured. "
-                "Using mock triage engine for demo."
-            )
+            logger.info("Azure OpenAI credentials not configured. Checking for standard OpenAI key...")
+            openai_key = os.getenv("OPENAI_API_KEY", "")
+            if openai_key and openai_key != "your-key":
+                try:
+                    from openai import OpenAI
+                    self.openai_client = OpenAI(api_key=openai_key)
+                    self._initialized = True
+                    self.deployment = os.getenv("OPENAI_MODEL", "gpt-4o") # Default to 4o for standard OpenAI
+                    logger.info("Standard OpenAI client initialized (model=%s).", self.deployment)
+                except Exception as exc:
+                    logger.error("Failed to init standard OpenAI client: %s", exc)
+            else:
+                logger.warning("No AI credentials found. Using mock triage engine.")
             return
 
         try:
             from openai import AzureOpenAI
 
-            # Newer openai SDK versions (≥1.50) removed the 'proxies' kwarg.
-            # If the environment has HTTP_PROXY / HTTPS_PROXY set, the SDK
-            # may fail.  We catch that and create the client with an explicit
-            # httpx client that respects system proxy settings.
             try:
                 self.openai_client = AzureOpenAI(
                     azure_endpoint=endpoint,
@@ -132,7 +138,6 @@ class TriageEngine:
                 )
             except TypeError:
                 import httpx
-
                 self.openai_client = AzureOpenAI(
                     azure_endpoint=endpoint,
                     api_key=key,
@@ -140,10 +145,80 @@ class TriageEngine:
                     http_client=httpx.Client(),
                 )
 
-            self._initialized = True
-            logger.info("Azure OpenAI client initialized (deployment=%s).", self.deployment)
+            # Validate the deployment with a minimal test call.
+            # Uses max_completion_tokens (required by newer models like gpt-5.x).
+            # This catches wrong deployment names and auth errors at startup
+            # instead of silently falling back to mock on every patient call.
+            try:
+                self.openai_client.chat.completions.create(
+                    model=self.deployment,
+                    messages=[{"role": "user", "content": "ping"}],
+                    max_completion_tokens=1,
+                )
+                self._initialized = True
+                logger.info(
+                    "Azure OpenAI client initialized — deployment '%s' verified OK.",
+                    self.deployment,
+                )
+            except Exception as test_exc:
+                err = str(test_exc)
+                err_lower = err.lower()
+                if "DeploymentNotFound" in err or ("404" in err and "deployment" in err_lower):
+                    logger.error(
+                        "Azure OpenAI deployment '%s' NOT FOUND. Check GPT_DEPLOYMENT in .env. Error: %s",
+                        self.deployment, test_exc,
+                    )
+                    self._initialized = False
+                    self._init_error = f"Deployment '{self.deployment}' not found. Check GPT_DEPLOYMENT in .env."
+                elif "401" in err or "unauthorized" in err_lower or "authentication" in err_lower:
+                    logger.error("Azure OpenAI auth failed. Check AZURE_OPENAI_KEY. Error: %s", test_exc)
+                    self._initialized = False
+                    self._init_error = "Authentication failed. Check AZURE_OPENAI_KEY in .env."
+                else:
+                    # Any other error (network, transient) — mark initialized and retry at call time
+                    self._initialized = True
+                    logger.warning(
+                        "Deployment test call non-fatal error for '%s' (will retry at call time): %s",
+                        self.deployment, test_exc,
+                    )
         except Exception as exc:
             logger.error("Failed to init Azure OpenAI client: %s", exc)
+
+
+    def _chat_complete(self, messages: list, max_tokens: int = 800, system_override: str = "") -> str:
+        """Wrapper around chat.completions.create that handles model compatibility.
+
+        - Tries response_format=json_object first (standard).
+        - Falls back to plain completion if the model does not support it (e.g. gpt-5.x).
+        - Always returns the raw string content from the first choice.
+        """
+        kwargs = dict(
+            model=self.deployment,
+            messages=messages,
+            max_completion_tokens=max_tokens,
+        )
+        try:
+            kwargs["response_format"] = {"type": "json_object"}
+            resp = self.openai_client.chat.completions.create(**kwargs)
+        except Exception as exc:
+            err = str(exc).lower()
+            if "response_format" in err or "unsupported" in err or "invalid" in err:
+                logger.warning("response_format not supported by deployment '%s', retrying without: %s", self.deployment, exc)
+                kwargs.pop("response_format", None)
+                resp = self.openai_client.chat.completions.create(**kwargs)
+            else:
+                raise
+        finish = resp.choices[0].finish_reason if resp.choices else None
+        content = resp.choices[0].message.content if resp.choices else None
+        if finish == "content_filter":
+            logger.error("_chat_complete: output filtered by content policy (model=%s)", self.deployment)
+            return ""
+        if finish == "length":
+            logger.warning("_chat_complete: response truncated (finish_reason=length, model=%s) — increase max_tokens", self.deployment)
+        if not content:
+            logger.error("_chat_complete: empty response (finish_reason=%s, model=%s)", finish, self.deployment)
+            return ""
+        return content
 
     # ------------------------------------------------------------------
     # RAG: Retrieve context from knowledge base
@@ -189,9 +264,324 @@ class TriageEngine:
             logger.error("RAG retrieval error: %s", exc)
             return "", False
 
+    def _format_medical_history(self, medical_history: Optional[dict]) -> str:
+        """Format the full medical record into a concise summary for GPT context."""
+        if not medical_history:
+            return "None provided."
+            
+        parts = []
+        demo = medical_history.get("patient") or medical_history.get("demographics", {})
+        if demo:
+            age = demo.get("date_of_birth", "Unknown DOB")
+            sex = demo.get("sex", "Unknown Sex")
+            parts.append(f"Patient: {demo.get('first_name','')} {demo.get('last_name','')}, {sex}, DOB: {age}")
+        
+        # Active Conditions
+        conds = medical_history.get("diagnoses", [])
+        if conds:
+            active_conds = [d.get("description", "") for d in conds if d.get("status") == "active"]
+            if active_conds:
+                parts.append("Active Diagnoses: " + ", ".join(active_conds))
+        
+        # Medications
+        meds = medical_history.get("medications", [])
+        if meds:
+            active_meds = [f"{m.get('name')} {m.get('dosage')}" for m in meds if m.get("status") == "active"]
+            if active_meds:
+                parts.append("Current Medications: " + ", ".join(active_meds))
+        
+        # Allergies
+        allergies = medical_history.get("allergies", [])
+        if allergies:
+            parts.append("Allergies: " + ", ".join([f"{a.get('allergen')} ({a.get('reaction')})" for a in allergies]))
+
+        # Recent Vitals
+        vitals = medical_history.get("vitals", [])
+        if vitals:
+            v = vitals[0] # Latest vitals
+            v_str = f"Latest Vitals ({v.get('recorded_at','')}): BP {v.get('bp_systolic','?')}/{v.get('bp_diastolic','?')}, HR {v.get('heart_rate','?')}, SpO2 {v.get('spo2','?')}%, Temp {v.get('temperature','?')}°C"
+            parts.append(v_str)
+
+        # Doctor Notes (Last 2)
+        notes = medical_history.get("doctor_notes", [])
+        if notes:
+            parts.append("Recent Clinical Notes:")
+            for n in notes[:2]:
+                parts.append(f"- {n.get('note_date')}: {n.get('assessment')} (Plan: {n.get('plan')})")
+        
+        return "\n".join(parts)
+
     # ------------------------------------------------------------------
     # Dynamic question generation (Agentic AI)
     # ------------------------------------------------------------------
+
+    def _build_pre_assessment_hypothesis(
+        self,
+        chief_complaint: str,
+        medical_history: Optional[dict],
+        demographics: Optional[dict],
+    ) -> str:
+        """Build a clinical hypothesis block that AIVoN uses before asking the first question.
+
+        This is the core of the "think before you ask" behaviour: AIVoN synthesises the
+        patient's full medical background and the current complaint into a prioritised list
+        of differential diagnoses it wants to rule in or out. Every subsequent question is
+        then driven by this hypothesis rather than a generic symptom checklist.
+
+        Returns a formatted string injected into the system prompt so the model has an
+        explicit internal reasoning frame when it produces the first question.
+        """
+        if not medical_history:
+            return (
+                "No prior medical history on file. "
+                "Approach this as a de-novo presentation and ask broad screening questions first."
+            )
+
+        hist_str = self._format_medical_history(medical_history)
+
+        # Build a compact demographics note
+        demo_note = ""
+        if demographics:
+            age   = demographics.get("age_range", "")
+            sex   = demographics.get("sex", "")
+            if age or sex:
+                demo_note = f"Patient demographics: {sex}, {age}."
+
+        hypothesis_prompt = f"""You are a senior emergency physician conducting a rapid pre-assessment 
+before starting patient questioning. You have the patient's FULL medical history and their current complaint.
+
+{demo_note}
+
+[FULL MEDICAL HISTORY]
+{hist_str}
+
+[CURRENT CHIEF COMPLAINT]
+{chief_complaint}
+
+TASK: In 3-5 sentences, reason through the following and produce a structured clinical hypothesis:
+1. Which of the patient's known conditions are MOST LIKELY connected to the current complaint?
+2. What is your PRIMARY differential diagnosis given the combination of history + complaint?
+3. What are the 2-3 most dangerous conditions you MUST rule out first (red flag differentials)?
+4. Which specific aspect of this patient's history (medications, allergies, past procedures) 
+   should most influence your line of questioning?
+
+Respond ONLY with a JSON object:
+{{
+  "primary_hypothesis": "One sentence: most likely diagnosis given history + complaint",
+  "red_flag_differentials": ["condition1", "condition2", "condition3"],
+  "history_risk_factors": ["most relevant risk factor from history", "..."],
+  "questioning_strategy": "One sentence: how history should shape the questions asked"
+}}"""
+
+        if not self._initialized:
+            return (
+                f"Pre-assessment (mock): Patient has known medical history. "
+                f"Current complaint: {chief_complaint}. "
+                f"Proceed with targeted questioning based on risk profile."
+            )
+
+        try:
+            response_content = self._chat_complete(
+                messages=[
+                    {"role": "user", "content": hypothesis_prompt},
+                ],
+                max_tokens=400,
+            )
+            hyp = json.loads(response_content)
+            parts = [
+                f"PRIMARY HYPOTHESIS: {hyp.get('primary_hypothesis', '')}",
+                f"RED FLAG DIFFERENTIALS TO RULE OUT: {', '.join(hyp.get('red_flag_differentials', []))}",
+                f"RELEVANT HISTORY RISK FACTORS: {', '.join(hyp.get('history_risk_factors', []))}",
+                f"QUESTIONING STRATEGY: {hyp.get('questioning_strategy', '')}",
+            ]
+            hypothesis_text = "\n".join(parts)
+            logger.info("Pre-assessment hypothesis built for complaint: %s", chief_complaint[:60])
+            return hypothesis_text
+        except Exception as exc:
+            logger.warning("Pre-assessment hypothesis generation failed (%s) — using history summary.", exc)
+            return self._format_medical_history(medical_history)
+
+    def generate_next_question(
+        self,
+        chief_complaint: str,
+        previous_answers: list[dict],
+        demographics: Optional[dict] = None,
+        medical_history: Optional[dict] = None,
+    ) -> dict:
+        """Generate EXACTLY ONE focused clinical follow-up question.
+
+        On the very first call (previous_answers is empty) AIVoN builds a clinical
+        pre-assessment hypothesis by cross-referencing the patient's full medical
+        history with the current complaint. This hypothesis is injected into the
+        system prompt so every question is driven by a targeted differential
+        diagnosis strategy rather than a generic symptom checklist.
+
+        On subsequent calls the hypothesis is rebuilt cheaply from the cached history
+        string and the evolving transcript is used to avoid repetition.
+        """
+        if not self._initialized:
+            count = len(previous_answers)
+            if count >= 4:
+                return {"done": True, "question": None}
+            mock_qs = [
+                "Are you in severe pain?",
+                "Do you have a high fever?",
+                "Is it difficult to breathe?",
+                "Do you feel dizzy or faint?",
+            ]
+            q_text = mock_qs[count] if count < len(mock_qs) else "Any other symptoms?"
+            return {
+                "done": False,
+                "question": {
+                    "question": q_text,
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "mock fallback",
+                },
+            }
+
+        # ── Step 1: Build or reuse clinical pre-assessment hypothesis ────────
+        # On the first question (empty transcript) we run the full hypothesis LLM call.
+        # On subsequent questions we reuse the cheaper formatted history string so we
+        # do not burn extra tokens on every turn.
+        is_first_question = len(previous_answers) == 0
+        if is_first_question and medical_history:
+            hypothesis_block = self._build_pre_assessment_hypothesis(
+                chief_complaint, medical_history, demographics
+            )
+            hypothesis_section = f"""[AI PRE-ASSESSMENT HYPOTHESIS]
+Before asking any questions, AIVoN has already reviewed the patient's full medical history
+and formed the following clinical reasoning frame. Every question MUST be driven by this
+hypothesis — start from the most dangerous differential and work down.
+
+{hypothesis_block}
+"""
+        else:
+            # Subsequent questions: include history summary without re-running hypothesis LLM
+            hypothesis_section = f"""[PATIENT MEDICAL HISTORY SUMMARY]
+{self._format_medical_history(medical_history)}
+"""
+
+        # ── Step 2: RAG context ──────────────────────────────────────────────
+        guidelines, _ = self._retrieve_context(chief_complaint)
+
+        # ── Step 3: Build system prompt ──────────────────────────────────────
+        system_prompt = f"""You are AIVoN, a clinical triage assistant supporting ER nurses.
+Your task: select the single most diagnostically valuable follow-up question for the patient below.
+
+Clinical guidelines:
+{guidelines if guidelines else "Apply evidence-based emergency medicine principles."}
+
+{hypothesis_section}
+
+Patient demographics:
+{json.dumps(demographics or {})}
+
+Chief complaint:
+{chief_complaint}
+
+Questions already asked (do not repeat any of these):
+{json.dumps(previous_answers, indent=2)}
+
+Decision rules:
+- Choose a question that has not been asked yet and was not covered in the chief complaint.
+- Prioritise questions that target the most dangerous differential diagnoses first.
+- If a known chronic condition exists, ask about acute complications relevant to the complaint.
+- Prefer questions whose answer could change the triage classification.
+- Set "done" to true when: (a) you have enough information to classify confidently, or (b) the transcript already has 5 or more questions, or (c) the presentation is clearly life-threatening.
+- For visible injuries (cut, burn, rash, bleeding) with no photo in the transcript, set type to "photo_request".
+
+Question type rules — choose carefully:
+- "yes_no": any question where the answer is yes or no (e.g. "Do you have chest pain?", "Is there swelling in your leg?"). This is the most common type. Include options ["Yes", "No"].
+- "scale": ONLY when explicitly asking the patient to rate intensity/severity on a number scale (e.g. "Rate your pain from 1 to 10"). Do NOT use scale for symptom presence questions. Include options ["1","2","3","4","5","6","7","8","9","10"].
+- "multiple_choice": when there are 3 or more distinct options (e.g. onset timing, location). Include all options in the options array.
+- "free_text": when the answer is open-ended and cannot be captured by the above types. Leave options as [].
+- "photo_request": only when a visible physical finding needs to be assessed. Leave options as [].
+
+Output valid JSON only:
+- "done": boolean
+- "question": object with "question" (string), "type" (one of the types above), "options" (array), "clinical_rationale" (one sentence)
+- When done is true, set "question" to null
+"""
+
+        # ── Step 4: Build user message; attach images only when present ─────
+        has_images = any(ans.get("image") for ans in previous_answers)
+
+        if has_images:
+            content: list[dict] = [
+                {
+                    "type": "text",
+                    "text": (
+                        f"Patient complaint: {chief_complaint}\n\n"
+                        f"Assessment so far:\n{json.dumps(previous_answers, indent=2)}"
+                    ),
+                }
+            ]
+            for ans in previous_answers:
+                if ans.get("image"):
+                    b64 = ans["image"]
+                    if not b64.startswith("data:image"):
+                        b64 = f"data:image/jpeg;base64,{b64}"
+                    content.append({"type": "image_url", "image_url": {"url": b64}})
+        else:
+            # Plain string avoids multimodal content-filter edge cases
+            content = (
+                f"Patient complaint: {chief_complaint}\n\n"
+                f"Assessment so far:\n{json.dumps(previous_answers, indent=2)}"
+            )
+
+        # ── Step 5: Call GPT ─────────────────────────────────────────────────
+        _fallback_questions = [
+            "Are you in severe pain right now?",
+            "Do you have a high fever?",
+            "Is it difficult to breathe?",
+            "Do you feel dizzy or faint?",
+            "Have you had any loss of consciousness?",
+        ]
+
+        try:
+            response_content = self._chat_complete(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",   "content": content},
+                ],
+                max_tokens=800,
+            )
+            # Strip markdown code fences GPT sometimes wraps JSON in
+            cleaned = response_content.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("```")[1]
+                if cleaned.startswith("json"):
+                    cleaned = cleaned[4:]
+                cleaned = cleaned.strip()
+            result = json.loads(cleaned)
+            logger.info(
+                "generate_next_question: done=%s q='%s'",
+                result.get("done"),
+                str(result.get("question", {}).get("question", ""))[:80],
+            )
+            return result
+
+        except json.JSONDecodeError as exc:
+            logger.error(
+                "generate_next_question: JSON parse error — raw response was: %r — error: %s",
+                response_content if "response_content" in dir() else "<no response>",
+                exc,
+            )
+        except Exception as exc:
+            logger.error("generate_next_question: API error: %s", exc, exc_info=True)
+
+        count = len(previous_answers)
+        q_text = _fallback_questions[count % len(_fallback_questions)]
+        return {
+            "done": count >= 5,
+            "question": {
+                "question": q_text,
+                "type": "yes_no",
+                "options": ["Yes", "No"],
+                "clinical_rationale": "fallback — API/parse error",
+            },
+        }
 
     def generate_questions(
         self,
@@ -246,23 +636,36 @@ Base all questions on the guidelines above."""
             knowledge_section = """KNOWLEDGE SOURCE: General medical knowledge (no specific protocol found in knowledge base).
 Use evidence-based clinical assessment principles for this complaint."""
 
-        system_prompt = f"""You are an emergency medical triage AI assistant. Your role is to
-ask focused, condition-specific follow-up questions to assess the severity of a patient's condition.
+        system_prompt = f"""You are an emergency medical triage AI assistant generating follow-up questions for a SPECIFIC patient complaint.
 
 {knowledge_section}
 
+════ PRIMARY DIRECTIVE ════
+The complaint is: {chief_complaint}
+Every single question MUST be about THIS specific complaint. If the complaint is "chest pain" — ask about radiation, diaphoresis, and STEMI history. If it's "headache" — ask about thunderclap onset, visual aura, neck stiffness. If it's "leg swelling" — ask about DVT risk, calf tenderness, recent travel. NEVER default to generic emergency questions.
+
 RULES:
-1. Generate 3-5 focused follow-up questions SPECIFIC to this exact complaint.
-2. Use the patient demographics to adapt questions to their risk profile.
+1. Generate EXACTLY 5 questions that ONLY make clinical sense for "{chief_complaint}" — not for any other complaint.
+   - Question 1: The single most important red-flag ruling question for THIS complaint (worst-case rule-out).
+   - Question 2: Character/quality of the main symptom specific to this presentation.
+   - Question 3: Onset, timing, or trigger SPECIFIC to this complaint.
+   - Question 4: Associated symptom that is diagnostically significant for THIS complaint.
+   - Question 5: Medical background relevant ONLY to THIS complaint (e.g., cardiac history for chest pain, migraine history for headache, DVT history for leg pain).
+2. Adapt to patient demographics: {demo_context or "unknown"}
    - Males 45+: prioritise cardiac red flags
-   - Females 18-44: consider gynaecological causes for abdominal pain
-   - Under 18: consider paediatric presentations and doses
-   - 75+: consider falls, polypharmacy, atypical presentations
-3. Questions must help determine triage level: EMERGENCY, URGENT, or ROUTINE.
-4. Prioritise RED FLAG assessment questions first.
-5. Keep questions simple — the patient may be in distress.
-6. Do NOT ask age or sex (already collected). Do NOT repeat previous answers.
-7. Questions must be SPECIFIC to the complaint — not generic.
+   - Females 18-44: gynaecological causes for pelvic/abdominal pain
+   - Under 18: paediatric presentations
+   - 75+: falls, atypical presentations, polypharmacy
+3. FORBIDDEN generic questions — NEVER ask these regardless of complaint:
+   - "When did your symptoms start?" (too generic — ask onset SPECIFIC to the complaint)
+   - "Do you have any other symptoms?" (too vague)
+   - "Do you have any serious medical conditions?" (unless directly relevant)
+   - "Are you on any medications?" (too generic)
+   - "Rate your pain 1-10" (only allowed if pain is the PRIMARY complaint)
+   - Any question that could apply to ANY patient regardless of complaint
+4. Each question must be clinically meaningful — a doctor would need this answer to triage THIS complaint.
+5. Keep questions simple — patient may be in distress. Maximum 15 words per question.
+6. Do NOT ask age, sex, or anything already answered. Do NOT repeat previous answers.
 
 CRITICAL OUTPUT RULES — MUST FOLLOW:
 - NEVER use type "free_text". The patient cannot type — they are in distress.
@@ -272,6 +675,9 @@ CRITICAL OUTPUT RULES — MUST FOLLOW:
 - For location questions use specific anatomical options.
 - For severity always use scale type with options ["1","2","3","4","5","6","7","8","9","10"].
 - Allowed types: "yes_no", "scale", "multiple_choice" ONLY.
+- When a question uses "or" to connect two things (e.g. "Is X or Y?"), the two options MUST be meaningfully DIFFERENT from each other. Never connect synonyms or near-synonyms with "or".
+- For "Do you have any of these conditions?" or "Do you have any allergies?" questions, add "allow_multi": true to allow patients to select multiple options.
+- Questions about health conditions/medications/allergies should ALWAYS include "allow_multi": true and must include a "None of the above" option.
 
 OUTPUT FORMAT (strict JSON):
 {{
@@ -315,36 +721,44 @@ OUTPUT FORMAT (strict JSON):
             return self._mock_questions(chief_complaint)
 
         try:
-            response = self.openai_client.chat.completions.create(
-                model=self.deployment,
+            response_content = self._chat_complete(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
-                response_format={"type": "json_object"},
-                max_completion_tokens=1000,
+                max_tokens=1000,
             )
 
-            result = json.loads(response.choices[0].message.content)
-            questions = result.get("questions", [])
+            # Robust JSON extraction: handle models that wrap JSON in prose
+            if response_content:
+                raw = response_content.strip()
+                # If not starting with '{', find the first '{' and last '}'
+                if not raw.startswith("{"):
+                    start = raw.find("{")
+                    end = raw.rfind("}") + 1
+                    if start != -1 and end > start:
+                        raw = raw[start:end]
+                        logger.info("Extracted JSON from prose response for: %s", chief_complaint[:50])
+                try:
+                    result = json.loads(raw)
+                except json.JSONDecodeError:
+                    logger.warning("JSON parse failed for questions (complaint=%s) — raw snippet: %s", chief_complaint[:40], raw[:200])
+                    return self._mock_questions(chief_complaint)
+            else:
+                return self._mock_questions(chief_complaint)
 
-            # Grup B: Token usage tracking for cost monitoring (Instruction requirement)
-            usage = getattr(response, "usage", None)
-            if usage:
-                logger.info(
-                    "generate_questions — tokens used: prompt=%d completion=%d total=%d",
-                    usage.prompt_tokens,
-                    usage.completion_tokens,
-                    usage.total_tokens,
-                )
+            questions = result.get("questions", [])
+            if not questions:
+                logger.warning("AI returned 0 questions for '%s' — using mock", chief_complaint[:50])
+                return self._mock_questions(chief_complaint)
 
             logger.info(
-                "Generated %d questions for: %s", len(questions), chief_complaint[:50]
+                "AI generated %d questions for: %s", len(questions), chief_complaint[:50]
             )
             return questions
 
         except Exception as exc:
-            logger.error("Question generation error: %s", exc)
+            logger.error("Question generation error (complaint=%s): %s", chief_complaint[:40], exc)
             return self._mock_questions(chief_complaint)
 
     # ------------------------------------------------------------------
@@ -355,6 +769,8 @@ OUTPUT FORMAT (strict JSON):
         self,
         chief_complaint: str,
         answers: list[dict],
+        medical_history: Optional[dict] = None,
+        language: str = "en-US",
     ) -> dict:
         """Perform final triage assessment based on all collected information.
 
@@ -365,20 +781,27 @@ OUTPUT FORMAT (strict JSON):
         Args:
             chief_complaint: Patient's initial complaint in English.
             answers: All question/answer pairs collected.
+            medical_history: Optional dict containing diagnoses, medications, etc.
 
         Returns:
-            Assessment dict with triage_level, assessment, red_flags,
-            recommended_action, risk_score, and source_guidelines.
+            Assessment dict with triage_level, assessment, patient_summary, clinical_report, etc.
         """
         context, rag_found = self._retrieve_context(chief_complaint)
 
-        answers_text = "\n".join(
-            f"Q: {a.get('question', '')} → A: {a.get('answer', '')}"
-            for a in answers
-        )
+        answers_text = ""
+        for ans in answers:
+            q = ans.get('question', '')
+            a = ans.get('answer', '')
+            if ans.get('image'):
+                answers_text += f"Q: {q} → A: [User provided an image]\n"
+            else:
+                answers_text += f"Q: {q} → A: {a}\n"
 
-        # AI-102: RAG-aware prompt — cite sources when available,
-        # fall back to general knowledge transparently when not.
+        # Use the full rich formatter (same as generate_next_question) so the
+        # clinical report has access to vitals, recent doctor notes, and allergies —
+        # not just a flat list of diagnosis/medication names.
+        history_context = self._format_medical_history(medical_history)
+
         if rag_found:
             knowledge_section = f"""MEDICAL GUIDELINES (base your assessment on these):
 {context}
@@ -388,61 +811,93 @@ You MUST cite the guideline sources used in source_guidelines."""
             knowledge_section = """KNOWLEDGE SOURCE: General medical knowledge (no specific protocol found in knowledge base).
 Use evidence-based clinical principles. Set source_guidelines to an empty list []."""
 
-        system_prompt = f"""You are an emergency medical triage AI. Analyze the patient's
-symptoms and answers to determine the appropriate triage level.
+        # Build a concise history risk-factor block to front-load the clinical report prompt
+        history_risk_note = ""
+        if medical_history:
+            active_diags = [
+                d.get("description", "")
+                for d in medical_history.get("diagnoses", [])
+                if d.get("status") == "active"
+            ]
+            allergies = [
+                f"{a.get('allergen')} → {a.get('reaction')}"
+                for a in medical_history.get("allergies", [])
+            ]
+            active_meds = [
+                f"{m.get('name')} {m.get('dosage', '')}"
+                for m in medical_history.get("medications", [])
+                if m.get("status") == "active"
+            ]
+            history_risk_note = (
+                f"KNOWN ACTIVE CONDITIONS: {', '.join(active_diags) or 'none'}\n"
+                f"CURRENT MEDICATIONS: {', '.join(active_meds) or 'none'}\n"
+                f"ALLERGIES: {', '.join(allergies) or 'none'}\n"
+                "The clinical report MUST explicitly reason about how these pre-existing "
+                "factors raise or lower the probability of each suspected condition."
+            )
+
+        system_prompt = f"""You are AIVoN, a clinical triage AI supporting emergency medicine physicians.
+Analyse the patient data and produce a structured triage assessment.
 
 {knowledge_section}
 
-ASSESSMENT RULES:
-1. Identify ALL red flags present.
-2. Classify into: EMERGENCY, URGENT, or ROUTINE.
-3. Provide a clear assessment summary.
-4. Recommend specific actions.
+{history_risk_note}
 
-OUTPUT FORMAT (strict JSON):
-{{
-  "triage_level": "EMERGENCY|URGENT|ROUTINE",
-  "assessment": "Brief clinical assessment summary",
-  "red_flags": ["list", "of", "identified", "red", "flags"],
-  "recommended_action": "What the patient should do",
-  "risk_score": 8,
-  "source_guidelines": ["guideline sources used, or empty list if none"],
-  "suspected_conditions": ["possible conditions"],
-  "time_sensitivity": "How urgent (e.g., 'Seek ER within 10 minutes')"
-}}
+Evaluation guidance:
+- Identify red flags, cross-referencing with the patient's known conditions and medications.
+- Classify urgency: EMERGENCY, URGENT, or ROUTINE.
+- Summarise the assessment in 2-3 clinical sentences.
+- Recommend a specific action tailored to this patient's medical background.
+- Write a patient-facing summary (field: patient_summary) in {language}. Use a calm, empathetic tone. Acknowledge relevant health history. Ask if the patient wants help finding the best hospital by ER capacity and traffic, and note that arrival time and a clinical summary will be shared with the hospital in advance.
+- Write the SAME patient-facing summary in English (field: patient_summary_en). Identical content to patient_summary but always in English regardless of the patient's language.
+- Write a doctor-facing clinical report (field: clinical_report) in English. Use formal medical terminology. Synthesise how pre-existing conditions and medications interact with the current complaint. Include ICD-10 suggestions, note allergy risks, and cite any guidelines used.
+
+Output valid JSON with these fields: triage_level (EMERGENCY/URGENT/ROUTINE), assessment, patient_summary, patient_summary_en, clinical_report, red_flags (array), recommended_action, risk_score (1-10), source_guidelines (array), suspected_conditions (array with ICD-10 codes), time_sensitivity.
 """
 
-        user_message = (
-            f"Chief complaint: {chief_complaint}\n\n"
-            f"Patient answers:\n{answers_text}\n\n"
-            f"Provide triage assessment."
+        has_images = any(ans.get("image") for ans in answers)
+
+        user_text = (
+            f"Patient complaint: {chief_complaint}\n\n"
+            f"Medical history:\n{history_context}\n\n"
+            f"Assessment answers:\n{answers_text}"
         )
 
+        if has_images:
+            content: list[dict] = [{"type": "text", "text": user_text}]
+            for ans in answers:
+                if ans.get("image"):
+                    b64 = ans["image"]
+                    if not b64.startswith("data:image"):
+                        b64 = f"data:image/jpeg;base64,{b64}"
+                    content.append({"type": "image_url", "image_url": {"url": b64}})
+        else:
+            content = user_text
+
         if not self._initialized:
-            return self._mock_assessment(chief_complaint, answers)
+            mock_data = self._mock_assessment(chief_complaint, answers)
+            mock_data["patient_summary"] = "We have reviewed your symptoms and recommend you to visit the hospital for further evaluation. Please do not panic, this is standard protocol."
+            mock_data["clinical_report"] = f"Patient presents with {chief_complaint}. Routine mock evaluation."
+            return mock_data
 
         try:
-            response = self.openai_client.chat.completions.create(
-                model=self.deployment,
+            response_content = self._chat_complete(
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message},
+                    {"role": "user", "content": content},
                 ],
-                response_format={"type": "json_object"},
-                max_completion_tokens=1000,
+                max_tokens=2000,
             )
 
-            assessment = json.loads(response.choices[0].message.content)
+            # Strip markdown fences (same defensive parse as generate_next_question)
+            cleaned = response_content.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("```")[1]
+                if cleaned.startswith("json"):
+                    cleaned = cleaned[4:]
+                cleaned = cleaned.strip()
 
-            # Grup B: Token usage tracking for cost monitoring (Instruction requirement)
-            usage = getattr(response, "usage", None)
-            if usage:
-                logger.info(
-                    "assess_triage — tokens used: prompt=%d completion=%d total=%d",
-                    usage.prompt_tokens,
-                    usage.completion_tokens,
-                    usage.total_tokens,
-                )
+            assessment = json.loads(cleaned)
 
             # Validate triage level
             if assessment.get("triage_level") not in (
@@ -460,9 +915,19 @@ OUTPUT FORMAT (strict JSON):
             )
             return assessment
 
+        except json.JSONDecodeError as exc:
+            logger.error(
+                "assess_triage: JSON parse error — raw=%r — %s",
+                response_content if "response_content" in dir() else "<no response>",
+                exc,
+            )
         except Exception as exc:
-            logger.error("Triage assessment error: %s", exc)
-            return self._mock_assessment(chief_complaint, answers)
+            logger.error("assess_triage: API error: %s", exc, exc_info=True)
+
+        mock_data = self._mock_assessment(chief_complaint, answers)
+        mock_data["patient_summary"] = "We have reviewed your symptoms and recommend you to visit the hospital for further evaluation. Please do not panic, this is standard protocol."
+        mock_data["clinical_report"] = f"Patient presents with {chief_complaint}. Routine mock evaluation."
+        return mock_data
 
     # ------------------------------------------------------------------
     # Patient record creation
@@ -493,8 +958,11 @@ OUTPUT FORMAT (strict JSON):
                 rag_sourced — bool: True if advice is grounded in guidelines
         """
         triage_level = assessment.get("triage_level", TRIAGE_URGENT)
-        red_flags    = assessment.get("red_flags", [])
-        suspected    = assessment.get("suspected_conditions", [])
+        red_flags    = [str(f) for f in assessment.get("red_flags", [])]
+        suspected    = [
+            s if isinstance(s, str) else s.get("name", str(s))
+            for s in assessment.get("suspected_conditions", [])
+        ]
 
         # ── Step 1: Try RAG for condition-specific protocol ───────────────
         context, rag_found = self._retrieve_context(chief_complaint)
@@ -550,22 +1018,20 @@ OUTPUT FORMAT (strict JSON, no extra text):
             advice = self._mock_pre_arrival_advice(chief_complaint, triage_level)
         else:
             try:
-                response = self.openai_client.chat.completions.create(
-                    model=self.deployment,
+                response_content = self._chat_complete(
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user",   "content": user_message},
                     ],
-                    response_format={"type": "json_object"},
-                    max_completion_tokens=600,
+                    max_tokens=600,
                 )
-                usage = getattr(response, "usage", None)
-                if usage:
-                    logger.info(
-                        "generate_pre_arrival_advice — tokens: prompt=%d completion=%d total=%d",
-                        usage.prompt_tokens, usage.completion_tokens, usage.total_tokens,
-                    )
-                advice = json.loads(response.choices[0].message.content)
+                cleaned_adv = response_content.strip()
+                if cleaned_adv.startswith("```"):
+                    cleaned_adv = cleaned_adv.split("```")[1]
+                    if cleaned_adv.startswith("json"):
+                        cleaned_adv = cleaned_adv[4:]
+                    cleaned_adv = cleaned_adv.strip()
+                advice = json.loads(cleaned_adv)
             except Exception as exc:
                 logger.error("Pre-arrival advice generation failed: %s", exc)
                 advice = self._mock_pre_arrival_advice(chief_complaint, triage_level)
@@ -805,14 +1271,12 @@ OUTPUT FORMAT (strict JSON):
             return self._mock_hospital_prep(triage_level, chief_complaint)
 
         try:
-            response = self.openai_client.chat.completions.create(
-                model=self.deployment,
+            response_content = self._chat_complete(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user",   "content": user_message},
                 ],
-                response_format={"type": "json_object"},
-                max_completion_tokens=400,
+                max_tokens=400,
             )
             usage = getattr(response, "usage", None)
             if usage:
@@ -820,7 +1284,7 @@ OUTPUT FORMAT (strict JSON):
                     "generate_hospital_prep — tokens: prompt=%d completion=%d total=%d",
                     usage.prompt_tokens, usage.completion_tokens, usage.total_tokens,
                 )
-            result = json.loads(response.choices[0].message.content)
+            result = json.loads(response_content)
             items = result.get("prep_items", [])
             logger.info("Generated %d hospital prep items for '%s'", len(items), chief_complaint[:50])
             return items
@@ -967,16 +1431,24 @@ OUTPUT FORMAT (strict JSON):
                     "clinical_rationale": "Pain severity",
                 },
                 {
-                    "question": "Do you have any of these symptoms?",
+                    "question": "Do you have any of these symptoms right now?",
                     "type": "multiple_choice",
-                    "options": ["Sweating", "Shortness of breath", "Nausea", "Dizziness", "None"],
+                    "allow_multi": True,
+                    "options": ["Sweating", "Shortness of breath", "Nausea", "Dizziness", "None of the above"],
                     "clinical_rationale": "Associated symptoms",
                 },
                 {
-                    "question": "Do you have a history of heart disease?",
-                    "type": "yes_no",
-                    "options": ["Yes", "No"],
-                    "clinical_rationale": "Cardiac history",
+                    "question": "Do you have any of these pre-existing conditions?",
+                    "type": "multiple_choice",
+                    "allow_multi": True,
+                    "options": ["Heart disease", "Diabetes", "High blood pressure", "Previous heart attack or stroke", "None of the above"],
+                    "clinical_rationale": "Cardiac history and risk factors",
+                },
+                {
+                    "question": "When did this chest pain start?",
+                    "type": "multiple_choice",
+                    "options": ["Just now", "Less than 30 min ago", "30 min–2 hours ago", "More than 2 hours ago"],
+                    "clinical_rationale": "Onset timing critical for STEMI management",
                 },
             ]
 
@@ -1001,10 +1473,16 @@ OUTPUT FORMAT (strict JSON):
                     "clinical_rationale": "FAST - Arms assessment",
                 },
                 {
-                    "question": "Is your speech slurred or unclear?",
-                    "type": "yes_no",
-                    "options": ["Yes", "No"],
+                    "question": "How is your speech right now?",
+                    "type": "multiple_choice",
+                    "options": ["Normal and clear", "Slightly slurred", "Very slurred or hard to understand", "Unable to speak"],
                     "clinical_rationale": "FAST - Speech assessment",
+                },
+                {
+                    "question": "When did these symptoms start?",
+                    "type": "multiple_choice",
+                    "options": ["Within the last 30 min", "30 min–1 hour ago", "1–3 hours ago", "More than 3 hours ago"],
+                    "clinical_rationale": "Thrombolysis time window assessment",
                 },
             ]
 
@@ -1034,6 +1512,12 @@ OUTPUT FORMAT (strict JSON):
                     "options": ["Sudden", "Gradual"],
                     "clinical_rationale": "Onset pattern for surgical vs medical cause",
                 },
+                {
+                    "question": "Do you have a fever or have you recently had one?",
+                    "type": "yes_no",
+                    "options": ["Yes, fever now", "Yes, earlier today", "No fever"],
+                    "clinical_rationale": "Infectious vs non-infectious abdominal cause",
+                },
             ]
 
         if any(kw in complaint_lower for kw in ["breath", "asthma", "wheez", "cough", "lung"]):
@@ -1061,6 +1545,357 @@ OUTPUT FORMAT (strict JSON):
                     "type": "multiple_choice",
                     "options": ["Allergen", "Smoke/fumes", "Cold air", "Exercise", "Nothing specific"],
                     "clinical_rationale": "Trigger identification",
+                },
+                {
+                    "question": "Do you have any bluish discoloration of your lips or fingertips?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Cyanosis — severe hypoxia red flag",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["back pain", "back ache", "backache", "lumbar", "spine", "lower back", "upper back", "sırt"]):
+            return [
+                {
+                    "question": "Where exactly is the back pain?",
+                    "type": "multiple_choice",
+                    "options": ["Lower back (lumbar)", "Upper back", "Between shoulder blades", "One side only", "Entire back"],
+                    "clinical_rationale": "Pain localization guides diagnosis (lumbar disc vs. kidney vs. spinal)",
+                },
+                {
+                    "question": "Does the pain shoot down your leg or buttock?",
+                    "type": "yes_no",
+                    "options": ["Yes — shoots down leg", "No — stays in back"],
+                    "clinical_rationale": "Radiculopathy / sciatica red flag",
+                },
+                {
+                    "question": "When did this back pain start?",
+                    "type": "multiple_choice",
+                    "options": ["After an injury or fall", "After lifting something heavy", "Woke up with it", "Gradually over days", "Suddenly without cause"],
+                    "clinical_rationale": "Mechanism of injury — trauma vs. spontaneous vs. discogenic",
+                },
+                {
+                    "question": "Do you have numbness, tingling, or weakness in your legs?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Cauda equina / cord compression red flag — requires urgent imaging",
+                },
+                {
+                    "question": "Any difficulty with bladder or bowel control?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Cauda equina syndrome emergency indicator",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["leg pain", "leg ache", "calf", "thigh", "shin", "leg swelling", "leg cramp", "knee pain", "ankle pain", "foot pain", "bacak", "diz"]):
+            return [
+                {
+                    "question": "Where is the pain in your leg?",
+                    "type": "multiple_choice",
+                    "options": ["Calf (lower leg)", "Thigh (upper leg)", "Knee", "Ankle", "Foot", "Entire leg"],
+                    "clinical_rationale": "Location guides DVT, muscle, joint, or vascular assessment",
+                },
+                {
+                    "question": "Is the leg swollen, red, or warm to touch?",
+                    "type": "multiple_choice",
+                    "allow_multi": True,
+                    "options": ["Swollen", "Red/discolored", "Warm to touch", "None of these"],
+                    "clinical_rationale": "DVT / cellulitis / thrombophlebitis red flags",
+                },
+                {
+                    "question": "Did the pain start after an injury or fall?",
+                    "type": "yes_no",
+                    "options": ["Yes — after injury/fall", "No — started on its own"],
+                    "clinical_rationale": "Traumatic vs. spontaneous onset — fracture vs. DVT vs. cramp",
+                },
+                {
+                    "question": "Have you had recent surgery, long travel, or prolonged bedrest?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "DVT risk factors — immobility / post-surgical state",
+                },
+                {
+                    "question": "Rate your leg pain on a scale of 1-10",
+                    "type": "scale",
+                    "options": [str(i) for i in range(1, 11)],
+                    "clinical_rationale": "Pain severity to determine urgency",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["arm pain", "shoulder pain", "wrist", "elbow", "hand pain", "finger", "arm swelling", "arm injury", "kol", "omuz"]):
+            return [
+                {
+                    "question": "Where exactly is the arm pain?",
+                    "type": "multiple_choice",
+                    "options": ["Shoulder", "Upper arm", "Elbow", "Forearm", "Wrist", "Hand / fingers"],
+                    "clinical_rationale": "Location narrows fracture, joint, or vascular cause",
+                },
+                {
+                    "question": "Did it happen after a fall or direct impact?",
+                    "type": "yes_no",
+                    "options": ["Yes — after injury", "No — no injury"],
+                    "clinical_rationale": "Traumatic fracture vs. spontaneous (thrombosis, neuropathy)",
+                },
+                {
+                    "question": "Can you move the arm normally?",
+                    "type": "multiple_choice",
+                    "options": ["Full movement, no pain", "Limited movement with pain", "Barely able to move", "Cannot move at all"],
+                    "clinical_rationale": "Range of motion assessment for fracture vs. soft tissue",
+                },
+                {
+                    "question": "Is there numbness or tingling in the hand or fingers?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Nerve compression or vascular compromise red flag",
+                },
+                {
+                    "question": "Is the arm visibly deformed, bruised, or swollen?",
+                    "type": "multiple_choice",
+                    "allow_multi": True,
+                    "options": ["Visibly deformed", "Swollen", "Bruised", "None of these"],
+                    "clinical_rationale": "Fracture / dislocation vs. soft tissue injury",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["fever", "temperature", "chills", "feverish", "high temp", "ateş", "ates"]):
+            return [
+                {
+                    "question": "What is your current temperature if known?",
+                    "type": "multiple_choice",
+                    "options": ["Below 38°C (100.4°F)", "38–39°C (100.4–102.2°F)", "39–40°C (102.2–104°F)", "Above 40°C (104°F)", "Don't know"],
+                    "clinical_rationale": "Fever severity classification for sepsis screening",
+                },
+                {
+                    "question": "How long have you had the fever?",
+                    "type": "multiple_choice",
+                    "options": ["Less than 24 hours", "1–3 days", "4–7 days", "More than 1 week"],
+                    "clinical_rationale": "Duration guides viral vs. bacterial vs. systemic cause",
+                },
+                {
+                    "question": "Do you have any of these symptoms along with the fever?",
+                    "type": "multiple_choice",
+                    "allow_multi": True,
+                    "options": ["Stiff neck", "Severe headache", "Difficulty breathing", "Skin rash", "Confusion", "None of these"],
+                    "clinical_rationale": "Meningitis / sepsis red flags requiring immediate attention",
+                },
+                {
+                    "question": "Do you have any pain or burning when urinating?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Urinary tract infection / pyelonephritis as fever source",
+                },
+                {
+                    "question": "Have you recently travelled abroad or been exposed to someone sick?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Travel-related illness / infectious disease exposure",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["dizzy", "dizziness", "vertigo", "faint", "fainting", "lightheaded", "light-headed", "pass out", "blackout", "syncope", "baş dönmesi", "bas donmesi"]):
+            return [
+                {
+                    "question": "What did the dizziness feel like?",
+                    "type": "multiple_choice",
+                    "options": ["Room spinning around me (vertigo)", "Feeling like I might faint", "Unsteady / loss of balance", "Sudden brief blackout / passed out"],
+                    "clinical_rationale": "Differentiates peripheral vertigo from presyncope from syncope",
+                },
+                {
+                    "question": "When did the dizziness start?",
+                    "type": "multiple_choice",
+                    "options": ["Suddenly, within seconds", "Gradually over minutes", "Gradually over hours", "Comes and goes repeatedly"],
+                    "clinical_rationale": "Sudden onset suggests central (stroke) vs. peripheral (BPPV) cause",
+                },
+                {
+                    "question": "Did you lose consciousness (black out)?",
+                    "type": "yes_no",
+                    "options": ["Yes — I blacked out", "No — stayed conscious"],
+                    "clinical_rationale": "Loss of consciousness indicates syncope — cardiac/vasovagal evaluation needed",
+                },
+                {
+                    "question": "Do you have any of these along with dizziness?",
+                    "type": "multiple_choice",
+                    "allow_multi": True,
+                    "options": ["Severe headache", "Double or blurred vision", "Difficulty speaking", "One-sided weakness", "Nausea/vomiting", "None of these"],
+                    "clinical_rationale": "Central cause (stroke, TIA) red flags",
+                },
+                {
+                    "question": "Did the dizziness start when you stood up quickly?",
+                    "type": "yes_no",
+                    "options": ["Yes — when standing up", "No — not related to position"],
+                    "clinical_rationale": "Orthostatic hypotension assessment — dehydration / medication cause",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["rash", "allerg", "hives", "itch", "swelling face", "swollen face", "swollen throat", "lip swelling", "skin reaction", "anaphylax", "alerji", "kaşıntı"]):
+            return [
+                {
+                    "question": "Where is the rash or swelling?",
+                    "type": "multiple_choice",
+                    "allow_multi": True,
+                    "options": ["Face / lips", "Throat / tongue", "Arms or legs", "Torso (chest/back)", "All over body", "Nowhere — no rash"],
+                    "clinical_rationale": "Anaphylaxis red flag: lip/throat/tongue swelling requires immediate epinephrine",
+                },
+                {
+                    "question": "Do you have difficulty swallowing or feel your throat closing?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Angioedema / anaphylaxis airway threat — immediate action needed",
+                },
+                {
+                    "question": "Did this reaction start after eating, a sting, or taking medication?",
+                    "type": "multiple_choice",
+                    "options": ["After eating something", "After insect sting or bite", "After taking medication", "After touching something", "No clear trigger"],
+                    "clinical_rationale": "Allergen identification for treatment and avoidance",
+                },
+                {
+                    "question": "How quickly did this reaction develop?",
+                    "type": "multiple_choice",
+                    "options": ["Within minutes", "Within 1 hour", "Over several hours", "Over a day or more"],
+                    "clinical_rationale": "Rapid onset (<1 hour) indicates anaphylaxis risk",
+                },
+                {
+                    "question": "Do you have shortness of breath, chest tightness, or wheezing?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Bronchospasm — anaphylaxis respiratory involvement red flag",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["injury", "trauma", "fell", "fall", "hit", "cut", "wound", "bleeding", "fracture", "broken", "accident", "crush", "yaralanma", "kaza", "düşme"]):
+            return [
+                {
+                    "question": "What type of injury occurred?",
+                    "type": "multiple_choice",
+                    "options": ["Fall / slip", "Motor vehicle accident", "Sports injury", "Cut or laceration", "Blunt impact / blow", "Other"],
+                    "clinical_rationale": "Mechanism of injury guides assessment severity",
+                },
+                {
+                    "question": "Which body part is injured?",
+                    "type": "multiple_choice",
+                    "options": ["Head / face", "Neck or spine", "Chest or abdomen", "Arm or shoulder", "Leg or hip", "Multiple areas"],
+                    "clinical_rationale": "Location priorities: head/spine/chest = high risk for internal injury",
+                },
+                {
+                    "question": "Is there active bleeding?",
+                    "type": "multiple_choice",
+                    "options": ["Yes — heavy, uncontrolled", "Yes — light, controlled with pressure", "Minor oozing only", "No bleeding"],
+                    "clinical_rationale": "Hemorrhage control priority assessment",
+                },
+                {
+                    "question": "Did you lose consciousness after the injury?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Loss of consciousness after head trauma = urgent CT evaluation",
+                },
+                {
+                    "question": "Rate your pain on a scale of 1-10",
+                    "type": "scale",
+                    "options": [str(i) for i in range(1, 11)],
+                    "clinical_rationale": "Pain severity for triage priority",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["eye pain", "eye hurt", "vision", "blurred vision", "double vision", "red eye", "eye swelling", "can't see", "cannot see", "blind", "göz"]):
+            return [
+                {
+                    "question": "What is the main eye problem?",
+                    "type": "multiple_choice",
+                    "options": ["Pain in the eye", "Blurred or lost vision", "Double vision", "Red / irritated eye", "Foreign object in eye", "Eye discharge"],
+                    "clinical_rationale": "Symptom type guides acute glaucoma vs. retinal vs. infection",
+                },
+                {
+                    "question": "Did vision changes come on suddenly?",
+                    "type": "yes_no",
+                    "options": ["Yes — suddenly", "No — gradually"],
+                    "clinical_rationale": "Sudden vision loss = retinal artery occlusion / detachment emergency",
+                },
+                {
+                    "question": "Is the affected eye red?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Conjunctivitis vs. acute angle-closure glaucoma vs. uveitis",
+                },
+                {
+                    "question": "Was there any chemical splash or injury to the eye?",
+                    "type": "yes_no",
+                    "options": ["Yes — chemical or object", "No — no trauma"],
+                    "clinical_rationale": "Chemical burn / foreign body requires immediate irrigation",
+                },
+                {
+                    "question": "Do you see flashing lights, floaters, or a dark curtain in your vision?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Retinal detachment symptoms — urgent ophthalmology",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["urinary", "urine", "burning urination", "frequent urination", "kidney", "blood in urine", "pee", "idrar", "böbrek"]):
+            return [
+                {
+                    "question": "What is your main urinary symptom?",
+                    "type": "multiple_choice",
+                    "options": ["Pain or burning when urinating", "Frequent need to urinate", "Blood in urine", "Difficulty urinating / weak stream", "No urine output"],
+                    "clinical_rationale": "Symptom type differentiates UTI, kidney stone, BPH, or renal failure",
+                },
+                {
+                    "question": "Do you have pain in your lower back or flank (side)?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Flank pain + urinary symptoms = kidney stone or pyelonephritis",
+                },
+                {
+                    "question": "Do you have a fever above 38°C (100.4°F)?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Fever + UTI symptoms = possible pyelonephritis requiring IV antibiotics",
+                },
+                {
+                    "question": "How long have you had this symptom?",
+                    "type": "multiple_choice",
+                    "options": ["Less than 24 hours", "1–3 days", "4–7 days", "More than 1 week"],
+                    "clinical_rationale": "Symptom duration guides acute vs. chronic assessment",
+                },
+                {
+                    "question": "Have you had urinary tract infections or kidney stones before?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Prior UTI / stone history increases recurrence risk and guides treatment",
+                },
+            ]
+
+        if any(kw in complaint_lower for kw in ["neck pain", "stiff neck", "neck stiffness", "neck injury", "boyun"]):
+            return [
+                {
+                    "question": "Can you touch your chin to your chest?",
+                    "type": "multiple_choice",
+                    "options": ["Yes, easily", "Yes, with difficulty", "No — neck too stiff", "Too painful to try"],
+                    "clinical_rationale": "Neck stiffness (meningismus) — meningitis red flag",
+                },
+                {
+                    "question": "Did the neck pain start after a trauma or accident?",
+                    "type": "yes_no",
+                    "options": ["Yes — after trauma", "No — no trauma"],
+                    "clinical_rationale": "Traumatic cervical spine injury requires immobilization and imaging",
+                },
+                {
+                    "question": "Do you have a severe headache or fever along with the neck pain?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Neck pain + headache + fever = bacterial meningitis must be ruled out",
+                },
+                {
+                    "question": "Do you have numbness or tingling in your arms or hands?",
+                    "type": "yes_no",
+                    "options": ["Yes", "No"],
+                    "clinical_rationale": "Cervical radiculopathy / cord compression — nerve root compromise",
+                },
+                {
+                    "question": "When did the neck pain start?",
+                    "type": "multiple_choice",
+                    "options": ["Within the last hour (sudden)", "Over the past day", "Over the past few days", "Chronic — weeks or more"],
+                    "clinical_rationale": "Acute sudden onset vs. gradual for differential diagnosis",
                 },
             ]
 
@@ -1090,15 +1925,21 @@ OUTPUT FORMAT (strict JSON):
                     "options": ["Yes", "No"],
                     "clinical_rationale": "Altered mental status assessment",
                 },
+                {
+                    "question": "Have you taken your insulin or diabetes medication today?",
+                    "type": "multiple_choice",
+                    "options": ["Yes, as prescribed", "Took more than prescribed", "Missed a dose", "Don't take medication"],
+                    "clinical_rationale": "Medication compliance for hypo/hyperglycaemia cause",
+                },
             ]
 
-        # Generic questions
+        # Generic questions (5 questions for any complaint not matched above)
         return [
             {
-                "question": "When did the symptoms start?",
+                "question": "When did your symptoms start?",
                 "type": "multiple_choice",
-                "options": ["Just now", "Hours ago", "Days ago", "Weeks ago"],
-                "clinical_rationale": "Onset timing",
+                "options": ["Just now", "Less than 1 hour ago", "1-6 hours ago", "6-24 hours ago", "More than 1 day ago"],
+                "clinical_rationale": "Onset timing for urgency classification",
             },
             {
                 "question": "Rate your discomfort on a scale of 1-10",
@@ -1107,10 +1948,24 @@ OUTPUT FORMAT (strict JSON):
                 "clinical_rationale": "Severity assessment",
             },
             {
-                "question": "Do you have any chronic medical conditions?",
-                "type": "yes_no",
-                "options": ["Yes", "No"],
-                "clinical_rationale": "Medical history",
+                "question": "Are your symptoms getting better, worse, or staying the same?",
+                "type": "multiple_choice",
+                "options": ["Getting worse", "Staying the same", "Getting better"],
+                "clinical_rationale": "Symptom trajectory for urgency assessment",
+            },
+            {
+                "question": "Do you have any of these additional symptoms?",
+                "type": "multiple_choice",
+                "allow_multi": True,
+                "options": ["High fever", "Severe pain", "Difficulty breathing", "Loss of consciousness", "None of these"],
+                "clinical_rationale": "Red flag symptom screening",
+            },
+            {
+                "question": "Do you have any serious medical conditions or allergies?",
+                "type": "multiple_choice",
+                "allow_multi": True,
+                "options": ["Heart disease", "Diabetes", "Severe allergies", "High blood pressure", "None of the above"],
+                "clinical_rationale": "Risk stratification from medical history",
             },
         ]
 
@@ -1396,4 +2251,5 @@ OUTPUT FORMAT (strict JSON):
                 TRIAGE_URGENT: "Seek medical care within 2 hours",
                 TRIAGE_ROUTINE: "Schedule appointment within 48 hours",
             }[level],
+            "ai_mode": "mock",
         }

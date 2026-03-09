@@ -57,7 +57,77 @@ tmp_audio_*
 *.log
 logs/
 
-# ── Logs ──────────────────────────────────────────────────────────
+# ── Patient media / photos ────────────────────────────────────────
 patient_photos/
 data/illness_photos/
 docs/images/others/
+
+# ── Binary executables ────────────────────────────────────────────
+*.exe
+*.dll
+
+# ── Temporary / scratch files ─────────────────────────────────────
+e_temp*.js
+e_temp*.py
+temp_test*.js
+e_err.log
+
+# ── Claude Code local settings ────────────────────────────────────
+.claude/
+
+# ── Old versioned UI files (keep only latest) ────────────────────
+ui/patient_app_v[0-9].html
+ui/patient_app_v1[01].html
+ui/hospital_dashboard_v[678].html
+ui/refactor_stage*.py
+ui/v10_patcher*.py
+ui/temp.js
+
+# ── One-off dev/patch scripts ─────────────────────────────────────
+patcher.py
+test_maps*.py
+docs/images/icons/remove_bg.py
+docs/images/others/extract_icons.py
+
+# ── Unused/old assets (removed from tracking) ────────────────────
+docs/images/logo_v0.PNG
+docs/images/logo_v1.png
+docs/images/logo_v2.png
+docs/images/logo_v2.PNG
+docs/images/Gemini_Generated_Image_*.png
+docs/images/thinking_ai.mp4
+docs/images/icons/ic_*_v0.png
+docs/images/icons/ic_*_v1.png
+docs/images/icons/ic_*_v2.png
+docs/images/icons/ic_consent-removebg*.png
+docs/images/icons/strip_8k_col1.png
+docs/images/icons/ic_clock.jpg
+
+# ── Superseded source files ───────────────────────────────────────
+src/health_db.py
+
+# ── Unused icon assets (keep only the 3 referenced in the app) ────
+# Referenced: ic_consent.png, ic_hospital.png, ic_mic.png
+docs/images/icons/ic_ai_brain.png
+docs/images/icons/ic_ai_chat.png
+docs/images/icons/ic_ambulance.png
+docs/images/icons/ic_bp.png
+docs/images/icons/ic_camera.png
+docs/images/icons/ic_clock.png
+docs/images/icons/ic_doctor.png
+docs/images/icons/ic_ekg.png
+docs/images/icons/ic_health_record.png
+docs/images/icons/ic_health_safe.png
+docs/images/icons/ic_injection.png
+docs/images/icons/ic_lab.png
+docs/images/icons/ic_medication.png
+docs/images/icons/ic_mental.png
+docs/images/icons/ic_nurse.png
+docs/images/icons/ic_payment.png
+docs/images/icons/ic_profile.png
+docs/images/icons/ic_qr_checkin.png
+docs/images/icons/ic_qr_ticket.png
+docs/images/icons/ic_registration.png
+docs/images/icons/ic_symptoms.png
+docs/images/icons/ic_theme.png
+docs/images/icons/ic_thermometer.png

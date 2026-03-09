@@ -96,6 +96,17 @@ class HospitalQueue:
                 """
             )
             conn.commit()
+            # Migration: add timestamp columns if they don't exist yet
+            for col_def in [
+                ("treatment_started_at", "TEXT"),
+                ("discharged_at", "TEXT"),
+            ]:
+                try:
+                    conn.execute(f"ALTER TABLE patient_queue ADD COLUMN {col_def[0]} {col_def[1]}")
+                    conn.commit()
+                    logger.info("Added column %s to patient_queue.", col_def[0])
+                except Exception:
+                    pass  # column already exists
             conn.close()
             logger.info("Patient queue table ready at %s.", self.db_path)
         except Exception as exc:
@@ -107,24 +118,19 @@ class HospitalQueue:
 
     @staticmethod
     def _anonymize_location(lat: Optional[float], lon: Optional[float]) -> tuple[Optional[float], Optional[float]]:
-        """Anonymize precise GPS coordinates to a ~1 km grid cell.
-
-        GDPR Compliance: Precise location is PII. We round to 2 decimal
-        places (~1.1 km grid) so staff can see approximate direction but
-        not the patient's exact address. The full route is computed on the
-        client side only and never stored.
+        """Pass through precise GPS coordinates for smooth real-time tracking.
 
         Args:
             lat: Precise latitude.
             lon: Precise longitude.
 
         Returns:
-            Tuple of (rounded_lat, rounded_lon) or (None, None).
+            Tuple of (lat, lon) or (None, None).
         """
         if lat is None or lon is None:
             return None, None
-        # Round to 2 decimal places ≈ 1.1 km resolution
-        return round(lat, 2), round(lon, 2)
+        # Return precise coordinates so live tracking map works smoothly
+        return lat, lon
 
     # ------------------------------------------------------------------
     # Queue operations
@@ -165,7 +171,7 @@ class HospitalQueue:
                     record.get("triage_level", "URGENT"),
                     record.get("chief_complaint", ""),
                     json.dumps(record.get("red_flags", [])),
-                    record.get("assessment", ""),
+                    json.dumps(record.get("assessment", {})) if isinstance(record.get("assessment"), dict) else record.get("assessment", ""),
                     json.dumps(record.get("suspected_conditions", [])),
                     record.get("risk_score", 5),
                     record.get("recommended_action", ""),
@@ -235,6 +241,13 @@ class HospitalQueue:
                         patient[field] = json.loads(patient.get(field, "[]"))
                     except (json.JSONDecodeError, TypeError):
                         patient[field] = []
+                # Parse assessment if json
+                try:
+                    asmt = patient.get("assessment", "")
+                    if asmt and isinstance(asmt, str) and asmt.startswith("{"):
+                        patient["assessment"] = json.loads(asmt)
+                except (json.JSONDecodeError, TypeError):
+                    pass
                 # Parse qa_transcript
                 try:
                     patient["qa_transcript"] = json.loads(patient.get("qa_transcript", "[]") or "[]")
@@ -279,6 +292,12 @@ class HospitalQueue:
                     except (json.JSONDecodeError, TypeError):
                         patient[field] = []
                 try:
+                    asmt = patient.get("assessment", "")
+                    if asmt and isinstance(asmt, str) and asmt.startswith("{"):
+                        patient["assessment"] = json.loads(asmt)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+                try:
                     patient["qa_transcript"] = json.loads(patient.get("qa_transcript", "[]") or "[]")
                 except (json.JSONDecodeError, TypeError):
                     patient["qa_transcript"] = []
@@ -302,14 +321,36 @@ class HospitalQueue:
         """
         try:
             conn = self._get_connection()
-            conn.execute(
-                """
-                UPDATE patient_queue
-                SET status = ?, updated_at = ?
-                WHERE patient_id = ?
-                """,
-                (status, datetime.now(timezone.utc).isoformat(), patient_id),
-            )
+            now = datetime.now(timezone.utc).isoformat()
+            if status == "in_treatment":
+                conn.execute(
+                    """
+                    UPDATE patient_queue
+                    SET status = ?, updated_at = ?, treatment_started_at = ?,
+                        eta_minutes = NULL
+                    WHERE patient_id = ?
+                    """,
+                    (status, now, now, patient_id),
+                )
+            elif status == "discharged":
+                conn.execute(
+                    """
+                    UPDATE patient_queue
+                    SET status = ?, updated_at = ?, discharged_at = ?,
+                        eta_minutes = NULL
+                    WHERE patient_id = ?
+                    """,
+                    (status, now, now, patient_id),
+                )
+            else:
+                conn.execute(
+                    """
+                    UPDATE patient_queue
+                    SET status = ?, updated_at = ?
+                    WHERE patient_id = ?
+                    """,
+                    (status, now, patient_id),
+                )
             conn.commit()
             conn.close()
             logger.info("Patient %s status → %s.", patient_id, status)
