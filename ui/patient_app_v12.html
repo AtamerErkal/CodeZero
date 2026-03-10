@@ -1334,6 +1334,7 @@
             margin-bottom: 8px;
             flex-wrap: wrap;
         }
+
         .q-dot {
             width: 10px;
             height: 10px;
@@ -1342,15 +1343,18 @@
             transition: all .3s ease;
             flex-shrink: 0;
         }
+
         .q-dot-done {
             background: var(--primary);
             opacity: .55;
         }
+
         .q-dot-active {
             background: var(--primary);
             transform: scale(1.5);
             box-shadow: 0 0 0 3px rgba(13, 148, 136, .25);
         }
+
         .q-remaining {
             text-align: center;
             font-size: .8rem;
@@ -1358,6 +1362,7 @@
             margin-bottom: 18px;
             font-weight: 500;
         }
+
         .q-multi-hint {
             text-align: center;
             font-size: .78rem;
@@ -2672,23 +2677,53 @@
 
         /* Questions Loading — Clean Loader */
         @keyframes qlPulse {
-            0%, 100% { transform: scale(0.92); opacity: 0.6; }
-            50% { transform: scale(1.12); opacity: 1; }
+
+            0%,
+            100% {
+                transform: scale(0.92);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scale(1.12);
+                opacity: 1;
+            }
         }
 
         @keyframes qlOrbName {
-            0%, 100% { transform: scale(0.93); }
-            50% { transform: scale(1.09); }
+
+            0%,
+            100% {
+                transform: scale(0.93);
+            }
+
+            50% {
+                transform: scale(1.09);
+            }
         }
 
         @keyframes qlOrb {
-            0%, 100% { transform: scale(0.93); box-shadow: 0 10px 34px rgba(13, 148, 136, 0.28), 0 0 0 0 rgba(13, 148, 136, 0.12); }
-            50% { transform: scale(1.09); box-shadow: 0 18px 52px rgba(13, 148, 136, 0.52), 0 0 0 16px rgba(13, 148, 136, 0.06); }
+
+            0%,
+            100% {
+                transform: scale(0.93);
+                box-shadow: 0 10px 34px rgba(13, 148, 136, 0.28), 0 0 0 0 rgba(13, 148, 136, 0.12);
+            }
+
+            50% {
+                transform: scale(1.09);
+                box-shadow: 0 18px 52px rgba(13, 148, 136, 0.52), 0 0 0 16px rgba(13, 148, 136, 0.06);
+            }
         }
 
         @keyframes shimmerText {
-            0% { background-position: -200% center; }
-            100% { background-position: 200% center; }
+            0% {
+                background-position: -200% center;
+            }
+
+            100% {
+                background-position: 200% center;
+            }
         }
 
         .ql-loader {
@@ -2744,7 +2779,8 @@
             display: inline-block;
         }
 
-        .aivon-brand, .aivon-name {
+        .aivon-brand,
+        .aivon-name {
             color: #0D9488;
             font-weight: 900;
             font-style: normal;
@@ -2752,7 +2788,8 @@
             letter-spacing: 0.04em;
         }
 
-        .aivon-o, .aivon-i {
+        .aivon-o,
+        .aivon-i {
             color: #2DD4BF;
             text-shadow: 0 0 16px rgba(45, 212, 191, 0.95), 0 0 32px rgba(13, 148, 136, 0.5);
         }
@@ -2763,20 +2800,29 @@
             flex-direction: column;
             align-items: center;
         }
+
         .an-heart-grp {
             transform-box: fill-box;
             transform-origin: 50% 50%;
             animation: qlOrb 2.8s ease-in-out infinite;
         }
+
         .an-halo-ring {
             transform-box: fill-box;
             transform-origin: 50% 50%;
             animation: qlPulse 2.8s ease-in-out infinite;
         }
+
         @keyframes ecgTravel {
-            from { stroke-dashoffset: 0; }
-            to   { stroke-dashoffset: -748; }
+            from {
+                stroke-dashoffset: 0;
+            }
+
+            to {
+                stroke-dashoffset: -748;
+            }
         }
+
         .an-ecg-path {
             stroke-dasharray: 90, 658;
             animation: ecgTravel 3.5s linear infinite;
@@ -2904,7 +2950,6 @@
             text-align: center;
             animation: floatRobotWelcome 3.5s ease-in-out infinite;
         }
-
     </style>
 
 
@@ -3063,7 +3108,8 @@
                 <div id="voiceUI" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
                     <button id="micBtn" class="mic-btn" onclick="toggleRecording()"
                         style="width:120px;height:120px;border-radius:50%;background:none!important;border:none;display:flex;align-items:center;justify-content:center;box-shadow:none!important;cursor:pointer;transition:transform 0.2s;padding:0;">
-                        <img src="/docs/images/icons/ic_mic.png" style="width:112px;height:112px;object-fit:contain;display:block;">
+                        <img src="/docs/images/icons/ic_mic.png"
+                            style="width:112px;height:112px;object-fit:contain;display:block;">
                     </button>
                     <div style="text-align: center;">
                         <div id="micStatus" style="font-weight: 800; font-size: 1.2rem; color: var(--text);"></div>
@@ -3167,36 +3213,44 @@
                     <!-- Heart animation (replaces orb) -->
                     <div class="an-heart-wrap">
                         <svg viewBox="0 0 360 132" xmlns="http://www.w3.org/2000/svg"
-                             style="width:min(260px,80vw);height:auto;display:block;overflow:visible;">
+                            style="width:min(260px,80vw);height:auto;display:block;overflow:visible;">
                             <defs>
                                 <linearGradient id="qlHG" x1="0" y1="0" x2="1" y2="1">
-                                    <stop offset="0%"   stop-color="#2DD4BF"/>
-                                    <stop offset="45%"  stop-color="#0D9488"/>
-                                    <stop offset="100%" stop-color="#0F766E"/>
+                                    <stop offset="0%" stop-color="#2DD4BF" />
+                                    <stop offset="45%" stop-color="#0D9488" />
+                                    <stop offset="100%" stop-color="#0F766E" />
                                 </linearGradient>
                                 <filter id="qlHGlow" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur stdDeviation="8" result="b"/>
-                                    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                    <feGaussianBlur stdDeviation="8" result="b" />
+                                    <feMerge>
+                                        <feMergeNode in="b" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
                                 </filter>
                                 <filter id="qlEcgGlow" x="-5%" y="-60%" width="110%" height="220%">
-                                    <feGaussianBlur stdDeviation="2.5" result="b"/>
-                                    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                    <feGaussianBlur stdDeviation="2.5" result="b" />
+                                    <feMerge>
+                                        <feMergeNode in="b" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
                                 </filter>
                             </defs>
-                            <ellipse class="an-halo-ring" cx="180" cy="67" rx="94" ry="86" fill="rgba(13,148,136,0.10)" style="animation-delay:0s"/>
-                            <ellipse class="an-halo-ring" cx="180" cy="67" rx="72" ry="65" fill="rgba(13,148,136,0.17)" style="animation-delay:0.18s"/>
+                            <ellipse class="an-halo-ring" cx="180" cy="67" rx="94" ry="86" fill="rgba(13,148,136,0.10)"
+                                style="animation-delay:0s" />
+                            <ellipse class="an-halo-ring" cx="180" cy="67" rx="72" ry="65" fill="rgba(13,148,136,0.17)"
+                                style="animation-delay:0.18s" />
                             <g class="an-heart-grp">
                                 <path fill="url(#qlHG)" filter="url(#qlHGlow)"
-                                      d="M 180,115 C 174,94 127,90 127,58 C 127,28 154,16 180,37 C 206,16 233,28 233,58 C 233,90 186,94 180,115 Z"/>
+                                    d="M 180,115 C 174,94 127,90 127,58 C 127,28 154,16 180,37 C 206,16 233,28 233,58 C 233,90 186,94 180,115 Z" />
                             </g>
                             <path class="an-ecg-path"
-                                  d="M 0,72 H 138 L 155,22 L 172,72 H 175 L 183,100 L 190,72 H 198 L 204,20 L 211,72 L 218,20 L 224,72 H 360"
-                                  fill="none" stroke="#2DD4BF" stroke-width="2.5"
-                                  stroke-linecap="round" stroke-linejoin="round"
-                                  filter="url(#qlEcgGlow)" opacity="0.95"/>
+                                d="M 0,72 H 138 L 155,22 L 172,72 H 175 L 183,100 L 190,72 H 198 L 204,20 L 211,72 L 218,20 L 224,72 H 360"
+                                fill="none" stroke="#2DD4BF" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round" filter="url(#qlEcgGlow)" opacity="0.95" />
                         </svg>
                     </div>
-                    <div class="ql-orb-name aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</div>
+                    <div class="ql-orb-name aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N
+                    </div>
 
                     <!-- Shimmer status text -->
                     <div class="ql-status">
@@ -3240,7 +3294,9 @@
             <div id="questionNav" style="display:none; margin-top:20px;">
                 <!-- Progress indicator — dots rendered dynamically by renderQuestion() -->
                 <div id="qProgressBarWrap" style="display:none;">
-                    <div id="qProgressBar" style="height:100%; border-radius:99px; background:linear-gradient(90deg,#0D9488,#2DD4BF); transition:width 0.4s ease; width:0%;"></div>
+                    <div id="qProgressBar"
+                        style="height:100%; border-radius:99px; background:linear-gradient(90deg,#0D9488,#2DD4BF); transition:width 0.4s ease; width:0%;">
+                    </div>
                     <span id="qProgressLabel"></span>
                 </div>
                 <div style="display:flex; width:100%">
@@ -3262,41 +3318,50 @@
         <div class="page" id="page-consent">
             <div style="text-align:center;padding:8px 0 18px">
                 <div style="margin:0 auto 12px;width:64px;height:64px;">
-                    <img src="/docs/images/icons/ic_consent.png" style="width:64px;height:64px;object-fit:contain;border-radius:16px;">
+                    <img src="/docs/images/icons/ic_consent.png"
+                        style="width:64px;height:64px;object-fit:contain;border-radius:16px;">
                 </div>
                 <h2 id="cs_title"></h2>
             </div>
 
             <!-- Short summary -->
             <p id="cs_consentDesc"
-                style="font-size:0.95rem;color:var(--text-2);margin-bottom:20px;line-height:1.55;text-align:center;font-weight:500;padding:0 4px;"></p>
+                style="font-size:0.95rem;color:var(--text-2);margin-bottom:20px;line-height:1.55;text-align:center;font-weight:500;padding:0 4px;">
+            </p>
 
             <!-- Accordion: details -->
             <div class="card" style="margin-bottom:20px; padding:0; overflow:hidden;">
                 <button onclick="toggleConsentDetails()" id="csDetailsToggleBtn"
                     style="width:100%; background:none; border:none; cursor:pointer; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; color:var(--text-2); font-size:0.875rem; font-weight:600; gap:8px;">
                     <span style="display:flex; align-items:center; gap:8px;">
-                        <i data-lucide="shield-check" style="width:16px;height:16px;color:var(--medical-teal);flex-shrink:0;"></i>
+                        <i data-lucide="shield-check"
+                            style="width:16px;height:16px;color:var(--medical-teal);flex-shrink:0;"></i>
                         <span id="cs_detailsToggleLabel"></span>
                     </span>
-                    <i id="csDetailsChevron" data-lucide="chevron-down" style="width:16px;height:16px;color:var(--text-3);flex-shrink:0;transition:transform 0.2s;"></i>
+                    <i id="csDetailsChevron" data-lucide="chevron-down"
+                        style="width:16px;height:16px;color:var(--text-3);flex-shrink:0;transition:transform 0.2s;"></i>
                 </button>
-                <div id="cs_detailsBody" style="display:none; padding:4px 18px 16px; border-top:1px solid var(--border);">
+                <div id="cs_detailsBody"
+                    style="display:none; padding:4px 18px 16px; border-top:1px solid var(--border);">
                     <div style="display:flex; flex-direction:column; gap:13px; margin-top:12px;">
                         <div class="consent-item" style="border:none; padding:0;">
-                            <div class="consent-icon" style="background:rgba(59,130,246,0.15);color:#3B82F6"><i data-lucide="message-square" style="width:16px;height:16px;"></i></div>
+                            <div class="consent-icon" style="background:rgba(59,130,246,0.15);color:#3B82F6"><i
+                                    data-lucide="message-square" style="width:16px;height:16px;"></i></div>
                             <span id="cs_line1" class="consent-text"></span>
                         </div>
                         <div class="consent-item" style="border:none; padding:0;">
-                            <div class="consent-icon" style="background:var(--success-l);color:var(--success-text)"><i data-lucide="image" style="width:16px;height:16px;"></i></div>
+                            <div class="consent-icon" style="background:var(--success-l);color:var(--success-text)"><i
+                                    data-lucide="image" style="width:16px;height:16px;"></i></div>
                             <span id="cs_photoLine" class="consent-text"></span>
                         </div>
                         <div class="consent-item" style="border:none; padding:0;">
-                            <div class="consent-icon" style="background:var(--warning-l);color:var(--warning-text)"><i data-lucide="activity" style="width:16px;height:16px;"></i></div>
+                            <div class="consent-icon" style="background:var(--warning-l);color:var(--warning-text)"><i
+                                    data-lucide="activity" style="width:16px;height:16px;"></i></div>
                             <span id="cs_line3" class="consent-text"></span>
                         </div>
                         <div class="consent-item" style="border:none; padding:0;">
-                            <div class="consent-icon" style="background:var(--danger-l);color:var(--danger-text)"><i data-lucide="map-pin" style="width:16px;height:16px;"></i></div>
+                            <div class="consent-icon" style="background:var(--danger-l);color:var(--danger-text)"><i
+                                    data-lucide="map-pin" style="width:16px;height:16px;"></i></div>
                             <span id="cs_line4" class="consent-text"></span>
                         </div>
                     </div>
@@ -3322,7 +3387,8 @@
                 <i data-lucide="arrow-right" style="width:22px;height:22px;margin-left:4px;"></i>
             </button>
 
-            <div style="display:flex; align-items:center; justify-content:center; gap:6px; color:var(--text-3); margin-bottom:24px;">
+            <div
+                style="display:flex; align-items:center; justify-content:center; gap:6px; color:var(--text-3); margin-bottom:24px;">
                 <i data-lucide="lock" style="width:14px;height:14px;"></i>
                 <span id="cs_data_secure" style="font-size:0.8rem; font-weight:500;"></span>
             </div>
@@ -3335,45 +3401,51 @@
                 <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:36px;">
                     <div class="an-heart-wrap">
                         <svg viewBox="0 0 360 132" xmlns="http://www.w3.org/2000/svg"
-                             style="width:min(340px,94vw);height:auto;display:block;overflow:visible;">
+                            style="width:min(340px,94vw);height:auto;display:block;overflow:visible;">
                             <defs>
                                 <linearGradient id="anHG" x1="0" y1="0" x2="1" y2="1">
-                                    <stop offset="0%"   stop-color="#2DD4BF"/>
-                                    <stop offset="45%"  stop-color="#0D9488"/>
-                                    <stop offset="100%" stop-color="#0F766E"/>
+                                    <stop offset="0%" stop-color="#2DD4BF" />
+                                    <stop offset="45%" stop-color="#0D9488" />
+                                    <stop offset="100%" stop-color="#0F766E" />
                                 </linearGradient>
                                 <filter id="anGlow" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur stdDeviation="8" result="b"/>
-                                    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                    <feGaussianBlur stdDeviation="8" result="b" />
+                                    <feMerge>
+                                        <feMergeNode in="b" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
                                 </filter>
                                 <filter id="ecgGlow" x="-5%" y="-60%" width="110%" height="220%">
-                                    <feGaussianBlur stdDeviation="2.5" result="b"/>
-                                    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                    <feGaussianBlur stdDeviation="2.5" result="b" />
+                                    <feMerge>
+                                        <feMergeNode in="b" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
                                 </filter>
                             </defs>
 
                             <!-- Halo rings (~1.2× bigger than original) -->
-                            <ellipse class="an-halo-ring" cx="180" cy="67" rx="94" ry="86"
-                                     fill="rgba(13,148,136,0.10)" style="animation-delay:0s"/>
-                            <ellipse class="an-halo-ring" cx="180" cy="67" rx="72" ry="65"
-                                     fill="rgba(13,148,136,0.17)" style="animation-delay:0.18s"/>
+                            <ellipse class="an-halo-ring" cx="180" cy="67" rx="94" ry="86" fill="rgba(13,148,136,0.10)"
+                                style="animation-delay:0s" />
+                            <ellipse class="an-halo-ring" cx="180" cy="67" rx="72" ry="65" fill="rgba(13,148,136,0.17)"
+                                style="animation-delay:0.18s" />
 
                             <!-- Beating heart — 1.2× bigger than original -->
                             <g class="an-heart-grp">
                                 <path fill="url(#anHG)" filter="url(#anGlow)"
-                                      d="M 180,115 C 174,94 127,90 127,58 C 127,28 154,16 180,37 C 206,16 233,28 233,58 C 233,90 186,94 180,115 Z"/>
+                                    d="M 180,115 C 174,94 127,90 127,58 C 127,28 154,16 180,37 C 206,16 233,28 233,58 C 233,90 186,94 180,115 Z" />
                             </g>
 
                             <!-- ECG pulse: flat → Λ → V → N → flat, travels left→right -->
                             <path class="an-ecg-path"
-                                  d="M 0,72 H 138 L 155,22 L 172,72 H 175 L 183,100 L 190,72 H 198 L 204,20 L 211,72 L 218,20 L 224,72 H 360"
-                                  fill="none" stroke="#2DD4BF" stroke-width="2.5"
-                                  stroke-linecap="round" stroke-linejoin="round"
-                                  filter="url(#ecgGlow)" opacity="0.95"/>
+                                d="M 0,72 H 138 L 155,22 L 172,72 H 175 L 183,100 L 190,72 H 198 L 204,20 L 211,72 L 218,20 L 224,72 H 360"
+                                fill="none" stroke="#2DD4BF" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round" filter="url(#ecgGlow)" opacity="0.95" />
 
                         </svg>
                     </div>
-                    <div class="ql-orb-name aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</div>
+                    <div class="ql-orb-name aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N
+                    </div>
                 </div>
 
                 <h2 id="an_title"
@@ -3476,15 +3548,21 @@
                 <span id="gps_waitText"></span>
             </div>
 
-            <div id="gpsDenied" style="display:none; background:rgba(239,68,68,0.08); border:1.5px solid rgba(239,68,68,0.25); border-radius:16px; padding:18px 20px; margin-bottom:16px;">
+            <div id="gpsDenied"
+                style="display:none; background:rgba(239,68,68,0.08); border:1.5px solid rgba(239,68,68,0.25); border-radius:16px; padding:18px 20px; margin-bottom:16px;">
                 <div style="display:flex; align-items:flex-start; gap:12px;">
-                    <div style="background:#FEF2F2; border:1px solid #FECACA; color:#DC2626; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <div
+                        style="background:#FEF2F2; border:1px solid #FECACA; color:#DC2626; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                         <i data-lucide="map-pin-off" style="width:18px; height:18px;"></i>
                     </div>
                     <div style="flex:1;">
-                        <div id="gps_deniedTitle" style="font-size:0.9rem; font-weight:800; color:#DC2626; margin-bottom:4px;"></div>
-                        <div id="gps_deniedDesc" style="font-size: 0.875rem; color:var(--text-2); margin-bottom:10px; line-height:1.5;"></div>
-                        <div id="gps_deniedSteps" style="font-size: 0.875rem; color:var(--text-2); line-height:1.8;"></div>
+                        <div id="gps_deniedTitle"
+                            style="font-size:0.9rem; font-weight:800; color:#DC2626; margin-bottom:4px;"></div>
+                        <div id="gps_deniedDesc"
+                            style="font-size: 0.875rem; color:var(--text-2); margin-bottom:10px; line-height:1.5;">
+                        </div>
+                        <div id="gps_deniedSteps" style="font-size: 0.875rem; color:var(--text-2); line-height:1.8;">
+                        </div>
                         <button onclick="retryGPS()" id="gps_retryBtn"
                             style="margin-top:12px; background:var(--primary); color:white; border:none; border-radius:10px; padding:8px 16px; font-size: 0.875rem; font-weight:700; cursor:pointer; width:100%;"></button>
                     </div>
@@ -3708,7 +3786,7 @@
                 rs_tab_instructions: 'Instructions',
                 rs_tab_contact: 'Emergency Contact',
                 rs_openNav: 'Open Navigation', rs_liveTrackingTitle: 'LIVE TRACKING ACTIVE', rs_liveTrackingSub: 'The medical team is monitoring your GPS for arrival.', rs_passFooter: 'Show this pass to the triage nurse immediately upon arrival.',
-                wl_langHeroSub: 'AI Emergency Assistant — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Back', ph_backBtn: 'Back', gps_privacyText: 'Your location is only used to find the most suitable hospital. Your identity is kept confidential.', rs_contactTitle: 'Notify Contact Person', rs_contactDesc: 'The following will be sent to your emergency contact:', rs_contactItem1: 'Summary of your condition', rs_contactItem2: 'Assigned hospital name & address', rs_contactItem3: 'Your current location', rs_contactItem4: 'Hospital registration number', rs_contactSendBtn: 'Send notification now', rs_demo: '⚠️ Demo only. Call 112 for real emergencies.',                 aiChecking: 'Checking AI…', aiConnected: '🤖 AI connected — real-time analysis', aiDemo: '⚙️ Demo mode — AI not configured',
+                wl_langHeroSub: 'AI Emergency Assistant — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Back', ph_backBtn: 'Back', gps_privacyText: 'Your location is only used to find the most suitable hospital. Your identity is kept confidential.', rs_contactTitle: 'Notify Contact Person', rs_contactDesc: 'The following will be sent to your emergency contact:', rs_contactItem1: 'Summary of your condition', rs_contactItem2: 'Assigned hospital name & address', rs_contactItem3: 'Your current location', rs_contactItem4: 'Hospital registration number', rs_contactSendBtn: 'Send notification now', rs_demo: '⚠️ Demo only. Call 112 for real emergencies.', aiChecking: 'Checking AI…', aiConnected: '🤖 AI connected — real-time analysis', aiDemo: '⚙️ Demo mode — AI not configured',
                 adv_call112: 'Call 112 immediately or have someone call for you', adv_sit_still: 'Sit or lie down and do not move', adv_stay_calm: 'Stay calm and breathe slowly', adv_rest: 'Rest and avoid physical exertion', adv_someone_with_you: 'Have someone accompany you to the hospital', adv_bring_meds: 'Bring all current medications with you', adv_bring_id: 'Bring your ID and insurance card', adv_no_drive: 'Do NOT drive yourself to the hospital', adv_no_eat: 'Do not eat or drink anything until examined', adv_chest_loose: 'Loosen tight clothing around your chest', adv_chest_no_stress: 'Avoid physical or emotional stress', adv_bleed_pressure: 'Apply firm pressure to the wound with a clean cloth', adv_bleed_no_remove: 'Do not remove any object embedded in a wound', adv_breath_upright: 'Sit upright — do not lie flat', adv_breath_no_lie: 'Do not lie flat — this worsens breathing', adv_head_dark: 'Rest in a quiet, dark room if possible', adv_head_no_screen: 'Avoid screens, bright lights and loud noise', adv_proceed_er: 'Go to the emergency room as soon as possible',
                 hnPlaceholder: 'Choose your health record…',
                 tr_aiVoNOverview: '<span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> Assessment',
@@ -3823,7 +3901,7 @@
                 rs_tab_instructions: 'Anweisungen',
                 rs_tab_contact: 'Notfallkontakt',
                 rs_openNav: 'Navigation öffnen', rs_liveTrackingTitle: 'LIVE-TRACKING AKTIV', rs_liveTrackingSub: 'Das Team überwacht Ihre GPS-Position für die Ankunft.', rs_passFooter: 'Zeigen Sie diesen Pass sofort der Triage-Schwester bei Ankunft.',
-                wl_langHeroSub: 'KI-Notfallassistent — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Zurück', ph_backBtn: 'Zurück', gps_privacyText: 'Ihr Standort wird nur verwendet, um das geeignetste Krankenhaus zu finden. Ihre Identität bleibt vertraulich.', rs_contactTitle: 'Kontaktperson benachrichtigen', rs_contactDesc: 'Folgendes wird an Ihren Notfallkontakt gesendet:', rs_contactItem1: 'Zusammenfassung Ihres Zustands', rs_contactItem2: 'Name & Adresse des Krankenhauses', rs_contactItem3: 'Ihr aktueller Standort', rs_contactItem4: 'Krankenhausregistrierungsnummer', rs_contactSendBtn: 'Benachrichtigung senden',  rs_demo: '⚠️ Nur Demo. Im Notfall 112 anrufen.',
+                wl_langHeroSub: 'KI-Notfallassistent — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Zurück', ph_backBtn: 'Zurück', gps_privacyText: 'Ihr Standort wird nur verwendet, um das geeignetste Krankenhaus zu finden. Ihre Identität bleibt vertraulich.', rs_contactTitle: 'Kontaktperson benachrichtigen', rs_contactDesc: 'Folgendes wird an Ihren Notfallkontakt gesendet:', rs_contactItem1: 'Zusammenfassung Ihres Zustands', rs_contactItem2: 'Name & Adresse des Krankenhauses', rs_contactItem3: 'Ihr aktueller Standort', rs_contactItem4: 'Krankenhausregistrierungsnummer', rs_contactSendBtn: 'Benachrichtigung senden', rs_demo: '⚠️ Nur Demo. Im Notfall 112 anrufen.',
                 aiChecking: 'KI-Status wird geprüft…', aiConnected: '🤖 KI verbunden — Echtzeit-Analyse', aiDemo: '⚙️ Demo-Modus — KI nicht konfiguriert',
                 adv_call112: 'Rufen Sie sofort 112 an oder lassen Sie jemanden rufen', adv_sit_still: 'Setzen oder legen Sie sich hin und bewegen Sie sich nicht', adv_stay_calm: 'Bleiben Sie ruhig und atmen Sie langsam', adv_rest: 'Ruhen Sie sich aus und vermeiden Sie körperliche Anstrengung', adv_someone_with_you: 'Lassen Sie sich von jemandem ins Krankenhaus begleiten', adv_bring_meds: 'Bringen Sie alle aktuellen Medikamente mit', adv_bring_id: 'Bringen Sie Ausweis und Krankenversicherungskarte mit', adv_no_drive: 'Fahren Sie NICHT selbst ins Krankenhaus', adv_no_eat: 'Essen oder trinken Sie nichts bis zur Untersuchung', adv_chest_loose: 'Lockern Sie enge Kleidung um die Brust', adv_chest_no_stress: 'Vermeiden Sie körperlichen oder emotionalen Stress', adv_bleed_pressure: 'Drücken Sie mit einem sauberen Tuch fest auf die Wunde', adv_bleed_no_remove: 'Entfernen Sie keinen in der Wunde steckenden Gegenstand', adv_breath_upright: 'Sitzen Sie aufrecht — legen Sie sich nicht hin', adv_breath_no_lie: 'Legen Sie sich nicht flach hin — das verschlimmert die Atmung', adv_head_dark: 'Ruhen Sie sich in einem ruhigen, dunklen Raum aus', adv_head_no_screen: 'Vermeiden Sie Bildschirme, helles Licht und Lärm', adv_proceed_er: 'Gehen Sie so schnell wie möglich in die Notaufnahme',
                 hnPlaceholder: 'Krankenakte auswählen…',
@@ -3939,7 +4017,7 @@
                 rs_tab_instructions: 'Talimatlar',
                 rs_tab_contact: 'Acil Kişisi',
                 rs_openNav: 'Navigasyonu Aç', rs_liveTrackingTitle: 'CANLI TAKİP AKTİF', rs_liveTrackingSub: 'Sağlık ekibi varışınızı GPS ile izliyor.', rs_passFooter: 'Varışta bu kartı görevliye gösterin veya girişteki cihaza QR kodunuzu okutun.',
-                wl_langHeroSub: 'AI Emergency Assistant — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Geri', ph_backBtn: 'Geri', gps_privacyText: 'Konumunuz yalnızca en uygun hastaneyi bulmak için kullanılmaktadır. Kimliğiniz gizli tutulmaktadır.', rs_contactTitle: 'Bu bilgiler kayıtlı ACİL kişinize gönderilecek', rs_contactDesc: 'Acil kişinize şunlar gönderilecek:', rs_contactItem1: 'Rahatsızlığınızın özeti', rs_contactItem2: 'Atanan hastane adı ve adresi', rs_contactItem3: 'Mevcut konumunuz', rs_contactItem4: 'Hastane kayıt numarası', rs_contactSendBtn: 'Bildirimi gönder',  rs_demo: "⚠️ Yalnızca demo. Gerçek acillerde 112'yi arayın.",
+                wl_langHeroSub: 'AI Emergency Assistant — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Geri', ph_backBtn: 'Geri', gps_privacyText: 'Konumunuz yalnızca en uygun hastaneyi bulmak için kullanılmaktadır. Kimliğiniz gizli tutulmaktadır.', rs_contactTitle: 'Bu bilgiler kayıtlı ACİL kişinize gönderilecek', rs_contactDesc: 'Acil kişinize şunlar gönderilecek:', rs_contactItem1: 'Rahatsızlığınızın özeti', rs_contactItem2: 'Atanan hastane adı ve adresi', rs_contactItem3: 'Mevcut konumunuz', rs_contactItem4: 'Hastane kayıt numarası', rs_contactSendBtn: 'Bildirimi gönder', rs_demo: "⚠️ Yalnızca demo. Gerçek acillerde 112'yi arayın.",
                 aiChecking: 'Yapay zeka durumu kontrol ediliyor…', aiConnected: '🤖 Yapay zeka bağlı — gerçek zamanlı analiz', aiDemo: '⚙️ Demo modu — YZ yapılandırılmamış',
                 adv_call112: "Hemen 112'yi arayın veya birine aratın", adv_sit_still: 'Oturun ya da uzanın ve hareket etmeyin', adv_stay_calm: 'Sakin olun ve yavaş nefes alın', adv_rest: 'Dinlenin ve fiziksel efordan kaçının', adv_someone_with_you: 'Hastaneye birinin eşliğinde gidin', adv_bring_meds: 'Kullandığınız tüm ilaçları yanınıza alın', adv_bring_id: 'Kimliğinizi ve sigorta kartınızı getirin', adv_no_drive: 'Hastaneye KENDİNİZ araba kullanarak gitmeyin', adv_no_eat: 'Muayene edilene kadar hiçbir şey yemeyin ya da içmeyin', adv_chest_loose: 'Göğsünüzün etrafındaki dar giysileri gevşetin', adv_chest_no_stress: 'Fiziksel veya duygusal stresten kaçının', adv_bleed_pressure: 'Temiz bir bezle yaraya sıkıca bastırın', adv_bleed_no_remove: 'Yaraya saplanmış bir nesneyi çıkarmayın', adv_breath_upright: 'Dik oturun — yatmayın', adv_breath_no_lie: 'Düz yatmayın — solunumu kötüleştirir', adv_head_dark: 'Mümkünse sakin, karanlık bir odada dinlenin', adv_head_no_screen: 'Ekranlardan, parlak ışıktan ve gürültüden kaçının', adv_proceed_er: 'En kısa sürede acil servise gidin',
                 hnPlaceholder: 'Sağlık kaydınızı seçin…',
@@ -4360,7 +4438,7 @@
 
                     if (d.text && d.text.trim()) {
                         S.detectedLang = d.language || S.selectedLang || 'en-GB';
-                        setComplaintFromAudio(d.text.trim(), d.language);
+                        setComplaintFromAudio(d.text.trim(), S.selectedLang || d.language);
                         webSpeechResult = '';
                         return;
                     }
@@ -4554,7 +4632,7 @@
             let q = S.questions[S.qIdx];
             if (typeof q === 'string') q = { question: q, type: 'yes_no', options: [] };
             let { question, type, options } = q;
-            const _lang = S.detectedLang || S.selectedLang || 'en-GB';
+            const _lang = S.selectedLang || S.detectedLang || 'en-GB';
             const _to = o => translateOption(o, _lang);
             // Run type heuristics only when type is truly ambiguous (free_text or unknown with no options).
             // Never override an explicit yes_no / scale / multiple_choice that the AI set.
@@ -4599,7 +4677,7 @@
     ${isMulti ? `<div class="q-multi-hint">${S.lang === 'tr' ? 'Birden fazla seçebilirsiniz' : S.lang === 'de' ? 'Mehrfachauswahl möglich' : 'Select all that apply'}</div>` : ''}
     <div class="${type === 'scale' ? '' : 'radio-group'}" id="qOptions"></div>`;
             const opts = document.getElementById('qOptions');
-            const _lc = S.detectedLang || S.selectedLang || 'en-GB';
+            const _lc = S.selectedLang || S.detectedLang || 'en-GB';
             const displayOpts = options.map(opt => ({ display: translateOption(opt, _lc), value: opt }));
 
             if (type === 'photo_request') {
@@ -4779,7 +4857,13 @@
         // FALLBACK ASSESSMENT
         // ═══════════════════════════════════════════════════════════
         function buildFallbackAssessment(complaint, answers) {
-            const c = (complaint || '').toLowerCase(); const a = (answers || []).map(x => (x.answer || '').toLowerCase()).join(' '); const text = c + ' ' + a;
+            const c = (complaint || '').toLowerCase();
+            const a = (answers || []).map(x => {
+                let ans = x.answer || '';
+                if (Array.isArray(ans)) ans = ans.join(' ');
+                return String(ans).toLowerCase();
+            }).join(' ');
+            const text = c + ' ' + a;
             let level = 'ROUTINE', score = 3;
             if (/chest pain|heart attack|stroke|unconscious|not breathing|anaphyla|severe bleeding|crushing|thunderclap|göğüs ağrısı|nefes alamıyorum|brustschmerz/i.test(text)) { level = 'EMERGENCY'; score = 9; }
             else if (/vomit|fever|dizz|faint|headache|abdominal|shortness|severe|bleed|ateş|kusma|baş ağrısı|schmerz|fieber/i.test(text)) { level = 'URGENT'; score = 6; }
@@ -4825,7 +4909,7 @@
                     body: JSON.stringify({
                         complaint: S.complaint,
                         complaint_en: S.complaintEN || S.complaint,
-                        detected_language: S.detectedLang,
+                        detected_language: S.selectedLang || S.detectedLang,
                         assessment: S.assessment,
                         hospital: S.selectedHospital,
                         lat: S.lat,
@@ -4894,7 +4978,7 @@
                 const apiCall = fetch(API + '/api/patient/assess', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        complaint: S.complaint, complaint_en: S.complaintEN, detected_language: S.detectedLang, health_number: S.healthNumber,
+                        complaint: S.complaint, complaint_en: S.complaintEN, detected_language: S.selectedLang || S.detectedLang, health_number: S.healthNumber,
                         questions: S.questions.map(q => q.question_en ? q : (q.question || q)), answers: qaList, has_photo: S.photos.length > 0,
                         photo_count: S.photos.length, photo_base64: S.photos.length ? S.photos.map(p => p.dataUrl) : null,
                         photo_mime: S.photos.length ? S.photos[0].mime : null,
@@ -4969,7 +5053,7 @@
             }
 
             if (a.patient_summary) {
-                const shortSummary = (function(txt, max) {
+                const shortSummary = (function (txt, max) {
                     const sents = txt.match(/[^.!?]+[.!?]+/g) || [txt];
                     return sents.slice(0, max).join(' ').trim();
                 })(a.patient_summary, 3);
@@ -5051,8 +5135,8 @@
             // Pre-compute bests for "why" tag logic
             const occOrder = { low: 0, medium: 1, high: 2, full: 3 };
             const minDist = Math.min(...S.hospitals.map(h => h.distance_km));
-            const minEta  = Math.min(...S.hospitals.map(h => h.eta_minutes));
-            const minOcc  = Math.min(...S.hospitals.map(h => occOrder[(h.occupancy || 'medium').toLowerCase()] ?? 1));
+            const minEta = Math.min(...S.hospitals.map(h => h.eta_minutes));
+            const minOcc = Math.min(...S.hospitals.map(h => occOrder[(h.occupancy || 'medium').toLowerCase()] ?? 1));
 
             hl.innerHTML = S.hospitals.map((h, i) => {
                 const colors = { low: '#30D158', medium: '#FF9F0A', high: '#FF453A', full: '#8E8E93' };
@@ -5518,3 +5602,5 @@
 </body>
 
 </html>
+
+

@@ -115,7 +115,7 @@ class AssessRequest(_BM):
     health_number:      _Opt[str] = None
     has_photo:          bool = False
     photo_count:        int = 0
-    photo_base64:       _Opt[str] = None
+    photo_base64:       _Opt[object] = None
     photo_mime:         _Opt[str] = None
 
 class NextQuestionRequest(_BM):
