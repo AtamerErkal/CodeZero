@@ -3810,7 +3810,7 @@
               <span style="font-size:.78rem;font-weight:800;padding:3px 10px;border-radius:6px;background:${col}20;color:${col};border:1px solid ${col}40;">${h(p.override_action)}</span>
               ${p.updated_at ? `<span style="font-size:.73rem;color:var(--text3);">&#x1F552; ${new Date(p.updated_at).toLocaleString()}</span>` : ''}
             </div>
-            ${p.override_note ? `<div style="font-size:.8rem;color:var(--text2);margin-top:8px;font-style:italic;">"${h(p.override_note)}"</div>` : ''}
+            ${p.override_note ? `<div style="margin-top:8px;">${p.override_note.split('\n---\n').map(entry => `<div style="font-size:.8rem;color:var(--text2);font-style:italic;padding:4px 0;border-bottom:1px solid var(--border);">"${h(entry.trim())}"</div>`).join('')}</div>` : ''}
           </div>` : ''}
           <div style="font-size:.75rem;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Physician Override</div>
           <div style="margin-bottom:10px;">

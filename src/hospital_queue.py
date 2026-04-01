@@ -418,13 +418,31 @@ class HospitalQueue:
         try:
             conn = self._get_connection()
             now = datetime.now(timezone.utc).isoformat()
+
+            # Fetch existing note to accumulate (never overwrite)
+            existing_note = ""
+            row = conn.execute(
+                "SELECT override_note FROM patient_queue WHERE patient_id = ?", (patient_id,)
+            ).fetchone()
+            if row and row[0]:
+                existing_note = row[0]
+
+            # Prepend new note with timestamp; keep full history
+            if note:
+                ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+                accumulated = f"[{ts}] [{action}→{new_level}] {note}"
+                if existing_note:
+                    accumulated = accumulated + "\n---\n" + existing_note
+            else:
+                accumulated = existing_note or ""
+
             conn.execute(
                 """
                 UPDATE patient_queue
                 SET triage_level = ?, override_action = ?, override_note = ?, updated_at = ?
                 WHERE patient_id = ?
                 """,
-                (new_level, action, note, now, patient_id),
+                (new_level, action, accumulated, now, patient_id),
             )
             conn.commit()
             conn.close()
@@ -433,6 +451,22 @@ class HospitalQueue:
 
         except Exception as exc:
             logger.error("Failed to override patient triage: %s", exc)
+            return False
+
+    def set_dispatch_note(self, patient_id: str, note: str) -> bool:
+        """Store an ambulance dispatch note without touching triage_level."""
+        try:
+            conn = self._get_connection()
+            now = datetime.now(timezone.utc).isoformat()
+            conn.execute(
+                "UPDATE patient_queue SET override_action='AMBULANCE', override_note=?, updated_at=? WHERE patient_id=?",
+                (note, now, patient_id),
+            )
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as exc:
+            logger.error("set_dispatch_note failed: %s", exc)
             return False
 
     def update_location(self, patient_id: str, lat: float, lon: float, eta_minutes: int) -> bool:

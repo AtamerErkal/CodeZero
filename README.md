@@ -31,10 +31,10 @@
 
 **CodeZero** is a full-stack, AI-powered pre-hospital triage platform with two complementary interfaces:
 
-- **VitalNavAI** — a mobile-first patient app where anyone can describe their emergency, answer AI-guided clinical questions, and be routed to the best available hospital.
-- **ER Command Center** — a real-time hospital dashboard where ER staff see incoming patients, their AI-assessed triage level, live GPS location, estimated arrival time, and full medical history — *before* the patient arrives.
+- **VitalNavAI** — a mobile-first patient app where anyone can describe their emergency via voice or text, answer AI-guided clinical questions, and be routed to the best available hospital with a 5-level MTS triage assessment.
+- **ER Command Center** — a real-time hospital dashboard where ER staff see incoming patients, their AI-assessed triage level, live GPS location, estimated arrival time, physician override controls, and full medical history — *before* the patient arrives.
 
-Unlike symptom checkers that end with a generic recommendation, CodeZero creates a **live two-sided connection**: the patient gets routed to the right hospital, and the ER gets the right preparation time.
+Unlike symptom checkers that end with a generic recommendation, CodeZero creates a **live two-sided connection**: the patient gets routed to the right hospital, and the ER gets the right preparation time. An **Expert-in-the-Loop** physician review layer allows ER doctors to upgrade, approve, or adjust the AI's triage decision — with the update reflected in real-time on the patient's own device.
 
 <br/>
 
@@ -45,25 +45,25 @@ Unlike symptom checkers that end with a generic recommendation, CodeZero creates
 <td width="50%">
 
 ### 🎙️ Voice-First, Any Language
-Speak in your native language — Azure Speech auto-detects from **10 supported languages** with full RTL support (Arabic, Hebrew, Farsi). A waveform animation gives real-time feedback during recording. Text fallback always available.
+Speak in your native language — Azure Speech SDK transcribes audio using the patient's selected language for maximum accuracy. A Web Speech API fallback ensures voice input works in all modern browsers without any credentials. A live waveform animation gives real-time feedback. Transcript approval step lets patients confirm before continuing.
 
 ### 🧬 Condition-Specific AI Questions
-GPT-4 generates **clinically relevant, diagnosis-deepening follow-up questions** grounded in real medical guidelines via RAG. Questions are specific to the patient's exact complaint — chest pain gets STEMI rule-out questions, leg swelling gets DVT risk questions. **13+ condition-specific clinical protocols** cover the most common ER presentations.
+GPT-4 generates **clinically relevant, diagnosis-deepening follow-up questions** grounded in real medical guidelines via RAG. Questions are specific to the patient's exact complaint — chest pain gets STEMI rule-out questions, leg swelling gets DVT risk questions. **15+ condition-specific clinical protocols** cover the most common ER presentations.
 
-### 📊 5-Step Guided Journey
-A visual progress bar guides patients through: Language → Welcome → Complaint Input → Photo Upload → AI Questions → Consent → Triage Result. Every step is accessible via keyboard and touch.
+### 📊 5-Level MTS Triage (Manchester Triage System)
+A visual progress bar guides patients through: Language → Welcome → Complaint Input → Photo Upload → AI Questions → Consent → Triage Result. The AI maps every assessment to the full MTS scale: **IMMEDIATE · EMERGENCY · URGENT · STANDARD · NON_URGENT** — with distinct outcome flows for each level.
 
 </td>
 <td width="50%">
 
 ### 🗺️ Real-Time GPS Tracking
-The patient's live position streams continuously to the hospital dashboard via `watchPosition`. The ER map shows each incoming patient's exact location and trajectory, updated every 4 seconds. A built-in simulation mode demonstrates the feature without real GPS.
+The patient's live position streams continuously to the ER dashboard via `watchPosition`. The map shows each incoming patient's exact location and trajectory, updated every 4 seconds. IMMEDIATE/EMERGENCY patients have in-app animated ambulance tracking. STANDARD/NON_URGENT patients are excluded from the server simulation (they navigate themselves).
 
 ### 🏥 Live ER Command Center
-Multi-panel dashboard with sortable patient cards (by Triage Level, ETA, Risk Score, Newest), KPI strip, full-screen Leaflet map, statistics charts, and PDF-ready reports. Emergency patient arrivals trigger a prominent full-width alert banner with animation.
+Multi-panel dashboard with sortable patient cards (by Triage Level, ETA, Risk Score, Newest), KPI strip, full-screen Leaflet map, statistics charts, and PDF-ready reports. Emergency patient arrivals trigger a prominent full-width alert banner. Ambulance dispatch events are annotated directly on patient cards with estimated hospital arrival time.
 
-### 🔒 GDPR-Compliant by Design
-GPS coordinates rounded to ~1 km grid before storage. No names stored. Patient IDs are random ER codes. Privacy is engineered into every data layer — not bolted on afterward.
+### 👨‍⚕️ Expert-in-the-Loop Physician Review
+After AI triage, a physician polling card appears on the patient's screen. ER doctors can **APPROVE**, **UPGRADE**, or **ADJUST** the triage level with a clinical note. The patient's screen updates in real-time to reflect the physician's decision, cumulative notes are preserved chronologically.
 
 </td>
 </tr>
@@ -94,12 +94,19 @@ GPS coordinates rounded to ~1 km grid before storage. No names stored. Patient I
                                      • Pain level?
                                           │
                                           ▼
-                                   ┌─────────────┐
-                                   │  TRIAGE      │
-                                   │  EMERGENCY   │──▶ 🚨 ER NOTIFIED
-                                   │  URGENT      │    Live GPS map
-                                   │  ROUTINE     │    ETA countdown
-                                   └─────────────┘    Medical history
+                                   ┌─────────────────┐
+                                   │  MTS 5-LEVEL     │
+                                   │  IMMEDIATE  ─────┼─▶ 🚨 Ambulance
+                                   │  EMERGENCY  ─────┼─▶ 🚑 Transport
+                                   │  URGENT     ─────┼─▶ ⚡ ER + GPS
+                                   │  STANDARD   ─────┼─▶ 🏥 Self-nav
+                                   │  NON_URGENT ─────┼─▶ 💙 Self-care
+                                   └─────────────────┘
+                                          │
+                                          ▼
+                                   👨‍⚕️ PHYSICIAN REVIEW
+                                   (approve / upgrade / note)
+                                   → reflected on patient screen
 ```
 
 **On the hospital side:**
@@ -110,7 +117,7 @@ GPS coordinates rounded to ~1 km grid before storage. No names stored. Patient I
   ╰──────────────────────────────────────────────────────────────────────╯
 
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  📊 KPI Strip     Total | 🚨 Emergencies | ⚠️ Urgent | ✅ Routine    │
+  │  📊 KPI Strip   Total | 🚨 Immediate | ⚡ Urgent | ✅ Standard       │
   │  🔔 Alert Banner  EMERGENCY arriving in 4 min — Suspected DVT        │
   ├────────────────────────┬────────────────────────────────────────────┤
   │  📋 Patient Cards      │  🗺️ Live Leaflet Map                        │
@@ -122,7 +129,8 @@ GPS coordinates rounded to ~1 km grid before storage. No names stored. Patient I
   │  │ 🚨 VN-2026-4821   │ │                                            │
   │  │ Chest Pain · 22F  │ ├────────────────────────────────────────────┤
   │  │ ETA: 6 min        │ │  📈 Statistics Panel                       │
-  │  │ Risk: 9/10        │ │  📄 Reports Tab                            │
+  │  │ 🚑 Ambulance note │ │  📄 Reports Tab                            │
+  │  │ 👨‍⚕️ Dr note (log) │ │                                            │
   │  └───────────────────┘ │                                            │
   └────────────────────────┴────────────────────────────────────────────┘
 ```
@@ -141,8 +149,8 @@ GPS coordinates rounded to ~1 km grid before storage. No names stored. Patient I
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                 PATIENT  ←──  Mobile / Desktop Browser                   │
 │                                                                          │
-│   ui/patient_app_v12.html  ────────────────────▶  FastAPI Server         │
-│   (VitalNavAI — standalone HTML, zero build step)   hospital_server.py   │
+│   ui/patient_app_v13.html  ────────────────────▶  FastAPI Server         │
+│   (VitalNavAI — standalone HTML, zero build step)   hospital_server_v1   │
 │                                                      :8001               │
 │                                                           │              │
 │   ┌───────────────────────────────────────────────────────┴────────┐    │
@@ -150,8 +158,8 @@ GPS coordinates rounded to ~1 km grid before storage. No names stored. Patient I
 │   │                                                                │    │
 │   │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐   │    │
 │   │  │ Azure Speech │  │ Azure OpenAI │  │  Azure AI Search   │   │    │
-│   │  │ STT + Auto   │  │ GPT-4 / 5   │  │  Medical Knowledge │   │    │
-│   │  │ Lang Detect  │  │ + RAG Triage │  │  Semantic Ranking  │   │    │
+│   │  │ STT · Direct │  │ GPT-4 / 5   │  │  Medical Knowledge │   │    │
+│   │  │ Lang or Auto │  │ + RAG Triage │  │  Semantic Ranking  │   │    │
 │   │  └──────────────┘  └──────────────┘  └────────────────────┘   │    │
 │   │                                                                │    │
 │   │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐   │    │
@@ -165,7 +173,7 @@ GPS coordinates rounded to ~1 km grid before storage. No names stored. Patient I
 │   Health Records DB     ←──  health_db.py (30 demo patients)            │
 │                                    │                                     │
 │   ui/hospital_dashboard_v9.html  ◀─┘  ER Staff Command Center           │
-│   (standalone HTML — Leaflet map, sort, filter, live GPS)               │
+│   (standalone HTML — Leaflet map, sort, filter, live GPS, physician UI) │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -175,10 +183,10 @@ GPS coordinates rounded to ~1 km grid before storage. No names stored. Patient I
 
 | Service | Role in CodeZero | AI-102 Domain | Fallback |
 |:---|:---|:---:|:---|
-| **Azure OpenAI** (GPT-4/5) | Condition-specific question generation, triage assessment, clinical report | Generative AI | Rule-based engine + 13 clinical mock sets |
+| **Azure OpenAI** (GPT-4/5) | Condition-specific question generation, triage assessment, clinical report | Generative AI | Rule-based engine + 15 clinical mock sets |
 | **Azure AI Search** | Medical knowledge base — semantic RAG retrieval | Knowledge Mining | Local file keyword matching |
 | **Azure AI Document Intelligence** | Extract clinical text from PDF guidelines | Knowledge Mining | Manual text files |
-| **Azure Speech Services** | Voice input with automatic language detection | NLP | Browser Web Speech API |
+| **Azure Speech Services** | Voice input — direct language mode or auto-detection (4 languages) | NLP | Browser Web Speech API |
 | **Azure Translator** | Real-time question/answer translation (100+ languages) | NLP | GPT translation fallback |
 | **Azure Maps** | ETA with live traffic, nearest hospital routing | Plan & Manage | Haversine + 440-hospital DB |
 | **Azure Content Safety** | Filter harmful input from patients | Responsible AI | Local allowlist filter |
@@ -228,7 +236,7 @@ Chief Complaint (English)
 
 ### Condition-specific mock protocols (offline fallback)
 
-When the AI is unavailable, 13 hand-crafted clinical protocols activate automatically:
+When AI is unavailable, 15 hand-crafted clinical protocols activate automatically:
 
 | Complaint Group | Key Assessment Focus |
 |:---|:---|
@@ -250,12 +258,48 @@ When the AI is unavailable, 13 hand-crafted clinical protocols activate automati
 
 <br/>
 
+## 📊 MTS 5-Level Triage Outcomes
+
+Each triage level triggers a distinct patient flow:
+
+| Level | Colour | Patient Flow | Dashboard |
+|:---|:---:|:---|:---|
+| 🔴 **IMMEDIATE** | Red | In-app ambulance dispatch → animated ambulance tracker → hospital ETA | `🚑 AMBULANCE` dispatch note + total arrival ETA |
+| 🟠 **EMERGENCY** | Orange | Choose ambulance or self-transport → ambulance tracker OR GPS triage page | Ambulance note or URGENT tracking |
+| 🟡 **URGENT** | Yellow | GPS triage page → hospital list → live tracking → physician polling | Live GPS pin, ETA countdown |
+| 🟢 **STANDARD** | Green | Self-care instructions → physician polling (no GPS simulation) | `incoming` status, no auto-movement |
+| 🔵 **NON_URGENT** | Blue | Full self-care guidance → optional physician review | `incoming` status |
+
+<br/>
+
+## 👨‍⚕️ Expert-in-the-Loop Physician Review
+
+After submission, a live polling card appears on the patient's screen for URGENT, STANDARD, and NON_URGENT patients. ER physicians can act from the dashboard without the patient having to do anything:
+
+```
+  Dashboard (Doctor side)              Patient screen
+  ─────────────────────                ──────────────────────────
+  [APPROVE]  [UPGRADE]  [ADJUST]  ───▶  🔁 Expert Review Active
+       │          │                          ↓ (decision arrives)
+       │          └─ new_level: URGENT  ───▶  ⚠️ Physician upgraded your
+       │             note: "Elevated         assessment to URGENT
+       │              troponin pattern"  ───▶  [Proceed to URGENT flow]
+       │
+       └─ APPROVE ──────────────────────▶  ✅ Your assessment confirmed
+```
+
+- Decisions are reflected **immediately** on the patient's screen (polling every 5 s for URGENT, 15 s for NON_URGENT)
+- Physician notes accumulate chronologically — never overwritten
+- On UPGRADE, `S.assessment.triage_level` is updated client-side so all subsequent navigation shows the new level
+
+<br/>
+
 ## 🗺️ Real-Time Patient Tracking
 
 The patient app continuously streams GPS coordinates to the ER dashboard:
 
 ```javascript
-// Patient side — runs every 4 seconds
+// Patient side — runs every 4 seconds (URGENT/EMERGENCY/IMMEDIATE only)
 navigator.geolocation.watchPosition(async position => {
     await fetch(`/api/patient/${regNumber}/location`, {
         method: 'PATCH',
@@ -265,14 +309,12 @@ navigator.geolocation.watchPosition(async position => {
 ```
 
 ```python
-# Server endpoint
-@app.patch("/api/patient/{patient_id}/location")
-def update_location(patient_id: str, body: LocationUpdate):
-    # lat/lon rounded to ~111m grid (GDPR)
-    hq.update_patient_location(patient_id, rounded_lat, rounded_lon)
+# Server background thread — moves patients toward hospital every 5 s
+# Only runs for patients with status='incoming' AND location_lat IS NOT NULL
+# STANDARD/NON_URGENT patients submit without GPS → excluded from simulation
 ```
 
-The ER Leaflet map refreshes the pin positions every 5 seconds — giving staff a live operational picture of all en-route patients with colour-coded triage severity.
+The ER Leaflet map refreshes pin positions every 5 seconds — giving staff a live operational picture of all en-route patients with colour-coded triage severity.
 
 <br/>
 
@@ -302,21 +344,20 @@ The ER Leaflet map refreshes the pin positions every 5 seconds — giving staff 
 - Smart diff rendering — cards update in-place (no flicker on refresh)
 - Expandable detail panel with 4 tabs: **Overview**, **Q&A Transcript**, **Clinical AI Report**, **Media**
 - Medical history pulled from health DB (ICD-10 codes, medications, allergies, labs)
-- Patient-facing AI summary (`patient_summary`) **and** English clinical report (`patient_summary_en`) — always shown in English for staff
+- Ambulance dispatch events shown as annotated notes on the card
+- Physician notes displayed as a **chronological timeline** — each entry timestamped with action and level
 
 ### Sorting & Filtering
 | Control | Behaviour |
 |:---|:---|
-| **By Triage** | EMERGENCY → URGENT → ROUTINE (database-level ordering) |
+| **By Triage** | IMMEDIATE → EMERGENCY → URGENT → STANDARD → NON_URGENT |
 | **By ETA** | Ascending arrival time — soonest first |
 | **By Risk** | Descending risk score (AI-assessed 0–10) |
 | **Newest** | Most recently registered patient first |
-| KPI Filters | Click any KPI card to filter by Emergencies, Urgents, Routines, En Route, In Treatment, Discharged, or All |
-
-> Sort mode persists across KPI filter changes — clicking "By ETA" while viewing "All Patients" correctly re-sorts the full list.
+| KPI Filters | Click any KPI card to filter by level, status, or all |
 
 ### Emergency Alert System
-When a new EMERGENCY-level patient registers, the dashboard triggers:
+When a new EMERGENCY/IMMEDIATE-level patient registers, the dashboard triggers:
 - Full-width crimson banner with animated pulse effect
 - Patient name, complaint, and ETA prominently displayed
 - Auto-dismisses after 10 seconds or on manual close
@@ -325,7 +366,7 @@ When a new EMERGENCY-level patient registers, the dashboard triggers:
 - **Live Map** — Leaflet map with patient pins, colour-coded by triage; dark/light tile switching
 - **Statistics** — Real-time charts: triage breakdown, top conditions, hourly arrivals
 - **Reports** — Printable/PDF-ready patient reports
-- **Dark Mode** — One-click toggle with instant map tile swap (no reload)
+- **Dark Mode** — One-click toggle with instant map tile swap
 - **Keyboard Navigation** — Arrow keys, Enter (expand), Escape (collapse) on patient list
 - **Compact Mode** — Toggle between full and condensed card view
 
@@ -353,9 +394,10 @@ When a new EMERGENCY-level patient registers, the dashboard triggers:
 
 ### Design Principles
 - **Zero friction** — voice-first; patients in distress don't type
+- **Transcript approval** — recorded speech is shown for patient confirmation before proceeding
 - **Touch-optimised** — all interactive elements ≥ 54 px
 - **Mobile-only layout** — centred 480px card, full-screen on phones
-- **Calm clinical palette** — Medical Teal primary, clear EMERGENCY/URGENT/ROUTINE distinction
+- **Calm clinical palette** — Medical Teal primary, clear triage level colour coding
 
 ### Multi-Language Support
 | Language | Code | Direction |
@@ -363,6 +405,27 @@ When a new EMERGENCY-level patient registers, the dashboard triggers:
 | English | `en` | LTR |
 | German / Deutsch | `de` | LTR |
 | Turkish / Türkçe | `tr` | LTR |
+
+> All UI strings — including outcome pages, physician decision cards, ambulance tracker, and consent screen — are fully translated across all three languages.
+
+### Voice Input Pipeline
+```
+  User speaks
+       │
+       ▼
+  MediaRecorder (WebM/Opus) + Web Speech API   ← run in parallel
+       │                            │
+       ▼                            ▼
+  POST /api/patient/transcribe   webSpeechResult (interim → final)
+  with lang hint (e.g. tr-TR)
+       │
+       ├─ Azure Speech SDK (direct language mode)  ── best accuracy
+       ├─ OpenAI Whisper (if OPENAI_API_KEY set)   ── good accuracy
+       └─ Return empty → use Web Speech result     ── always available
+       │
+       ▼
+  Transcript shown → patient approves or re-records
+```
 
 ### Photo Upload
 Patients can upload images or videos of their injury, rash, or affected area. Media is stored server-side and accessible in the dashboard's media tab with a lightbox viewer (keyboard navigation: ←→ arrows, Escape to close).
@@ -443,13 +506,16 @@ Health records are matched to incoming patients by health card number — giving
 | Endpoint | Method | Description |
 |:---|:---:|:---|
 | `/api/patient/questions` | `POST` | Generate condition-specific clinical follow-up questions |
-| `/api/patient/assess` | `POST` | Full triage assessment — returns level, risk score, AI report |
-| `/api/patient/submit` | `POST` | Register patient in hospital queue |
-| `/api/patient/hospitals` | `GET` | Nearest hospitals ranked by effective ETA |
-| `/api/patient/{id}/location` | `PATCH` | Update live GPS location (called every 4s by app) |
-| `/api/transcribe` | `POST` | Audio blob → transcribed text via Azure Speech |
+| `/api/patient/assess` | `POST` | Full triage assessment — returns MTS level, risk score, AI report |
+| `/api/patient/submit` | `POST` | Register patient in hospital queue (supports ambulance dispatch note) |
+| `/api/patient/hospitals` | `GET` | Nearest hospitals ranked by effective ETA (`?lat=&lon=&n=`) |
+| `/api/patient/transcribe` | `POST` | Audio blob + `lang` → transcribed text via Azure Speech / Whisper |
+| `/api/patient/{id}/status` | `GET` | Patient status + physician decision (polled by patient app) |
+| `/api/patient/{id}/location` | `PATCH` | Update live GPS location (called every 4 s by URGENT+ patients) |
+| `/api/patient/{id}/triage` | `PATCH` | Physician override — set MTS level, action, and clinical note |
+| `/api/patient/{id}/status` | `PATCH` | Update patient status (`incoming → arrived → in_treatment → discharged`) |
 | `/api/patients` | `GET` | Patient list with `sort` and `status` filters |
-| `/api/stats` | `GET` | Queue KPIs (totals, emergencies, en-route count) |
+| `/api/stats` | `GET` | Queue KPIs (totals by level, en-route count) |
 | `/api/patient/{id}` | `GET` | Single patient full detail |
 | `/api/health_record/{number}` | `GET` | Health DB lookup by patient card number |
 | `/api/illness_photo/{id}/{idx}` | `GET` | Retrieve uploaded patient photo or video |
@@ -463,6 +529,7 @@ Health records are matched to incoming patients by health card number — giving
 ### Prerequisites
 
 - **Python 3.11+**
+- **ffmpeg** *(recommended — needed for Azure Speech audio conversion)*
 - Azure subscription *(optional — full demo mode works without any credentials)*
 
 ### 1. Clone & Install
@@ -547,10 +614,10 @@ python hospital_server_v1.py
 
 | App | How to Open | Who Uses It |
 |:---|:---|:---|
-| 📱 **VitalNavAI** Patient App | Open `ui/patient_app_v12.html` in browser | Patient — pre-hospital triage |
+| 📱 **VitalNavAI** Patient App | `http://localhost:8001/patient` | Patient — pre-hospital triage |
 | 🏥 **ER Command Center** | `http://localhost:8001` | ER staff — live patient management |
 
-> Both HTML files are **fully standalone** — zero build step, no npm, no framework. Open directly in any modern browser.
+> Both HTML files are **fully standalone** — zero build step, no npm, no framework.
 
 <br/>
 
@@ -561,9 +628,9 @@ CodeZero runs completely without Azure credentials — ideal for evaluation and 
 | Feature | ☁️ With Azure | 🖥️ Demo Mode |
 |:---|:---|:---|
 | Triage reasoning | GPT-4/5 + RAG guidelines | Rule-based keyword engine |
-| Question generation | GPT — condition-specific | 13 clinical protocol sets |
+| Question generation | GPT — condition-specific | 15 clinical protocol sets |
 | Translation | Azure Translator (100+ languages) | GPT fallback / passthrough |
-| Voice input | Azure Speech STT + lang detect | Browser Web Speech API |
+| Voice input | Azure Speech STT (direct language) | Browser Web Speech API |
 | Hospital search | Azure Maps POI + live traffic | Built-in 440-hospital database |
 | ETA calculation | Real-time traffic data | Haversine formula + 55 km/h estimate |
 | Knowledge search | Azure AI Search semantic | Local file keyword matching |
@@ -573,22 +640,24 @@ CodeZero runs completely without Azure credentials — ideal for evaluation and 
 
 ## 🎬 Demo Scenarios
 
-### Scenario 1 — 🚨 Chest Pain → EMERGENCY
+### Scenario 1 — 🚨 Chest Pain → IMMEDIATE
 
 ```
 1. Open patient app → speak or click "Chest Pain"
-2. Answer: pain radiates to jaw, severity 9/10, sweating, shortness of breath
-3. → EMERGENCY — Suspected Acute Coronary Syndrome / STEMI
-   Dashboard: alert banner fires, patient card appears, countdown timer starts
+2. Answer: pain radiates to jaw, severity 10/10, sweating, arm numbness
+3. → IMMEDIATE — Suspected Acute MI / STEMI
+   Patient: animated ambulance tracker with named hospital + ETA
+   Dashboard: 🚑 AMBULANCE dispatch note, total arrival ETA displayed
 ```
 
 ### Scenario 2 — 🦵 Leg Swelling → URGENT (DVT)
 
 ```
 1. Speak: "My leg is swollen and red since my flight yesterday"
-2. Auto-detected language, complaint_en = "leg swelling after flight"
+2. Auto-detected language → continues in detected language
 3. AI questions: Is it warm? Any recent surgery? Previous DVT?
 4. → URGENT — Suspected Deep Vein Thrombosis
+   GPS triage page → hospital selection → live tracking + physician polling
 ```
 
 ### Scenario 3 — ⚡ Stroke Symptoms → EMERGENCY
@@ -596,26 +665,28 @@ CodeZero runs completely without Azure credentials — ideal for evaluation and 
 ```
 1. Click "Stroke / Face drooping"
 2. FAST assessment: sudden onset, facial asymmetry, arm drift, slurred speech
-3. Onset < 30 min → within thrombolysis window
-4. → EMERGENCY — Possible Ischaemic Stroke (FAST positive, time-critical)
+3. → EMERGENCY — Possible Ischaemic Stroke (FAST positive, time-critical)
+   Patient chooses: Ambulance → animated tracker, or Self-transport → GPS triage
 ```
 
-### Scenario 4 — 🇩🇪 German Voice Input
+### Scenario 4 — 🇩🇪 German Voice + Physician Upgrade
 
 ```
-1. Select Deutsch or speak — language auto-detected
-2. "Ich habe starke Kopfschmerzen und mir ist schwindelig"
-3. Translated to English internally: "I have severe headache and dizziness"
-4. AI questions served in German, assessment runs in English
-5. → URGENT — Severe migraine with vascular features
+1. Select Deutsch → speak: "Ich habe starke Brustschmerzen"
+2. AI: STANDARD → patient sees standard care instructions
+3. Doctor reviews from dashboard → clicks UPGRADE to URGENT + adds note
+4. Patient screen: ⚠️ Physician updated your assessment → URGENT
+   Patient clicks "Proceed to URGENT flow" → GPS triage page
 ```
 
-### Scenario 5 — 💊 Mild Complaint → ROUTINE
+### Scenario 5 — 💊 Mild Complaint → NON_URGENT
 
 ```
 1. "Sore throat since 2 days, no fever, no difficulty swallowing"
 2. Severity 2/10, improving, no red flags
-3. → ROUTINE — Viral pharyngitis, self-care advice
+3. → NON_URGENT — Viral pharyngitis
+   Full self-care guide + physician polling (15 s interval)
+   No GPS submitted → dashboard shows registered, no auto-movement
 ```
 
 <br/>
@@ -624,14 +695,15 @@ CodeZero runs completely without Azure credentials — ideal for evaluation and 
 
 ```
 CodeZero/
-├── 📄 hospital_server_v1.py          # FastAPI REST server — 14 endpoints (1,505 lines)
+├── 📄 hospital_server_v1.py          # FastAPI REST server — 16 endpoints
 ├── 📄 requirements.txt
 │
 ├── 📂 src/
-│   ├── triage_engine.py              # 🧠 Core AI — GPT + RAG + 13 mock protocols (2,254 lines)
+│   ├── triage_engine.py              # 🧠 Core AI — GPT + RAG + 15 mock protocols
 │   ├── hospital_queue.py             # 🏥 SQLite patient queue — GDPR-compliant
-│   ├── maps_handler.py               # 🗺️ 440-hospital DB + ETA routing (755 lines)
-│   ├── speech_handler.py             # 🎙️ Azure Speech STT + auto language detection
+│   │                                 #    (cumulative physician notes, dispatch notes)
+│   ├── maps_handler.py               # 🗺️ 440-hospital DB + ETA routing
+│   ├── speech_handler.py             # 🎙️ Azure Speech STT — direct or auto-detect
 │   ├── translator.py                 # 🌍 Azure Translator — bidirectional, 100+ languages
 │   ├── knowledge_indexer.py          # 📚 Azure AI Search — index + semantic RAG
 │   ├── document_processor.py         # 📄 Azure Doc Intelligence — PDF extraction
@@ -639,7 +711,9 @@ CodeZero/
 │   └── safety_filter.py              # 🛡️ Azure Content Safety input filtering
 │
 ├── 📂 ui/
-│   ├── patient_app_v12.html          # 📱 VitalNavAI — standalone patient triage app
+│   ├── patient_app_v13.html          # 📱 VitalNavAI — standalone patient triage app
+│   │                                 #    (MTS 5-level, ambulance tracker, physician polling,
+│   │                                 #     transcript approval, EN/DE/TR full i18n)
 │   └── hospital_dashboard_v9.html    # 📊 ER Command Center — standalone dashboard
 │
 ├── 📂 data/
@@ -658,11 +732,11 @@ CodeZero/
 | **⚡ Speed** | < 5 s per interaction; 440-hospital DB for instant lookup; smart diff card updates (no full re-render) |
 | **🎯 Clinical Relevance** | Every AI question is complaint-specific; forbidden generic questions; NICE/AHA guideline grounding |
 | **🔬 Transparency** | Every triage assessment cites source guidelines; RAG-grounded responses; clinical rationale per question |
-| **🔒 Privacy** | GDPR-compliant: GPS rounded to ~1 km; no PII stored; random anonymous patient IDs |
+| **🔒 Privacy** | GDPR-compliant: STANDARD/NON_URGENT patients submit without GPS; GPS rounded to ~1 km for others; no PII stored |
 | **📱 Mobile-First** | 480px centred card; ≥ 54 px touch targets; voice input as primary input method |
-| **🌍 Multilingual** | 10 languages auto-detected; full RTL layout for Arabic/Hebrew/Farsi |
+| **🌍 Multilingual** | EN/DE/TR — 60+ UI keys fully translated; Azure Speech with direct language mode |
 | **🛡️ Resilience** | Every Azure service has a tested fallback; zero dependencies for core offline operation |
-| **📦 Portability** | HTML files are 100% standalone — open directly in any browser, no build step, no server needed for patient app |
+| **📦 Portability** | HTML files are 100% standalone — open directly in any browser, no build step |
 
 <br/>
 

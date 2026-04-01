@@ -229,6 +229,7 @@ class SubmitRequest(_BM):
     health_number:      _Opt[str] = None
     demographics:       _Opt[dict] = None
     data_consent:       _Opt[bool] = None
+    ambulance_note:     _Opt[str] = None
 
 # â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -725,21 +726,28 @@ def patient_submit(body: SubmitRequest):
             logger.warning("Media %d save failed for %s: %s", idx_m, pid, exc)
 
     hq.add_patient(record)
+
+    # Store ambulance dispatch note (IMMEDIATE / EMERGENCY+ambulance flows)
+    if body.ambulance_note and body.ambulance_note.strip():
+        hq.set_dispatch_note(record["patient_id"], body.ambulance_note.strip())
+
     logger.info(
-        "Patient submitted: %s â†’ %s (lang=%s consent=%s)",
+        "Patient submitted: %s â†’ %s (lang=%s consent=%s ambulance=%s)",
         record["patient_id"], hospital.get("name", ""),
         body.detected_language, body.data_consent,
+        bool(body.ambulance_note),
     )
 
     return {"ok": True, "patient_id": record["patient_id"]}
 
 
 @app.post("/api/patient/transcribe")
-async def patient_transcribe(audio: UploadFile = File(...)):
+async def patient_transcribe(audio: UploadFile = File(...), lang: str = Form(default="")):
     """Transcribe patient audio (WebM/Opus from browser) â†’ text.
 
     Pipeline:
       1. Azure Speech SDK  (via src.speech_handler if available)
+         - Uses ``lang`` directly when provided (skips auto-detection → more accurate)
       2. OpenAI Whisper API (if OPENAI_API_KEY is set)
       3. Return empty â†’ frontend falls back to Web Speech / manual typing
     """
@@ -790,16 +798,18 @@ async def patient_transcribe(audio: UploadFile = File(...)):
             if speech._initialized:
                 wav_path = speech.convert_browser_audio_to_wav(raw, source_suffix=suffix)
                 if wav_path:
-                    result = speech.recognize_from_audio_file(wav_path)
+                    # Use the patient's selected language directly when available;
+                    # skip auto-detection which can fail on short/accented speech.
+                    result = speech.recognize_from_audio_file(wav_path, language=lang or None)
                     try:
                         _os.unlink(wav_path)
                     except Exception:
                         pass
-                    if result and result.get("text", "").strip():
-                        logger.info("Transcribed via Azure Speech: %sâ€¦", result["text"][:60])
-                        return {"text": result["text"], "language": result.get("language", "en-US")}
+                    if result and result.get(“text”, “”).strip():
+                        logger.info(“Transcribed via Azure Speech (lang=%s): %sâ€¦”, lang or “auto”, result[“text”][:60])
+                        return {“text”: result[“text”], “language”: result.get(“language”, lang or “en-US”)}
                     else:
-                        logger.warning("Azure Speech returned no text â€” falling back to Whisper")
+                        logger.warning(“Azure Speech returned no text â€” falling back to Whisper”)
                 else:
                     logger.warning("Audio conversion failed (ffmpeg/pydub missing?) â€” falling back to Whisper")
             else:

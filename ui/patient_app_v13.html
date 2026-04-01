@@ -3185,8 +3185,13 @@
                 <div id="voiceUI" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
                     <button id="micBtn" class="mic-btn" onclick="toggleRecording()"
                         style="width:120px;height:120px;border-radius:50%;background:none!important;border:none;display:flex;align-items:center;justify-content:center;box-shadow:none!important;cursor:pointer;transition:transform 0.2s;padding:0;">
-                        <img src="/docs/images/icons/ic_mic.png"
-                            style="width:112px;height:112px;object-fit:contain;display:block;">
+                        <svg viewBox="0 0 112 112" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:112px;height:112px;display:block;">
+                            <circle cx="56" cy="56" r="56" fill="#E6FAF8"/>
+                            <rect x="42" y="18" width="28" height="48" rx="14" fill="#0D9488"/>
+                            <path d="M30 58c0 14.36 11.64 26 26 26s26-11.64 26-26" stroke="#0D9488" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+                            <line x1="56" y1="84" x2="56" y2="96" stroke="#0D9488" stroke-width="4.5" stroke-linecap="round"/>
+                            <line x1="43" y1="96" x2="69" y2="96" stroke="#0D9488" stroke-width="4.5" stroke-linecap="round"/>
+                        </svg>
                     </button>
                     <div style="text-align: center;">
                         <div id="micStatus" style="font-weight: 800; font-size: 1.2rem; color: var(--text);"></div>
@@ -3399,8 +3404,11 @@
         <div class="page" id="page-consent">
             <div style="text-align:center;padding:8px 0 18px">
                 <div style="margin:0 auto 12px;width:64px;height:64px;">
-                    <img src="/docs/images/icons/ic_consent.png"
-                        style="width:64px;height:64px;object-fit:contain;border-radius:16px;">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;display:block;">
+                        <rect width="64" height="64" rx="16" fill="#E6FAF8"/>
+                        <path d="M32 10L14 18v14c0 10.5 7.7 20.3 18 22.7C43.3 52.3 51 42.5 51 32V18L32 10z" fill="#0D9488" opacity="0.15" stroke="#0D9488" stroke-width="2.5"/>
+                        <path d="M22 32l7 7 13-14" stroke="#0D9488" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                 </div>
                 <h2 id="cs_title"></h2>
             </div>
@@ -4054,7 +4062,9 @@
                 nurg_rec_desc: 'We recommend scheduling a routine appointment with your family physician. If your symptoms worsen at any time, please use VitalNav.ai again or call <strong>112</strong> immediately.',
                 nurg_self_care_title: '💙 Self-Care Recommendations',
                 nurg_logged: 'Your assessment has been logged for optional physician review. You will be notified if a physician adjusts your assessment.',
-                nurg_new_assessment: 'Start New Assessment'
+                nurg_new_assessment: 'Start New Assessment',
+                amb_dispatched_note: 'Ambulance dispatched →',
+                amb_est_arrival: 'est. hospital arrival'
             },
             de: {
                 topbarLang: 'DE',
@@ -4231,7 +4241,9 @@
                 nurg_rec_desc: 'Wir empfehlen, einen regulären Termin bei Ihrem Hausarzt zu vereinbaren. Falls sich Ihre Symptome verschlimmern, nutzen Sie VitalNav.ai erneut oder rufen Sie sofort <strong>112</strong> an.',
                 nurg_self_care_title: '💙 Selbstfürsorge-Empfehlungen',
                 nurg_logged: 'Ihre Beurteilung wurde für eine optionale Arztüberprüfung protokolliert. Sie werden benachrichtigt, falls ein Arzt Ihre Beurteilung anpasst.',
-                nurg_new_assessment: 'Neue Bewertung starten'
+                nurg_new_assessment: 'Neue Bewertung starten',
+                amb_dispatched_note: 'Krankenwagen entsendet →',
+                amb_est_arrival: 'voraussichtl. Ankunft Klinik'
             },
             tr: {
                 topbarLang: 'TR',
@@ -4408,7 +4420,9 @@
                 nurg_rec_desc: 'Aile hekiminizden rutin bir randevu almanızı öneririz. Semptomlarınız kötüleşirse VitalNav.ai\'yi tekrar kullanın veya hemen <strong>112</strong>\'yi arayın.',
                 nurg_self_care_title: '💙 Evde Bakım Önerileri',
                 nurg_logged: 'Değerlendirmeniz isteğe bağlı doktor incelemesi için kaydedildi. Bir doktor değerlendirmenizi güncellerse bildirim alacaksınız.',
-                nurg_new_assessment: 'Yeni Değerlendirme Başlat'
+                nurg_new_assessment: 'Yeni Değerlendirme Başlat',
+                amb_dispatched_note: 'Ambulans gönderildi →',
+                amb_est_arrival: 'tahmini hastane varışı'
             },
         };
 
@@ -4775,13 +4789,13 @@
             } else if (isRecording && !mediaRec) {
                 // Web Speech only mode (no MediaRecorder)
                 isRecording = false; setMicState('idle');
-                // Wait briefly for any final Web Speech result
+                // Wait for Web Speech final onresult to fire (1000ms is enough for most browsers)
                 setTimeout(() => {
                     const finalResult = (webSpeechResult || wsr || '').trim();
                     if (finalResult) { setComplaintFromAudio(finalResult, S.selectedLang || S.detectedLang); }
                     else { const m = { en: 'No audio captured — please type.', de: 'Keine Aufnahme.', tr: 'Ses alınamadı — lütfen yazın.' }; toast(m[S.lang] || m.en, 'warn'); }
                     webSpeechResult = '';
-                }, 400);
+                }, 1000);
                 return;
             }
             isRecording = false; setMicState('idle');
@@ -4805,9 +4819,9 @@
             }
         }
         async function processAudio() {
-            // Wait 800ms — gives Web Speech API time to fire its final onresult
+            // Wait 1500ms — gives Web Speech API time to fire its final onresult
             // before we snapshot webSpeechResult (race condition guard).
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => setTimeout(r, 1500));
             const wsr = (webSpeechResult || '').trim();
             const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
 
@@ -4823,6 +4837,10 @@
                 if (blob.size > 500) {
                     const form = new FormData();
                     form.append('audio', blob, 'complaint.webm');
+                    // Send the known language so Azure can skip auto-detection (more accurate)
+                    if (S.selectedLang || S.detectedLang) {
+                        form.append('lang', S.selectedLang || S.detectedLang);
+                    }
 
                     const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
                     const d = await r.json();
@@ -5696,7 +5714,7 @@
 
                 <div class="card" style="margin-bottom:16px; border-left: 6px solid var(--success) !important;">
                     <p style="font-size:1.1rem; font-weight:800; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
-                        <img src="/docs/images/icons/ic_hospital.png" style="width:32px;height:32px;object-fit:contain;border-radius:8px;flex-shrink:0;">
+                        <span style="width:32px;height:32px;border-radius:8px;background:#E6FAF8;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="building-2" style="width:18px;height:18px;color:#0D9488;"></i></span>
                         ${escHtml(selectedHosp.name)}
                     </p>
                     <p style="font-size:.8rem; color:var(--text-2); margin-bottom:12px; padding-left: 26px;">
@@ -6170,12 +6188,35 @@
         // ═══════════════════════════════════════════════════════════
         // PART 2A: IMMEDIATE FLOW
         // ═══════════════════════════════════════════════════════════
-        function showImmediateAlert() {
+        async function _ensureHospitalsLoaded() {
+            if (S.hospitals && S.hospitals.length > 0) return;
+            if (!S.lat || !S.lon) {
+                // Try one-shot GPS if not yet obtained
+                try {
+                    await new Promise((res, rej) => {
+                        navigator.geolocation.getCurrentPosition(
+                            p => { S.lat = p.coords.latitude; S.lon = p.coords.longitude; res(); },
+                            rej, { timeout: 5000, enableHighAccuracy: false }
+                        );
+                    });
+                } catch (_) { return; }
+            }
+            try {
+                const r = await fetch(`${API}/api/patient/hospitals?lat=${S.lat}&lon=${S.lon}&n=3`);
+                if (r.ok) S.hospitals = await r.json();
+            } catch (_) {}
+        }
+
+        async function showImmediateAlert() {
+            await _ensureHospitalsLoaded();
             const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
             S.ambEtaMinutes = hosp ? Math.max(3, hosp.eta_minutes || 10) : 10;
             S.ambHospName = hosp ? hosp.name : 'Nearest Emergency Department';
             S.ambHospAddr = hosp ? hosp.address : '';
             S.ambIsImmediate = true;
+            // Estimated total arrival: ambulance to patient + ~5 min scene + transport to hospital
+            const hospEta = hosp ? (hosp.eta_minutes || S.ambEtaMinutes) : S.ambEtaMinutes;
+            S._ambulanceNote = `🚑 ${t('amb_dispatched_note')} ${S.ambHospName} — ${t('amb_est_arrival')} ~${S.ambEtaMinutes + 5 + hospEta} min`;
             submitToBackend().catch(() => {});
             showAmbulanceTracking(true);
         }
@@ -6214,13 +6255,16 @@
             startPhysicianPolling(5, 'expertLoopEmg');
         }
 
-        function onEmgTransportChoice(choice) {
+        async function onEmgTransportChoice(choice) {
             if (choice === 'ambulance') {
+                await _ensureHospitalsLoaded();
                 const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
                 S.ambEtaMinutes = hosp ? Math.max(3, hosp.eta_minutes || 12) : 12;
                 S.ambHospName = hosp ? hosp.name : 'Nearest Emergency Department';
                 S.ambHospAddr = hosp ? hosp.address : '';
                 S.ambIsImmediate = false;
+                const hospEta = hosp ? (hosp.eta_minutes || S.ambEtaMinutes) : S.ambEtaMinutes;
+                S._ambulanceNote = `🚑 ${t('amb_dispatched_note')} ${S.ambHospName} — ${t('amb_est_arrival')} ~${S.ambEtaMinutes + 5 + hospEta} min`;
                 submitToBackend().catch(() => {});
                 showAmbulanceTracking(false);
             } else {
@@ -6491,6 +6535,10 @@
                 })).filter(a => a.question && a.answer);
                 const mediaArr = (S.photos || []).length > 0
                     ? S.photos.map(p => ({ dataUrl: p.dataUrl, mime: p.mime || 'image/jpeg', type: p.type || 'photo' })) : null;
+                // STANDARD/NON_URGENT patients navigate themselves — omit GPS so the
+                // background simulation thread doesn't auto-move them to 'in_treatment'.
+                const lvl = normalizeTriage((S.assessment || {}).triage_level);
+                const selfNavigating = (lvl === 'STANDARD' || lvl === 'NON_URGENT');
                 await fetch(API + '/api/patient/submit', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -6498,10 +6546,11 @@
                         detected_language: S.selectedLang || S.detectedLang,
                         assessment: S.assessment,
                         hospital: S.selectedHospital || (S.hospitals && S.hospitals[0]) || null,
-                        lat: S.lat, lon: S.lon, answers: qaList,
+                        lat: selfNavigating ? null : S.lat, lon: selfNavigating ? null : S.lon, answers: qaList,
                         has_photo: (S.photos || []).length > 0, photo_count: (S.photos || []).length,
                         media: mediaArr, reg_number: S.regNumber,
-                        health_number: S.healthNumber || null, data_consent: S.dataConsent !== false
+                        health_number: S.healthNumber || null, data_consent: S.dataConsent !== false,
+                        ambulance_note: S._ambulanceNote || null
                     })
                 });
             } catch(e) { console.warn('Backend submit failed (non-critical):', e); S._submitted = false; }
@@ -6584,6 +6633,12 @@
             const newLvl = data.new_triage_level ? normalizeTriage(data.new_triage_level) : normalizeTriage(data.ai_triage_level);
             const note = data.physician_note || null;
             const meta = MTS_META[newLvl] || MTS_META.URGENT;
+
+            // Always update S so any subsequent navigation shows the physician-confirmed level
+            if (newLvl) {
+                S.assessment = S.assessment || {};
+                S.assessment.triage_level = newLvl;
+            }
             const container = document.getElementById(containerId);
             if (!container) return;
 

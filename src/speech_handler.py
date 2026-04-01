@@ -238,11 +238,13 @@ class SpeechHandler:
             logger.error("Audio conversion error: %s", exc)
             return None
 
-    def recognize_from_audio_file(self, audio_path: str) -> Optional[dict]:
+    def recognize_from_audio_file(self, audio_path: str, language: Optional[str] = None) -> Optional[dict]:
         """Recognize speech from an audio file (WAV format).
 
         Args:
             audio_path: Path to a WAV audio file.
+            language: BCP-47 language code (e.g. 'tr-TR'). When provided,
+                      skips auto-detection for higher accuracy on known languages.
 
         Returns:
             Recognition result dict or ``None``.
@@ -254,20 +256,28 @@ class SpeechHandler:
         try:
             import azure.cognitiveservices.speech as speechsdk
 
-            # FIX: DetectAudioAtStart (used with recognize_once) supports max 4 languages
-            auto_detect_config = (
-                speechsdk.languageconfig.AutoDetectSourceLanguageConfig(
-                    languages=AUTO_DETECT_LANGUAGES
-                )
-            )
-
             audio_config = speechsdk.audio.AudioConfig(filename=audio_path)
 
-            recognizer = speechsdk.SpeechRecognizer(
-                speech_config=self.speech_config,
-                auto_detect_source_language_config=auto_detect_config,
-                audio_config=audio_config,
-            )
+            if language:
+                # Direct language mode — faster and more accurate than auto-detect
+                self.speech_config.speech_recognition_language = language
+                recognizer = speechsdk.SpeechRecognizer(
+                    speech_config=self.speech_config,
+                    audio_config=audio_config,
+                )
+                logger.info("Azure Speech: using direct language %s", language)
+            else:
+                # Auto-detect from candidate list (max 4 for recognize_once)
+                auto_detect_config = (
+                    speechsdk.languageconfig.AutoDetectSourceLanguageConfig(
+                        languages=AUTO_DETECT_LANGUAGES
+                    )
+                )
+                recognizer = speechsdk.SpeechRecognizer(
+                    speech_config=self.speech_config,
+                    auto_detect_source_language_config=auto_detect_config,
+                    audio_config=audio_config,
+                )
 
             result = recognizer.recognize_once()
             return self._process_result(result)
