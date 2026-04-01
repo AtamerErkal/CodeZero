@@ -1,16 +1,9 @@
 """
 Triage Engine Module
 ====================
-Core AI-powered triage logic. Combines Azure OpenAI (GPT-4) with RAG
+Core AI-powered triage logic. Combines Azure OpenAI (GPT-5.2) with RAG
 from the medical knowledge base to perform dynamic patient assessment
 and triage classification.
-
-AI-102 Concepts:
-  - Azure OpenAI chat completions with system/user/assistant roles
-  - Structured JSON output (response_format)
-  - RAG: Retrieval-Augmented Generation for grounded responses
-  - Agentic AI: Multi-step reasoning with dynamic question generation
-  - Prompt engineering: system prompt design for medical domain
 """
 
 from __future__ import annotations
@@ -46,7 +39,7 @@ TRIAGE_DESCRIPTIONS = {
 
 # ---------------------------------------------------------------------------
 # Demographic intake questions — always asked first before AI clinical questions.
-# Answers are injected into the GPT-4 prompt so the model can adapt questions
+# Answers are injected into the GPT-5.2 prompt so the model can adapt questions
 # to the patient's risk profile (e.g. cardiac risk is higher for males over 45).
 # ---------------------------------------------------------------------------
 DEMOGRAPHIC_QUESTIONS: list[dict] = [
@@ -227,7 +220,7 @@ class TriageEngine:
     def _retrieve_context(self, query: str) -> tuple[str, bool]:
         """Search the medical knowledge base for relevant guidelines.
 
-        AI-102: This is the "Retrieval" step of RAG. The search query
+        This is the "Retrieval" step of RAG. The search query
         is derived from the patient's complaint. Results are concatenated
         and injected into the system prompt as grounding context.
 
@@ -358,7 +351,7 @@ before starting patient questioning. You have the patient's FULL medical history
 [CURRENT CHIEF COMPLAINT]
 {chief_complaint}
 
-TASK: In 3-5 sentences, reason through the following and produce a structured clinical hypothesis:
+TASK: In 5 sentences, reason through the following and produce a structured clinical hypothesis:
 1. Which of the patient's known conditions are MOST LIKELY connected to the current complaint?
 2. What is your PRIMARY differential diagnosis given the combination of history + complaint?
 3. What are the 2-3 most dangerous conditions you MUST rule out first (red flag differentials)?

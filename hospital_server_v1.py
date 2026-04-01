@@ -83,7 +83,82 @@ docs_dir = ROOT / "docs"
 if docs_dir.exists():
     app.mount("/docs", StaticFiles(directory=str(docs_dir)), name="docs")
 
-NAT_FLAG = {"DE": "ðŸ‡©ðŸ‡ª", "TR": "ðŸ‡¹ðŸ‡·", "UK": "ðŸ‡¬ðŸ‡§", "GB": "ðŸ‡¬ðŸ‡§"}
+NAT_FLAG = {"DE": "🇩🇪", "TR": "🇹🇷", "UK": "🇬🇧", "GB": "🇬🇧"}
+
+# ── Hospital location (Ulm Uni Klinik) ──────────────────────────────────────
+HOSPITAL_LAT = 48.4215
+HOSPITAL_LON = 9.9593
+
+# ── Background thread: move patients toward hospital every 5 seconds ─────────
+import threading as _threading
+import math as _math
+import sqlite3 as _sqlite3
+
+def _move_patients_loop():
+    """Background daemon: moves all incoming patients toward the hospital."""
+    TICK = 5          # seconds between ticks
+    LAT_KM = 111.0    # km per degree latitude
+    LON_KM = 72.0     # km per degree longitude at 48°N
+    SPEED_KM_MIN = 60.0 / 60.0  # 60 km/h = 1 km/min
+    ARRIVE_DIST_KM = 0.05  # 50 m threshold → arrived
+
+    import datetime as _dt
+
+    while True:
+        _threading.Event().wait(TICK)
+        try:
+            conn = _sqlite3.connect(str(hq.db_path))
+            conn.row_factory = _sqlite3.Row
+            rows = conn.execute(
+                "SELECT patient_id, location_lat, location_lon, eta_minutes "
+                "FROM patient_queue WHERE status = 'incoming' AND location_lat IS NOT NULL"
+            ).fetchall()
+
+            now_iso = _dt.datetime.now(_dt.timezone.utc).isoformat()
+
+            for row in rows:
+                pid = row["patient_id"]
+                lat = row["location_lat"]
+                lon = row["location_lon"]
+
+                # Actual remaining distance (in km)
+                dlat = HOSPITAL_LAT - lat
+                dlon = HOSPITAL_LON - lon
+                dist_km = _math.sqrt((dlat * LAT_KM) ** 2 + (dlon * LON_KM) ** 2)
+
+                if dist_km <= ARRIVE_DIST_KM:
+                    conn.execute(
+                        "UPDATE patient_queue SET status='in_treatment', eta_minutes=NULL, "
+                        "arrival_time=?, treatment_started_at=?, updated_at=? WHERE patient_id=?",
+                        (now_iso, now_iso, now_iso, pid)
+                    )
+                    logger.info("Patient %s → in_treatment (auto-arrived).", pid)
+                    continue
+
+                # Move: distance covered this tick at constant 60 km/h
+                step_km = SPEED_KM_MIN * (TICK / 60.0)
+                frac = min(1.0, step_km / dist_km)
+                new_lat = lat + dlat * frac
+                new_lon = lon + dlon * frac
+
+                # Re-derive ETA from new remaining distance (always a clean integer)
+                new_dist_km = dist_km * (1.0 - frac)
+                new_eta = max(1, round(new_dist_km / SPEED_KM_MIN))  # integer minutes
+
+                conn.execute(
+                    "UPDATE patient_queue SET location_lat=?, location_lon=?, eta_minutes=?, "
+                    "updated_at=? WHERE patient_id=?",
+                    (new_lat, new_lon, new_eta, now_iso, pid)
+                )
+
+            conn.commit()
+            conn.close()
+        except Exception as _e:
+            logger.warning("Patient movement tick error: %s", _e)
+
+_move_thread = _threading.Thread(target=_move_patients_loop, daemon=True, name="PatientMovement")
+_move_thread.start()
+logger.info("Patient movement background thread started.")
 
 
 # â”€â”€ schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -384,23 +459,38 @@ def api_stats():
     arrived_count  = sts.get("arrived", 0)
     en_route = incoming_count + arrived_count
 
-    # Count triage levels across all active patients (incoming + arrived)
-    active_pts = [
+    # Count triage levels — ONLY incoming (en-route) patients
+    # so the chip badges match exactly what's shown in the patient list.
+    # get_all_patients() already normalises ROUTINE → STANDARD on read,
+    # so we count against the canonical MTS 5-level names.
+    incoming_pts = [
         p for p in hq.get_all_patients(limit=500)
-        if (p.get("status") or "incoming") in ("incoming", "arrived")
+        if (p.get("status") or "incoming") == "incoming"
     ]
     from collections import Counter
-    triage_counts = Counter(p.get("triage_level", TRIAGE_ROUTINE) for p in active_pts)
+    triage_counts = Counter(p.get("triage_level", "STANDARD") for p in incoming_pts)
+
+    # Build the full 5-level dict the dashboard chip row expects
+    by_triage_level = {
+        "IMMEDIATE": triage_counts.get("IMMEDIATE", 0),
+        "EMERGENCY": triage_counts.get(TRIAGE_EMERGENCY, 0),
+        "URGENT":    triage_counts.get(TRIAGE_URGENT, 0),
+        "STANDARD":  triage_counts.get("STANDARD", 0) + triage_counts.get(TRIAGE_ROUTINE, 0),
+        "NON_URGENT": triage_counts.get("NON_URGENT", 0),
+    }
 
     return {
-        "total":        sum(sts.values()),
-        "incoming":     incoming_count,
-        "emergencies":  triage_counts.get(TRIAGE_EMERGENCY, 0),
-        "urgents":      triage_counts.get(TRIAGE_URGENT, 0),
-        "routines":     triage_counts.get(TRIAGE_ROUTINE, 0),
-        "en_route":     en_route,
-        "treated":      sts.get("discharged", 0),
-        "in_treatment": sts.get("in_treatment", 0),
+        "total":           sum(sts.values()),
+        "incoming":        incoming_count,
+        # Legacy scalar fields kept for backward-compat with older dashboards
+        "emergencies":     by_triage_level["EMERGENCY"],
+        "urgents":         by_triage_level["URGENT"],
+        "routines":        by_triage_level["STANDARD"],  # STANDARD is the new ROUTINE
+        "en_route":        en_route,
+        "treated":         sts.get("discharged", 0),
+        "in_treatment":    sts.get("in_treatment", 0),
+        # New: full 5-level breakdown for MTS chip row
+        "by_triage_level": by_triage_level,
     }
 
 
@@ -414,11 +504,13 @@ def api_patients(sort: str = "triage", limit: int = 50, status: str = None):
     """
     if status == "all":
         patients = hq.get_all_patients(limit=limit)
-    elif status:
+    elif status and status not in ("incoming", "en_route"):
         all_pts = hq.get_all_patients(limit=limit)
         patients = [p for p in all_pts if (p.get("status") or "").lower() == status.lower()]
     else:
-        patients = hq.get_incoming_patients(limit=limit)
+        # Default: show both incoming (en-route) AND arrived (at the door, awaiting treatment)
+        all_pts = hq.get_all_patients(limit=limit)
+        patients = [p for p in all_pts if (p.get("status") or "incoming") in ("incoming", "arrived")]
     enriched = [_enrich_patient(p) for p in patients]
 
     if sort == "eta":
@@ -1000,6 +1092,7 @@ def patient_assess(body: AssessRequest):
             q_en   = item.get("question_en") or q_en_lookup.get(idx, q_orig) or q_orig
             ans    = item.get("answer", item.get("original_answer", ""))
             ans_orig = item.get("original_answer", str(ans))
+            img = item.get("image", None)
         else:
             continue
 
@@ -1104,6 +1197,27 @@ def api_patient_detail(patient_id: str):
     return _enrich_patient(match)
 
 
+@app.get("/api/patient/{patient_id}/status")
+def api_patient_status(patient_id: str):
+    """Return concise patient status and physician override info."""
+    all_p = hq.get_all_patients(limit=200)
+    match = next((p for p in all_p if p["patient_id"] == patient_id), None)
+    if not match:
+        raise HTTPException(404, "Patient not found")
+    
+    has_override = bool(match.get("override_action"))
+    return {
+        "patient_id": patient_id,
+        "status": match.get("status"),
+        "ai_triage_level": match.get("ai_triage_level") or match.get("triage_level"),
+        "triage_level": match.get("triage_level"),
+        "physician_decision": match.get("override_action") or None,
+        "new_triage_level": match.get("triage_level") if has_override else None,
+        "physician_note": match.get("override_note") or None,
+        "override_timestamp": match.get("updated_at") if has_override else None,
+    }
+
+
 @app.get("/api/health_record/{health_number}")
 def api_health_record(health_number: str):
     """Full health record from health DB."""
@@ -1124,6 +1238,49 @@ def api_update_status(patient_id: str, body: dict):
     if not ok:
         raise HTTPException(500, "Failed to update status")
     return {"ok": True, "patient_id": patient_id, "status": status}
+
+
+@app.patch("/api/patient/{patient_id}/triage")
+def api_update_triage(patient_id: str, body: dict):
+    """Override the AI triage level with a physician decision.
+
+    Accepts all MTS 5-level values (IMMEDIATE, EMERGENCY, URGENT, STANDARD,
+    NON_URGENT) plus legacy ROUTINE (normalised → STANDARD).
+    For the APPROVE action, ``new_level`` is optional — the current patient
+    level is used when omitted.
+    """
+    new_level = body.get("new_level")
+    action    = body.get("action", "")
+    note      = body.get("note", "")
+
+    # APPROVE keeps the current triage level — resolve it from the DB
+    if action == "APPROVE" and not new_level:
+        all_p   = hq.get_all_patients(limit=200)
+        patient = next((p for p in all_p if p["patient_id"] == patient_id), None)
+        new_level = (patient or {}).get("triage_level") or "URGENT"
+
+    # Normalise legacy alias
+    if new_level == "ROUTINE":
+        new_level = "STANDARD"
+
+    valid = {"IMMEDIATE", "EMERGENCY", "URGENT", "STANDARD", "NON_URGENT"}
+    if new_level not in valid:
+        raise HTTPException(
+            400,
+            f"Invalid triage level '{new_level}'. Must be one of: {sorted(valid)}"
+        )
+
+    ok = hq.update_triage(patient_id, new_level, action, note)
+    if not ok:
+        raise HTTPException(500, "Failed to update triage level in database")
+
+    return {
+        "ok":             True,
+        "patient_id":     patient_id,
+        "triage_level":   new_level,
+        "override_action": action,
+        "override_note":  note,
+    }
 
 
 @app.patch("/api/patient/{patient_id}/location")
@@ -1233,95 +1390,62 @@ def api_clear():
 
 @app.post("/api/admin/seed")
 def api_seed():
-    """Seed realistic test patients."""
+    """Seed realistic test patients dynamically."""
+    import random
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc).isoformat()
-    test_patients = [
-        {"patient_id": "ER-2026-AA01", "triage_level": "EMERGENCY",
-         "chief_complaint": "Crushing chest pain radiating to left arm",
-         "assessment": "Suspected STEMI. Immediate cath lab activation required. Patient diaphoretic, BP 85/50.",
-         "red_flags": ["chest_pain_radiation", "diaphoresis", "hypotension"],
-         "risk_score": 10, "suspected_conditions": ["STEMI", "ACS"],
-         "recommended_action": "Activate cath lab. 12-lead ECG. Aspirin 300mg. IV access x2.",
-         "time_sensitivity": "Within 5 minutes", "eta_minutes": 4,
-         "health_number": "DEMO-DE-001", "location": {"lat": 48.77, "lon": 9.18},
-         "destination_hospital": "Klinikum Stuttgart", "language": "de-DE",
-         "data_consent": True, "has_photo": False, "photo_count": 0,
-         "complaint_text": "Starke Brustschmerzen die in den linken Arm ausstrahlen",
-         "qa_transcript": [
-             {"question": "Wann hat es begonnen?", "question_en": "When did it start?", "answer": "15 minutes ago", "original_answer": "Vor 15 Minuten"},
-             {"question": "SchmerzstÃ¤rke 1-10?", "question_en": "Rate pain 1-10?", "answer": "9", "original_answer": "9"},
-             {"question": "Kurzatmigkeit?", "question_en": "Any shortness of breath?", "answer": "Yes", "original_answer": "Ja, sehr"},
-         ], "timestamp": now},
-
-        {"patient_id": "ER-2026-BB02", "triage_level": "EMERGENCY",
-         "chief_complaint": "Thunderclap headache, worst of life, sudden onset",
-         "assessment": "Possible subarachnoid hemorrhage. Immediate CT head required. GCS 14.",
-         "red_flags": ["sudden_severe_headache", "vomiting", "photophobia", "neck_stiffness"],
-         "risk_score": 9, "suspected_conditions": ["Subarachnoid Hemorrhage", "Meningitis"],
-         "recommended_action": "Immediate CT head non-contrast. Lumbar puncture if CT negative.",
-         "time_sensitivity": "Within 10 minutes", "eta_minutes": 7,
-         "health_number": "DEMO-TR-001", "location": {"lat": 48.79, "lon": 9.20},
-         "destination_hospital": "Klinikum Stuttgart", "language": "tr-TR",
-         "data_consent": True, "has_photo": True, "photo_count": 1,
-         "complaint_text": "HayatÄ±mda yaÅŸadÄ±ÄŸÄ±m en kÃ¶tÃ¼ baÅŸ aÄŸrÄ±sÄ±, aniden geldi",
-         "qa_transcript": [
-             {"question": "Ne zaman baÅŸladÄ±?", "question_en": "When did it start?", "answer": "Suddenly 20 min ago", "original_answer": "Aniden, 20 dakika Ã¶nce"},
-             {"question": "GÃ¶rme bozukluÄŸu var mÄ±?", "question_en": "Any visual changes?", "answer": "Yes, blurry", "original_answer": "Evet, bulanÄ±k gÃ¶rÃ¼yorum"},
-             {"question": "Kusma oldu mu?", "question_en": "Any vomiting?", "answer": "Yes, twice", "original_answer": "Evet, iki kez"},
-         ], "timestamp": now},
-
-        {"patient_id": "ER-2026-CC03", "triage_level": "URGENT",
-         "chief_complaint": "Severe abdominal pain after blunt trauma",
-         "assessment": "Blunt abdominal trauma. Possible splenic laceration. Rigid board-like abdomen.",
-         "red_flags": ["rigid_abdomen", "post_trauma", "tachycardia"],
-         "risk_score": 8, "suspected_conditions": ["Splenic Laceration", "Internal Bleeding"],
-         "recommended_action": "FAST ultrasound. Trauma surgery consult. 2x large bore IV. Cross-match.",
-         "time_sensitivity": "Within 30 minutes", "eta_minutes": 12,
-         "health_number": "DEMO-UK-001", "location": {"lat": 48.81, "lon": 9.15},
-         "destination_hospital": "Klinikum Stuttgart", "language": "en-GB",
-         "data_consent": True, "has_photo": True, "photo_count": 2,
-         "complaint_text": "Really bad stomach pain after being hit by a car door at the car park",
-         "qa_transcript": [
-             {"question": "Where is the pain?", "question_en": "Where is the pain?", "answer": "Left abdomen", "original_answer": "Left abdomen"},
-             {"question": "Rate pain 1-10?", "question_en": "Rate pain 1-10?", "answer": "8", "original_answer": "8"},
-         ], "timestamp": now},
-
-        {"patient_id": "ER-2026-DD04", "triage_level": "URGENT",
-         "chief_complaint": "Acute asthma exacerbation, difficulty breathing",
-         "assessment": "Moderate asthma exacerbation. SpO2 91% on air. Audible wheeze bilateral.",
-         "red_flags": ["low_spo2", "respiratory_distress"],
-         "risk_score": 7, "suspected_conditions": ["Asthma Exacerbation", "COPD"],
-         "recommended_action": "Nebulised salbutamol 5mg. Oral prednisolone 40mg. O2 titrate to 94-98%.",
-         "time_sensitivity": "Within 20 minutes", "eta_minutes": 15,
-         "health_number": "DEMO-TR-002", "location": {"lat": 48.76, "lon": 9.22},
-         "destination_hospital": "Klinikum Stuttgart", "language": "tr-TR",
-         "data_consent": True, "has_photo": False, "photo_count": 0,
-         "complaint_text": "Nefes almakta Ã§ok zorlanÄ±yorum, ciÄŸerlerim sÄ±kÄ±ÅŸmÄ±ÅŸ gibi",
-         "qa_transcript": [
-             {"question": "Ä°nhalatÃ¶rÃ¼nÃ¼z var mÄ±?", "question_en": "Do you have an inhaler?", "answer": "Yes but not helping", "original_answer": "Var ama iÅŸe yaramÄ±yor"},
-             {"question": "Ne zamandÄ±r?", "question_en": "How long?", "answer": "1 hour", "original_answer": "1 saattir"},
-         ], "timestamp": now},
-
-        {"patient_id": "ER-2026-EE05", "triage_level": "ROUTINE",
-         "chief_complaint": "Mild headache and dizziness since this morning",
-         "assessment": "Likely tension headache with mild dehydration. No neurological signs. BP normal.",
-         "red_flags": [], "risk_score": 2,
-         "suspected_conditions": ["Tension Headache", "Dehydration"],
-         "recommended_action": "Oral hydration. Paracetamol 1g. Reassess in 1 hour.",
-         "time_sensitivity": "Within 2 hours", "eta_minutes": 28,
-         "health_number": "DEMO-DE-003", "location": {"lat": 48.74, "lon": 9.16},
-         "destination_hospital": "Klinikum Stuttgart", "language": "de-DE",
-         "data_consent": True, "has_photo": False, "photo_count": 0,
-         "complaint_text": "Leichte Kopfschmerzen und Schwindel seit dem Morgen",
-         "qa_transcript": [
-             {"question": "Wie lange schon?", "question_en": "How long?", "answer": "Since morning", "original_answer": "Seit dem Morgen"},
-             {"question": "Fieber?", "question_en": "Any fever?", "answer": "No", "original_answer": "Nein"},
-         ], "timestamp": now},
+    
+    # Pool of valid non-Turkish health numbers (DE and UK only)
+    health_numbers_de = [f"DEMO-DE-{i:03d}" for i in range(1, 11)]
+    health_numbers_uk = [f"DEMO-UK-{i:03d}" for i in range(1, 11)]
+    all_hn = health_numbers_de + health_numbers_uk
+    
+    templates = [
+        {"triage_level": "EMERGENCY", "chief_complaint": "Crushing chest pain radiating to left arm", "assessment": "Suspected STEMI. Immediate cath lab activation required. Patient diaphoretic, BP 85/50.", "red_flags": ["chest_pain_radiation", "diaphoresis", "hypotension"], "risk_score": 10, "suspected_conditions": ["STEMI", "ACS"], "recommended_action": "Activate cath lab. 12-lead ECG. Aspirin 300mg. IV access x2.", "time_sensitivity": "Within 5 minutes", "language": "de-DE", "complaint_text": "Starke Brustschmerzen die in den linken Arm ausstrahlen", "qa_transcript": [{"question": "Wann hat es begonnen?", "question_en": "When did it start?", "answer": "15 minutes ago", "original_answer": "Vor 15 Minuten"}, {"question": "SchmerzstÃ¤rke 1-10?", "question_en": "Rate pain 1-10?", "answer": "9", "original_answer": "9"}, {"question": "Kurzatmigkeit?", "question_en": "Any shortness of breath?", "answer": "Yes", "original_answer": "Ja, sehr"}], "has_photo": False, "photo_count": 0},
+        {"triage_level": "EMERGENCY", "chief_complaint": "Thunderclap headache, worst of life, sudden onset", "assessment": "Possible subarachnoid hemorrhage. Immediate CT head required. GCS 14.", "red_flags": ["sudden_severe_headache", "vomiting", "photophobia", "neck_stiffness"], "risk_score": 9, "suspected_conditions": ["Subarachnoid Hemorrhage", "Meningitis"], "recommended_action": "Immediate CT head non-contrast. Lumbar puncture if CT negative.", "time_sensitivity": "Within 10 minutes", "language": "en-GB", "complaint_text": "Worst headache of my life, came out of nowhere", "qa_transcript": [{"question": "When did it start?", "question_en": "When did it start?", "answer": "Suddenly 20 min ago", "original_answer": "Suddenly 20 min ago"}, {"question": "Any visual changes?", "question_en": "Any visual changes?", "answer": "Yes, blurry", "original_answer": "Yes, blurry"}], "has_photo": True, "photo_count": 1},
+        {"triage_level": "URGENT", "chief_complaint": "Severe abdominal pain after blunt trauma", "assessment": "Blunt abdominal trauma. Possible splenic laceration. Rigid board-like abdomen.", "red_flags": ["rigid_abdomen", "post_trauma", "tachycardia"], "risk_score": 8, "suspected_conditions": ["Splenic Laceration", "Internal Bleeding"], "recommended_action": "FAST ultrasound. Trauma surgery consult. 2x large bore IV. Cross-match.", "time_sensitivity": "Within 30 minutes", "language": "en-GB", "complaint_text": "Really bad stomach pain after being hit by a car door", "qa_transcript": [{"question": "Where is the pain?", "question_en": "Where is the pain?", "answer": "Left abdomen", "original_answer": "Left abdomen"}, {"question": "Rate pain 1-10?", "question_en": "Rate pain 1-10?", "answer": "8", "original_answer": "8"}], "has_photo": True, "photo_count": 2},
+        {"triage_level": "URGENT", "chief_complaint": "Acute asthma exacerbation, difficulty breathing", "assessment": "Moderate asthma exacerbation. SpO2 91% on air. Audible wheeze bilateral.", "red_flags": ["low_spo2", "respiratory_distress"], "risk_score": 7, "suspected_conditions": ["Asthma Exacerbation", "COPD"], "recommended_action": "Nebulised salbutamol 5mg. Oral prednisolone 40mg. O2 titrate to 94-98%.", "time_sensitivity": "Within 20 minutes", "language": "de-DE", "complaint_text": "Ich bekomme sehr schwer Luft, meine Lungen fühlen sich eng an", "qa_transcript": [{"question": "Haben Sie ein Inhalatorspray?", "question_en": "Do you have an inhaler?", "answer": "Yes but not helping", "original_answer": "Ja, aber es hilft nicht"}, {"question": "Seit wann?", "question_en": "How long?", "answer": "1 hour", "original_answer": "Seit 1 Stunde"}], "has_photo": False, "photo_count": 0},
+        {"triage_level": "ROUTINE", "chief_complaint": "Mild headache and dizziness since this morning", "assessment": "Likely tension headache with mild dehydration. No neurological signs. BP normal.", "red_flags": [], "risk_score": 2, "suspected_conditions": ["Tension Headache", "Dehydration"], "recommended_action": "Oral hydration. Paracetamol 1g. Reassess in 1 hour.", "time_sensitivity": "Within 2 hours", "language": "de-DE", "complaint_text": "Leichte Kopfschmerzen und Schwindel seit dem Morgen", "qa_transcript": [{"question": "Wie lange schon?", "question_en": "How long?", "answer": "Since morning", "original_answer": "Seit dem Morgen"}, {"question": "Fieber?", "question_en": "Any fever?", "answer": "No", "original_answer": "Nein"}], "has_photo": False, "photo_count": 0},
+        {"triage_level": "ROUTINE", "chief_complaint": "Twisted ankle during a run, mild swelling", "assessment": "Ankle sprain. Ottawa rules negative. RICE protocol advised.", "red_flags": [], "risk_score": 3, "suspected_conditions": ["Ankle Sprain"], "recommended_action": "X-ray if weight bearing is impossible. RICE.", "time_sensitivity": "Within 3 hours", "language": "en-GB", "complaint_text": "Twisted my ankle during a morning run, it's slightly swollen now", "qa_transcript": [{"question": "Can you walk on it?", "question_en": "Can you walk on it?", "answer": "Yes, but it hurts", "original_answer": "Yes, but it hurts"}], "has_photo": True, "photo_count": 1},
+        {"triage_level": "URGENT", "chief_complaint": "High fever, productive cough, feeling very weak", "assessment": "Suspected lobar pneumonia. SpO2 93%. Needs chest X-ray and antibiotics.", "red_flags": ["high_fever", "tachypnea"], "risk_score": 6, "suspected_conditions": ["Pneumonia", "Sepsis screen"], "recommended_action": "Chest X-ray. Blood cultures. IV Co-amoxiclav.", "time_sensitivity": "Within 1 hour", "language": "de-DE", "complaint_text": "Hohes Fieber und produktiver Husten, fühle mich sehr schwach", "qa_transcript": [{"question": "Wie hoch ist das Fieber?", "question_en": "How high is the fever?", "answer": "39.5 C", "original_answer": "39,5 C"}], "has_photo": False, "photo_count": 0}
     ]
-    for tp in test_patients:
-        hq.add_patient(tp)
-    return {"ok": True, "seeded": len(test_patients)}
+    
+    # Pick a random number between 2 and 4 patients to seed each time
+    num_to_seed = random.randint(2, 4)
+    selected_templates = random.sample(templates, k=num_to_seed)
+    
+    import time
+    seeded_count = 0
+    for tmpl in selected_templates:
+        # Clone the template so we can mutate it
+        pt = dict(tmpl)
+        # Timestamp + random suffix = always unique, never collides
+        unique_suffix = f"{int(time.time() * 1000) % 100000:05d}{random.randint(10, 99)}"
+        pt["patient_id"] = f"ER-{unique_suffix}"
+        import time as _t; _t.sleep(0.002)  # tiny gap so timestamps differ
+        
+        # Assign a random valid health number matching the template's language
+        if pt["language"] == "de-DE":
+            pt["health_number"] = random.choice(health_numbers_de)
+        else:
+            pt["health_number"] = random.choice(health_numbers_uk)
+
+        # Randomize geolocation around Ulm (~48.4, 9.9) within roughly +/- 15km
+        pt["location"] = {"lat": 48.4 + random.uniform(-0.15, 0.15), "lon": 9.9 + random.uniform(-0.15, 0.15)}
+        pt["destination_hospital"] = "Ulm Uni Klinik"
+        # Derive ETA from actual distance to hospital (60 km/h)
+        loc = pt.get("location", {})
+        _dlat = HOSPITAL_LAT - loc.get("lat", HOSPITAL_LAT)
+        _dlon = HOSPITAL_LON - loc.get("lon", HOSPITAL_LON)
+        _dist_km = _math.sqrt((_dlat * 111.0) ** 2 + (_dlon * 72.0) ** 2)
+        pt["eta_minutes"] = max(1, round(_dist_km / 1.0))  # 1 km/min = 60 km/h
+        pt["data_consent"] = True
+        pt["timestamp"] = now
+        
+        hq.add_patient(pt)
+        seeded_count += 1
+        
+    return {"ok": True, "seeded": seeded_count}
 
 
 
@@ -1373,20 +1497,20 @@ def serve_dashboard():
 
 @app.get("/patient", response_class=HTMLResponse)
 def serve_patient_app():
-    path = ROOT / "ui" / "patient_app_v12.html"
+    path = ROOT / "ui" / "patient_app_v13.html"
     if path.exists():
         return HTMLResponse(path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Patient app HTML not found</h1>", status_code=404)
 
 
-@app.get("/patient_app_12.html", response_class=HTMLResponse)
+@app.get("/patient_app_13.html", response_class=HTMLResponse)
 def serve_patient_app_plain():
     """Direct filename access — convenience alias."""
     return serve_patient_app()
 
 
-@app.get("/patient_app_v12.html", response_class=HTMLResponse)
-def serve_patient_app_v12():
+@app.get("/patient_app_v13.html", response_class=HTMLResponse)
+def serve_patient_app_v13():
     """Direct filename access — convenience alias."""
     return serve_patient_app()
 

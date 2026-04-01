@@ -2950,6 +2950,83 @@
             text-align: center;
             animation: floatRobotWelcome 3.5s ease-in-out infinite;
         }
+
+        /* ══════════════════════════════════════════════════════
+           MTS 5-LEVEL TRIAGE THEMING — v13
+        ══════════════════════════════════════════════════════ */
+        :root {
+            --mts-imm: #FF0000;
+            --mts-imm-bg: #FFF0F0;
+            --mts-imm-border: rgba(255,0,0,0.3);
+            --mts-emg: #FF8C00;
+            --mts-emg-bg: #FFF4E6;
+            --mts-emg-border: rgba(255,140,0,0.3);
+            --mts-urg: #D4A000;
+            --mts-urg-bg: #FFFBEB;
+            --mts-urg-border: rgba(212,160,0,0.4);
+            --mts-std: #28A745;
+            --mts-std-bg: #F0FFF4;
+            --mts-std-border: rgba(40,167,69,0.3);
+            --mts-nurg: #007BFF;
+            --mts-nurg-bg: #EFF6FF;
+            --mts-nurg-border: rgba(0,123,255,0.3);
+        }
+        [data-theme="dark"] {
+            --mts-imm-bg: rgba(255,0,0,0.12);
+            --mts-emg-bg: rgba(255,140,0,0.12);
+            --mts-urg-bg: rgba(212,160,0,0.1);
+            --mts-std-bg: rgba(40,167,69,0.12);
+            --mts-nurg-bg: rgba(0,123,255,0.12);
+        }
+        /* Triage banners — all 5 MTS levels */
+        .triage-banner.imm  { background: var(--mts-imm-bg)  !important; border: 2px solid var(--mts-imm-border)  !important; }
+        .triage-banner.std  { background: var(--mts-std-bg)  !important; border: 2px solid var(--mts-std-border)  !important; }
+        .triage-banner.nurg { background: var(--mts-nurg-bg) !important; border: 2px solid var(--mts-nurg-border) !important; }
+        .triage-banner.imm  .triage-title { color: var(--mts-imm);  }
+        .triage-banner.std  .triage-title { color: var(--mts-std);  }
+        .triage-banner.nurg .triage-title { color: var(--mts-nurg); }
+
+        /* MTS level badge pill */
+        .mts-badge {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 7px 18px; border-radius: 99px;
+            font-size: 0.95rem; font-weight: 900; letter-spacing: 0.04em;
+        }
+        .mts-badge.lvl-imm  { background: #FF0000; color: #fff; }
+        .mts-badge.lvl-emg  { background: #FF8C00; color: #fff; }
+        .mts-badge.lvl-urg  { background: #FFD700; color: #1a1a2e; }
+        .mts-badge.lvl-std  { background: #28A745; color: #fff; }
+        .mts-badge.lvl-nurg { background: #007BFF; color: #fff; }
+
+        /* Ambulance progress bar */
+        .amb-progress-track {
+            height: 12px; background: var(--border);
+            border-radius: 99px; overflow: hidden; margin: 10px 0;
+        }
+        .amb-progress-fill {
+            height: 100%; border-radius: 99px; transition: width 1s linear;
+        }
+
+        /* Physician decision fade-in */
+        @keyframes physicianFadeIn {
+            from { opacity: 0; transform: translateY(-12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .physician-card-anim { animation: physicianFadeIn 0.5s ease forwards; }
+
+        /* Upgrade pulse border */
+        @keyframes upgradePulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(255,0,0,0.35); }
+            50%      { box-shadow: 0 0 0 12px rgba(255,0,0,0); }
+        }
+        .upgrade-pulse { animation: upgradePulse 1.4s ease-in-out infinite; }
+
+        /* Override notification slide-in */
+        @keyframes overrideSlideIn {
+            from { opacity: 0; transform: translateY(-16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .override-notification { animation: overrideSlideIn 0.45s cubic-bezier(.4,0,.2,1) forwards; }
     </style>
 
 
@@ -3132,7 +3209,11 @@
                         style="font-size: 0.875rem; font-weight:800; color:var(--success); text-transform:uppercase; margin-bottom:5px;">
                     </div>
                     <div id="transcriptText"
-                        style="font-size:0.95rem; font-weight:600; font-style: italic; color:var(--text);"></div>
+                        style="font-size:0.95rem; font-weight:600; font-style: italic; color:var(--text); margin-bottom:10px;"></div>
+                    <div id="transcriptApproveRow" style="display:none; gap:8px; margin-top:8px;">
+                        <button onclick="approveTranscript()" id="btnApproveTranscript" style="flex:1; padding:10px 14px; background:var(--success); color:white; border:none; border-radius:10px; font-family:var(--font); font-size:0.85rem; font-weight:700; cursor:pointer;">&#x2705; <span id="lblApproveTranscript">Use this</span></button>
+                        <button onclick="reRecordTranscript()" id="btnReRecordTranscript" style="flex:1; padding:10px 14px; background:var(--card-alt); color:var(--text); border:1px solid var(--border); border-radius:10px; font-family:var(--font); font-size:0.85rem; font-weight:700; cursor:pointer;">&#x1F504; <span id="lblReRecordTranscript">Re-record</span></button>
+                    </div>
                 </div>
             </div>
             <div class="spinner-wrap" id="inputSpinner" style="display:none; margin-bottom: 20px;">
@@ -3570,15 +3651,40 @@
             </div>
 
             <div id="hospitalList"></div>
+            <div id="expertLoopUrg"></div>
         </div>
 
         <!-- PAGE: RESULT -->
         <div class="page" id="page-result">
             <!-- Dynamic content populated by renderResult() -->
-
-
             <div id="toast"></div>
         </div>
+
+        <!-- PAGE: TRIAGE EXPLANATION CARD (v13 — MTS 5-level) -->
+        <div class="page" id="page-triage-explain">
+            <div id="triageExplainContent"></div>
+        </div>
+
+        <!-- PAGE: AMBULANCE TRACKING (v13) -->
+        <div class="page" id="page-ambulance">
+            <div id="ambulanceContent"></div>
+        </div>
+
+        <!-- PAGE: EMERGENCY TRANSPORT QUESTION (v13) -->
+        <div class="page" id="page-outcome-emg">
+            <div id="outcomeEmgContent"></div>
+        </div>
+
+        <!-- PAGE: STANDARD OUTCOME (v13) -->
+        <div class="page" id="page-outcome-std">
+            <div id="outcomeStdContent"></div>
+        </div>
+
+        <!-- PAGE: NON_URGENT OUTCOME (v13) -->
+        <div class="page" id="page-outcome-nurg">
+            <div id="outcomeNurgContent"></div>
+        </div>
+
     </div>
 
     <script>
@@ -3587,6 +3693,82 @@
         const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
             ? 'http://localhost:8001'
             : location.origin;
+
+        // ═══════════════════════════════════════════════════════════
+        // MTS 5-LEVEL CONSTANTS (v13)
+        // ═══════════════════════════════════════════════════════════
+        const MTS_META = {
+            IMMEDIATE:  { level:1, color:'#FF0000', textColor:'white',   cls:'imm',  badge:'lvl-imm',  emoji:'&#x1F534;', max_wait:0,   label:'IMMEDIATE',  subtitle:'Level 1 \u2014 MTS Red' },
+            EMERGENCY:  { level:2, color:'#FF8C00', textColor:'white',   cls:'emg',  badge:'lvl-emg',  emoji:'&#x1F7E0;', max_wait:10,  label:'EMERGENCY',  subtitle:'Level 2 \u2014 MTS Orange' },
+            URGENT:     { level:3, color:'#FFD700', textColor:'#1a1a2e', cls:'urg',  badge:'lvl-urg',  emoji:'&#x1F7E1;', max_wait:30,  label:'URGENT',     subtitle:'Level 3 \u2014 MTS Yellow' },
+            STANDARD:   { level:4, color:'#28A745', textColor:'white',   cls:'std',  badge:'lvl-std',  emoji:'&#x1F7E2;', max_wait:90,  label:'STANDARD',   subtitle:'Level 4 \u2014 MTS Green' },
+            NON_URGENT: { level:5, color:'#007BFF', textColor:'white',   cls:'nurg', badge:'lvl-nurg', emoji:'&#x1F535;', max_wait:120, label:'NON-URGENT', subtitle:'Level 5 \u2014 MTS Blue' },
+            ROUTINE:    { level:4, color:'#28A745', textColor:'white',   cls:'std',  badge:'lvl-std',  emoji:'&#x1F7E2;', max_wait:90,  label:'STANDARD',   subtitle:'Level 4 \u2014 MTS Green' },
+        };
+
+        function normalizeTriage(lvl) {
+            if (!lvl) return 'URGENT';
+            const u = String(lvl).toUpperCase().trim();
+            if (u === 'ROUTINE') return 'STANDARD';
+            return MTS_META[u] ? u : 'URGENT';
+        }
+
+        /**
+         * enforceTriageFloor — Risk Score Guardrail (v13)
+         * If the AI risk_score is inconsistent with the triage_level (e.g. score=9
+         * but level=ROUTINE), upgrade the level to the minimum floor for that score.
+         * Sets _triage_upgraded_by_score=true as an audit flag when upgraded.
+         * MTS floor thresholds: 9-10 → IMMEDIATE, 7-8 → EMERGENCY,
+         *                        5-6  → URGENT,    3-4 → STANDARD, 0-2 → NON_URGENT
+         */
+        function enforceTriageFloor(assessment) {
+            if (!assessment) return assessment;
+            const score = parseFloat(assessment.risk_score) || 0;
+            if (score <= 0) return assessment; // no score — don't override
+            const ORDER  = ['IMMEDIATE','EMERGENCY','URGENT','STANDARD','NON_URGENT'];
+            let floor;
+            if      (score >= 9) floor = 'IMMEDIATE';
+            else if (score >= 7) floor = 'EMERGENCY';
+            else if (score >= 5) floor = 'URGENT';
+            else if (score >= 3) floor = 'STANDARD';
+            else                 floor = 'NON_URGENT';
+            const current = normalizeTriage(assessment.triage_level);
+            // Only upgrade (never downgrade) — higher ORDER index = lower severity
+            if (ORDER.indexOf(current) > ORDER.indexOf(floor)) {
+                console.warn(`[enforceTriageFloor] Upgrading triage ${current} → ${floor} (risk_score=${score})`);
+                assessment.triage_level       = floor;
+                assessment._triage_upgraded_by_score = true;
+                assessment._triage_prev_level = current;
+            }
+            return assessment;
+        }
+
+        const MTS_DEFAULT_DO = {
+            IMMEDIATE:  ['Stay still and keep your airway clear','Stay on the phone with emergency services','Follow all instructions from the dispatcher'],
+            EMERGENCY:  ['Stay calm and sit or lie down comfortably','Keep your phone nearby and charged','Unlock or open the door if possible'],
+            URGENT:     ['Proceed to the hospital promptly','Bring your ID and insurance card','Bring your current medications'],
+            STANDARD:   ['Schedule an appointment with your family physician as soon as possible','Stay hydrated and rest','Monitor your symptoms closely'],
+            NON_URGENT: ['Rest and stay hydrated','Monitor your symptoms over the next 24 hours','Use VitalNav.ai again if symptoms worsen'],
+        };
+        const MTS_DEFAULT_DONT = {
+            IMMEDIATE:  ['Do not move unless in immediate danger','Do not eat or drink anything','Do not panic - help is on the way'],
+            EMERGENCY:  ['Do not eat or drink anything','Do not drive yourself to the hospital','Do not ignore any worsening symptoms'],
+            URGENT:     ['Do not delay seeking care','Do not take new medications without medical advice','Do not ignore new or worsening symptoms'],
+            STANDARD:   ['Do not ignore worsening symptoms','Do not self-medicate without professional advice','Do not hesitate to call 112/911 if symptoms worsen suddenly'],
+            NON_URGENT: ['Do not ignore symptoms if they worsen','Do not skip follow-up if recommended','Do not hesitate to use VitalNav.ai again if needed'],
+        };
+
+        function getDefaultReasoning(lvl) {
+            const map = {
+                IMMEDIATE:  'Your symptoms indicate a life-threatening emergency requiring immediate medical intervention. Emergency services have been notified.',
+                EMERGENCY:  'Your symptoms indicate a very urgent condition requiring medical assessment within 10 minutes. Please proceed to care immediately.',
+                URGENT:     'Your symptoms indicate an urgent condition. Medical evaluation is recommended within 30 minutes to prevent any worsening.',
+                STANDARD:   'Your symptoms do not currently indicate an emergency, but medical evaluation is recommended within 90 minutes for proper care.',
+                NON_URGENT: 'Your symptoms do not indicate an emergency at this time. A routine medical consultation is recommended if symptoms persist.',
+            };
+            return map[lvl] || map.URGENT;
+        }
+
         // ═══════════════════════════════════════════════════════════
         // DEMO PATIENTS per language
         // ═══════════════════════════════════════════════════════════
@@ -3720,6 +3902,8 @@
                 sym_vomiting_diarrhea: 'Persistent Vomiting or Diarrhea',
                 sym_numbness_weakness: 'Body Numbness or Weakness',
                 sym_altered_consciousness: 'Altered Consciousness',
+                micLabelIdle: 'Tap to speak',
+                micSubIdle: 'Tell us your symptoms',
                 micLabelRec: 'Listening...',
                 micSubRec: 'Tap to stop',
                 micLabelDone: 'Recorded',
@@ -3770,8 +3954,11 @@
                 tr_nearestLabel: 'Current traffic &amp; hospital occupancy — choose one of the recommended hospitals',
                 tr_adviceLabel: 'Before you arrive', tr_fastest: 'Best choice',
                 tr_hospSpinner: 'Finding best hospitals…', tr_noHosp: 'No hospitals found nearby.', tr_notifying: 'Notifying hospital…',
-                tr_emg_title: '🚨 Go to emergency immediately', tr_emg_sub: 'Your symptoms require urgent care — do not wait',
-                tr_urg_title: '⚠️ You need hospital care soon', tr_urg_sub: 'Please find a hospital within the next 30 minutes',
+                tr_imm_title: '🔴 CRITICAL EMERGENCY', tr_imm_sub: 'Immediate intervention required — ambulance dispatched',
+                tr_emg_title: '🚨 Go to the ER immediately', tr_emg_sub: 'Your symptoms require emergency care — please head there now',
+                tr_urg_title: '⚠️ You need hospital care soon', tr_urg_sub: 'Please find a hospital as soon as possible',
+                tr_std_title: '✅ Standard Priority', tr_std_sub: 'GP or clinic visit recommended',
+                tr_nurg_title: 'ℹ️ Non-Urgent', tr_nurg_sub: 'Self-care and a routine appointment recommended',
                 tr_rtn_title: 'ℹ️ You should see a doctor today', tr_rtn_sub: 'Your symptoms are not immediately life-threatening',
                 tr_orBelow: '— or select a hospital below —',
                 tr_doLabel: '✅ DO:', tr_dontLabel: "❌ DON'T:",
@@ -3811,7 +3998,63 @@
                 an_title: 'Analysing Data...',
                 an_sub: 'Your AI Emergency Assistant <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> is evaluating your medical profile and preparing recommendations.',
                 an_step1: 'Data secured & encrypted',
-                an_step2: 'Calculating triage level...'
+                an_step2: 'Calculating triage level...',
+                transcript_approve_hint: 'Is this what you said?',
+                transcript_approve: 'Use this',
+                transcript_rerecord: 'Re-record',
+                amb_header_imm: '🚨 CRITICAL EMERGENCY — Help is on the way',
+                amb_header_emg: '⚠️ EMERGENCY — Ambulance dispatched',
+                amb_do_not_move: 'Do NOT move unless you are in immediate danger.',
+                amb_en_route: 'Ambulance En Route',
+                amb_eta_label: 'Estimated arrival',
+                amb_dispatched: 'Dispatched',
+                amb_arriving: 'Arriving',
+                amb_while_wait: '📋 While you wait',
+                amb_wait1: 'Stay calm and remain where you are',
+                amb_wait2: 'Keep your phone nearby and charged',
+                amb_wait3: 'Unlock or open the door if possible',
+                amb_wait4: 'Gather your medications if within reach',
+                amb_arrived_msg: '🚑 Ambulance has arrived at your location!',
+                amb_arrived_sub: 'Please follow the paramedics\' instructions.',
+                amb_arriving_now: 'Arriving now!',
+                amb_track_title: '🛰️ Live Tracking',
+                amb_track_sim: 'Simulation',
+                amb_track_you: 'You',
+                amb_track_hospital: 'Hospital',
+                emg_header: '⚠️ EMERGENCY',
+                emg_header_sub: 'You need immediate medical attention.',
+                emg_transport_q: 'How will you get to the hospital?',
+                emg_transport_hint: 'Time is critical. Please choose the fastest option available to you right now.',
+                emg_self_title: 'Yes, I can come',
+                emg_self_sub: 'Someone will drive me to the hospital',
+                emg_amb_title: 'No, send an ambulance',
+                emg_amb_sub: 'I cannot safely travel on my own',
+                phys_review_active: '🔁 Expert-in-the-Loop Review Active',
+                phys_review_sub: 'A physician is reviewing your case and will confirm or adjust your assessment shortly.',
+                phys_approved_msg: 'A physician has reviewed and confirmed your assessment as',
+                phys_upgraded_msg: 'IMPORTANT: An emergency physician has upgraded your assessment to',
+                phys_adjusted_msg: 'A physician has adjusted your assessment to',
+                phys_note_label: 'Physician Note',
+                phys_action_required: 'Action Required',
+                phys_btn_immediate: '🚨 Show Emergency Instructions',
+                phys_btn_emergency: '⚠️ Show Emergency Options',
+                phys_btn_urgent: '⚡ Find Emergency Department',
+                std_header_title: '✅ Standard Priority Assessment',
+                std_header_sub: 'Your condition has been assessed as Standard (MTS Level 4).',
+                std_next_title: 'What you should do next',
+                std_next_desc: 'Please schedule an appointment with your family physician as soon as possible. Your assessment has been forwarded to the nearest emergency department for expert physician review.',
+                std_rec_title: '📌 Recommendations',
+                std_time_label: 'Recommended: Medical attention within',
+                std_time_val: '90 minutes',
+                std_time_sub: 'MTS Level 4 — Green',
+                std_new_assessment: 'Start New Assessment',
+                nurg_header_title: 'ℹ️ Non-Urgent Assessment',
+                nurg_header_sub: 'Your symptoms do not indicate an emergency at this time.',
+                nurg_rec_title: 'Our Recommendation',
+                nurg_rec_desc: 'We recommend scheduling a routine appointment with your family physician. If your symptoms worsen at any time, please use VitalNav.ai again or call <strong>112</strong> immediately.',
+                nurg_self_care_title: '💙 Self-Care Recommendations',
+                nurg_logged: 'Your assessment has been logged for optional physician review. You will be notified if a physician adjusts your assessment.',
+                nurg_new_assessment: 'Start New Assessment'
             },
             de: {
                 topbarLang: 'DE',
@@ -3844,6 +4087,8 @@
                 sym_vomiting_diarrhea: 'Anhaltendes Erbrechen/Durchfall',
                 sym_numbness_weakness: 'Taubheitsgefühl oder Schwäche',
                 sym_altered_consciousness: 'Bewusstseinsveränderung',
+                micLabelIdle: 'Tippen zum Sprechen',
+                micSubIdle: 'Schildern Sie Ihre Beschwerden',
                 micLabelRec: 'Hören zu...',
                 micSubRec: 'Stoppen tippen',
                 micLabelDone: 'Aufgezeichnet',
@@ -3886,8 +4131,11 @@
                 tr_nearestLabel: 'Empfohlene Krankenhäuser basierend auf aktuellem Verkehr und Notaufnahme-Auslastung',
                 tr_adviceLabel: 'Vor Ihrer Ankunft', tr_fastest: 'Beste Wahl',
                 tr_hospSpinner: 'Beste Krankenhäuser werden gesucht…', tr_noHosp: 'Keine Krankenhäuser in der Nähe gefunden.', tr_notifying: 'Krankenhaus wird benachrichtigt…',
-                tr_emg_title: '🚨 Sofort in die Notaufnahme', tr_emg_sub: 'Ihre Symptome erfordern sofortige Versorgung — nicht warten',
-                tr_urg_title: '⚠️ Baldiger Krankenhausbesuch nötig', tr_urg_sub: 'Bitte innerhalb der nächsten 30 Minuten ein Krankenhaus aufsuchen',
+                tr_imm_title: '🔴 KRITISCHER NOTFALL', tr_imm_sub: 'Sofortiger Eingriff erforderlich — Krankenwagen wurde alarmiert',
+                tr_emg_title: '🚨 Sofort in die Notaufnahme', tr_emg_sub: 'Ihre Symptome erfordern notfallmäßige Versorgung — bitte fahren Sie jetzt',
+                tr_urg_title: '⚠️ Baldiger Krankenhausbesuch nötig', tr_urg_sub: 'Bitte so bald wie möglich ein Krankenhaus aufsuchen',
+                tr_std_title: '✅ Standardpriorität', tr_std_sub: 'Hausarzt- oder Klinikbesuch empfohlen',
+                tr_nurg_title: 'ℹ️ Nicht dringend', tr_nurg_sub: 'Selbstfürsorge und ein regulärer Arzttermin empfohlen',
                 tr_rtn_title: 'ℹ️ Heute einen Arzt aufsuchen', tr_rtn_sub: 'Ihre Symptome sind nicht unmittelbar lebensbedrohlich',
                 tr_orBelow: '— oder unten ein Krankenhaus auswählen —', tr_doLabel: '✅ TUN:', tr_dontLabel: '❌ NICHT TUN:',
                 rs_regLabel: 'Ihre Registrierungsnummer', rs_regHint: 'Zeigen Sie diese an der Krankenhausrezeption.',
@@ -3927,7 +4175,63 @@
                 an_title: 'Daten werden analysiert...',
                 an_sub: 'Ihr KI-Notfallassistent <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> wertet Ihr medizinisches Profil aus und bereitet Empfehlungen vor.',
                 an_step1: 'Daten gesichert & verschlüsselt',
-                an_step2: 'Dringlichkeitsstufe wird berechnet...'
+                an_step2: 'Dringlichkeitsstufe wird berechnet...',
+                transcript_approve_hint: 'Ist das das, was Sie gesagt haben?',
+                transcript_approve: 'Verwenden',
+                transcript_rerecord: 'Erneut aufnehmen',
+                amb_header_imm: '🚨 KRITISCHER NOTFALL — Hilfe ist unterwegs',
+                amb_header_emg: '⚠️ NOTFALL — Krankenwagen alarmiert',
+                amb_do_not_move: 'Bewegen Sie sich NICHT, es sei denn, Sie sind in unmittelbarer Gefahr.',
+                amb_en_route: 'Krankenwagen unterwegs',
+                amb_eta_label: 'Voraussichtliche Ankunft',
+                amb_dispatched: 'Alarmiert',
+                amb_arriving: 'Ankunft',
+                amb_while_wait: '📋 Während Sie warten',
+                amb_wait1: 'Bleiben Sie ruhig und verbleiben Sie, wo Sie sind',
+                amb_wait2: 'Halten Sie Ihr Telefon in der Nähe und aufgeladen',
+                amb_wait3: 'Entsperren oder öffnen Sie die Tür wenn möglich',
+                amb_wait4: 'Holen Sie Ihre Medikamente, wenn erreichbar',
+                amb_arrived_msg: '🚑 Krankenwagen ist an Ihrem Standort angekommen!',
+                amb_arrived_sub: 'Bitte folgen Sie den Anweisungen der Sanitäter.',
+                amb_arriving_now: 'Kommt jetzt an!',
+                amb_track_title: '🛰️ Live-Verfolgung',
+                amb_track_sim: 'Simulation',
+                amb_track_you: 'Sie',
+                amb_track_hospital: 'Krankenhaus',
+                emg_header: '⚠️ NOTFALL',
+                emg_header_sub: 'Sie benötigen sofortige medizinische Versorgung.',
+                emg_transport_q: 'Wie kommen Sie ins Krankenhaus?',
+                emg_transport_hint: 'Die Zeit ist kritisch. Wählen Sie jetzt die schnellste Option.',
+                emg_self_title: 'Ja, ich kann kommen',
+                emg_self_sub: 'Jemand wird mich ins Krankenhaus fahren',
+                emg_amb_title: 'Nein, schicken Sie einen Krankenwagen',
+                emg_amb_sub: 'Ich kann nicht sicher alleine reisen',
+                phys_review_active: '🔁 Experten-Überprüfung aktiv',
+                phys_review_sub: 'Ein Arzt überprüft Ihren Fall und wird Ihre Einschätzung bestätigen oder anpassen.',
+                phys_approved_msg: 'Ein Arzt hat Ihre Einschätzung überprüft und bestätigt als',
+                phys_upgraded_msg: 'WICHTIG: Ein Notarzt hat Ihre Einschätzung hochgestuft auf',
+                phys_adjusted_msg: 'Ein Arzt hat Ihre Einschätzung angepasst auf',
+                phys_note_label: 'Arztnotiz',
+                phys_action_required: 'Handlungsbedarf',
+                phys_btn_immediate: '🚨 Notfallanweisungen anzeigen',
+                phys_btn_emergency: '⚠️ Notfalloptionen anzeigen',
+                phys_btn_urgent: '⚡ Notaufnahme finden',
+                std_header_title: '✅ Standardpriorität Bewertung',
+                std_header_sub: 'Ihr Zustand wurde als Standard eingestuft (MTS-Stufe 4).',
+                std_next_title: 'Was Sie als nächstes tun sollten',
+                std_next_desc: 'Bitte vereinbaren Sie so bald wie möglich einen Termin bei Ihrem Hausarzt. Ihre Beurteilung wurde zur Überprüfung an die nächste Notaufnahme weitergeleitet.',
+                std_rec_title: '📌 Empfehlungen',
+                std_time_label: 'Empfohlen: Medizinische Versorgung innerhalb von',
+                std_time_val: '90 Minuten',
+                std_time_sub: 'MTS-Stufe 4 — Grün',
+                std_new_assessment: 'Neue Bewertung starten',
+                nurg_header_title: 'ℹ️ Nicht dringende Bewertung',
+                nurg_header_sub: 'Ihre Symptome weisen derzeit nicht auf einen Notfall hin.',
+                nurg_rec_title: 'Unsere Empfehlung',
+                nurg_rec_desc: 'Wir empfehlen, einen regulären Termin bei Ihrem Hausarzt zu vereinbaren. Falls sich Ihre Symptome verschlimmern, nutzen Sie VitalNav.ai erneut oder rufen Sie sofort <strong>112</strong> an.',
+                nurg_self_care_title: '💙 Selbstfürsorge-Empfehlungen',
+                nurg_logged: 'Ihre Beurteilung wurde für eine optionale Arztüberprüfung protokolliert. Sie werden benachrichtigt, falls ein Arzt Ihre Beurteilung anpasst.',
+                nurg_new_assessment: 'Neue Bewertung starten'
             },
             tr: {
                 topbarLang: 'TR',
@@ -3960,6 +4264,8 @@
                 sym_vomiting_diarrhea: 'Sürekli Kusma veya İshal',
                 sym_numbness_weakness: 'Uyuşma veya Güçsüzlük',
                 sym_altered_consciousness: 'Bilinç Değişikliği',
+                micLabelIdle: 'Konuşmak için dokunun',
+                micSubIdle: 'Belirtilerinizi anlatın',
                 micLabelRec: 'Dinleniyor...',
                 micSubRec: 'Durdurmak için dokunun',
                 micLabelDone: 'Kaydedildi',
@@ -4002,8 +4308,11 @@
                 tr_nearestLabel: 'Mevcut <strong>trafik</strong> durumu ve hastane acillerinin <strong>yoğunluk</strong> durumuna göre tavsiye edilen hastaneler',
                 tr_adviceLabel: 'Varmadan önce', tr_fastest: 'En iyi seçim',
                 tr_hospSpinner: 'En uygun hastaneler aranıyor…', tr_noHosp: 'Yakında hastane bulunamadı.', tr_notifying: 'Hastane bilgilendiriliyor…',
-                tr_emg_title: '🚨 Hemen acile gidin', tr_emg_sub: 'Semptomlarınız acil bakım gerektiriyor — beklemeyin',
-                tr_urg_title: '⚠️ En kısa sürede hastaneye gitmelisiniz', tr_urg_sub: 'Lütfen 30 dakika içinde bir hastane bulun',
+                tr_imm_title: '🔴 KRİTİK ACİL DURUM', tr_imm_sub: 'Anında müdahale gerekiyor — ambulans çağrıldı',
+                tr_emg_title: '🚨 Hemen acile gidin', tr_emg_sub: 'Semptomlarınız acil bakım gerektiriyor — lütfen hemen yola çıkın',
+                tr_urg_title: '⚠️ En kısa sürede hastaneye gitmelisiniz', tr_urg_sub: 'Lütfen en kısa sürede bir hastane bulun',
+                tr_std_title: '✅ Standart Öncelik', tr_std_sub: 'Aile hekimi veya klinik ziyareti önerilir',
+                tr_nurg_title: 'ℹ️ Acil Değil', tr_nurg_sub: 'Evde bakım ve rutin randevu önerilir',
                 tr_rtn_title: 'ℹ️ Bugün bir doktora görünün', tr_rtn_sub: 'Semptomlarınız hemen hayati tehlike oluşturmuyor',
                 tr_orBelow: '— veya aşağıdan hastane seçin —', tr_doLabel: '✅ YAPILACAKLAR:', tr_dontLabel: '❌ YAPILMAYACAKLAR:',
                 rs_regLabel: 'Kayıt numaranız', rs_regHint: 'Varışta hastane resepsiyonunda gösterin.',
@@ -4043,7 +4352,63 @@
                 an_title: 'Veriler Analiz Ediliyor...',
                 an_sub: 'AI Emergency Assistant\'ınız <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>, tıbbi profilinizi değerlendiriyor ve tavsiyelerini hazırlıyor.',
                 an_step1: 'Veriler şifrelendi ve güvende',
-                an_step2: 'Aciliyet seviyesi hesaplanıyor...'
+                an_step2: 'Aciliyet seviyesi hesaplanıyor...',
+                transcript_approve_hint: 'Bunu mu dediniz?',
+                transcript_approve: 'Bunu kullan',
+                transcript_rerecord: 'Yeniden kaydet',
+                amb_header_imm: '🚨 KRİTİK ACİL — Yardım yolda',
+                amb_header_emg: '⚠️ ACİL — Ambulans yollandı',
+                amb_do_not_move: 'Anlık tehlikede değilseniz HAREKET ETMEYİN.',
+                amb_en_route: 'Ambulans Yolda',
+                amb_eta_label: 'Tahmini varış',
+                amb_dispatched: 'Yollandı',
+                amb_arriving: 'Geliyor',
+                amb_while_wait: '📋 Beklerken yapılacaklar',
+                amb_wait1: 'Sakin olun ve bulunduğunuz yerde kalın',
+                amb_wait2: 'Telefonunuzu yakında ve şarjlı tutun',
+                amb_wait3: 'Mümkünse kapıyı açın veya kilidi açın',
+                amb_wait4: 'Erişebiliyorsanız ilaçlarınızı toplayın',
+                amb_arrived_msg: '🚑 Ambulans konumunuza ulaştı!',
+                amb_arrived_sub: 'Lütfen sağlık ekibinin talimatlarını izleyin.',
+                amb_arriving_now: 'Şimdi geliyor!',
+                amb_track_title: '🛰️ Canlı Takip',
+                amb_track_sim: 'Simülasyon',
+                amb_track_you: 'Siz',
+                amb_track_hospital: 'Hastane',
+                emg_header: '⚠️ ACİL',
+                emg_header_sub: 'Acil tıbbi yardıma ihtiyacınız var.',
+                emg_transport_q: 'Hastaneye nasıl gideceksiniz?',
+                emg_transport_hint: 'Zaman kritik. Şu anda mevcut en hızlı seçeneği seçin.',
+                emg_self_title: 'Evet, gelebilirim',
+                emg_self_sub: 'Biri beni hastaneye götürecek',
+                emg_amb_title: 'Hayır, ambulans gönderin',
+                emg_amb_sub: 'Tek başıma güvenli şekilde seyahat edemem',
+                phys_review_active: '🔁 Uzman İncelemesi Aktif',
+                phys_review_sub: 'Bir doktor vakanızı inceliyor ve değerlendirmenizi kısa süre içinde onaylayacak veya güncelleyecek.',
+                phys_approved_msg: 'Bir doktor değerlendirmenizi inceledi ve onayladı:',
+                phys_upgraded_msg: 'ÖNEMLİ: Bir acil doktoru değerlendirmenizi yükseltti:',
+                phys_adjusted_msg: 'Bir doktor değerlendirmenizi güncelledi:',
+                phys_note_label: 'Doktor Notu',
+                phys_action_required: 'Eylem Gerekli',
+                phys_btn_immediate: '🚨 Acil Talimatları Göster',
+                phys_btn_emergency: '⚠️ Acil Seçeneklerini Göster',
+                phys_btn_urgent: '⚡ Acil Servis Bul',
+                std_header_title: '✅ Standart Öncelik Değerlendirmesi',
+                std_header_sub: 'Durumunuz Standart olarak değerlendirildi (MTS Düzey 4).',
+                std_next_title: 'Bundan sonra ne yapmalısınız',
+                std_next_desc: 'Lütfen en kısa sürede aile hekiminizden randevu alın. Değerlendirmeniz uzman doktor incelemesi için en yakın acil servise iletildi.',
+                std_rec_title: '📌 Öneriler',
+                std_time_label: 'Önerilen: Tıbbi yardım',
+                std_time_val: '90 dakika içinde',
+                std_time_sub: 'MTS Düzey 4 — Yeşil',
+                std_new_assessment: 'Yeni Değerlendirme Başlat',
+                nurg_header_title: 'ℹ️ Acil Olmayan Değerlendirme',
+                nurg_header_sub: 'Semptomlarınız şu anda acil bir durum belirtmiyor.',
+                nurg_rec_title: 'Önerimiz',
+                nurg_rec_desc: 'Aile hekiminizden rutin bir randevu almanızı öneririz. Semptomlarınız kötüleşirse VitalNav.ai\'yi tekrar kullanın veya hemen <strong>112</strong>\'yi arayın.',
+                nurg_self_care_title: '💙 Evde Bakım Önerileri',
+                nurg_logged: 'Değerlendirmeniz isteğe bağlı doktor incelemesi için kaydedildi. Bir doktor değerlendirmenizi güncellerse bildirim alacaksınız.',
+                nurg_new_assessment: 'Yeni Değerlendirme Başlat'
             },
         };
 
@@ -4248,13 +4613,32 @@
         }
 
         function startOver() {
+            // Stop physician polling — must happen BEFORE regNumber is cleared
+            // so the session guard in _doPoll fires correctly.
+            if (_physicianPollInterval) { clearInterval(_physicianPollInterval); _physicianPollInterval = null; }
+            _pollSessionRegNumber = null;
+            // Stop ambulance countdown
+            if (_ambCountdownInterval) { clearInterval(_ambCountdownInterval); _ambCountdownInterval = null; }
+            // Stop location simulation
+            if (_simInterval) { clearInterval(_simInterval); _simInterval = null; }
+            // Stop mic if still recording
+            if (isRecording) { try { stopRecording(); } catch (_) {} }
+            // Reset voice/audio state
+            webSpeechResult = '';
+
             Object.assign(S, {
-                complaint: '', complaintEN: '', detectedLang: S.selectedLang || 'en-GB', photos: [],
-                questions: [], answers: [], qIdx: 0, dataConsent: null, assessment: null, lat: null, lon: null,
-                hospitals: [], selectedHospital: null, regNumber: null, aiMode: null
+                complaint: '', complaintEN: '', voiceTranscript: '', _transcriptApproved: false,
+                detectedLang: S.selectedLang || 'en-GB', photos: [],
+                questions: [], answers: [], qIdx: 0, dataConsent: null, assessment: null,
+                lat: null, lon: null, hospitals: [], selectedHospital: null,
+                regNumber: null, aiMode: null, _submitted: false,
+                ambEtaMinutes: null, ambHospName: null, ambHospAddr: null
             });
             const ct = document.getElementById('complaintText'); if (ct) ct.value = '';
-            document.getElementById('transcriptBox').classList.remove('visible');
+            const tBox = document.getElementById('transcriptBox');
+            if (tBox) { tBox.classList.remove('visible'); tBox.style.display = ''; }
+            const tApproveRow = document.getElementById('transcriptApproveRow');
+            if (tApproveRow) tApproveRow.style.display = 'none';
             enableContinue(false);
             document.getElementById('mediaGrid').innerHTML = '';
             updateMediaCount();
@@ -4320,8 +4704,13 @@
                     if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
                     else interim += e.results[i][0].transcript;
                 }
-                // Update result: prefer final, fall back to interim display
-                if (final.trim()) webSpeechResult = final.trim();
+                // Store final result if available; fall back to interim so
+                // stopping mid-sentence still captures something.
+                if (final.trim()) {
+                    webSpeechResult = final.trim();
+                } else if (interim.trim()) {
+                    webSpeechResult = interim.trim(); // overwritten by final later
+                }
                 const display = (final || interim).trim();
                 if (display) {
                     document.getElementById('transcriptText').textContent = display;
@@ -4411,12 +4800,14 @@
             } else {
                 if (wf) wf.style.display = 'none';
                 if (btn) btn.classList.remove('recording');
-                // Eğer şikayet varsa "Tekrar kaydedin", yoksa "Dokun ve Konuş" yazsın
                 if (statusTxt) statusTxt.textContent = S.complaint ? t('micLabelDone') : t('micLabelIdle');
+                if (subTxt) subTxt.textContent = S.complaint ? t('micSubDone') : t('micSubIdle');
             }
         }
         async function processAudio() {
-            await new Promise(r => setTimeout(r, 350));
+            // Wait 800ms — gives Web Speech API time to fire its final onresult
+            // before we snapshot webSpeechResult (race condition guard).
+            await new Promise(r => setTimeout(r, 800));
             const wsr = (webSpeechResult || '').trim();
             const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
 
@@ -4472,19 +4863,46 @@
             if (!text || text.trim().length === 0) return;
 
             S.voiceTranscript = text.trim();
+            S._transcriptApproved = false;
 
             updateFinalComplaint();
 
             const tText = document.getElementById('transcriptText');
             const tBox = document.getElementById('transcriptBox');
             const tLang = document.getElementById('transcriptLang');
+            const tApproveRow = document.getElementById('transcriptApproveRow');
+            const lblApprove = document.getElementById('lblApproveTranscript');
+            const lblReRecord = document.getElementById('lblReRecordTranscript');
 
             if (tText) tText.textContent = `"${S.voiceTranscript}"`;
             if (tBox) tBox.style.display = 'block';
-            if (tLang) tLang.textContent = '✓ ' + t('transcriptLang');
+            if (tLang) tLang.textContent = t('transcript_approve_hint');
+            if (tApproveRow) tApproveRow.style.display = 'flex';
+            if (lblApprove) lblApprove.textContent = t('transcript_approve');
+            if (lblReRecord) lblReRecord.textContent = t('transcript_rerecord');
 
-            enableContinue(true);
+            enableContinue(false);
             setMicState('idle');
+        }
+
+        function approveTranscript() {
+            S._transcriptApproved = true;
+            const tApproveRow = document.getElementById('transcriptApproveRow');
+            const tLang = document.getElementById('transcriptLang');
+            if (tApproveRow) tApproveRow.style.display = 'none';
+            if (tLang) tLang.textContent = '✓ ' + t('transcriptLang');
+            enableContinue(true);
+        }
+
+        function reRecordTranscript() {
+            S.voiceTranscript = '';
+            S._transcriptApproved = false;
+            const tBox = document.getElementById('transcriptBox');
+            const tApproveRow = document.getElementById('transcriptApproveRow');
+            if (tBox) tBox.style.display = 'none';
+            if (tApproveRow) tApproveRow.style.display = 'none';
+            enableContinue(false);
+            updateFinalComplaint();
         }
 
         function updateFinalComplaint() {
@@ -4864,13 +5282,13 @@
                 return String(ans).toLowerCase();
             }).join(' ');
             const text = c + ' ' + a;
-            let level = 'ROUTINE', score = 3;
+            let level = 'STANDARD', score = 3;
             if (/chest pain|heart attack|stroke|unconscious|not breathing|anaphyla|severe bleeding|crushing|thunderclap|göğüs ağrısı|nefes alamıyorum|brustschmerz/i.test(text)) { level = 'EMERGENCY'; score = 9; }
             else if (/vomit|fever|dizz|faint|headache|abdominal|shortness|severe|bleed|ateş|kusma|baş ağrısı|schmerz|fieber/i.test(text)) { level = 'URGENT'; score = 6; }
             const doList = [], dontList = [];
             if (level === 'EMERGENCY') { doList.push(t('adv_proceed_er'), t('adv_sit_still'), t('adv_stay_calm')); dontList.push(t('adv_no_eat')); }
             else if (level === 'URGENT') { doList.push(t('adv_rest'), t('adv_someone_with_you'), t('adv_bring_meds')); dontList.push(t('adv_no_eat')); }
-            else { doList.push(t('adv_rest'), t('adv_bring_meds'), t('adv_bring_id')); }
+            else { doList.push(t('adv_rest'), t('adv_bring_meds'), t('adv_bring_id')); dontList.push(); }
             if (/chest|heart|brust|göğüs/i.test(text)) { doList.push(t('adv_chest_loose')); dontList.push(t('adv_chest_no_stress')); }
             if (/bleed|kanama|blutung/i.test(text)) { doList.push(t('adv_bleed_pressure')); dontList.push(t('adv_bleed_no_remove')); }
             if (/breath|nefes|atem/i.test(text)) { doList.push(t('adv_breath_upright')); dontList.push(t('adv_breath_no_lie')); }
@@ -4882,17 +5300,30 @@
         // SUBMIT TO QUEUE (AFTER CONSENT)
         // ═══════════════════════════════════════════════════════════
         async function submitConsent() {
-            // 1. Onay kontrolü
+            // 1. Consent check
             if (!S.dataConsent) {
                 document.getElementById('consentWarning').style.display = 'flex';
                 document.getElementById('consentWarningTxt').textContent = t('consentWarning');
                 return;
             }
 
+            // 2. Double-submit guard — shared with submitToBackend()
+            if (S._submitted) {
+                // Already submitted (e.g. IMMEDIATE/EMERGENCY path beat us here)
+                renderResult();
+                goToPage('result');
+                return;
+            }
+
             const btn = document.getElementById('btnGetAssessment');
             const originalText = btn.innerHTML;
+            // Disable button immediately to prevent double-tap
             btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;border-top-color:#fff;"></div>';
             btn.disabled = true;
+
+            // 3. Claim the submission slot BEFORE the async fetch
+            S._submitted = true;
+            if (!S.regNumber) S.regNumber = genRegNumber();
 
             try {
                 const mediaArr = S.photos.length > 0 ? S.photos.map(p => ({ dataUrl: p.dataUrl, mime: p.mime || 'image/jpeg', type: p.type || 'photo' })) : null;
@@ -4932,6 +5363,8 @@
             } catch (error) {
                 console.error("Submission error:", error);
                 toast("Connection error. Please try again.", "warn");
+                // Release the guard on error so patient can retry
+                S._submitted = false;
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
@@ -4991,7 +5424,7 @@
 
                 // Hem API'nin bitmesini hem de en az 1 sn geçmesini bekle
                 const [apiResponse] = await Promise.all([apiCall, minWait]);
-                S.assessment = apiResponse;
+                S.assessment = enforceTriageFloor(apiResponse);
 
                 if (S.assessment._qa_pairs && S.assessment._qa_pairs.length > 0) {
                     S.answersEN = S.assessment._qa_pairs.map(p => ({
@@ -5015,25 +5448,39 @@
                 await new Promise(r => setTimeout(r, 800));
 
             } catch (e) {
-                S.assessment = buildFallbackAssessment(S.complaint || S.complaintEN || '', S.answers);
+                S.assessment = enforceTriageFloor(buildFallbackAssessment(S.complaint || S.complaintEN || '', S.answers));
                 S.answersEN = qaList;
             }
 
-            // 4. Triyaj ekranına yönlendir
-            goToPage('triage');
-            renderTriageBanner();
-            requestGPS();
+            // 4. Show Triage Explanation Card first (v13 MTS 5-level flow)
+            // Pre-fetch hospitals in background while patient reads explanation card
+            if (!S.lat && navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        S.lat = pos.coords.latitude;
+                        S.lon = pos.coords.longitude;
+                        S.country = detectCountryFromCoords ? detectCountryFromCoords(S.lat, S.lon) : 'DE';
+                        fetchHospitals();
+                    },
+                    () => {},
+                    { timeout: 8000, enableHighAccuracy: false }
+                );
+            }
+            showTriageExplanationCard();
         }
 
         // ═══════════════════════════════════════════════════════════
         // TRIAGE BANNER + ADVICE
         // ═══════════════════════════════════════════════════════════
         function renderTriageBanner() {
-            const a = S.assessment || {}; const lvl = (a.triage_level || 'URGENT').toUpperCase();
+            const a = S.assessment || {}; const lvl = normalizeTriage(a.triage_level);
             let cls, title, sub;
-            if (lvl === 'EMERGENCY') { cls = 'emg'; title = t('tr_emg_title'); sub = t('tr_emg_sub'); }
-            else if (lvl === 'URGENT') { cls = 'urg'; title = t('tr_urg_title'); sub = t('tr_urg_sub'); }
-            else { cls = 'rtn'; title = t('tr_rtn_title'); sub = t('tr_rtn_sub'); }
+            if (lvl === 'IMMEDIATE')       { cls = 'imm'; title = t('tr_imm_title'); sub = t('tr_imm_sub'); }
+            else if (lvl === 'EMERGENCY')  { cls = 'emg'; title = t('tr_emg_title'); sub = t('tr_emg_sub'); }
+            else if (lvl === 'URGENT')     { cls = 'urg'; title = t('tr_urg_title'); sub = t('tr_urg_sub'); }
+            else if (lvl === 'STANDARD')   { cls = 'std'; title = t('tr_std_title'); sub = t('tr_std_sub'); }
+            else if (lvl === 'NON_URGENT') { cls = 'nurg'; title = t('tr_nurg_title'); sub = t('tr_nurg_sub'); }
+            else                           { cls = 'rtn'; title = t('tr_rtn_title'); sub = t('tr_rtn_sub'); }
 
             let html = `<div class="triage-banner ${cls}"><div class="triage-title">${title}</div><div class="triage-sub">${sub}</div></div>`;
 
@@ -5268,7 +5715,7 @@
                     </div>
                 </div>
 
-                <button class="btn btn-primary" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${selectedHosp.lat},${selectedHosp.lon}')"
+                <button class="btn btn-primary" onclick="openNavigationToHospital()"
                     style="margin-bottom:20px; gap:10px; height:68px; font-size:1.1rem; font-weight:800; background:linear-gradient(135deg,#0D9488,#0F766E); border:none; box-shadow:0 4px 20px rgba(13,148,136,0.4);">
                     <i data-lucide="navigation" style="width:22px; height:22px;"></i>
                     ${t('rs_openNav')}
@@ -5297,7 +5744,7 @@
                         </div>
                         <div style="padding: 20px 20px 24px; text-align: center;">
                             <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 14px;">
-                                <div style="width:72px;height:72px;border-radius:50%;background:var(--ios-bg);border:3px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:2rem;">👤</div>
+                                ${S.photos && S.photos.length > 0 ? `<img src="${S.photos[0].dataUrl}" alt="Patient photo" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--medical-blue);margin-bottom:8px;flex-shrink:0;">` : `<div style="width:72px;height:72px;border-radius:50%;background:var(--ios-bg);border:3px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:2rem;">👤</div>`}
                                 ${(S.assessment?.full_name || S.assessment?.patient_name) ? `<div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:4px;">${escHtml(S.assessment.full_name || S.assessment.patient_name)}</div>` : ''}
                                 <div style="font-size: 0.6rem; color: var(--text-2); font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom:2px;">${t('rs_patientId')}</div>
                                 <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 800; color: var(--medical-blue);">${S.regNumber}</div>
@@ -5404,7 +5851,15 @@
         // ADVICE BLOCK
         // ═══════════════════════════════════════════════════════════
         function renderAdviceBlock(containerId, doList, dontList, level) {
-            const color = { EMERGENCY: 'var(--red)', URGENT: 'var(--orange)', ROUTINE: 'var(--green)' }[level] || 'var(--blue)';
+            const _advLvl = normalizeTriage(level);
+            const color = {
+                IMMEDIATE:  '#FF0000',
+                EMERGENCY:  'var(--red)',
+                URGENT:     'var(--orange)',
+                STANDARD:   'var(--green)',
+                NON_URGENT: 'var(--blue)',
+                ROUTINE:    'var(--green)'
+            }[_advLvl] || 'var(--blue)';
             let html = `<div style="border:1.5px solid ${color};border-radius:var(--r-lg);padding:16px;margin-bottom:14px">`;
             if (doList.length) {
                 html += `<p style="font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:${color};margin-bottom:8px">${t('tr_doLabel')}</p>`;
@@ -5579,8 +6034,15 @@
             const banner = document.getElementById('resultBanner');
             if (!banner) return;
 
-            let cls = level === 'EMERGENCY' ? 'emg' : level === 'URGENT' ? 'urg' : 'rtn';
-            let title = t('rs_notified_' + cls.toLowerCase());
+            const _lvlN = normalizeTriage(level);
+            let cls = _lvlN === 'IMMEDIATE' ? 'imm'
+                    : _lvlN === 'EMERGENCY' ? 'emg'
+                    : _lvlN === 'URGENT'    ? 'urg'
+                    : _lvlN === 'STANDARD'  ? 'std'
+                    : _lvlN === 'NON_URGENT'? 'nurg'
+                    : 'rtn';
+            const _clsForKey = (cls === 'std' || cls === 'nurg') ? 'rtn' : cls; // fallback i18n key for new levels
+            let title = (t('rs_notified_' + cls) !== 'rs_notified_' + cls) ? t('rs_notified_' + cls) : t('rs_notified_' + _clsForKey);
 
             banner.innerHTML = `
                 <div class="triage-banner ${cls}" style="border-radius:20px; text-align:center; padding:24px; margin-bottom:20px; box-shadow: var(--sh);">
@@ -5588,7 +6050,7 @@
                         ${title}
                     </div>
                     <div style="font-size:0.9rem; opacity:0.9;">
-                        ${t('rs_notified_sub_' + cls.toLowerCase())}
+                        ${(t('rs_notified_sub_' + cls) !== 'rs_notified_sub_' + cls) ? t('rs_notified_sub_' + cls) : t('rs_notified_sub_' + _clsForKey)}
                     </div>
                 </div>`;
 
@@ -5596,6 +6058,563 @@
             const callDiv = document.getElementById('resultEmergencyCall');
             if (callDiv) {
                 callDiv.innerHTML = '';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PART 1: TRIAGE EXPLANATION CARD (v13)
+        // ═══════════════════════════════════════════════════════════
+        function showTriageExplanationCard() {
+            const a = S.assessment || {};
+            const lvl = normalizeTriage(a.triage_level);
+            const meta = MTS_META[lvl] || MTS_META.URGENT;
+            const isImmediate = (lvl === 'IMMEDIATE');
+
+            const conditionSummary = a.condition_summary || a.patient_summary || 'Your symptoms have been evaluated.';
+            const reasoning = a.reasoning || getDefaultReasoning(lvl);
+            const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO[lvl] || []).slice(0, 3);
+            const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT[lvl] || []).slice(0, 3);
+            const maxWait = (a.max_wait_minutes != null) ? a.max_wait_minutes : meta.max_wait;
+            const headerTextCol = meta.textColor;
+
+            let html = `
+            <div style="background:${meta.color};margin:-24px -20px 0;padding:22px 20px 18px;color:${headerTextCol};">
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.85;margin-bottom:6px;">&#x1F3E5; Your Assessment Result</div>
+                <div class="mts-badge ${meta.badge}" style="margin-bottom:6px;">${meta.emoji} ${meta.label}</div>
+                <div style="font-size:0.78rem;font-weight:600;opacity:0.85;">${escHtml(meta.subtitle)}</div>
+                ${isImmediate ? `<div id="immCountdown" style="font-size:0.72rem;font-weight:800;margin-top:10px;background:rgba(0,0,0,0.22);border-radius:8px;padding:5px 12px;display:inline-block;">Auto-advancing in 3s...</div>` : ''}
+            </div>
+
+            <div style="padding:0 0 20px;">
+
+            ${a._triage_upgraded_by_score ? `
+            <div style="background:#FFF4E6;border:1.5px solid #FF8C00;border-radius:var(--r-lg);padding:14px 18px;margin:12px 0;display:flex;align-items:flex-start;gap:12px;">
+                <span style="font-size:1.2rem;flex-shrink:0;">&#x26A0;&#xFE0F;</span>
+                <div>
+                    <div style="font-size:0.8rem;font-weight:800;color:#FF8C00;margin-bottom:4px;letter-spacing:0.03em;">TRIAGE LEVEL AUTO-CORRECTED</div>
+                    <div style="font-size:0.82rem;color:#7a4a00;line-height:1.5;">
+                        Your AI risk score (${a.risk_score}/10) was inconsistent with the initial
+                        <strong>${escHtml(a._triage_prev_level || 'lower')}</strong> classification.
+                        Your triage level has been upgraded to
+                        <strong style="color:${meta.color};">${escHtml(meta.label)}</strong>
+                        to ensure appropriate care.
+                    </div>
+                </div>
+            </div>` : ''}
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin:16px 0 12px;">
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4CB; What we found</div>
+                <p style="font-size:0.9rem;color:var(--text);font-weight:500;line-height:1.55;font-style:italic;margin:0;">"${escHtml(conditionSummary)}"</p>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:12px;">
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4A1; Why this assessment</div>
+                <p style="font-size:0.88rem;color:var(--text-2);line-height:1.6;margin:0;">${escHtml(reasoning)}</p>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:12px;">
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">&#x1F4CC; What you should do</div>
+                ${doList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x2705;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
+                ${dontList.length ? `
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--danger-text);margin-top:14px;margin-bottom:12px;">&#x26D4; What you should avoid</div>
+                ${dontList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x274C;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
+                ` : ''}
+            </div>
+
+            ${maxWait === 0
+                ? `<div style="background:${meta.color};border-radius:var(--r-lg);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;color:${headerTextCol};">
+                    <span style="font-size:1.3rem;">&#x26A1;</span>
+                    <div><div style="font-weight:800;font-size:0.9rem;">Immediate response required</div>
+                    <div style="font-size:0.78rem;opacity:0.85;">Do not delay — emergency services have been notified.</div></div>
+                   </div>`
+                : `<div style="background:var(--card);border:1.5px solid ${meta.color}45;border-radius:var(--r-lg);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+                    <span style="font-size:1.3rem;">&#x1F3E5;</span>
+                    <div><div style="font-weight:800;font-size:0.88rem;color:var(--text);">Medical care has been arranged</div>
+                    <div style="font-size:0.75rem;color:var(--text-2);">Manchester Triage System \u2014 Level ${meta.level}</div></div>
+                   </div>`
+            }
+
+            ${!isImmediate ? `
+            <button class="btn btn-primary" onclick="onTriageExplainContinue()"
+                style="background:${meta.color} !important;border-radius:20px;font-size:1rem;font-weight:800;height:64px;box-shadow:0 8px 24px ${meta.color}55;">
+                CONTINUE &#x2192;
+            </button>` : ''}
+
+            </div>`;
+
+            const container = document.getElementById('triageExplainContent');
+            if (container) container.innerHTML = html;
+            goToPage('triage-explain');
+            lucide.createIcons();
+
+            if (isImmediate) {
+                let countdown = 3;
+                const countEl = document.getElementById('immCountdown');
+                const timer = setInterval(() => {
+                    countdown--;
+                    if (countEl) countEl.textContent = `Auto-advancing in ${countdown}s...`;
+                    if (countdown <= 0) { clearInterval(timer); onTriageExplainContinue(); }
+                }, 1000);
+            }
+        }
+
+        function onTriageExplainContinue() {
+            const lvl = normalizeTriage((S.assessment || {}).triage_level);
+            if (lvl === 'IMMEDIATE')  { showImmediateAlert(); }
+            else if (lvl === 'EMERGENCY') { showEmergencyTransportQuestion(); }
+            else if (lvl === 'URGENT')    { goToPage('triage'); renderTriageBanner(); requestGPS(); submitToBackend().catch(() => {}); startPhysicianPolling(5, 'expertLoopUrg'); }
+            else if (lvl === 'STANDARD')  { showStandardOutcome(); }
+            else                           { showNonUrgentOutcome(); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PART 2A: IMMEDIATE FLOW
+        // ═══════════════════════════════════════════════════════════
+        function showImmediateAlert() {
+            const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
+            S.ambEtaMinutes = hosp ? Math.max(3, hosp.eta_minutes || 10) : 10;
+            S.ambHospName = hosp ? hosp.name : 'Nearest Emergency Department';
+            S.ambHospAddr = hosp ? hosp.address : '';
+            S.ambIsImmediate = true;
+            submitToBackend().catch(() => {});
+            showAmbulanceTracking(true);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PART 2B: EMERGENCY TRANSPORT QUESTION
+        // ═══════════════════════════════════════════════════════════
+        function showEmergencyTransportQuestion() {
+            const content = document.getElementById('outcomeEmgContent');
+            if (!content) return;
+            content.innerHTML = `
+            <div style="background:#FF8C00;margin:-24px -20px 0;padding:22px 20px 18px;color:white;margin-bottom:0;">
+                <div style="font-size:1.1rem;font-weight:900;letter-spacing:-0.01em;margin-bottom:4px;">${t('emg_header')}</div>
+                <div style="font-size:0.88rem;font-weight:600;opacity:0.92;">${t('emg_header_sub')}</div>
+            </div>
+            <div style="padding:0 0 28px;">
+            <div style="background:var(--card);border:1.5px solid rgba(255,140,0,0.3);border-radius:var(--r-lg);padding:20px;margin-top:16px;margin-bottom:20px;">
+                <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:8px;">${t('emg_transport_q')}</div>
+                <div style="font-size:0.88rem;color:var(--text-2);margin-bottom:18px;line-height:1.5;">${t('emg_transport_hint')}</div>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <button onclick="onEmgTransportChoice('self')" style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--card-alt);border:2px solid var(--border);border-radius:var(--r-lg);cursor:pointer;font-family:var(--font);text-align:left;width:100%;">
+                        <span style="font-size:1.8rem;">&#x1F697;</span>
+                        <div><div style="font-size:1rem;font-weight:800;color:var(--text);">${t('emg_self_title')}</div>
+                        <div style="font-size:0.78rem;color:var(--text-2);margin-top:2px;">${t('emg_self_sub')}</div></div>
+                    </button>
+                    <button onclick="onEmgTransportChoice('ambulance')" style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:#FFF4E6;border:2px solid rgba(255,140,0,0.4);border-radius:var(--r-lg);cursor:pointer;font-family:var(--font);text-align:left;width:100%;">
+                        <span style="font-size:1.8rem;">&#x1F691;</span>
+                        <div><div style="font-size:1rem;font-weight:800;color:#CC5500;">${t('emg_amb_title')}</div>
+                        <div style="font-size:0.78rem;color:var(--text-2);margin-top:2px;">${t('emg_amb_sub')}</div></div>
+                    </button>
+                </div>
+            </div>
+            <div id="expertLoopEmg"></div>
+            </div>`;
+            goToPage('outcome-emg');
+            startPhysicianPolling(5, 'expertLoopEmg');
+        }
+
+        function onEmgTransportChoice(choice) {
+            if (choice === 'ambulance') {
+                const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
+                S.ambEtaMinutes = hosp ? Math.max(3, hosp.eta_minutes || 12) : 12;
+                S.ambHospName = hosp ? hosp.name : 'Nearest Emergency Department';
+                S.ambHospAddr = hosp ? hosp.address : '';
+                S.ambIsImmediate = false;
+                submitToBackend().catch(() => {});
+                showAmbulanceTracking(false);
+            } else {
+                goToPage('triage');
+                renderTriageBanner();
+                requestGPS();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PART 3: AMBULANCE TRACKING SIMULATION
+        // ═══════════════════════════════════════════════════════════
+        let _ambCountdownInterval = null;
+
+        function showAmbulanceTracking(isImmediate) {
+            const a = S.assessment || {};
+            const lvl = normalizeTriage(a.triage_level);
+            const ambEta = S.ambEtaMinutes || 10;
+            const hospName = escHtml(S.ambHospName || 'Nearest Emergency Department');
+            const hospAddr = S.ambHospAddr ? escHtml(S.ambHospAddr) : '';
+            const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO[isImmediate ? 'IMMEDIATE' : 'EMERGENCY'] || []).slice(0, 3);
+            const headerColor = isImmediate ? '#FF0000' : '#FF8C00';
+            const headerTitle = isImmediate
+                ? '&#x1F6A8; CRITICAL EMERGENCY &#x2014; Help is on the way'
+                : '&#x26A0;&#xFE0F; EMERGENCY &#x2014; Ambulance dispatched';
+            const gradEnd = isImmediate ? '#FF4500' : '#FFD700';
+
+            const content = document.getElementById('ambulanceContent');
+            if (!content) return;
+
+            content.innerHTML = `
+            <div style="background:${headerColor};margin:-24px -20px 0;padding:22px 20px 16px;color:white;margin-bottom:0;">
+                <div style="font-size:1rem;font-weight:900;">${isImmediate ? t('amb_header_imm') : t('amb_header_emg')}</div>
+                ${isImmediate ? `<div style="font-size:0.82rem;font-weight:600;opacity:0.9;margin-top:4px;">${t('amb_do_not_move')}</div>` : ''}
+            </div>
+            <div style="padding:0 0 28px;">
+
+            <div style="background:var(--card);border:1.5px solid ${headerColor}40;border-radius:var(--r-lg);padding:20px;margin-top:16px;margin-bottom:14px;">
+                <div style="font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-3);margin-bottom:6px;">&#x1F691; ${t('amb_en_route')}</div>
+                <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:2px;">${hospName}</div>
+                ${hospAddr ? `<div style="font-size:0.8rem;color:var(--text-2);margin-bottom:14px;">&#x1F4CD; ${hospAddr}</div>` : '<div style="margin-bottom:14px;"></div>'}
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                    <div style="font-size:0.78rem;font-weight:700;color:var(--text-2);">&#x23F1;&#xFE0F; ${t('amb_eta_label')}</div>
+                    <div id="ambEtaDisplay" style="font-size:1.3rem;font-weight:900;color:${headerColor};">~${ambEta} min</div>
+                </div>
+                <div class="amb-progress-track">
+                    <div class="amb-progress-fill" id="ambProgressFill" style="width:4%;background:linear-gradient(90deg,${headerColor},${gradEnd});"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-3);margin-top:3px;">
+                    <span>${t('amb_dispatched')}</span><span>${t('amb_arriving')}</span>
+                </div>
+            </div>
+
+            <div style="background:var(--card);border:1.5px solid ${headerColor}40;border-radius:var(--r-lg);padding:16px;margin-bottom:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:${headerColor};">${t('amb_track_title')}</div>
+                    <div style="font-size:0.68rem;color:var(--text-3);font-style:italic;">${t('amb_track_sim')}</div>
+                </div>
+                <div style="position:relative;border-radius:12px;overflow:hidden;background:#1e293b;">
+                    <svg viewBox="0 0 320 130" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+                        <defs>
+                            <linearGradient id="skyGrad${isImmediate ? 'I' : 'E'}" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#0f172a"/>
+                                <stop offset="100%" stop-color="#1e3a5f"/>
+                            </linearGradient>
+                            <linearGradient id="groundGrad${isImmediate ? 'I' : 'E'}" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#14532d"/>
+                                <stop offset="100%" stop-color="#166534"/>
+                            </linearGradient>
+                        </defs>
+                        <rect width="320" height="75" fill="url(#skyGrad${isImmediate ? 'I' : 'E'})"/>
+                        <rect y="75" width="320" height="55" fill="url(#groundGrad${isImmediate ? 'I' : 'E'})"/>
+                        <ellipse cx="260" cy="22" rx="38" ry="12" fill="white" opacity="0.06"/>
+                        <ellipse cx="70" cy="32" rx="24" ry="8" fill="white" opacity="0.05"/>
+                        <rect y="78" width="320" height="28" fill="#374151"/>
+                        <line x1="0" y1="78" x2="320" y2="78" stroke="#4b5563" stroke-width="1"/>
+                        <line x1="0" y1="106" x2="320" y2="106" stroke="#4b5563" stroke-width="1"/>
+                        <rect x="0"   y="89" width="34" height="4" fill="white" opacity="0.45" rx="2"/>
+                        <rect x="54"  y="89" width="34" height="4" fill="white" opacity="0.45" rx="2"/>
+                        <rect x="108" y="89" width="34" height="4" fill="white" opacity="0.45" rx="2"/>
+                        <rect x="162" y="89" width="34" height="4" fill="white" opacity="0.45" rx="2"/>
+                        <rect x="216" y="89" width="34" height="4" fill="white" opacity="0.45" rx="2"/>
+                        <rect x="270" y="89" width="34" height="4" fill="white" opacity="0.45" rx="2"/>
+                        <circle cx="20" cy="72" r="9" fill="${headerColor}" opacity="0.9"/>
+                        <text x="20" y="76.5" text-anchor="middle" font-size="9" font-family="sans-serif">📍</text>
+                        <text x="20" y="63" text-anchor="middle" font-size="8" font-family="sans-serif" fill="#94a3b8" font-weight="bold">${t('amb_track_you')}</text>
+                        <rect x="284" y="44" width="30" height="26" rx="5" fill="#16a34a"/>
+                        <text x="299" y="62" text-anchor="middle" font-size="16" font-family="sans-serif">🏥</text>
+                        <text x="299" y="40" text-anchor="middle" font-size="8" font-family="sans-serif" fill="#86efac" font-weight="bold">${t('amb_track_hospital')}</text>
+                        <text id="ambAnimIcon" x="20" y="86" font-size="20" font-family="sans-serif" text-anchor="middle">🚑</text>
+                    </svg>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:0.72rem;color:var(--text-3);">
+                    <span>📍 ${t('amb_track_you')}</span>
+                    <div style="display:flex;align-items:center;gap:5px;">
+                        <div style="width:24px;height:2px;background:${headerColor};border-radius:1px;"></div>
+                        <div style="width:6px;height:6px;border-radius:50%;background:${headerColor};animation:elegant-pulse 1.5s infinite;"></div>
+                        <div style="width:24px;height:2px;background:${headerColor};border-radius:1px;"></div>
+                    </div>
+                    <span>🏥 ${hospName}</span>
+                </div>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;">
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">${t('amb_while_wait')}</div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:var(--text);">&#x2705; <span>${t('amb_wait1')}</span></div>
+                    <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:var(--text);">&#x2705; <span>${t('amb_wait2')}</span></div>
+                    <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:var(--text);">&#x2705; <span>${t('amb_wait3')}</span></div>
+                    <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:var(--text);">&#x2705; <span>${t('amb_wait4')}</span></div>
+                    ${doList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;font-size:0.88rem;color:var(--text);">&#x2705; <span>${escHtml(item)}</span></div>`).join('')}
+                </div>
+            </div>
+
+            <div id="expertLoopAmb"></div>
+            </div>`;
+
+            goToPage('ambulance');
+            startAmbulanceCountdown(ambEta, headerColor, gradEnd);
+            startPhysicianPolling(5, 'expertLoopAmb');
+            if (S.regNumber) startLiveTracking();
+        }
+
+        function startAmbulanceCountdown(etaMinutes, fillColor, fillColorEnd) {
+            if (_ambCountdownInterval) clearInterval(_ambCountdownInterval);
+            let remaining = etaMinutes;
+            const total = etaMinutes;
+            // Move ambulance icon across SVG road (x: 20 → 278, range = 258px)
+            function _updateAmbIcon(pct) {
+                const el = document.getElementById('ambAnimIcon');
+                if (el) el.setAttribute('x', Math.round(20 + (pct / 100) * 258));
+            }
+            _updateAmbIcon(4);
+            _ambCountdownInterval = setInterval(() => {
+                remaining = Math.max(0, remaining - 0.5);
+                const pct = Math.min(95, Math.round((1 - remaining / total) * 100));
+                const etaEl = document.getElementById('ambEtaDisplay');
+                const fillEl = document.getElementById('ambProgressFill');
+                if (etaEl) etaEl.textContent = remaining <= 0 ? t('amb_arriving_now') : `~${Math.ceil(remaining)} min`;
+                if (fillEl) fillEl.style.width = pct + '%';
+                _updateAmbIcon(pct);
+                if (remaining <= 0) { clearInterval(_ambCountdownInterval); showAmbulanceArrived(); }
+            }, 30000);
+        }
+
+        function showAmbulanceArrived() {
+            const etaEl = document.getElementById('ambEtaDisplay');
+            if (etaEl) { etaEl.textContent = 'ARRIVED'; etaEl.style.color = '#28A745'; }
+            const ambContent = document.getElementById('ambulanceContent');
+            if (ambContent) {
+                const header = ambContent.querySelector('div:first-child');
+                if (header) { header.style.background = '#28A745'; header.innerHTML = `<div style="font-size:1.1rem;font-weight:900;">${t('amb_arrived_msg')}</div><div style="font-size:0.85rem;font-weight:600;opacity:0.9;margin-top:4px;">${t('amb_arrived_sub')}</div>`; }
+            }
+        }
+
+        function openNavigationToHospital() {
+            // Navigate to the hospital the patient selected on the results page
+            const hosp = S.selectedHospital || (S.hospitals && S.hospitals[0]);
+            if (!hosp) { toast('Hospital location not available', 'warn'); return; }
+            const dest = hosp.lat && hosp.lon
+                ? `${hosp.lat},${hosp.lon}`
+                : encodeURIComponent((hosp.name || '') + ' ' + (hosp.address || ''));
+            const origin = (S.lat && S.lon) ? `&origin=${S.lat},${S.lon}` : '';
+            const url = hosp.lat && hosp.lon
+                ? `https://www.google.com/maps/dir/?api=1${origin}&destination=${dest}&travelmode=driving`
+                : `https://www.google.com/maps/search/?api=1&query=${dest}`;
+            window.open(url, '_blank');
+        }
+
+        function openAmbulanceMap() {
+            const hosp = S.hospitals && S.hospitals[0];
+            if (hosp && S.lat && S.lon) {
+                window.open(`https://www.google.com/maps/dir/?api=1&origin=${S.lat},${S.lon}&destination=${hosp.lat},${hosp.lon}&travelmode=driving`, '_blank');
+            } else if (hosp) {
+                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hosp.name + ' ' + (hosp.address || ''))}`, '_blank');
+            } else {
+                window.open('https://www.google.com/maps/search/?api=1&query=emergency+hospital+near+me', '_blank');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PART 2D: STANDARD OUTCOME
+        // ═══════════════════════════════════════════════════════════
+        function showStandardOutcome() {
+            const a = S.assessment || {};
+            const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO.STANDARD).slice(0, 4);
+            const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT.STANDARD).slice(0, 3);
+            const condSummary = a.condition_summary || a.patient_summary || '';
+            const content = document.getElementById('outcomeStdContent');
+            if (!content) return;
+            content.innerHTML = `
+            <div style="background:#28A745;margin:-24px -20px 0;padding:22px 20px 16px;color:white;margin-bottom:0;">
+                <div style="font-size:1rem;font-weight:900;">${t('std_header_title')}</div>
+                <div style="font-size:0.85rem;font-weight:600;opacity:0.9;margin-top:4px;">${t('std_header_sub')}</div>
+            </div>
+            <div style="padding:0 0 28px;">
+            <div style="background:var(--card);border:1.5px solid rgba(40,167,69,0.25);border-radius:var(--r-lg);padding:20px;margin-top:16px;margin-bottom:14px;">
+                <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:10px;">${t('std_next_title')}</div>
+                <p style="font-size:0.88rem;color:var(--text-2);line-height:1.6;margin-bottom:${condSummary ? '12px' : '0'};">${t('std_next_desc')}</p>
+                ${condSummary ? `<p style="font-size:0.85rem;color:var(--text-2);font-style:italic;margin:0;">"${escHtml(condSummary)}"</p>` : ''}
+            </div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;">
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">${t('std_rec_title')}</div>
+                ${doList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x2705; <span>${escHtml(item)}</span></div>`).join('')}
+                <div style="margin-top:12px;">${dontList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x274C; <span>${escHtml(item)}</span></div>`).join('')}</div>
+            </div>
+            <div style="background:var(--card);border:1.5px solid rgba(40,167,69,0.25);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+                <span style="font-size:1.2rem;">&#x23F1;&#xFE0F;</span>
+                <div><div style="font-weight:800;font-size:0.88rem;color:var(--text);">${t('std_time_label')} <span style="color:#28A745;">${t('std_time_val')}</span></div>
+                <div style="font-size:0.75rem;color:var(--text-2);">${t('std_time_sub')}</div></div>
+            </div>
+            <div id="expertLoopStd"></div>
+            <button class="btn btn-secondary" onclick="location.reload()" style="margin-top:16px;height:48px;font-size:0.875rem;opacity:0.7;">${t('std_new_assessment')}</button>
+            </div>`;
+            goToPage('outcome-std');
+            submitToBackend().catch(() => {});
+            startPhysicianPolling(5, 'expertLoopStd');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PART 2E: NON_URGENT OUTCOME
+        // ═══════════════════════════════════════════════════════════
+        function showNonUrgentOutcome() {
+            const a = S.assessment || {};
+            const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO.NON_URGENT).slice(0, 4);
+            const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT.NON_URGENT).slice(0, 3);
+            const condSummary = a.condition_summary || a.patient_summary || '';
+            const content = document.getElementById('outcomeNurgContent');
+            if (!content) return;
+            content.innerHTML = `
+            <div style="background:#007BFF;margin:-24px -20px 0;padding:22px 20px 16px;color:white;margin-bottom:0;">
+                <div style="font-size:1rem;font-weight:900;">${t('nurg_header_title')}</div>
+                <div style="font-size:0.85rem;font-weight:600;opacity:0.9;margin-top:4px;">${t('nurg_header_sub')}</div>
+            </div>
+            <div style="padding:0 0 28px;">
+            <div style="background:var(--card);border:1.5px solid rgba(0,123,255,0.2);border-radius:var(--r-lg);padding:20px;margin-top:16px;margin-bottom:14px;">
+                <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:10px;">${t('nurg_rec_title')}</div>
+                <p style="font-size:0.88rem;color:var(--text-2);line-height:1.6;margin-bottom:${condSummary ? '12px' : '0'};">${t('nurg_rec_desc')}</p>
+                ${condSummary ? `<p style="font-size:0.85rem;color:var(--text-2);font-style:italic;margin:0;">"${escHtml(condSummary)}"</p>` : ''}
+            </div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;">
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">${t('nurg_self_care_title')}</div>
+                ${doList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x2705; <span>${escHtml(item)}</span></div>`).join('')}
+                <div style="margin-top:12px;">${dontList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x274C; <span>${escHtml(item)}</span></div>`).join('')}</div>
+            </div>
+            <div style="background:var(--mts-nurg-bg);border:1px solid var(--mts-nurg-border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:14px;font-size:0.82rem;color:var(--text-2);line-height:1.6;">
+                ${t('nurg_logged')}
+            </div>
+            <div id="expertLoopNurg"></div>
+            <button class="btn btn-secondary" onclick="location.reload()" style="margin-top:16px;height:48px;font-size:0.875rem;opacity:0.7;">${t('nurg_new_assessment')}</button>
+            </div>`;
+            goToPage('outcome-nurg');
+            submitToBackend().catch(() => {});
+            startPhysicianPolling(15, 'expertLoopNurg');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // BACKEND SUBMISSION — shared for all levels (v13)
+        // ═══════════════════════════════════════════════════════════
+        async function submitToBackend() {
+            if (S._submitted) return;
+            S._submitted = true;
+            if (!S.regNumber) S.regNumber = genRegNumber();
+            try {
+                const qaList = (S.answersEN || S.answers || []).map(a => ({
+                    question: a.question || '', question_en: a.question_en || a.question || '',
+                    answer: a.answer || '', original_answer: a.original_answer || a.originalAnswer || a.answer || ''
+                })).filter(a => a.question && a.answer);
+                const mediaArr = (S.photos || []).length > 0
+                    ? S.photos.map(p => ({ dataUrl: p.dataUrl, mime: p.mime || 'image/jpeg', type: p.type || 'photo' })) : null;
+                await fetch(API + '/api/patient/submit', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        complaint: S.complaint, complaint_en: S.complaintEN || S.complaint,
+                        detected_language: S.selectedLang || S.detectedLang,
+                        assessment: S.assessment,
+                        hospital: S.selectedHospital || (S.hospitals && S.hospitals[0]) || null,
+                        lat: S.lat, lon: S.lon, answers: qaList,
+                        has_photo: (S.photos || []).length > 0, photo_count: (S.photos || []).length,
+                        media: mediaArr, reg_number: S.regNumber,
+                        health_number: S.healthNumber || null, data_consent: S.dataConsent !== false
+                    })
+                });
+            } catch(e) { console.warn('Backend submit failed (non-critical):', e); S._submitted = false; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PART 4: PHYSICIAN OVERRIDE POLLING (v13)
+        // ═══════════════════════════════════════════════════════════
+        let _physicianPollInterval = null;
+        // Session token: prevents a decision from a previous session being shown
+        // to a new patient. Set fresh each time polling starts.
+        let _pollSessionRegNumber = null;
+
+        function startPhysicianPolling(intervalSec, containerId) {
+            // Clear any previous poll (previous patient / previous flow)
+            if (_physicianPollInterval) clearInterval(_physicianPollInterval);
+            _physicianPollInterval = null;
+
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const lvl = normalizeTriage((S.assessment || {}).triage_level);
+            const meta = MTS_META[lvl] || MTS_META.URGENT;
+            container.innerHTML = `
+            <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:16px;" id="physicianReviewCard_${containerId}">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                    <div style="width:10px;height:10px;border-radius:50%;background:#30D158;box-shadow:0 0 8px #30D158;animation:elegant-pulse 2s infinite ease-in-out;flex-shrink:0;"></div>
+                    <div style="font-size:0.88rem;font-weight:800;color:var(--text);">${t('phys_review_active')}</div>
+                </div>
+                <div style="font-size:0.82rem;color:var(--text-2);line-height:1.5;">&#x23F3; ${t('phys_review_sub')}</div>
+                <div id="physicianDecisionArea_${containerId}"></div>
+            </div>`;
+
+            let polls = 0;
+            // If regNumber is not set yet (submitToBackend still in flight), wait up
+            // to 30 s for it to become available before starting real API polls.
+            let waitTicks = 0;
+            const MAX_WAIT_TICKS = 30; // 30 × 1 s = 30 s
+
+            function _doPoll() {
+                polls++;
+                if (polls > 240) { clearInterval(_physicianPollInterval); return; } // ~20 min max
+                if (!S.regNumber) return; // still waiting — try next tick
+                // Bind this poll to the current patient session
+                if (!_pollSessionRegNumber) _pollSessionRegNumber = S.regNumber;
+                // Safety: if regNumber changed (new session started), stop
+                if (_pollSessionRegNumber !== S.regNumber) {
+                    clearInterval(_physicianPollInterval);
+                    return;
+                }
+                fetch(`${API}/api/patient/${encodeURIComponent(S.regNumber)}/status`)
+                    .then(res => res.ok ? res.json() : null)
+                    .then(data => {
+                        if (!data) return;
+                        // Guard: only show decision for the current session's patient
+                        if (_pollSessionRegNumber !== S.regNumber) return;
+                        if (data.physician_decision) {
+                            clearInterval(_physicianPollInterval);
+                            handlePhysicianDecision(data, containerId);
+                        }
+                    })
+                    .catch(() => { /* silent */ });
+            }
+
+            _physicianPollInterval = setInterval(_doPoll, intervalSec * 1000);
+        }
+
+        function handlePhysicianDecision(data, containerId) {
+            const card = document.getElementById(`physicianReviewCard_${containerId}`);
+            if (card) {
+                card.style.transition = 'opacity 0.5s';
+                card.style.opacity = '0';
+                setTimeout(() => { card.style.display = 'none'; showPhysicianDecisionCard(data, containerId); }, 500);
+            } else {
+                showPhysicianDecisionCard(data, containerId);
+            }
+        }
+
+        function showPhysicianDecisionCard(data, containerId) {
+            const decision = (data.physician_decision || '').toUpperCase();
+            const newLvl = data.new_triage_level ? normalizeTriage(data.new_triage_level) : normalizeTriage(data.ai_triage_level);
+            const note = data.physician_note || null;
+            const meta = MTS_META[newLvl] || MTS_META.URGENT;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            let icon, msgText;
+            if (decision === 'APPROVE')    { icon = '&#x2705;'; msgText = `${t('phys_approved_msg')} <strong>${meta.label}</strong>.`; }
+            else if (decision === 'UPGRADE')   { icon = '&#x26A0;&#xFE0F;'; msgText = `<strong>${t('phys_upgraded_msg')}</strong> <strong>${meta.label}</strong>.`; }
+            else                            { icon = '&#x2139;&#xFE0F;'; msgText = `${t('phys_adjusted_msg')} <strong>${meta.label}</strong>.`; }
+
+            const decDiv = document.createElement('div');
+            decDiv.className = 'override-notification';
+            decDiv.innerHTML = `
+            <div style="background:${meta.color};border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;color:${meta.textColor};" ${decision === 'UPGRADE' ? 'class="upgrade-pulse"' : ''}>
+                <div style="font-size:1rem;font-weight:800;margin-bottom:8px;">${icon} ${msgText}</div>
+                <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 13px;font-size:0.78rem;font-weight:800;">${meta.emoji} ${meta.label} &mdash; Level ${meta.level}</div>
+                ${note ? `<div style="margin-top:12px;background:rgba(255,255,255,0.15);border-radius:10px;padding:12px;font-size:0.85rem;line-height:1.5;"><strong>&#x1F4CB; ${t('phys_note_label')}:</strong> ${escHtml(note)}</div>` : ''}
+            </div>`;
+            container.appendChild(decDiv);
+
+            if (decision === 'UPGRADE' && newLvl) {
+                setTimeout(() => {
+                    const actionDiv = document.createElement('div');
+                    actionDiv.className = 'override-notification physician-card-anim';
+                    let actionBtn = '';
+                    if (newLvl === 'IMMEDIATE') actionBtn = `<button onclick="showImmediateAlert()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;background:${meta.color};color:${meta.textColor};border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font);font-size:0.9rem;font-weight:800;">${t('phys_btn_immediate')}</button>`;
+                    else if (newLvl === 'EMERGENCY') actionBtn = `<button onclick="showEmergencyTransportQuestion()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;background:${meta.color};color:${meta.textColor};border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font);font-size:0.9rem;font-weight:800;">${t('phys_btn_emergency')}</button>`;
+                    else if (newLvl === 'URGENT') actionBtn = `<button onclick="goToPage('triage');renderTriageBanner();requestGPS();" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;background:${meta.color};color:${meta.textColor};border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font);font-size:0.9rem;font-weight:800;">${t('phys_btn_urgent')}</button>`;
+                    if (actionBtn) {
+                        actionDiv.innerHTML = `<div style="background:var(--card);border:2px solid ${meta.color};border-radius:var(--r-lg);padding:16px 20px;margin-bottom:14px;"><div style="font-size:0.88rem;font-weight:800;color:${meta.color};margin-bottom:8px;">${t('phys_action_required')}</div><div style="font-size:0.85rem;color:var(--text-2);line-height:1.5;margin-bottom:12px;">${escHtml(getDefaultReasoning(newLvl))}</div>${actionBtn}</div>`;
+                        container.appendChild(actionDiv);
+                    }
+                }, 600);
             }
         }
     </script>

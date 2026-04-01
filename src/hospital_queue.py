@@ -34,6 +34,35 @@ logger = logging.getLogger(__name__)
 # Database file location
 DB_PATH = Path(__file__).parent.parent / "patient_queue.db"
 
+# MTS 5-level triage normalization constants
+_TRIAGE_ALIASES: dict[str, str] = {
+    "ROUTINE": "STANDARD",
+    "routine": "STANDARD",
+}
+_VALID_TRIAGE_LEVELS = {"IMMEDIATE", "EMERGENCY", "URGENT", "STANDARD", "NON_URGENT"}
+
+
+def _normalize_triage_level(level: Optional[str]) -> str:
+    """Normalize legacy/variant triage level strings to the canonical MTS 5-level set.
+
+    Maps ``ROUTINE`` → ``STANDARD`` and upper-cases the value; returns
+    ``"URGENT"`` as a safe fallback for unrecognised values.
+
+    Args:
+        level: Raw triage level string from DB or API payload.
+
+    Returns:
+        One of ``IMMEDIATE``, ``EMERGENCY``, ``URGENT``, ``STANDARD``, ``NON_URGENT``.
+    """
+    if not level:
+        return "URGENT"
+    upper = str(level).strip().upper()
+    # Handle alias first (e.g. ROUTINE → STANDARD)
+    canonical = _TRIAGE_ALIASES.get(upper, upper)
+    if canonical in _VALID_TRIAGE_LEVELS:
+        return canonical
+    return "URGENT"
+
 
 class HospitalQueue:
     """Manages the queue of incoming triaged patients.
@@ -96,10 +125,18 @@ class HospitalQueue:
                 """
             )
             conn.commit()
-            # Migration: add timestamp columns if they don't exist yet
+            # Migration: add columns if they don't exist yet
             for col_def in [
                 ("treatment_started_at", "TEXT"),
                 ("discharged_at", "TEXT"),
+                ("override_action", "TEXT"),
+                ("override_note", "TEXT"),
+                ("qa_transcript", "TEXT"),
+                ("health_number", "TEXT DEFAULT ''"),
+                ("has_photo", "INTEGER DEFAULT 0"),
+                ("photo_count", "INTEGER DEFAULT 0"),
+                ("complaint_text", "TEXT DEFAULT ''"),
+                ("ai_triage_level", "TEXT"),
             ]:
                 try:
                     conn.execute(f"ALTER TABLE patient_queue ADD COLUMN {col_def[0]} {col_def[1]}")
@@ -162,8 +199,9 @@ class HospitalQueue:
                     recommended_action, time_sensitivity, source_guidelines,
                     eta_minutes, arrival_time, location_lat, location_lon,
                     language, destination_hospital, status, updated_at,
-                    qa_transcript, health_number, has_photo, photo_count, complaint_text
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incoming', ?, ?, ?, ?, ?, ?)
+                    qa_transcript, health_number, has_photo, photo_count, complaint_text,
+                    ai_triage_level
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incoming', ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     record.get("patient_id", ""),
@@ -189,6 +227,7 @@ class HospitalQueue:
                     1 if record.get("has_photo") else 0,
                     int(record.get("photo_count", 0)),
                     record.get("complaint_text", ""),
+                    record.get("triage_level", "URGENT"),  # ai_triage_level: immutable original AI level
                 ),
             )
             conn.commit()
@@ -235,6 +274,8 @@ class HospitalQueue:
             patients = []
             for row in rows:
                 patient = dict(row)
+                # Normalize legacy ROUTINE triage level to STANDARD on every read
+                patient["triage_level"] = _normalize_triage_level(patient.get("triage_level"))
                 # Parse JSON fields
                 for field in ("red_flags", "suspected_conditions", "source_guidelines"):
                     try:
@@ -286,6 +327,8 @@ class HospitalQueue:
             patients = []
             for row in rows:
                 patient = dict(row)
+                # Normalize legacy ROUTINE triage level to STANDARD on every read
+                patient["triage_level"] = _normalize_triage_level(patient.get("triage_level"))
                 for field in ("red_flags", "suspected_conditions", "source_guidelines"):
                     try:
                         patient[field] = json.loads(patient.get(field, "[]"))
@@ -358,6 +401,38 @@ class HospitalQueue:
 
         except Exception as exc:
             logger.error("Failed to update patient status: %s", exc)
+            return False
+
+    def update_triage(self, patient_id: str, new_level: str, action: str = "", note: str = "") -> bool:
+        """Update a patient's triage level (Expert-in-the-loop override).
+
+        Args:
+            patient_id: The patient ID string.
+            new_level: New triage level ('EMERGENCY', 'URGENT', 'ROUTINE').
+            action: Action taken ('UPGRADE', 'DOWNGRADE', 'APPROVE').
+            note: Clinical justification note.
+
+        Returns:
+            True if updated successfully.
+        """
+        try:
+            conn = self._get_connection()
+            now = datetime.now(timezone.utc).isoformat()
+            conn.execute(
+                """
+                UPDATE patient_queue
+                SET triage_level = ?, override_action = ?, override_note = ?, updated_at = ?
+                WHERE patient_id = ?
+                """,
+                (new_level, action, note, now, patient_id),
+            )
+            conn.commit()
+            conn.close()
+            logger.info("Patient %s triage manually overridden to %s (%s).", patient_id, new_level, action)
+            return True
+
+        except Exception as exc:
+            logger.error("Failed to override patient triage: %s", exc)
             return False
 
     def update_location(self, patient_id: str, lat: float, lon: float, eta_minutes: int) -> bool:
