@@ -259,13 +259,20 @@ class SpeechHandler:
             audio_config = speechsdk.audio.AudioConfig(filename=audio_path)
 
             if language:
-                # Direct language mode — faster and more accurate than auto-detect
-                self.speech_config.speech_recognition_language = language
+                # Direct language mode — create a fresh SpeechConfig so we don't
+                # mutate the shared self.speech_config (avoids state leakage).
+                import os as _os
+                direct_cfg = speechsdk.SpeechConfig(
+                    subscription=_os.getenv("SPEECH_KEY", ""),
+                    region=_os.getenv("SPEECH_REGION", "westeurope"),
+                )
+                direct_cfg.speech_recognition_language = language
+                direct_cfg.output_format = speechsdk.OutputFormat.Detailed
                 recognizer = speechsdk.SpeechRecognizer(
-                    speech_config=self.speech_config,
+                    speech_config=direct_cfg,
                     audio_config=audio_config,
                 )
-                logger.info("Azure Speech: using direct language %s", language)
+                logger.info("Azure Speech: direct language mode (%s)", language)
             else:
                 # Auto-detect from candidate list (max 4 for recognize_once)
                 auto_detect_config = (
@@ -280,7 +287,7 @@ class SpeechHandler:
                 )
 
             result = recognizer.recognize_once()
-            return self._process_result(result)
+            return self._process_result(result, fallback_language=language)
 
         except Exception as exc:
             logger.error("Speech recognition from file error: %s", exc)
@@ -327,11 +334,13 @@ class SpeechHandler:
     # Helpers
     # ------------------------------------------------------------------
 
-    def _process_result(self, result) -> Optional[dict]:
+    def _process_result(self, result, fallback_language: Optional[str] = None) -> Optional[dict]:
         """Process a speech recognition result.
 
         Args:
             result: SpeechRecognitionResult from the SDK.
+            fallback_language: BCP-47 code to use when auto-detect property is
+                               absent (i.e. direct-language-mode recognitions).
 
         Returns:
             Parsed result dict or ``None``.
@@ -339,11 +348,14 @@ class SpeechHandler:
         import azure.cognitiveservices.speech as speechsdk
 
         if result.reason == speechsdk.ResultReason.RecognizedSpeech:
-            # AI-102: The auto-detect language result is stored in a
-            # property bag, accessed via PropertyId
-            detected_language = result.properties.get(
-                speechsdk.PropertyId.SpeechServiceConnection_AutoDetectSourceLanguageResult,
-                "en-US",
+            # In direct-language mode the auto-detect property is not populated;
+            # fall back to the language we requested, then to "en-US".
+            detected_language = (
+                result.properties.get(
+                    speechsdk.PropertyId.SpeechServiceConnection_AutoDetectSourceLanguageResult,
+                )
+                or fallback_language
+                or "en-US"
             )
             logger.info(
                 "Recognized: '%s' (language=%s)",
