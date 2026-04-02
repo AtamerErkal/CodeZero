@@ -1,47 +1,45 @@
 <div align="center">
+  <img src="docs/images/banner.png" alt="CodeZero Banner" width="100%"/>
+  <br/>
+  
+  # CodeZero ⚡🏥
+  **AI-Powered Pre-Hospital Triage System**  
+  Voice-First + RAG + Real-time GPS + Manchester Triage System
 
-<img src="docs/images/banner.png" alt="CodeZero Banner" width="100%"/>
+  [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
+  [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+  [![Azure AI](https://img.shields.io/badge/Azure_AI-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/en-us/products/ai-services)
+  [![GPT-4](https://img.shields.io/badge/GPT--4-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com)
+  [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/agpl-3.0)
 
-<br/>
-
-# CodeZero ⚡🏥
-AI-Powered Pre-Hospital Triage System | Voice-First + RAG + Real-time GPS + Manchester Triage
-
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Azure AI](https://img.shields.io/badge/Azure_AI-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/en-us/products/ai-services)
-[![GPT-4+](https://img.shields.io/badge/GPT--4+-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
-<image-card alt="License" src="https://img.shields.io/github/license/AtamerErkal/CodeZero" ></image-card>
-
-[🚀 Quick Start](#-quick-start) · [🎯 How It Works](#-how-it-works) · [✨ Features](#-key-features) · [🏗️ Architecture](#%EF%B8%8F-architecture) · [🔌 API Reference](#-api-reference) · [🎬 Demo Scenarios](#-demo-scenarios)
-
----
-
+  [🚀 Quick Start](#-quick-start) · [🎯 How It Works](#-how-it-works) · [✨ Features](#-key-features) · [🏗️ Architecture](#️-architecture) · [🔌 API Reference](#-api-reference) · [🎬 Demo Scenarios](#-demo-scenarios)
 </div>
 
-> [!CAUTION]
-> **Medical Disclaimer** — This is an educational and demonstration system. It is **NOT** a certified medical device and must **NOT** be used for real clinical triage decisions. Always call emergency services (**112** / **911**) in a genuine medical emergency.
-> [!License]
-> This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
-You are free to use, modify, and distribute the code for **non-commercial and open-source purposes**, provided that any modifications or derivative works are also released under AGPL-3.0 and the full source code is made available.
-
-**Commercial use, SaaS hosting, enterprise deployment, or any closed-source usage requires a separate commercial license.**
-
-For commercial licensing inquiries, please contact me at: atamererkal.eu@gmail.com 
-
 ---
 
-<br/>
+> [!CAUTION]  
+> **Medical Disclaimer** — This is an educational and demonstration project.  
+> It is **NOT** a certified medical device and must **NOT** be used for real clinical triage decisions.  
+> In any real medical emergency, always call **112** (Europe) or **911** immediately.
+
+> [!IMPORTANT]  
+> **License**  
+> This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
+> You are free to use, modify, and distribute it for **non-commercial and open-source purposes**, as long as any modifications or derivative works are also released under AGPL-3.0 and the full source code is provided.  
+> 
+> **Commercial use, SaaS hosting, enterprise deployment, or any closed-source usage requires a separate commercial license.**  
+> For commercial licensing inquiries, please contact: **atamererkal.eu@gmail.com**
+
+---
 
 ## 🧠 What is CodeZero?
 
 **CodeZero** is a full-stack, AI-powered pre-hospital triage platform with two complementary interfaces:
 
-- **VitalNavAI** — a mobile-first patient app where anyone can describe their emergency via voice or text, answer AI-guided clinical questions, and be routed to the best available hospital with a 5-level MTS triage assessment.
-- **ER Command Center** — a real-time hospital dashboard where ER staff see incoming patients, their AI-assessed triage level, live GPS location, estimated arrival time, physician override controls, and full medical history — *before* the patient arrives.
+- **VitalNavAI** — a mobile-first patient app where anyone can describe their emergency via voice or text, answer AI-guided clinical questions, and receive a 5-level Manchester Triage System (MTS) assessment.
+- **ER Command Center** — a real-time hospital dashboard where ER staff see incoming patients, their AI-assessed triage level, live GPS location, estimated arrival time, physician override controls, and notes — *before* the patient arrives.
 
-Unlike symptom checkers that end with a generic recommendation, CodeZero creates a **live two-sided connection**: the patient gets routed to the right hospital, and the ER gets the right preparation time. An **Expert-in-the-Loop** physician review layer allows ER doctors to upgrade, approve, or adjust the AI's triage decision — with the update reflected in real-time on the patient's own device.
+Unlike simple symptom checkers, CodeZero creates a **live two-way bridge** between patient and hospital. An **Expert-in-the-Loop** mechanism allows ER physicians to review, approve, upgrade or adjust the AI triage decision in real time.
 
 <br/>
 
