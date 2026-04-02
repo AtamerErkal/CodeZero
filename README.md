@@ -4,17 +4,15 @@
 
 <br/>
 
-# ⚡ CodeZero
-
-### Intelligent Pre-Hospital Emergency Triage System
-
-**AI-powered triage that bridges the gap between first symptoms and hospital treatment — in any language, on any device.**
+# CodeZero ⚡🏥
+AI-Powered Pre-Hospital Triage System | Voice-First + RAG + Real-time GPS + Manchester Triage
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Azure AI](https://img.shields.io/badge/Azure_AI-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/en-us/products/ai-services)
 [![GPT-4+](https://img.shields.io/badge/GPT--4+-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
+<image-card alt="License" src="https://img.shields.io/github/license/AtamerErkal/CodeZero" ></image-card>
 
 [🚀 Quick Start](#-quick-start) · [🎯 How It Works](#-how-it-works) · [✨ Features](#-key-features) · [🏗️ Architecture](#%EF%B8%8F-architecture) · [🔌 API Reference](#-api-reference) · [🎬 Demo Scenarios](#-demo-scenarios)
 
@@ -24,6 +22,15 @@
 
 > [!CAUTION]
 > **Medical Disclaimer** — This is an educational and demonstration system. It is **NOT** a certified medical device and must **NOT** be used for real clinical triage decisions. Always call emergency services (**112** / **911**) in a genuine medical emergency.
+> [!License]
+> This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
+You are free to use, modify, and distribute the code for **non-commercial and open-source purposes**, provided that any modifications or derivative works are also released under AGPL-3.0 and the full source code is made available.
+
+**Commercial use, SaaS hosting, enterprise deployment, or any closed-source usage requires a separate commercial license.**
+
+For commercial licensing inquiries, please contact me at: atamererkal.eu@gmail.com 
+
+---
 
 <br/>
 
