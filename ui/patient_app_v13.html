@@ -4670,6 +4670,7 @@
             if (_simInterval) { clearInterval(_simInterval); _simInterval = null; }
             // Stop mic if still recording
             if (isRecording) { try { stopRecording(); } catch (_) {} }
+            stopAudioViz();
             // Reset voice/audio state
             webSpeechResult = '';
 
@@ -4730,6 +4731,41 @@
         // ═══════════════════════════════════════════════════════════
         let mediaRec = null, audioChunks = [], isRecording = false;
         let webSpeechRec = null, webSpeechResult = '';
+        // Real-time audio visualizer state
+        let _vizCtx = null, _vizAnalyser = null, _vizFrame = null;
+
+        function startAudioViz(stream) {
+            try {
+                _vizCtx = new (window.AudioContext || window.webkitAudioContext)();
+                _vizAnalyser = _vizCtx.createAnalyser();
+                _vizAnalyser.fftSize = 128;
+                _vizAnalyser.smoothingTimeConstant = 0.6;
+                _vizCtx.createMediaStreamSource(stream).connect(_vizAnalyser);
+                const bars = document.querySelectorAll('#waveformBars .sf-bar');
+                const data = new Uint8Array(_vizAnalyser.frequencyBinCount);
+                const N = bars.length;
+                function tick() {
+                    _vizFrame = requestAnimationFrame(tick);
+                    _vizAnalyser.getByteFrequencyData(data);
+                    for (let i = 0; i < N; i++) {
+                        // Map bins to speech-range frequencies (~200–3000 Hz)
+                        const bin = Math.floor(2 + (i / N) * (data.length / 4));
+                        const h = 3 + (data[bin] / 255) * 34;
+                        bars[i].style.cssText = `background:var(--success)!important;height:${h}px;animation:none;transition:height 0.08s;`;
+                    }
+                }
+                tick();
+            } catch (e) { console.warn('AudioContext viz failed:', e); }
+        }
+
+        function stopAudioViz() {
+            if (_vizFrame) { cancelAnimationFrame(_vizFrame); _vizFrame = null; }
+            if (_vizCtx) { _vizCtx.close().catch(() => {}); _vizCtx = null; _vizAnalyser = null; }
+            // Reset bars
+            document.querySelectorAll('#waveformBars .sf-bar').forEach(b => {
+                b.style.cssText = 'background:var(--success)!important;';
+            });
+        }
 
         async function toggleRecording() {
             if (isRecording) {
@@ -4740,45 +4776,51 @@
         }
 
         function startWebSpeech(langCode) {
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return;
-            webSpeechRec = new SR();
-            webSpeechRec.continuous = true; webSpeechRec.interimResults = true;
-            webSpeechRec.lang = langCode || 'tr-TR';
-            // Do NOT reset webSpeechResult here — keep any previous result until confirmed done
-            webSpeechRec.onresult = e => {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) {
+                console.info('Web Speech API not available in this browser — server fallback only.');
+                return;
+            }
+            const rec = new SR();
+            webSpeechRec = rec;
+            rec.continuous = true; rec.interimResults = true;
+            rec.lang = langCode || 'tr-TR';
+
+            rec.onresult = e => {
                 let interim = '', final = '';
                 for (let i = 0; i < e.results.length; i++) {
                     if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
                     else interim += e.results[i][0].transcript;
                 }
-                // Store final result if available; fall back to interim so
-                // stopping mid-sentence still captures something.
-                if (final.trim()) {
-                    webSpeechResult = final.trim();
-                } else if (interim.trim()) {
-                    webSpeechResult = interim.trim(); // overwritten by final later
-                }
+                if (final.trim()) webSpeechResult = final.trim();
+                else if (interim.trim()) webSpeechResult = interim.trim();
                 const display = (final || interim).trim();
                 if (display) {
-                    document.getElementById('transcriptText').textContent = display;
-                    document.getElementById('transcriptBox').classList.add('visible');
-                    document.getElementById('transcriptLang').textContent = '🎤 ' + t('micLabelRec');
+                    const tb = document.getElementById('transcriptText');
+                    const tbx = document.getElementById('transcriptBox');
+                    const tl = document.getElementById('transcriptLang');
+                    if (tb) tb.textContent = display;
+                    if (tbx) tbx.style.display = 'block';
+                    if (tl) tl.textContent = '🎤 ' + t('micLabelRec');
                 }
             };
-            webSpeechRec.onerror = e => {
-                // 'no-speech' and 'aborted' are normal — don't clear result
-                if (e.error !== 'no-speech' && e.error !== 'aborted') {
-                    console.warn('Web Speech error:', e.error);
+            rec.onerror = e => {
+                console.warn('Web Speech error:', e.error);
+                // Surface hard failures to the user (not normal no-speech/aborted pauses)
+                if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                    const m = { en: 'Browser speech blocked — using server fallback.', de: 'Browser-Sprache blockiert — Serverfallback aktiv.', tr: 'Tarayıcı sesi engellendi — sunucu kullanılıyor.' };
+                    toast(m[S.lang] || m.en, 'warn');
+                } else if (e.error === 'network') {
+                    console.info('Web Speech: network error (needs internet/HTTPS) — server fallback active.');
                 }
             };
-            webSpeechRec.onend = () => {
-                // Auto-restart if still recording (some browsers stop after silence)
-                if (isRecording && webSpeechRec === null) return; // manually stopped
-                if (isRecording) {
-                    try { webSpeechRec.start(); } catch (_) { }
-                }
+            rec.onend = () => {
+                // Auto-restart with a FRESH instance — can't call .start() on a stopped instance
+                if (!isRecording || webSpeechRec !== rec) return; // manually stopped or replaced
+                webSpeechRec = null;
+                startWebSpeech(langCode); // create new instance and restart
             };
-            try { webSpeechRec.start(); } catch (e) { console.warn('WebSpeech start failed:', e); }
+            try { rec.start(); } catch (e) { console.warn('WebSpeech start failed:', e); webSpeechRec = null; }
         }
         function stopWebSpeech() {
             if (webSpeechRec) {
@@ -4789,11 +4831,17 @@
         }
 
         async function startRecording() {
+            webSpeechResult = '';  // clear any stale result from previous attempt
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRec = new MediaRecorder(stream); audioChunks = [];
+                // Pick a MIME type the browser actually supports so the blob is valid
+                const mime = ['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/webm','audio/mp4']
+                    .find(t => MediaRecorder.isTypeSupported(t)) || '';
+                mediaRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+                audioChunks = [];
                 mediaRec.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
                 mediaRec.onstop = processAudio; mediaRec.start(100); isRecording = true;
+                startAudioViz(stream);          // ← real mic level visualizer
                 startWebSpeech(S.selectedLang || S.detectedLang || 'tr-TR');
                 setMicState('recording');
             } catch (e) {
@@ -4801,30 +4849,26 @@
                 if (SR) { isRecording = true; startWebSpeech(S.selectedLang || S.detectedLang || 'tr-TR'); setMicState('recording'); return; }
                 const msgs = {
                     NotAllowedError: { en: 'Microphone access denied.', de: 'Mikrofonzugriff verweigert.', tr: 'Mikrofon erişimi reddedildi.' },
-                    NotFoundError: { en: 'No microphone found.', de: 'Kein Mikrofon gefunden.', tr: 'Mikrofon bulunamadı.' },
-                    NotReadableError: { en: 'Microphone is used by another app.', de: 'Mikrofon wird verwendet.', tr: 'Mikrofon başka uygulama tarafından kullanılıyor.' }
+                    NotFoundError:   { en: 'No microphone found.', de: 'Kein Mikrofon gefunden.', tr: 'Mikrofon bulunamadı.' },
+                    NotReadableError:{ en: 'Microphone is used by another app.', de: 'Mikrofon wird verwendet.', tr: 'Mikrofon başka uygulama tarafından kullanılıyor.' }
                 };
                 const m = msgs[e.name] || { en: 'Microphone unavailable — please type.', de: 'Mikrofon nicht verfügbar.', tr: 'Mikrofon kullanılamıyor — lütfen yazın.' };
                 toast(m[S.lang] || m.en, 'warn');
             }
         }
         function stopRecording() {
-            // Snapshot Web Speech result BEFORE stopping (prevents race condition)
-            const wsr = webSpeechResult;
+            stopAudioViz();  // ← stop real-time visualizer immediately
 
-            // Stop Web Speech first, then give it 400ms to fire final onresult
             if (webSpeechRec) { try { webSpeechRec.stop(); } catch (e) { } webSpeechRec = null; }
 
             if (mediaRec && mediaRec.state !== 'inactive') {
-                // mediaRec.onstop → processAudio handles the rest
                 mediaRec.stop();
                 mediaRec.stream.getTracks().forEach(tr => tr.stop());
             } else if (isRecording && !mediaRec) {
                 // Web Speech only mode (no MediaRecorder)
                 isRecording = false; setMicState('idle');
-                // Wait for Web Speech final onresult to fire (1000ms is enough for most browsers)
                 setTimeout(() => {
-                    const finalResult = (webSpeechResult || wsr || '').trim();
+                    const finalResult = (webSpeechResult || '').trim();
                     if (finalResult) { setComplaintFromAudio(finalResult, S.selectedLang || S.detectedLang); }
                     else { const m = { en: 'No audio captured — please type.', de: 'Keine Aufnahme.', tr: 'Ses alınamadı — lütfen yazın.' }; toast(m[S.lang] || m.en, 'warn'); }
                     webSpeechResult = '';

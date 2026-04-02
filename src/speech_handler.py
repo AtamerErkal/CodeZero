@@ -109,8 +109,17 @@ class SpeechHandler:
                 region=self.speech_region,
             )
             # AI-102: Enable detailed output for richer result metadata
-            self.speech_config.output_format = (
-                speechsdk.OutputFormat.Detailed
+            self.speech_config.output_format = speechsdk.OutputFormat.Detailed
+            # Give Azure more time to detect speech at the start of the file
+            # (default is 5 s; browser recordings often have 1–2 s of lead-in silence)
+            self.speech_config.set_property(
+                speechsdk.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs,
+                "8000",
+            )
+            # Allow up to 30 s of end-silence before giving up on a long recording
+            self.speech_config.set_property(
+                speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs,
+                "2000",
             )
             self._initialized = True
             logger.info("Azure Speech config initialized (region=%s).", self.speech_region)
@@ -207,6 +216,8 @@ class SpeechHandler:
                         "-ar", "16000",          # 16 kHz — Azure Speech requirement
                         "-ac", "1",              # mono
                         "-sample_fmt", "s16",    # 16-bit PCM
+                        # Normalize + light denoise so Azure handles quiet/noisy mic input
+                        "-af", "afftdn=nf=-25,loudnorm=I=-16:TP=-1.5:LRA=11",
                         wav_path,
                     ],
                     check=True,
@@ -214,7 +225,18 @@ class SpeechHandler:
                     timeout=30,
                 )
                 os.unlink(src_path)
-                logger.info("ffmpeg converted browser audio to WAV: %s", wav_path)
+                wav_size = os.path.getsize(wav_path)
+                logger.info(
+                    "ffmpeg converted browser audio to WAV: %s (%.1f KB)",
+                    wav_path,
+                    wav_size / 1024,
+                )
+                if wav_size < 4096:  # < 4 KB → almost certainly silence
+                    logger.warning(
+                        "WAV file is very small (%.1f KB) — audio may be silent. "
+                        "Check microphone volume in OS settings.",
+                        wav_size / 1024,
+                    )
                 return wav_path
             except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as ffmpeg_err:
                 logger.warning("ffmpeg not available or failed (%s), trying pydub.", ffmpeg_err)
