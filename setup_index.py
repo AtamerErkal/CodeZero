@@ -13,11 +13,6 @@ This script:
   4. Creates or updates the Azure AI Search index with semantic configuration
   5. Uploads all document chunks to the index
 
-AI-102 Concepts:
-  - Knowledge Mining pipeline: Ingest → Enrich → Index → Query
-  - Azure AI Document Intelligence for document cracking
-  - Azure AI Search index creation with semantic ranking
-  - Chunking strategy for RAG (Retrieval-Augmented Generation)
 """
 
 from __future__ import annotations

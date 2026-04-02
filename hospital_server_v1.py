@@ -68,7 +68,6 @@ def _migrate_queue_db():
     except Exception as e:
         logger.warning("DB migration warning: %s", e)
 
-_migrate_queue_db()
 
 app = FastAPI(title="VitalNavAI ER Dashboard", version="1.0")
 app.add_middleware(
@@ -156,8 +155,6 @@ def _move_patients_loop():
         except Exception as _e:
             logger.warning("Patient movement tick error: %s", _e)
 
-_move_thread = _threading.Thread(target=_move_patients_loop, daemon=True, name="PatientMovement")
-_move_thread.start()
 logger.info("Patient movement background thread started.")
 
 
@@ -805,11 +802,11 @@ async def patient_transcribe(audio: UploadFile = File(...), lang: str = Form(def
                         _os.unlink(wav_path)
                     except Exception:
                         pass
-                    if result and result.get(“text”, “”).strip():
-                        logger.info(“Transcribed via Azure Speech (lang=%s): %sâ€¦”, lang or “auto”, result[“text”][:60])
-                        return {“text”: result[“text”], “language”: result.get(“language”, lang or “en-US”)}
+                    if result and result.get("text", "").strip():
+                        logger.info("Transcribed via Azure Speech (lang=%s): %sâ€¦", lang or "auto", result["text"][:60])
+                        return {"text": result["text"], "language": result.get("language", lang or "en-US")}
                     else:
-                        logger.warning(“Azure Speech returned no text â€” falling back to Whisper”)
+                        logger.warning("Azure Speech returned no text â€ falling back to Whisper")
                 else:
                     logger.warning("Audio conversion failed (ffmpeg/pydub missing?) â€” falling back to Whisper")
             else:
@@ -1634,7 +1631,12 @@ if __name__ == "__main__":
         ffmpeg_ok = True
     except Exception:
         ffmpeg_ok = False
+    _migrate_queue_db()
 
+    _move_thread = _threading.Thread(target=_move_patients_loop, daemon=True, name="PatientMovement")
+    _move_thread.start()
+    logger.info("Patient movement background thread started.")
+    
     print("VitalNavAI ER Command Center running on http://localhost:8001")
 
     uvicorn.run(app, host="0.0.0.0", port=8001, reload=False, log_level="info")

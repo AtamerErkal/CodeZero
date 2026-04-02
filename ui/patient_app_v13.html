@@ -4048,7 +4048,7 @@
                 phys_btn_emergency: '⚠️ Show Emergency Options',
                 phys_btn_urgent: '⚡ Find Emergency Department',
                 std_header_title: '✅ Standard Priority Assessment',
-                std_header_sub: 'Your condition has been assessed as Standard (MTS Level 4).',
+                std_header_sub: 'Your condition has been assessed. Please visit a clinic or GP soon.',
                 std_next_title: 'What you should do next',
                 std_next_desc: 'Please schedule an appointment with your family physician as soon as possible. Your assessment has been forwarded to the nearest emergency department for expert physician review.',
                 std_rec_title: '📌 Recommendations',
@@ -4064,7 +4064,18 @@
                 nurg_logged: 'Your assessment has been logged for optional physician review. You will be notified if a physician adjusts your assessment.',
                 nurg_new_assessment: 'Start New Assessment',
                 amb_dispatched_note: 'Ambulance dispatched →',
-                amb_est_arrival: 'est. hospital arrival'
+                amb_est_arrival: 'est. hospital arrival',
+                te_result_label: 'Assessment Result',
+                te_auto_advance: 'Auto-advancing in',
+                te_auto_advance_s: 's…',
+                te_found: 'What we found',
+                te_why: 'Why this assessment',
+                te_do: 'What you should do',
+                te_avoid: 'What you should avoid',
+                te_corrected: 'Triage Level Updated',
+                te_imm_required: 'Immediate response required',
+                te_imm_notified: 'Emergency services have been notified. Do not delay.',
+                te_continue: 'Continue'
             },
             de: {
                 topbarLang: 'DE',
@@ -4227,7 +4238,7 @@
                 phys_btn_emergency: '⚠️ Notfalloptionen anzeigen',
                 phys_btn_urgent: '⚡ Notaufnahme finden',
                 std_header_title: '✅ Standardpriorität Bewertung',
-                std_header_sub: 'Ihr Zustand wurde als Standard eingestuft (MTS-Stufe 4).',
+                std_header_sub: 'Ihr Zustand wurde bewertet. Bitte suchen Sie bald eine Klinik oder einen Arzt auf.',
                 std_next_title: 'Was Sie als nächstes tun sollten',
                 std_next_desc: 'Bitte vereinbaren Sie so bald wie möglich einen Termin bei Ihrem Hausarzt. Ihre Beurteilung wurde zur Überprüfung an die nächste Notaufnahme weitergeleitet.',
                 std_rec_title: '📌 Empfehlungen',
@@ -4243,7 +4254,18 @@
                 nurg_logged: 'Ihre Beurteilung wurde für eine optionale Arztüberprüfung protokolliert. Sie werden benachrichtigt, falls ein Arzt Ihre Beurteilung anpasst.',
                 nurg_new_assessment: 'Neue Bewertung starten',
                 amb_dispatched_note: 'Krankenwagen entsendet →',
-                amb_est_arrival: 'voraussichtl. Ankunft Klinik'
+                amb_est_arrival: 'voraussichtl. Ankunft Klinik',
+                te_result_label: 'Bewertungsergebnis',
+                te_auto_advance: 'Automatisch weiter in',
+                te_auto_advance_s: 'Sek…',
+                te_found: 'Was wir festgestellt haben',
+                te_why: 'Warum diese Bewertung',
+                te_do: 'Was Sie tun sollten',
+                te_avoid: 'Was Sie vermeiden sollten',
+                te_corrected: 'Triage-Level aktualisiert',
+                te_imm_required: 'Sofortige Reaktion erforderlich',
+                te_imm_notified: 'Notfalldienste wurden benachrichtigt. Keine Verzögerung.',
+                te_continue: 'Weiter'
             },
             tr: {
                 topbarLang: 'TR',
@@ -4406,7 +4428,7 @@
                 phys_btn_emergency: '⚠️ Acil Seçeneklerini Göster',
                 phys_btn_urgent: '⚡ Acil Servis Bul',
                 std_header_title: '✅ Standart Öncelik Değerlendirmesi',
-                std_header_sub: 'Durumunuz Standart olarak değerlendirildi (MTS Düzey 4).',
+                std_header_sub: 'Durumunuz değerlendirildi. Lütfen yakın zamanda bir kliniğe veya doktora başvurun.',
                 std_next_title: 'Bundan sonra ne yapmalısınız',
                 std_next_desc: 'Lütfen en kısa sürede aile hekiminizden randevu alın. Değerlendirmeniz uzman doktor incelemesi için en yakın acil servise iletildi.',
                 std_rec_title: '📌 Öneriler',
@@ -4422,7 +4444,18 @@
                 nurg_logged: 'Değerlendirmeniz isteğe bağlı doktor incelemesi için kaydedildi. Bir doktor değerlendirmenizi güncellerse bildirim alacaksınız.',
                 nurg_new_assessment: 'Yeni Değerlendirme Başlat',
                 amb_dispatched_note: 'Ambulans gönderildi →',
-                amb_est_arrival: 'tahmini hastane varışı'
+                amb_est_arrival: 'tahmini hastane varışı',
+                te_result_label: 'Değerlendirme Sonucu',
+                te_auto_advance: 'Otomatik devam',
+                te_auto_advance_s: 'sn…',
+                te_found: 'Bulgular',
+                te_why: 'Bu değerlendirmenin nedeni',
+                te_do: 'Yapmanız gerekenler',
+                te_avoid: 'Yapmamanız gerekenler',
+                te_corrected: 'Triyaj seviyesi güncellendi',
+                te_imm_required: 'Acil müdahale gerekiyor',
+                te_imm_notified: 'Acil servisler haberdar edildi. Gecikmeyiniz.',
+                te_continue: 'Devam'
             },
         };
 
@@ -4828,8 +4861,17 @@
             const spinner = document.getElementById('inputSpinner');
             const spinnerText = document.getElementById('inputSpinnerText');
 
-            if (spinner) spinner.classList.add('visible');
+            // ── PRIMARY PATH: Web Speech API result (instant, no server round-trip) ──
+            // If the browser captured a transcript, use it immediately.
+            if (wsr) {
+                setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang);
+                webSpeechResult = '';
+                return;
+            }
 
+            // ── SECONDARY PATH: Server-side Azure Speech transcription ──
+            // Only reached when Web Speech produced nothing (no API support, blocked mic, etc.)
+            if (spinner) spinner.classList.add('visible');
             const procMessages = { en: 'Processing audio…', de: 'Audio wird verarbeitet…', tr: 'Ses işleniyor…' };
             if (spinnerText) spinnerText.textContent = procMessages[S.lang] || procMessages.en;
 
@@ -4853,23 +4895,16 @@
                     }
                 }
 
-                if (wsr) {
-                    setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang);
-                    webSpeechResult = '';
-                } else {
-                    const m = { en: 'Could not understand audio — please type.', de: 'Audio nicht verstanden.', tr: 'Ses anlaşılamadı — lütfen yazın.' };
-                    toast(m[S.lang] || m.en, 'warn');
-                    setMicState('idle');
-                }
+                // Both paths empty — ask user to type
+                const m = { en: 'Could not understand audio — please type.', de: 'Audio nicht verstanden — bitte tippen.', tr: 'Ses anlaşılamadı — lütfen yazın.' };
+                toast(m[S.lang] || m.en, 'warn');
+                setMicState('idle');
+
             } catch (e) {
                 console.error("Transcription Error:", e);
-                if (wsr) {
-                    setComplaintFromAudio(wsr, S.selectedLang || S.detectedLang);
-                } else {
-                    const m = { en: 'Network error — please type.', de: 'Netzwerkfehler.', tr: 'Bağlantı hatası — lütfen yazın.' };
-                    toast(m[S.lang] || m.en, 'warn');
-                    setMicState('idle');
-                }
+                const m = { en: 'Network error — please type.', de: 'Netzwerkfehler — bitte tippen.', tr: 'Bağlantı hatası — lütfen yazın.' };
+                toast(m[S.lang] || m.en, 'warn');
+                setMicState('idle');
             } finally {
                 if (spinner) spinner.classList.remove('visible');
             }
@@ -6085,22 +6120,29 @@
         function showTriageExplanationCard() {
             const a = S.assessment || {};
             const lvl = normalizeTriage(a.triage_level);
+
+            // STANDARD and NON_URGENT skip this intermediate screen entirely —
+            // their outcome screens already show everything the patient needs.
+            if (lvl === 'STANDARD' || lvl === 'NON_URGENT') {
+                if (lvl === 'STANDARD') showStandardOutcome();
+                else showNonUrgentOutcome();
+                return;
+            }
+
             const meta = MTS_META[lvl] || MTS_META.URGENT;
             const isImmediate = (lvl === 'IMMEDIATE');
 
-            const conditionSummary = a.condition_summary || a.patient_summary || 'Your symptoms have been evaluated.';
+            const conditionSummary = a.condition_summary || a.patient_summary || '';
             const reasoning = a.reasoning || getDefaultReasoning(lvl);
             const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO[lvl] || []).slice(0, 3);
             const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT[lvl] || []).slice(0, 3);
-            const maxWait = (a.max_wait_minutes != null) ? a.max_wait_minutes : meta.max_wait;
             const headerTextCol = meta.textColor;
 
             let html = `
             <div style="background:${meta.color};margin:-24px -20px 0;padding:22px 20px 18px;color:${headerTextCol};">
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.85;margin-bottom:6px;">&#x1F3E5; Your Assessment Result</div>
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.85;margin-bottom:6px;">&#x1F3E5; ${t('te_result_label')}</div>
                 <div class="mts-badge ${meta.badge}" style="margin-bottom:6px;">${meta.emoji} ${meta.label}</div>
-                <div style="font-size:0.78rem;font-weight:600;opacity:0.85;">${escHtml(meta.subtitle)}</div>
-                ${isImmediate ? `<div id="immCountdown" style="font-size:0.72rem;font-weight:800;margin-top:10px;background:rgba(0,0,0,0.22);border-radius:8px;padding:5px 12px;display:inline-block;">Auto-advancing in 3s...</div>` : ''}
+                ${isImmediate ? `<div id="immCountdown" style="font-size:0.72rem;font-weight:800;margin-top:10px;background:rgba(0,0,0,0.22);border-radius:8px;padding:5px 12px;display:inline-block;">${t('te_auto_advance')} 3${t('te_auto_advance_s')}</div>` : ''}
             </div>
 
             <div style="padding:0 0 20px;">
@@ -6108,55 +6150,40 @@
             ${a._triage_upgraded_by_score ? `
             <div style="background:#FFF4E6;border:1.5px solid #FF8C00;border-radius:var(--r-lg);padding:14px 18px;margin:12px 0;display:flex;align-items:flex-start;gap:12px;">
                 <span style="font-size:1.2rem;flex-shrink:0;">&#x26A0;&#xFE0F;</span>
-                <div>
-                    <div style="font-size:0.8rem;font-weight:800;color:#FF8C00;margin-bottom:4px;letter-spacing:0.03em;">TRIAGE LEVEL AUTO-CORRECTED</div>
-                    <div style="font-size:0.82rem;color:#7a4a00;line-height:1.5;">
-                        Your AI risk score (${a.risk_score}/10) was inconsistent with the initial
-                        <strong>${escHtml(a._triage_prev_level || 'lower')}</strong> classification.
-                        Your triage level has been upgraded to
-                        <strong style="color:${meta.color};">${escHtml(meta.label)}</strong>
-                        to ensure appropriate care.
-                    </div>
-                </div>
+                <div style="font-size:0.82rem;font-weight:700;color:#7a4a00;line-height:1.5;">${t('te_corrected')}</div>
             </div>` : ''}
 
+            ${conditionSummary ? `
             <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin:16px 0 12px;">
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4CB; What we found</div>
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4CB; ${t('te_found')}</div>
                 <p style="font-size:0.9rem;color:var(--text);font-weight:500;line-height:1.55;font-style:italic;margin:0;">"${escHtml(conditionSummary)}"</p>
-            </div>
+            </div>` : ''}
 
             <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:12px;">
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4A1; Why this assessment</div>
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4A1; ${t('te_why')}</div>
                 <p style="font-size:0.88rem;color:var(--text-2);line-height:1.6;margin:0;">${escHtml(reasoning)}</p>
             </div>
 
             <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:12px;">
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">&#x1F4CC; What you should do</div>
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">&#x1F4CC; ${t('te_do')}</div>
                 ${doList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x2705;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
                 ${dontList.length ? `
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--danger-text);margin-top:14px;margin-bottom:12px;">&#x26D4; What you should avoid</div>
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--danger-text);margin-top:14px;margin-bottom:12px;">&#x26D4; ${t('te_avoid')}</div>
                 ${dontList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x274C;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
                 ` : ''}
             </div>
 
-            ${maxWait === 0
+            ${isImmediate
                 ? `<div style="background:${meta.color};border-radius:var(--r-lg);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;color:${headerTextCol};">
                     <span style="font-size:1.3rem;">&#x26A1;</span>
-                    <div><div style="font-weight:800;font-size:0.9rem;">Immediate response required</div>
-                    <div style="font-size:0.78rem;opacity:0.85;">Do not delay — emergency services have been notified.</div></div>
+                    <div><div style="font-weight:800;font-size:0.9rem;">${t('te_imm_required')}</div>
+                    <div style="font-size:0.78rem;opacity:0.85;">${t('te_imm_notified')}</div></div>
                    </div>`
-                : `<div style="background:var(--card);border:1.5px solid ${meta.color}45;border-radius:var(--r-lg);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
-                    <span style="font-size:1.3rem;">&#x1F3E5;</span>
-                    <div><div style="font-weight:800;font-size:0.88rem;color:var(--text);">Medical care has been arranged</div>
-                    <div style="font-size:0.75rem;color:var(--text-2);">Manchester Triage System \u2014 Level ${meta.level}</div></div>
-                   </div>`
+                : `<button class="btn btn-primary" onclick="onTriageExplainContinue()"
+                    style="background:${meta.color} !important;border-radius:20px;font-size:1rem;font-weight:800;height:64px;box-shadow:0 8px 24px ${meta.color}55;">
+                    ${t('te_continue')} &#x2192;
+                  </button>`
             }
-
-            ${!isImmediate ? `
-            <button class="btn btn-primary" onclick="onTriageExplainContinue()"
-                style="background:${meta.color} !important;border-radius:20px;font-size:1rem;font-weight:800;height:64px;box-shadow:0 8px 24px ${meta.color}55;">
-                CONTINUE &#x2192;
-            </button>` : ''}
 
             </div>`;
 
@@ -6170,7 +6197,7 @@
                 const countEl = document.getElementById('immCountdown');
                 const timer = setInterval(() => {
                     countdown--;
-                    if (countEl) countEl.textContent = `Auto-advancing in ${countdown}s...`;
+                    if (countEl) countEl.textContent = `${t('te_auto_advance')} ${countdown}${t('te_auto_advance_s')}`;
                     if (countdown <= 0) { clearInterval(timer); onTriageExplainContinue(); }
                 }, 1000);
             }
@@ -6470,11 +6497,6 @@
                 <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">${t('std_rec_title')}</div>
                 ${doList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x2705; <span>${escHtml(item)}</span></div>`).join('')}
                 <div style="margin-top:12px;">${dontList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x274C; <span>${escHtml(item)}</span></div>`).join('')}</div>
-            </div>
-            <div style="background:var(--card);border:1.5px solid rgba(40,167,69,0.25);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
-                <span style="font-size:1.2rem;">&#x23F1;&#xFE0F;</span>
-                <div><div style="font-weight:800;font-size:0.88rem;color:var(--text);">${t('std_time_label')} <span style="color:#28A745;">${t('std_time_val')}</span></div>
-                <div style="font-size:0.75rem;color:var(--text-2);">${t('std_time_sub')}</div></div>
             </div>
             <div id="expertLoopStd"></div>
             <button class="btn btn-secondary" onclick="location.reload()" style="margin-top:16px;height:48px;font-size:0.875rem;opacity:0.7;">${t('std_new_assessment')}</button>
