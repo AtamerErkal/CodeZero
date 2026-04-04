@@ -4075,7 +4075,11 @@
                 te_corrected: 'Triage Level Updated',
                 te_imm_required: 'Immediate response required',
                 te_imm_notified: 'Emergency services have been notified. Do not delay.',
-                te_continue: 'Continue'
+                te_continue: 'Continue',
+                lvl_IMMEDIATE: 'IMMEDIATE', lvl_EMERGENCY: 'EMERGENCY',
+                lvl_URGENT: 'URGENT', lvl_STANDARD: 'STANDARD', lvl_NON_URGENT: 'NON-URGENT',
+                level_word: 'Level',
+                contact_sending: 'Sending…', contact_notified: 'Contact Notified'
             },
             de: {
                 topbarLang: 'DE',
@@ -4265,7 +4269,11 @@
                 te_corrected: 'Triage-Level aktualisiert',
                 te_imm_required: 'Sofortige Reaktion erforderlich',
                 te_imm_notified: 'Notfalldienste wurden benachrichtigt. Keine Verzögerung.',
-                te_continue: 'Weiter'
+                te_continue: 'Weiter',
+                lvl_IMMEDIATE: 'SOFORT', lvl_EMERGENCY: 'NOTFALL',
+                lvl_URGENT: 'DRINGEND', lvl_STANDARD: 'STANDARD', lvl_NON_URGENT: 'NICHT DRINGEND',
+                level_word: 'Stufe',
+                contact_sending: 'Wird gesendet…', contact_notified: 'Kontakt benachrichtigt'
             },
             tr: {
                 topbarLang: 'TR',
@@ -4455,7 +4463,11 @@
                 te_corrected: 'Triyaj seviyesi güncellendi',
                 te_imm_required: 'Acil müdahale gerekiyor',
                 te_imm_notified: 'Acil servisler haberdar edildi. Gecikmeyiniz.',
-                te_continue: 'Devam'
+                te_continue: 'Devam',
+                lvl_IMMEDIATE: 'ACİL', lvl_EMERGENCY: 'ACİL MÜDAHALE',
+                lvl_URGENT: 'ACELİ', lvl_STANDARD: 'STANDART', lvl_NON_URGENT: 'ACİL DEĞİL',
+                level_word: 'Düzey',
+                contact_sending: 'Gönderiliyor…', contact_notified: 'Kişi Bilgilendirildi'
             },
         };
 
@@ -4478,6 +4490,8 @@
             if (vars) Object.keys(vars).forEach(k => { s = s.replace('{' + k + '}', vars[k]); });
             return s;
         }
+        // Returns the triage level name in the current UI language.
+        function tLevel(lvl) { return t('lvl_' + (lvl || 'URGENT')); }
 
         function applyLang() {
             const lb = document.getElementById('topbarLangBadge');
@@ -6113,13 +6127,13 @@
         function notifyContact() {
             const btn = document.getElementById("rs_contactBtn");
             const orig = btn.innerHTML;
-            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Sending...`;
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${t('contact_sending')}`;
             setTimeout(() => {
                 btn.classList.remove("btn-secondary");
                 btn.style.background = "var(--success)";
                 btn.style.color = "#fff";
                 btn.style.borderColor = "var(--success)";
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Contact Notified`;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${t('contact_notified')}`;
             }, 1500);
         }
 
@@ -6185,7 +6199,7 @@
             let html = `
             <div style="background:${meta.color};margin:-24px -20px 0;padding:22px 20px 18px;color:${headerTextCol};">
                 <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.85;margin-bottom:6px;">&#x1F3E5; ${t('te_result_label')}</div>
-                <div class="mts-badge ${meta.badge}" style="margin-bottom:6px;">${meta.emoji} ${meta.label}</div>
+                <div class="mts-badge ${meta.badge}" style="margin-bottom:6px;">${meta.emoji} ${tLevel(lvl)}</div>
                 ${isImmediate ? `<div id="immCountdown" style="font-size:0.72rem;font-weight:800;margin-top:10px;background:rgba(0,0,0,0.22);border-radius:8px;padding:5px 12px;display:inline-block;">${t('te_auto_advance')} 3${t('te_auto_advance_s')}</div>` : ''}
             </div>
 
@@ -6218,11 +6232,15 @@
             </div>
 
             ${isImmediate
-                ? `<div style="background:${meta.color};border-radius:var(--r-lg);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;color:${headerTextCol};">
+                ? `<div style="background:${meta.color};border-radius:var(--r-lg);padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;color:${headerTextCol};">
                     <span style="font-size:1.3rem;">&#x26A1;</span>
                     <div><div style="font-weight:800;font-size:0.9rem;">${t('te_imm_required')}</div>
                     <div style="font-size:0.78rem;opacity:0.85;">${t('te_imm_notified')}</div></div>
-                   </div>`
+                   </div>
+                   <button id="immSkipBtn" class="btn btn-primary" onclick="onTriageExplainContinue()"
+                    style="background:${meta.color} !important;border-radius:20px;font-size:1rem;font-weight:800;height:64px;box-shadow:0 8px 24px ${meta.color}55;margin-bottom:4px;">
+                    ${t('te_continue')} &#x2192;
+                  </button>`
                 : `<button class="btn btn-primary" onclick="onTriageExplainContinue()"
                     style="background:${meta.color} !important;border-radius:20px;font-size:1rem;font-weight:800;height:64px;box-shadow:0 8px 24px ${meta.color}55;">
                     ${t('te_continue')} &#x2192;
@@ -6237,8 +6255,10 @@
             lucide.createIcons();
 
             if (isImmediate) {
-                let countdown = 3;
+                // 8 seconds — enough to read the assessment + still urgent
+                let countdown = 8;
                 const countEl = document.getElementById('immCountdown');
+                if (countEl) countEl.textContent = `${t('te_auto_advance')} ${countdown}${t('te_auto_advance_s')}`;
                 const timer = setInterval(() => {
                     countdown--;
                     if (countEl) countEl.textContent = `${t('te_auto_advance')} ${countdown}${t('te_auto_advance_s')}`;
@@ -6650,32 +6670,43 @@
             </div>`;
 
             let polls = 0;
-            // If regNumber is not set yet (submitToBackend still in flight), wait up
-            // to 30 s for it to become available before starting real API polls.
-            let waitTicks = 0;
-            const MAX_WAIT_TICKS = 30; // 30 × 1 s = 30 s
+            // Track the timestamp of the last shown physician decision to avoid
+            // showing the same update twice (de-duplication across poll ticks).
+            let _lastShownTs = null;
 
             function _doPoll() {
                 polls++;
-                if (polls > 240) { clearInterval(_physicianPollInterval); return; } // ~20 min max
-                if (!S.regNumber) return; // still waiting — try next tick
-                // Bind this poll to the current patient session
+                // Poll for up to ~60 min (720 × 5s ticks or 240 × 15s ticks after first decision)
+                if (polls > 720) { clearInterval(_physicianPollInterval); return; }
+                if (!S.regNumber) return; // submitToBackend still in flight
                 if (!_pollSessionRegNumber) _pollSessionRegNumber = S.regNumber;
-                // Safety: if regNumber changed (new session started), stop
                 if (_pollSessionRegNumber !== S.regNumber) {
-                    clearInterval(_physicianPollInterval);
-                    return;
+                    clearInterval(_physicianPollInterval); return;
                 }
                 fetch(`${API}/api/patient/${encodeURIComponent(S.regNumber)}/status`)
                     .then(res => res.ok ? res.json() : null)
                     .then(data => {
                         if (!data) return;
-                        // Guard: only show decision for the current session's patient
                         if (_pollSessionRegNumber !== S.regNumber) return;
-                        if (data.physician_decision) {
-                            clearInterval(_physicianPollInterval);
-                            handlePhysicianDecision(data, containerId);
-                        }
+
+                        const action = (data.physician_decision || '').toUpperCase();
+
+                        // 'AMBULANCE' is the dispatch note written by the system, not
+                        // a real physician triage decision — skip it silently.
+                        if (!action || action === 'AMBULANCE') return;
+
+                        // De-duplicate: only show if timestamp changed from last shown
+                        const ts = data.override_timestamp || action;
+                        if (ts === _lastShownTs) return;
+                        _lastShownTs = ts;
+
+                        // Slow down polling to 15 s after the first real decision
+                        // (doctor may still make further changes)
+                        clearInterval(_physicianPollInterval);
+                        _physicianPollInterval = setInterval(_doPoll, 15000);
+                        polls = 0; // reset counter so we keep polling for 60 more min
+
+                        handlePhysicianDecision(data, containerId);
                     })
                     .catch(() => { /* silent */ });
             }
@@ -6709,16 +6740,16 @@
             if (!container) return;
 
             let icon, msgText;
-            if (decision === 'APPROVE')    { icon = '&#x2705;'; msgText = `${t('phys_approved_msg')} <strong>${meta.label}</strong>.`; }
-            else if (decision === 'UPGRADE')   { icon = '&#x26A0;&#xFE0F;'; msgText = `<strong>${t('phys_upgraded_msg')}</strong> <strong>${meta.label}</strong>.`; }
-            else                            { icon = '&#x2139;&#xFE0F;'; msgText = `${t('phys_adjusted_msg')} <strong>${meta.label}</strong>.`; }
+            if (decision === 'APPROVE')    { icon = '&#x2705;'; msgText = `${t('phys_approved_msg')} <strong>${tLevel(newLvl)}</strong>.`; }
+            else if (decision === 'UPGRADE')   { icon = '&#x26A0;&#xFE0F;'; msgText = `<strong>${t('phys_upgraded_msg')}</strong> <strong>${tLevel(newLvl)}</strong>.`; }
+            else                            { icon = '&#x2139;&#xFE0F;'; msgText = `${t('phys_adjusted_msg')} <strong>${tLevel(newLvl)}</strong>.`; }
 
             const decDiv = document.createElement('div');
             decDiv.className = 'override-notification';
             decDiv.innerHTML = `
             <div style="background:${meta.color};border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;color:${meta.textColor};" ${decision === 'UPGRADE' ? 'class="upgrade-pulse"' : ''}>
                 <div style="font-size:1rem;font-weight:800;margin-bottom:8px;">${icon} ${msgText}</div>
-                <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 13px;font-size:0.78rem;font-weight:800;">${meta.emoji} ${meta.label} &mdash; Level ${meta.level}</div>
+                <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 13px;font-size:0.78rem;font-weight:800;">${meta.emoji} ${tLevel(newLvl)}</div>
                 ${note ? `<div style="margin-top:12px;background:rgba(255,255,255,0.15);border-radius:10px;padding:12px;font-size:0.85rem;line-height:1.5;"><strong>&#x1F4CB; ${t('phys_note_label')}:</strong> ${escHtml(note)}</div>` : ''}
             </div>`;
             container.appendChild(decDiv);
