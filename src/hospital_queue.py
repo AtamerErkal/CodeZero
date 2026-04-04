@@ -469,6 +469,19 @@ class HospitalQueue:
             logger.error("set_dispatch_note failed: %s", exc)
             return False
 
+    def update_eta(self, patient_id: str, eta_minutes: int) -> None:
+        """Overwrite eta_minutes for a patient (e.g. to store ambulance round-trip ETA)."""
+        try:
+            conn = self._get_connection()
+            conn.execute(
+                "UPDATE patient_queue SET eta_minutes=? WHERE patient_id=?",
+                (eta_minutes, patient_id),
+            )
+            conn.commit()
+            conn.close()
+        except Exception as exc:
+            logger.error("update_eta failed: %s", exc)
+
     def update_location(self, patient_id: str, lat: float, lon: float, eta_minutes: int) -> bool:
         """Update a patient's live location and ETA.
 

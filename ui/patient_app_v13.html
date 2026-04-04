@@ -4014,7 +4014,8 @@
                 amb_header_emg: '⚠️ EMERGENCY — Ambulance dispatched',
                 amb_do_not_move: 'Do NOT move unless you are in immediate danger.',
                 amb_en_route: 'Ambulance En Route',
-                amb_eta_label: 'Estimated arrival',
+                amb_eta_label: 'Ambulance arriving at you in',
+                amb_hosp_eta_label: 'Est. hospital arrival',
                 amb_dispatched: 'Dispatched',
                 amb_arriving: 'Arriving',
                 amb_while_wait: '📋 While you wait',
@@ -4208,7 +4209,8 @@
                 amb_header_emg: '⚠️ NOTFALL — Krankenwagen alarmiert',
                 amb_do_not_move: 'Bewegen Sie sich NICHT, es sei denn, Sie sind in unmittelbarer Gefahr.',
                 amb_en_route: 'Krankenwagen unterwegs',
-                amb_eta_label: 'Voraussichtliche Ankunft',
+                amb_eta_label: 'Krankenwagen bei Ihnen in',
+                amb_hosp_eta_label: 'Voraussichtl. Krankenhausankunft',
                 amb_dispatched: 'Alarmiert',
                 amb_arriving: 'Ankunft',
                 amb_while_wait: '📋 Während Sie warten',
@@ -4402,7 +4404,8 @@
                 amb_header_emg: '⚠️ ACİL — Ambulans yollandı',
                 amb_do_not_move: 'Anlık tehlikede değilseniz HAREKET ETMEYİN.',
                 amb_en_route: 'Ambulans Yolda',
-                amb_eta_label: 'Tahmini varış',
+                amb_eta_label: 'Ambulans size geliyor',
+                amb_hosp_eta_label: 'Tahmini hastaneye varış',
                 amb_dispatched: 'Yollandı',
                 amb_arriving: 'Geliyor',
                 amb_while_wait: '📋 Beklerken yapılacaklar',
@@ -6301,13 +6304,13 @@
         async function showImmediateAlert() {
             await _ensureHospitalsLoaded();
             const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
-            S.ambEtaMinutes = hosp ? Math.max(3, hosp.eta_minutes || 10) : 10;
+            S.ambEtaMinutes = hosp ? Math.max(3, hosp.eta_minutes || 10) : 10; // ambulance → patient
             S.ambHospName = hosp ? hosp.name : 'Nearest Emergency Department';
             S.ambHospAddr = hosp ? hosp.address : '';
             S.ambIsImmediate = true;
-            // Estimated total arrival: ambulance to patient + ~5 min scene + transport to hospital
             const hospEta = hosp ? (hosp.eta_minutes || S.ambEtaMinutes) : S.ambEtaMinutes;
-            S._ambulanceNote = `🚑 ${t('amb_dispatched_note')} ${S.ambHospName} — ${t('amb_est_arrival')} ~${S.ambEtaMinutes + 5 + hospEta} min`;
+            S.ambTotalEta = S.ambEtaMinutes + 5 + hospEta; // ambulance → patient → hospital
+            S._ambulanceNote = `🚑 ${t('amb_dispatched_note')} ${S.ambHospName} — ${t('amb_est_arrival')} ~${S.ambTotalEta} min`;
             submitToBackend().catch(() => {});
             showAmbulanceTracking(true);
         }
@@ -6355,7 +6358,8 @@
                 S.ambHospAddr = hosp ? hosp.address : '';
                 S.ambIsImmediate = false;
                 const hospEta = hosp ? (hosp.eta_minutes || S.ambEtaMinutes) : S.ambEtaMinutes;
-                S._ambulanceNote = `🚑 ${t('amb_dispatched_note')} ${S.ambHospName} — ${t('amb_est_arrival')} ~${S.ambEtaMinutes + 5 + hospEta} min`;
+                S.ambTotalEta = S.ambEtaMinutes + 5 + hospEta;
+                S._ambulanceNote = `🚑 ${t('amb_dispatched_note')} ${S.ambHospName} — ${t('amb_est_arrival')} ~${S.ambTotalEta} min`;
                 submitToBackend().catch(() => {});
                 showAmbulanceTracking(false);
             } else {
@@ -6397,9 +6401,10 @@
                 <div style="font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-3);margin-bottom:6px;">&#x1F691; ${t('amb_en_route')}</div>
                 <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:2px;">${hospName}</div>
                 ${hospAddr ? `<div style="font-size:0.8rem;color:var(--text-2);margin-bottom:14px;">&#x1F4CD; ${hospAddr}</div>` : '<div style="margin-bottom:14px;"></div>'}
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-                    <div style="font-size:0.78rem;font-weight:700;color:var(--text-2);">&#x23F1;&#xFE0F; ${t('amb_eta_label')}</div>
-                    <div id="ambEtaDisplay" style="font-size:1.3rem;font-weight:900;color:${headerColor};">~${ambEta} min</div>
+                <div style="font-size:0.72rem;font-weight:700;color:var(--text-2);margin-bottom:4px;">&#x1F691; ${t('amb_eta_label')}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <div id="ambEtaDisplay" style="font-size:1.5rem;font-weight:900;color:${headerColor};">~${ambEta} min</div>
+                    ${S.ambTotalEta ? `<div style="font-size:0.75rem;color:var(--text-2);text-align:right;">🏥 ${t('amb_hosp_eta_label')}<br><strong style="font-size:0.95rem;color:var(--text);">~${S.ambTotalEta} min</strong></div>` : ''}
                 </div>
                 <div class="amb-progress-track">
                     <div class="amb-progress-fill" id="ambProgressFill" style="width:4%;background:linear-gradient(90deg,${headerColor},${gradEnd});"></div>
@@ -6636,7 +6641,8 @@
                         has_photo: (S.photos || []).length > 0, photo_count: (S.photos || []).length,
                         media: mediaArr, reg_number: S.regNumber,
                         health_number: S.healthNumber || null, data_consent: S.dataConsent !== false,
-                        ambulance_note: S._ambulanceNote || null
+                        ambulance_note: S._ambulanceNote || null,
+                        ambulance_total_eta: S.ambTotalEta || null
                     })
                 });
             } catch(e) { console.warn('Backend submit failed (non-critical):', e); S._submitted = false; }
@@ -6695,10 +6701,13 @@
                         // a real physician triage decision — skip it silently.
                         if (!action || action === 'AMBULANCE') return;
 
-                        // De-duplicate: only show if timestamp changed from last shown
-                        const ts = data.override_timestamp || action;
-                        if (ts === _lastShownTs) return;
-                        _lastShownTs = ts;
+                        // De-duplicate on note CONTENT, not timestamp.
+                        // updated_at changes every time the movement thread repositions the
+                        // patient — making timestamp-based de-dup fire on every movement tick.
+                        const latestEntry = (data.physician_note || '').split('\n---\n')[0].trim();
+                        const noteKey = latestEntry || action;
+                        if (noteKey === _lastShownTs) return;
+                        _lastShownTs = noteKey;
 
                         // Slow down polling to 15 s after the first real decision
                         // (doctor may still make further changes)
@@ -6728,7 +6737,13 @@
         function showPhysicianDecisionCard(data, containerId) {
             const decision = (data.physician_decision || '').toUpperCase();
             const newLvl = data.new_triage_level ? normalizeTriage(data.new_triage_level) : normalizeTriage(data.ai_triage_level);
-            const note = data.physician_note || null;
+            // Extract only the latest entry from the cumulative note log.
+            // The full log is for the dashboard; patients only need to see the latest message.
+            const _rawNote = data.physician_note || '';
+            const _latestEntry = _rawNote.split('\n---\n')[0].trim();
+            // Strip the [timestamp] [ACTION→LEVEL] prefix to get the doctor's actual message
+            const _noteMatch = _latestEntry.match(/^\[.*?\]\s*\[.*?\]\s*([\s\S]+)$/);
+            const note = (_noteMatch ? _noteMatch[1].trim() : _latestEntry) || null;
             const meta = MTS_META[newLvl] || MTS_META.URGENT;
 
             // Always update S so any subsequent navigation shows the physician-confirmed level

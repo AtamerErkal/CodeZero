@@ -227,6 +227,7 @@ class SubmitRequest(_BM):
     demographics:       _Opt[dict] = None
     data_consent:       _Opt[bool] = None
     ambulance_note:     _Opt[str] = None
+    ambulance_total_eta: _Opt[int] = None  # total round-trip ETA (ambulance→patient→hospital)
 
 # â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -724,9 +725,13 @@ def patient_submit(body: SubmitRequest):
 
     hq.add_patient(record)
 
-    # Store ambulance dispatch note (IMMEDIATE / EMERGENCY+ambulance flows)
+    # Store ambulance dispatch note and update ETA to round-trip total
     if body.ambulance_note and body.ambulance_note.strip():
         hq.set_dispatch_note(record["patient_id"], body.ambulance_note.strip())
+    if body.ambulance_total_eta and body.ambulance_total_eta > 0:
+        # Replace GPS driving time with the full ambulance round-trip ETA so the
+        # dashboard arrival timer reflects the real expected arrival time.
+        hq.update_eta(record["patient_id"], int(body.ambulance_total_eta))
 
     logger.info(
         "Patient submitted: %s â†’ %s (lang=%s consent=%s ambulance=%s)",
