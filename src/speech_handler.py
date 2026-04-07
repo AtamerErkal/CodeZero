@@ -3,12 +3,6 @@ Speech Handler Module
 =====================
 Handles voice input via Azure Speech Services with automatic language
 detection. Supports 6+ languages for the patient-facing triage app.
-
-AI-102 Concepts:
-  - Azure Cognitive Services Speech SDK
-  - Speech-to-Text (STT) with real-time recognition
-  - AutoDetectSourceLanguageConfig for multi-language support
-  - SpeechRecognizer with audio configuration
 """
 
 from __future__ import annotations

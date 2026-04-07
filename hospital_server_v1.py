@@ -81,6 +81,9 @@ from fastapi.staticfiles import StaticFiles
 docs_dir = ROOT / "docs"
 if docs_dir.exists():
     app.mount("/docs", StaticFiles(directory=str(docs_dir)), name="docs")
+ui_dir = ROOT / "ui"
+if ui_dir.exists():
+    app.mount("/ui", StaticFiles(directory=str(ui_dir)), name="ui")
 
 NAT_FLAG = {"DE": "🇩🇪", "TR": "🇹🇷", "UK": "🇬🇧", "GB": "🇬🇧"}
 
@@ -109,7 +112,8 @@ def _move_patients_loop():
             conn = _sqlite3.connect(str(hq.db_path))
             conn.row_factory = _sqlite3.Row
             rows = conn.execute(
-                "SELECT patient_id, location_lat, location_lon, eta_minutes "
+                "SELECT patient_id, location_lat, location_lon, eta_minutes, override_action, "
+                "amb_eta_patient, amb_dispatch_at "
                 "FROM patient_queue WHERE status = 'incoming' AND location_lat IS NOT NULL"
             ).fetchall()
 
@@ -120,6 +124,31 @@ def _move_patients_loop():
                 lat = row["location_lat"]
                 lon = row["location_lon"]
 
+                # ── AMBULANCE patients: elapsed-time countdown, patient stays stationary ──
+                # Derive remaining ETA from dispatch timestamp so it always matches
+                # what the patient app shows, even for patients submitted before restart.
+                if row["override_action"] == "AMBULANCE":
+                    amb_orig = row["amb_eta_patient"]   # original one-way ETA (static)
+                    dispatch_ts = row["amb_dispatch_at"]
+                    # Skip if dispatch wasn't fully written yet (avoids partial-state calc)
+                    if not amb_orig or not dispatch_ts:
+                        continue
+                    try:
+                        dispatch_dt = _dt.datetime.fromisoformat(dispatch_ts.replace("Z", "+00:00"))
+                        now_dt = _dt.datetime.now(_dt.timezone.utc)
+                        elapsed_min = (now_dt - dispatch_dt).total_seconds() / 60.0
+                        new_eta = max(0, round(amb_orig - elapsed_min))
+                    except Exception:
+                        new_eta = max(0, round((row["eta_minutes"] or 0) - TICK / 60.0))
+                    conn.execute(
+                        "UPDATE patient_queue SET eta_minutes=?, updated_at=? WHERE patient_id=?",
+                        (new_eta, now_iso, pid)
+                    )
+                    if new_eta == 0:
+                        logger.info("Patient %s ambulance arrived (eta→0).", pid)
+                    continue
+
+                # ── Normal patients: GPS-based movement toward hospital ──
                 # Actual remaining distance (in km)
                 dlat = HOSPITAL_LAT - lat
                 dlon = HOSPITAL_LON - lon
@@ -226,8 +255,9 @@ class SubmitRequest(_BM):
     health_number:      _Opt[str] = None
     demographics:       _Opt[dict] = None
     data_consent:       _Opt[bool] = None
-    ambulance_note:     _Opt[str] = None
-    ambulance_total_eta: _Opt[int] = None  # total round-trip ETA (ambulance→patient→hospital)
+    ambulance_note:          _Opt[str] = None
+    ambulance_total_eta:     _Opt[int] = None  # total round-trip ETA (ambulance→patient→hospital)
+    ambulance_to_patient_eta: _Opt[int] = None  # ambulance→patient leg only
 
 # â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -725,13 +755,21 @@ def patient_submit(body: SubmitRequest):
 
     hq.add_patient(record)
 
-    # Store ambulance dispatch note and update ETA to round-trip total
+    # Store ambulance dispatch atomically (one SQL update — no race with movement thread)
     if body.ambulance_note and body.ambulance_note.strip():
-        hq.set_dispatch_note(record["patient_id"], body.ambulance_note.strip())
-    if body.ambulance_total_eta and body.ambulance_total_eta > 0:
-        # Replace GPS driving time with the full ambulance round-trip ETA so the
-        # dashboard arrival timer reflects the real expected arrival time.
-        hq.update_eta(record["patient_id"], int(body.ambulance_total_eta))
+        if body.ambulance_to_patient_eta and body.ambulance_to_patient_eta > 0:
+            # New path: set everything in one atomic call so the movement thread
+            # never sees override_action='AMBULANCE' with amb_eta_patient still NULL.
+            hq.setup_ambulance_dispatch(
+                record["patient_id"],
+                body.ambulance_note.strip(),
+                int(body.ambulance_to_patient_eta),
+            )
+        else:
+            # Fallback for old clients that don't send ambulance_to_patient_eta
+            hq.set_dispatch_note(record["patient_id"], body.ambulance_note.strip())
+            if body.ambulance_total_eta and body.ambulance_total_eta > 0:
+                hq.update_eta(record["patient_id"], int(body.ambulance_total_eta))
 
     logger.info(
         "Patient submitted: %s â†’ %s (lang=%s consent=%s ambulance=%s)",
@@ -1501,7 +1539,7 @@ def reset_health_db():
 
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
-    path = ROOT / "ui" / "hospital_dashboard_v9.html"
+    path = ROOT / "ui" / "hospital_dashboard_v10.html"
     if path.exists():
         return HTMLResponse(path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Dashboard HTML not found</h1>", status_code=404)
@@ -1522,7 +1560,7 @@ def serve_patient_app_plain():
 
 
 @app.get("/patient_app_v13.html", response_class=HTMLResponse)
-def serve_patient_app_v13():
+def serve_patient_app_v14():
     """Direct filename access — convenience alias."""
     return serve_patient_app()
 
@@ -1555,7 +1593,7 @@ def api_ai_status():
     azure_key  = bool(_os.getenv("AZURE_OPENAI_KEY", "").strip()) and _os.getenv("AZURE_OPENAI_KEY") != "your-key"
     azure_ep   = bool(_os.getenv("AZURE_OPENAI_ENDPOINT", "").strip())
     openai_key = bool(_os.getenv("OPENAI_API_KEY", "").strip()) and _os.getenv("OPENAI_API_KEY") != "your-key"
-    deployment = _os.getenv("GPT_DEPLOYMENT", "gpt-4")
+    deployment = _os.getenv("GPT_DEPLOYMENT", "gpt-5.4-mini")
 
     init_error = ""
     if "triage" in _patient_services:

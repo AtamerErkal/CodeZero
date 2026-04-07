@@ -3136,7 +3136,17 @@
       const tc = TRIAGE_CLASS[lvl] || 'U';
       const eta = p.eta_minutes;
       const etaCls = eta && eta <= 5 ? 'crit' : eta && eta <= 10 ? 'urg' : 'ok';
-      const etaLabel = eta ? `${eta}<span style="font-size:0.6rem;font-weight:600;margin-left:2px;">min</span>` : (p.arrival_time ? '✓' : '—');
+      const _isAmb = p.override_action === 'AMBULANCE';
+      // Compact card: compute live ETA same way as full card
+      const _ambPOrig = p.amb_eta_patient;
+      const _ambDispAt = p.amb_dispatch_at;
+      const _cLiveEta = (_isAmb && _ambPOrig && _ambDispAt)
+          ? Math.max(0, Math.round(_ambPOrig - (Date.now() - new Date(_ambDispAt).getTime()) / 60000))
+          : null;
+      const _cEta = _isAmb ? _cLiveEta : eta;
+      const etaLabel = _isAmb
+        ? (_cEta != null ? `🚑${_cEta}<span style="font-size:0.6rem;font-weight:600;margin-left:1px;">m</span>` : '🚑—')
+        : eta ? `${eta}<span style="font-size:0.6rem;font-weight:600;margin-left:2px;">min</span>` : (p.arrival_time ? '✓' : '—');
       const name = p.full_name || pid;
       const comp = p.chief_complaint || p.complaint_text || '';
       const risk = p.risk_score;
@@ -3350,7 +3360,14 @@
       pts.forEach(p => {
         const pid = p.patient_id; if (!pid) return;
         const existing = document.getElementById('card-' + pid);
-        const eta = p.eta_minutes;
+        // Compute live ETA: ambulance patients use dispatch-time formula; others use eta_minutes
+        const pIsAmb2 = p.override_action === 'AMBULANCE';
+        const pAmbOrig = p.amb_eta_patient;
+        const pDispAt = p.amb_dispatch_at;
+        const liveEta = (pIsAmb2 && pAmbOrig && pDispAt)
+            ? Math.max(0, Math.round(pAmbOrig - (Date.now() - new Date(pDispAt).getTime()) / 60000))
+            : p.eta_minutes;
+        const eta = liveEta;
         const etaCls = eta && eta <= 5 ? 'crit' : eta && eta <= 10 ? 'urg' : 'ok';
 
         if (existing) {
@@ -3392,14 +3409,20 @@
             pill.textContent = STATUS_MAP[p.status] || p.status || 'Incoming';
           }
 
-          // Patch ETA
+          // Patch ETA (eta = liveEta, already computed dispatch-based for ambulance)
           const etaEl = existing.querySelector('.eta-num');
           if (etaEl) {
             etaEl.className = 'eta-num ' + etaCls;
             if (compactMode) {
-              etaEl.innerHTML = eta ? `${eta}<span style="font-size:0.6rem;font-weight:600;margin-left:2px;">min</span>` : (p.arrival_time ? '✓' : '—');
+              etaEl.innerHTML = pIsAmb2 && eta != null
+                ? `🚑${eta}<span style="font-size:0.6rem;font-weight:600;margin-left:1px;">m</span>`
+                : eta ? `${eta}<span style="font-size:0.6rem;font-weight:600;margin-left:2px;">min</span>` : (p.arrival_time ? '✓' : '—');
             } else {
-              etaEl.textContent = eta ? eta + ' min' : (p.arrival_time ? 'ARRIVED' : '—');
+              etaEl.textContent = eta != null ? `${eta} min` : (p.arrival_time ? 'ARRIVED' : '—');
+              if (pIsAmb2 && pAmbOrig && eta != null) {
+                const totalEl = existing.querySelector('.amb-total-line');
+                if (totalEl) totalEl.textContent = `~${Math.max(0, eta + 5 + pAmbOrig)} min`;
+              }
             }
           }
 
@@ -3517,9 +3540,27 @@
       const avIco = sex_lc === 'female' ? '👩' : '👨';
 
       // ETA
-      const etaTxt = eta ? (eta + ' min') : (p.arrival_time ? 'ARRIVED' : '—');
-      const etaCls = eta && eta <= 5 ? 'crit' : eta && eta <= 10 ? 'urg' : 'ok';
-      const etaPct = eta ? Math.min(100, Math.max(3, 100 - (eta / 60) * 100)) : (p.arrival_time ? 100 : 0);
+      const isAmbulance = p.override_action === 'AMBULANCE';
+      const ambPatEta = p.amb_eta_patient;   // original one-way dispatch ETA (static, minutes)
+      const dispatchAt = p.amb_dispatch_at;  // ISO timestamp when ambulance was dispatched
+
+      // For AMBULANCE patients: compute remaining time directly from dispatch timestamp.
+      // This stays in exact sync with the patient app's countdown (same formula, same data).
+      // Does NOT depend on eta_minutes, which can be stale from GPS-based movement thread.
+      const ambLiveEta = (isAmbulance && ambPatEta && dispatchAt)
+          ? Math.max(0, Math.round(ambPatEta - (Date.now() - new Date(dispatchAt).getTime()) / 60000))
+          : null;
+
+      // displayEta: what to show on the card. For ambulance → live dispatch-based calc.
+      const displayEta = (isAmbulance && ambLiveEta != null) ? ambLiveEta : eta;
+      // Total hospital arrival = remaining ambulance time + 5 min on-scene + return trip
+      const ambTotalEta = (isAmbulance && ambLiveEta != null && ambPatEta)
+          ? Math.max(0, ambLiveEta + 5 + ambPatEta)
+          : null;
+
+      const etaTxt = displayEta != null ? (displayEta + ' min') : (p.arrival_time ? 'ARRIVED' : '—');
+      const etaCls = displayEta && displayEta <= 5 ? 'crit' : displayEta && displayEta <= 10 ? 'urg' : 'ok';
+      const etaPct = displayEta ? Math.min(100, Math.max(3, 100 - (displayEta / 60) * 100)) : (p.arrival_time ? 100 : 0);
 
       // Risk chip
       const rCls = risk >= 8 ? 'risk-hi' : risk >= 5 ? 'risk-md' : 'risk-lo';
@@ -3654,9 +3695,15 @@
 
       <div style="text-align: right; display: flex; flex-direction: column; justify-content: center; height: 130px;">
           <div style="display: flex; flex-direction: column; align-items: flex-end;">
-              <div class="eta-num ${etaCls}" style="font-size: 1.8rem; line-height: 1; font-weight: 900;">${etaTxt}</div>
+              ${isAmbulance ? `
+              <div style="font-size:0.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:2px;">🚑 Ambulance → Patient</div>
+              <div class="eta-num ${etaCls}" style="font-size:1.8rem;line-height:1;font-weight:900;">${etaTxt}</div>
+              ${ambTotalEta != null ? `
+              <div style="font-size:0.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-top:6px;margin-bottom:2px;">🏥 Est. Hospital Arrival</div>
+              <div class="amb-total-line" style="font-size:1rem;font-weight:800;color:var(--text2);">~${ambTotalEta} min</div>` : ''}
+              ` : `<div class="eta-num ${etaCls}" style="font-size: 1.8rem; line-height: 1; font-weight: 900;">${etaTxt}</div>`}
           </div>
-          <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-4); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;">Arrival Time</div>
+          <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-4); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;">${isAmbulance ? 'Ambulance Info' : 'Arrival Time'}</div>
           <div style="margin-top: 15px;">${stPill}</div>
       </div>
 
@@ -4563,7 +4610,15 @@
                         <div style="margin-bottom:6px">${TRIAGE_BADGE[p.triage_level] || p.triage_level}</div>
                         ${p.chief_complaint ? `<div style="font-size:13px;color:#334155;margin-bottom:6px;line-height:1.4">💬 ${h(p.chief_complaint)}</div>` : ''}
                         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                            ${p.eta_minutes ? `<div style="font-size:13px;font-weight:700;color:${p.eta_minutes <= 5 ? '#B91C1C' : col}">⏱ ${p.eta_minutes} min</div>` : '<div style="font-size:13px;font-weight:700;color:#047857">✅ ARRIVED</div>'}
+                            ${(() => {
+                              if (p.override_action === 'AMBULANCE') {
+                                const _o = p.amb_eta_patient, _d = p.amb_dispatch_at;
+                                const _rem = (_o && _d) ? Math.max(0, Math.round(_o - (Date.now() - new Date(_d).getTime()) / 60000)) : p.eta_minutes;
+                                const _tot = (_rem != null && _o) ? Math.max(0, _rem + 5 + _o) : null;
+                                return `<div style="font-size:13px;font-weight:700;color:${_rem <= 5 ? '#B91C1C' : col}">🚑 ${_rem != null ? _rem + ' min' : '—'} to patient</div>${_tot != null ? `<div style="font-size:12px;color:#64748b">🏥 ~${_tot} min total</div>` : ''}`;
+                              }
+                              return p.eta_minutes ? `<div style="font-size:13px;font-weight:700;color:${p.eta_minutes <= 5 ? '#B91C1C' : col}">⏱ ${p.eta_minutes} min</div>` : '<div style="font-size:13px;font-weight:700;color:#047857">✅ ARRIVED</div>';
+                            })()}
                             ${p.blood_type ? `<span style="font-size:12px;background:#FFF5F5;color:#9B2C2C;padding:2px 7px;border-radius:4px;border:1px solid #FED7D7">🩸 ${h(p.blood_type)}</span>` : ''}
                         </div>
                     </div>`;

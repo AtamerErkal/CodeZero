@@ -1,0 +1,2891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VitalNav.ai - Hospital Command Center v10</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            night: "#0b1220",
+            surface: "#0f172a",
+            surface2: "#111827",
+            cyan: "#22d3ee",
+            teal: "#14b8a6",
+            emer: "#ef4444",
+            urgent: "#f59e0b",
+            delayed: "#facc15",
+            stable: "#10b981",
+            routine: "#60a5fa",
+            text1: "#e5e7eb",
+            text2: "#94a3b8"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --glass: rgba(15, 23, 42, 0.72);
+      --glass-border: rgba(148, 163, 184, 0.22);
+    }
+    body {
+      font-family: Inter, Manrope, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(1200px 700px at 5% -5%, rgba(20, 184, 166, 0.16), transparent 50%),
+        radial-gradient(1000px 500px at 100% 0%, rgba(34, 211, 238, 0.1), transparent 45%),
+        #0b1220;
+    }
+    .glass {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(2, 8, 23, 0.35);
+      transition: all 0.3s ease;
+    }
+    .glass:hover {
+      border-color: rgba(34, 211, 238, 0.4);
+      box-shadow: 0 10px 40px rgba(34, 211, 238, 0.15);
+    }
+    /* Glow effects for KPI cards */
+    .glow-emergency { box-shadow: 0 0 30px rgba(239, 68, 68, 0.3), 0 10px 30px rgba(2, 8, 23, 0.35); border-color: rgba(239, 68, 68, 0.5); }
+    .glow-urgent { box-shadow: 0 0 30px rgba(245, 158, 11, 0.3), 0 10px 30px rgba(2, 8, 23, 0.35); border-color: rgba(245, 158, 11, 0.5); }
+    .glow-routine { box-shadow: 0 0 30px rgba(96, 165, 250, 0.3), 0 10px 30px rgba(2, 8, 23, 0.35); border-color: rgba(96, 165, 250, 0.5); }
+    .glow-stable { box-shadow: 0 0 30px rgba(16, 185, 129, 0.3), 0 10px 30px rgba(2, 8, 23, 0.35); border-color: rgba(16, 185, 129, 0.5); }
+    .glow-teal { box-shadow: 0 0 30px rgba(20, 184, 166, 0.3), 0 10px 30px rgba(2, 8, 23, 0.35); border-color: rgba(20, 184, 166, 0.5); }
+    .glow-cyan { box-shadow: 0 0 30px rgba(34, 211, 238, 0.3), 0 10px 30px rgba(2, 8, 23, 0.35); border-color: rgba(34, 211, 238, 0.5); }
+    /* Skeleton loading animation */
+    @keyframes skeleton-pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, rgba(148, 163, 184, 0.1) 25%, rgba(148, 163, 184, 0.2) 50%, rgba(148, 163, 184, 0.1) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 1.5s ease-in-out infinite;
+      border-radius: 8px;
+    }
+    .skeleton-text { height: 1em; margin-bottom: 0.5em; }
+    .skeleton-title { height: 2em; width: 60%; margin-bottom: 0.5em; }
+    /* Delta indicators */
+    .delta-up { color: #10b981; }
+    .delta-down { color: #ef4444; }
+    .delta-neutral { color: #94a3b8; }
+    /* Sparkline container */
+    .sparkline-container { height: 30px; margin-top: 8px; }
+    .active-nav {
+      background: linear-gradient(90deg, rgba(34, 211, 238, 0.18), rgba(34, 211, 238, 0.04));
+      border: 1px solid rgba(34, 211, 238, 0.35);
+      color: #e5e7eb;
+    }
+    .chip {
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 9999px;
+      padding: 0.18rem 0.6rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    .triage-I { border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.09); }
+    .triage-E { border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.10); }
+    .triage-U { border-color: rgba(250,204,21,.45); background: rgba(250,204,21,.10); }
+    .triage-S { border-color: rgba(16,185,129,.45); background: rgba(16,185,129,.10); }
+    .triage-N { border-color: rgba(96,165,250,.45); background: rgba(96,165,250,.10); }
+    .mono { font-variant-numeric: tabular-nums; }
+    /* Collapsible sidebar */
+    .sidebar-collapsed { width: 72px !important; padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+    .sidebar-collapsed .sidebar-brand-text { display: none; }
+    .sidebar-collapsed .sidebar-label { display: none; }
+    .sidebar-collapsed .nav-btn { justify-content: center; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+    .sidebar-collapsed .system-health { display: none; }
+    .sidebar-toggle { position: absolute; right: -12px; top: 80px; z-index: 50; width: 24px; height: 24px; border-radius: 50%; background: var(--glass); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+    .sidebar-toggle:hover { background: rgba(34, 211, 238, 0.2); border-color: rgba(34, 211, 238, 0.5); }
+    .hidden-pane { display: none; }
+    /* Leaflet marker pulse */
+    @keyframes marker-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .5; transform: scale(1.3); }
+    }
+    @keyframes emgBannerIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes emgPulse { from { opacity: 1; } to { opacity: .6; } }
+    @keyframes emgFlash { 0% { opacity: .7; } 100% { opacity: 0; } }
+    @keyframes edgeGlow { 0%,100% { box-shadow: inset 0 0 40px rgba(220,38,38,.15); } 50% { box-shadow: inset 0 0 80px rgba(220,38,38,.35); } }
+    body.emg-alert { animation: edgeGlow 1s ease-in-out 6 alternate; }
+    /* KPI active highlight */
+    .kpi-active { outline: 2px solid rgba(34,211,238,.6) !important; box-shadow: 0 0 20px rgba(34,211,238,.2) !important; }
+    /* Leaflet popup dark theme override */
+    .leaflet-popup-content-wrapper { background: #1e293b !important; color: #e5e7eb !important; border-radius: 12px !important; border: 1px solid rgba(148,163,184,.22) !important; box-shadow: 0 10px 30px rgba(2,8,23,.5) !important; }
+    .leaflet-popup-tip { background: #1e293b !important; }
+    .leaflet-popup-close-button { color: #94a3b8 !important; }
+  </style>
+</head>
+<body class="min-h-screen text-text1">
+  <div class="flex min-h-screen">
+    <aside id="sidebar" class="hidden xl:flex xl:w-[280px] flex-col border-r border-slate-700/50 bg-surface/60 px-5 py-6 backdrop-blur-md transition-all duration-300 relative">
+      <div class="sidebar-toggle" onclick="toggleSidebar()">
+        <svg id="sidebar-chevron" class="w-4 h-4 text-text2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </div>
+      <div class="mb-8 flex items-center gap-3">
+        <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan to-teal text-night shrink-0">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12h3l2-4 3 8 2-4h6" />
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+          </svg>
+        </div>
+        <div class="sidebar-brand-text">
+          <p class="text-lg font-semibold tracking-tight">VitalNav.ai</p>
+          <p class="text-xs text-text2">ER Command Center</p>
+        </div>
+      </div>
+
+      <nav class="space-y-1 text-sm text-text2" id="side-nav">
+        <button data-tab="dashboard" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left active-nav flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          <span class="sidebar-label">Dashboard</span>
+        </button>
+        <button data-tab="incoming" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3 relative">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span class="sidebar-label">Incoming Patients</span>
+          <span id="nav-emg-badge" class="hidden absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full bg-emer text-white text-[10px] font-bold flex items-center justify-center px-1 animate-pulse"></span>
+        </button>
+        <button data-tab="tracking" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span class="sidebar-label">Live Tracking</span>
+        </button>
+        <button data-tab="triage" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="sidebar-label">Triage Queue</span>
+        </button>
+        <button data-tab="doctor" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          <span class="sidebar-label">Doctor Panel</span>
+        </button>
+        <button data-tab="reports" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span class="sidebar-label">Reports</span>
+        </button>
+        <button data-tab="analytics" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+          <span class="sidebar-label">Analytics</span>
+        </button>
+        <button data-tab="admin" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+          <span class="sidebar-label">Admin</span>
+        </button>
+        <button data-tab="settings" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span class="sidebar-label">Settings</span>
+        </button>
+      </nav>
+      <div class="mt-auto rounded-2xl border border-teal/30 bg-teal/10 p-4 system-health">
+        <p class="text-xs uppercase tracking-widest text-teal">System Health</p>
+        <p class="mt-1 text-sm font-semibold">AI Engine: Stable</p>
+        <p class="text-xs text-text2">Refresh cycle: 8s</p>
+      </div>
+    </aside>
+
+    <main class="flex-1">
+      <header class="sticky top-0 z-20 border-b border-slate-700/50 bg-surface/55 px-4 py-3 backdrop-blur-md md:px-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="relative w-full max-w-xl">
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-text3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input id="search-input" class="w-full rounded-xl border border-slate-600/70 bg-surface2/70 py-3 pl-11 pr-20 text-sm placeholder:text-text3 focus:border-cyan focus:outline-none transition-all" placeholder="Search patient ID or symptom..." />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-slate-600 px-2 py-0.5 text-xs text-text2">⌘K</span>
+          </div>
+          <div class="flex items-center gap-2 md:gap-3">
+            <!-- Sync Status -->
+            <div class="flex items-center gap-2 rounded-xl border border-slate-600/80 bg-surface2/70 px-3 py-2">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-teal"></span>
+              </span>
+              <span class="text-xs text-text2" id="sync-text">Syncing...</span>
+              <button onclick="refreshAll()" class="ml-1 p-1 rounded hover:bg-slate-700/50 transition-colors" title="Refresh now">
+                <svg class="w-4 h-4 text-text2 hover:text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+              </button>
+            </div>
+            <!-- Language -->
+            <div class="flex rounded-xl border border-slate-600/80 bg-surface2/70 p-1 text-xs">
+              <button onclick="setLang('en')" class="rounded-lg px-3 py-1 text-cyan bg-cyan/20">EN</button>
+              <button onclick="setLang('de')" class="rounded-lg px-3 py-1 text-text2 hover:text-text1">DE</button>
+            </div>
+            <!-- Privacy -->
+            <button id="privacyBtn" onclick="togglePrivacy()" class="flex items-center gap-1.5 rounded-xl border border-slate-600/80 bg-surface2/70 px-3 py-2 text-xs text-text2 hover:border-cyan/50 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              <span class="hidden sm:inline">Privacy</span>
+            </button>
+            <!-- Compact -->
+            <button id="compactToggleBtn" onclick="toggleCompact()" class="flex items-center gap-1.5 rounded-xl border border-slate-600/80 bg-surface2/70 px-3 py-2 text-xs text-text2 hover:border-cyan/50 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+              </svg>
+              <span class="hidden sm:inline">Compact</span>
+            </button>
+            <!-- User -->
+            <button class="flex items-center gap-2 rounded-xl border border-slate-600/80 bg-surface2/70 px-2 py-1.5 hover:border-cyan/50 transition-all">
+              <div class="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-cyan/80 to-teal text-night font-semibold text-sm">BW</div>
+              <div class="text-left leading-tight hidden sm:block">
+                <p class="text-[10px] text-text3 uppercase tracking-wider">Dr. Britta Weidermann</p>
+                <p class="text-xs font-semibold">Emergency Physician</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <section class="px-4 py-6 md:px-6 space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight md:text-3xl">Hospital Command Center</h1>
+            <p class="text-sm text-text2">Live emergency triage and patient routing overview</p>
+          </div>
+          <div class="chip text-teal mono" id="clock-text"></div>
+        </div>
+
+        <div id="pane-dashboard" class="pane">
+          <div class="grid grid-cols-1 gap-6 2xl:grid-cols-12">
+            <div class="2xl:col-span-8 space-y-6">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" id="kpi-cards">
+                <article onclick="toggleKpiFilter('all')" class="glass rounded-2xl p-4 glow-cyan cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-total"><p class="text-xs uppercase tracking-wide text-text2">Total Patients</p><p id="k-total" class="mono mt-2 text-3xl font-bold">—</p><div id="spark-total" class="sparkline-container"></div></article>
+                <article class="glass rounded-2xl p-4 glow-cyan" id="kpi-queue">
+                  <div class="flex items-start justify-between cursor-pointer" onclick="toggleKpiFilter('en_route')">
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-text2">In Queue</p>
+                      <p id="k-queue" class="mono mt-2 text-3xl font-bold">—</p>
+                    </div>
+                    <div id="spark-queue" class="sparkline-container w-20"></div>
+                  </div>
+                  <!-- Triage chips — V9 parity -->
+                  <div class="flex flex-wrap gap-1 mt-3" id="kpi-triage-chips">
+                    <button onclick="toggleKpiFilter('immediate');event.stopPropagation()" id="chip-immediate" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#ef4444;border-color:#ef444440;background:#ef444415"><span id="chip-k-imm">—</span> ☠ IMM</button>
+                    <button onclick="toggleKpiFilter('emergency');event.stopPropagation()" id="chip-emergency" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#f59e0b;border-color:#f59e0b40;background:#f59e0b15"><span id="chip-k-emg">—</span> 🚑 EMG</button>
+                    <button onclick="toggleKpiFilter('urgent');event.stopPropagation()" id="chip-urgent" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#facc15;border-color:#facc1540;background:#facc1515"><span id="chip-k-urg">—</span> ⚡ URG</button>
+                    <button onclick="toggleKpiFilter('standard');event.stopPropagation()" id="chip-standard" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#10b981;border-color:#10b98140;background:#10b98115"><span id="chip-k-std">—</span> ✅ STD</button>
+                    <button onclick="toggleKpiFilter('non_urgent');event.stopPropagation()" id="chip-non_urgent" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#60a5fa;border-color:#60a5fa40;background:#60a5fa15"><span id="chip-k-nurg">—</span> 📋 N-URG</button>
+                  </div>
+                </article>
+                <article onclick="toggleKpiFilter('emergency')" class="glass rounded-2xl p-4 glow-emergency cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-emergency"><p class="text-xs uppercase tracking-wide text-text2 text-emer">Emergency</p><p id="k-emergency" class="mono mt-2 text-3xl font-bold text-emer">—</p><div id="spark-emergency" class="sparkline-container"></div></article>
+                <article onclick="toggleKpiFilter('urgent')" class="glass rounded-2xl p-4 glow-urgent cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-urgent"><p class="text-xs uppercase tracking-wide text-text2 text-urgent">Urgent</p><p id="k-urgent" class="mono mt-2 text-3xl font-bold text-urgent">—</p><div id="spark-urgent" class="sparkline-container"></div></article>
+                <article onclick="toggleKpiFilter('standard')" class="glass rounded-2xl p-4 glow-routine cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-routine"><p class="text-xs uppercase tracking-wide text-text2">Routine</p><p id="k-routine" class="mono mt-2 text-3xl font-bold text-routine">—</p><div id="spark-routine" class="sparkline-container"></div></article>
+                <article onclick="toggleKpiFilter('in_treatment')" class="glass rounded-2xl p-4 glow-teal cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-treatment"><p class="text-xs uppercase tracking-wide text-text2">Under Treatment</p><p id="k-treatment" class="mono mt-2 text-3xl font-bold text-teal">—</p><div id="spark-treatment" class="sparkline-container"></div></article>
+                <article onclick="toggleKpiFilter('discharged')" class="glass rounded-2xl p-4 glow-stable sm:col-span-2 xl:col-span-2 cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-treated"><p class="text-xs uppercase tracking-wide text-text2">Treated Today</p><p id="k-treated" class="mono mt-2 text-3xl font-bold text-stable">—</p><div id="spark-treated" class="sparkline-container"></div></article>
+              </div>
+
+              <article class="glass rounded-2xl p-5">
+                <div class="mb-4 flex items-center justify-between">
+                  <h2 class="text-lg font-semibold">Incoming Patients</h2>
+                  <button id="open-incoming-btn" class="rounded-xl border border-cyan/40 bg-cyan/10 px-3 py-2 text-xs text-cyan">Open Full Queue</button>
+                </div>
+                <div id="incoming-list" class="space-y-3"></div>
+              </article>
+            </div>
+            <div class="2xl:col-span-4 space-y-6">
+              <article class="glass rounded-2xl p-5">
+                <h2 class="text-lg font-semibold">Triage Distribution</h2>
+                <div class="mt-4" id="triage-chart-container" style="height: 250px;"></div>
+                <div class="mt-2 grid grid-cols-2 gap-2 text-xs" id="triage-legend"></div>
+              </article>
+              <article class="glass rounded-2xl p-5">
+                <h2 class="text-lg font-semibold">Arrivals (Last 24 Hours)</h2>
+                <div class="mt-4" id="arrivals-chart-container" style="height: 150px;"></div>
+              </article>
+              <article class="glass rounded-2xl p-5">
+                <h2 class="text-lg font-semibold">Capacity</h2>
+                <div class="mt-4 space-y-3 text-sm">
+                  <div><div class="mb-1 flex justify-between text-text2"><span>ER Beds</span><span id="cap-er">0%</span></div><div class="h-2 rounded-full bg-slate-700"><div id="cap-er-bar" class="h-2 rounded-full bg-cyan" style="width:0%"></div></div></div>
+                  <div><div class="mb-1 flex justify-between text-text2"><span>ICU</span><span id="cap-icu">0%</span></div><div class="h-2 rounded-full bg-slate-700"><div id="cap-icu-bar" class="h-2 rounded-full bg-teal" style="width:0%"></div></div></div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div id="pane-incoming" class="pane hidden-pane">
+          <article class="glass rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold">Incoming Patients (Live)</h2>
+              <div class="flex items-center gap-1 bg-surface/60 rounded-xl border border-slate-700/50 p-1">
+                <button onclick="setSort('triage',this)" class="sort-btn active rounded-lg px-3 py-1.5 text-xs font-medium bg-cyan/20 text-cyan">By Triage</button>
+                <button onclick="setSort('eta',this)" class="sort-btn rounded-lg px-3 py-1.5 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50">By ETA</button>
+                <button onclick="setSort('time',this)" class="sort-btn rounded-lg px-3 py-1.5 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50">By Time</button>
+              </div>
+            </div>
+            <div id="incoming-list-full" class="space-y-3"></div>
+          </article>
+        </div>
+
+        <div id="pane-tracking" class="pane hidden-pane">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Map Visualization -->
+            <article class="glass rounded-2xl p-5 lg:col-span-2">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold flex items-center gap-2">
+                  <svg class="w-5 h-5 text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  Live Tracking Map
+                </h2>
+                <div class="flex items-center gap-3 text-xs">
+                  <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emer animate-pulse"></span> En Route</span>
+                  <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-stable"></span> Arrived</span>
+                </div>
+              </div>
+              <!-- Leaflet Map -->
+              <div id="map" class="rounded-xl border border-slate-700/50 overflow-hidden" style="height: 450px; z-index: 1;"></div>
+            </article>
+            
+            <!-- Patient List -->
+            <article class="glass rounded-2xl p-5">
+              <h2 class="text-lg font-semibold mb-4">Active Transports</h2>
+              <div id="tracking-patient-list" class="space-y-3 max-h-[400px] overflow-y-auto">
+                <!-- Patient items will be added dynamically -->
+              </div>
+            </article>
+          </div>
+          
+          <!-- Detailed Tracking Table -->
+          <article class="glass rounded-2xl p-5 mt-6">
+            <h2 class="text-lg font-semibold mb-3">Transport Details</h2>
+            <div class="overflow-auto">
+              <table class="w-full text-sm">
+                <thead class="text-text2 border-b border-slate-700/50">
+                  <tr>
+                    <th class="text-left py-3 px-2">Patient</th>
+                    <th class="text-left py-3 px-2">Status</th>
+                    <th class="text-left py-3 px-2">Distance</th>
+                    <th class="text-left py-3 px-2">ETA</th>
+                    <th class="text-left py-3 px-2">Speed</th>
+                    <th class="text-left py-3 px-2">Coordinates</th>
+                    <th class="text-left py-3 px-2">Destination</th>
+                  </tr>
+                </thead>
+                <tbody id="tracking-body"></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+
+        <div id="pane-triage" class="pane hidden-pane">
+          <article class="glass rounded-2xl p-5">
+            <h2 class="text-lg font-semibold mb-3">Triage Queue</h2>
+            <div class="overflow-auto">
+              <table class="w-full text-sm">
+                <thead class="text-text2"><tr><th class="text-left py-2">Patient</th><th class="text-left py-2">Level</th><th class="text-left py-2">Risk</th><th class="text-left py-2">ETA</th><th class="text-left py-2">Action</th></tr></thead>
+                <tbody id="triage-body"></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+
+        <div id="pane-doctor" class="pane hidden-pane">
+          <article class="glass rounded-2xl p-5">
+            <h2 class="text-lg font-semibold mb-3">Doctor Panel (Override Center)</h2>
+            <div id="doctor-panel-list" class="space-y-3"></div>
+          </article>
+        </div>
+
+        <div id="pane-reports" class="pane hidden-pane space-y-6">
+          <!-- Reports Header -->
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight">Reports & Analytics</h2>
+              <p class="text-sm text-text2 mt-1">Aggregated data insights by time period</p>
+            </div>
+            <button onclick="exportReportsCSV()" class="flex items-center gap-2 rounded-xl bg-cyan/15 border border-cyan/40 px-4 py-2 text-sm font-medium text-cyan hover:bg-cyan/25 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export CSV
+            </button>
+          </div>
+
+          <!-- Report Period Tabs -->
+          <div class="flex gap-2 p-1 bg-surface/60 rounded-xl border border-slate-700/50 w-fit">
+            <button onclick="switchReportTab('daily', this)" class="rpt-tab-btn active rounded-lg px-4 py-2 text-sm font-medium bg-cyan/20 text-cyan">Daily</button>
+            <button onclick="switchReportTab('weekly', this)" class="rpt-tab-btn rounded-lg px-4 py-2 text-sm font-medium text-text2 hover:text-text1 hover:bg-surface2/50">Weekly</button>
+            <button onclick="switchReportTab('monthly', this)" class="rpt-tab-btn rounded-lg px-4 py-2 text-sm font-medium text-text2 hover:text-text1 hover:bg-surface2/50">Monthly</button>
+            <button onclick="switchReportTab('yearly', this)" class="rpt-tab-btn rounded-lg px-4 py-2 text-sm font-medium text-text2 hover:text-text1 hover:bg-surface2/50">Yearly</button>
+          </div>
+
+          <!-- Daily Reports -->
+          <div id="rpt-daily" class="rpt-pane">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Today's Volume</div>
+                <div class="text-4xl font-bold text-white mono" id="rpt-d-total">—</div>
+                <div class="text-xs text-text2 mt-1">Total patients</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Avg Risk Score</div>
+                <div class="text-4xl font-bold mono" id="rpt-d-risk" style="color:var(--urgent)">—</div>
+                <div class="text-xs text-text2 mt-1">Out of 10</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Avg ETA</div>
+                <div class="text-4xl font-bold text-cyan mono" id="rpt-d-eta">—</div>
+                <div class="text-xs text-text2 mt-1">Minutes to arrival</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Photos Submitted</div>
+                <div class="text-4xl font-bold text-teal mono" id="rpt-d-photos">—</div>
+                <div class="text-xs text-text2 mt-1">With media</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+              <div class="glass rounded-2xl p-5">
+                <div class="text-sm font-semibold mb-4">Triage Distribution</div>
+                <div id="rpt-d-triage" class="space-y-2"></div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-sm font-semibold mb-4">Patient Status Flow</div>
+                <div id="rpt-d-status" class="space-y-2"></div>
+              </div>
+            </div>
+
+            <div class="glass rounded-2xl p-5 mt-4">
+              <div class="text-sm font-semibold mb-4">Risk Score Distribution</div>
+              <div class="flex items-end gap-1 h-32" id="rpt-d-risk-dist"></div>
+              <div class="flex justify-between mt-2 text-xs text-text3 font-mono">
+                <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weekly Reports -->
+          <div id="rpt-weekly" class="rpt-pane hidden">
+            <div class="glass rounded-2xl p-5">
+              <div class="text-sm font-semibold mb-4">Arrival Time Distribution (by hour)</div>
+              <div class="flex items-end gap-1 h-40" id="rpt-w-hours"></div>
+              <div class="flex justify-between mt-2 text-xs text-text3">
+                <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div class="glass rounded-2xl p-5">
+                <div class="text-sm font-semibold mb-4">Weekly Triage Mix</div>
+                <div id="rpt-w-triage" class="flex items-center gap-4"></div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-sm font-semibold mb-4">Top Complaints</div>
+                <div id="rpt-w-complaints" class="space-y-2"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly Reports -->
+          <div id="rpt-monthly" class="rpt-pane hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Monthly Volume</div>
+                <div class="text-4xl font-bold text-white mono" id="rpt-m-total">—</div>
+                <div class="text-xs text-text2 mt-1">Patients this month</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Discharge Rate</div>
+                <div class="text-4xl font-bold text-stable mono" id="rpt-m-discharge">—</div>
+                <div class="text-xs text-text2 mt-1">Successfully discharged</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">High-Risk Patients</div>
+                <div class="text-4xl font-bold text-emer mono" id="rpt-m-highrisk">—</div>
+                <div class="text-xs text-text2 mt-1">Risk score ≥ 7</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Avg Treatment Time</div>
+                <div class="text-4xl font-bold text-cyan mono" id="rpt-m-treat">—</div>
+                <div class="text-xs text-text2 mt-1">Admission to discharge</div>
+              </div>
+            </div>
+            <div class="glass rounded-2xl p-5 mt-4">
+              <div class="text-sm font-semibold mb-4">Top Conditions (Suspected)</div>
+              <div id="rpt-m-conds" class="space-y-2"></div>
+            </div>
+          </div>
+
+          <!-- Yearly Reports -->
+          <div id="rpt-yearly" class="rpt-pane hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Annual Volume</div>
+                <div class="text-4xl font-bold text-white mono" id="rpt-y-total">—</div>
+                <div class="text-xs text-text2 mt-1">Patients this year</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Emergency Rate</div>
+                <div class="text-4xl font-bold text-urgent mono" id="rpt-y-emg">—</div>
+                <div class="text-xs text-text2 mt-1">Of all patients</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Annual Avg Risk</div>
+                <div class="text-4xl font-bold mono" id="rpt-y-risk" style="color:var(--urgent)">—</div>
+                <div class="text-xs text-text2 mt-1">Yearly average</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Treatment Success</div>
+                <div class="text-4xl font-bold text-stable mono" id="rpt-y-treat">—</div>
+                <div class="text-xs text-text2 mt-1">Discharged / total</div>
+              </div>
+            </div>
+            <div class="glass rounded-2xl p-5 mt-4">
+              <div class="text-sm font-semibold mb-4">Language Distribution (All-time)</div>
+              <div id="rpt-y-lang" class="space-y-2"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="pane-analytics" class="pane hidden-pane space-y-6">
+          <!-- Live Statistics Header -->
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight">Live Statistics</h2>
+            <p class="text-sm text-text2 mt-1">Real-time metrics from current queue</p>
+          </div>
+
+          <!-- MTS 5-Level Breakdown -->
+          <div class="glass rounded-2xl p-5">
+            <div class="text-sm font-semibold mb-4">Live Queue Breakdown — MTS 5-Level</div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" id="stats-mts-grid">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Triage Donut Chart -->
+            <div class="glass rounded-2xl p-5">
+              <div class="text-sm font-semibold mb-4">MTS Triage Distribution</div>
+              <div class="flex items-center gap-6">
+                <div id="stats-donut" class="w-32 h-32"></div>
+                <div id="stats-legend" class="flex-1 space-y-2 text-xs"></div>
+              </div>
+            </div>
+
+            <!-- Key Metrics Grid -->
+            <div class="glass rounded-2xl p-5 lg:col-span-2">
+              <div class="text-sm font-semibold mb-4">Key Metrics</div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="stats-metrics">
+                <!-- Filled by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Patient Status Flow -->
+          <div class="glass rounded-2xl p-5">
+            <div class="text-sm font-semibold mb-4">Patient Status Flow</div>
+            <div id="stats-flow" class="h-12 rounded-xl overflow-hidden flex"></div>
+          </div>
+        </div>
+
+        <div id="pane-admin" class="pane hidden-pane space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight">Admin Panel</h2>
+              <p class="text-sm text-text2 mt-1">Manage patient queue, seed demo data, view all records</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="seedPatients()" class="flex items-center gap-2 rounded-xl bg-teal/15 border border-teal/40 px-4 py-2 text-sm font-medium text-teal hover:bg-teal/25 transition-all">🌱 Seed Demo</button>
+              <button onclick="clearQueue()" class="flex items-center gap-2 rounded-xl bg-emer/15 border border-emer/40 px-4 py-2 text-sm font-medium text-emer hover:bg-emer/25 transition-all">🗑 Clear Queue</button>
+            </div>
+          </div>
+          <article class="glass rounded-2xl p-5 overflow-x-auto">
+            <div id="admin-pt-table">
+              <div class="text-center py-8 text-text2"><div class="animate-pulse">Loading admin table...</div></div>
+            </div>
+          </article>
+        </div>
+
+        <div id="pane-settings" class="pane hidden-pane">
+          <article class="glass rounded-2xl p-5"><h2 class="text-lg font-semibold mb-3">Settings</h2><p class="text-text2 text-sm">Theme and language placeholders are ready. Backend-connected patient actions remain fully enabled.</p></article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="fixed bottom-6 right-6 hidden rounded-xl border border-slate-600 bg-surface2/95 px-4 py-3 text-sm shadow-xl"></div>
+
+  <!-- Media Lightbox -->
+  <div id="mediaLightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;gap:12px;" onclick="if(event.target===this)closeMediaLightbox()">
+    <button onclick="closeMediaLightbox()" style="position:fixed;top:16px;right:20px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:1.6rem;width:44px;height:44px;border-radius:50%;cursor:pointer;line-height:1;z-index:10000;">✕</button>
+    <div id="mediaLightboxContent" style="max-width:90vw;max-height:85vh;display:flex;align-items:center;justify-content:center;"></div>
+    <div id="mediaLightboxNav" style="display:flex;gap:16px;align-items:center;"></div>
+  </div>
+
+  <script>
+    // Core constants mirror v9 backend compatibility.
+    const TRIAGE_ORDER = ["IMMEDIATE", "EMERGENCY", "URGENT", "STANDARD", "NON_URGENT"];
+    const TRIAGE_CLASS = { IMMEDIATE: "I", EMERGENCY: "E", URGENT: "U", STANDARD: "S", NON_URGENT: "N", ROUTINE: "S" };
+    const TRIAGE_COLOR = { IMMEDIATE: "#ef4444", EMERGENCY: "#f59e0b", URGENT: "#facc15", STANDARD: "#10b981", NON_URGENT: "#60a5fa", ROUTINE: "#10b981" };
+    const STATUS_LABEL = { incoming: "Incoming", arrived: "Arrived", in_treatment: "In Treatment", discharged: "Discharged" };
+
+    const state = {
+      activeTab: "dashboard",
+      patients: [],
+      tracking: [],
+      stats: null,
+      arrivalsHistory: [],
+      actionLog: []
+    };
+
+    function normalizeTriage(level) {
+      const up = String(level || "URGENT").toUpperCase().trim();
+      return up === "ROUTINE" ? "STANDARD" : (TRIAGE_COLOR[up] ? up : "URGENT");
+    }
+    function h(v) {
+      return String(v ?? "").replace(/[&<>"']/g, (m) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[m]));
+    }
+    function triageBadge(level) {
+      const n = normalizeTriage(level);
+      const c = TRIAGE_CLASS[n];
+      return `<span class="chip triage-${c}" style="color:${TRIAGE_COLOR[n]}">${n.replace("_", " ")}</span>`;
+    }
+    function triageFlags(redFlags) {
+      const flags = (redFlags || []).filter((f) => f && f !== "none_identified");
+      return flags.length ? flags.map((f) => `<span class="chip border-emer/60 text-emer">⚠ ${h(String(f).replaceAll("_"," "))}</span>`).join("") : '<span class="chip text-text2">No red flags</span>';
+    }
+    function toast(text, kind = "ok") {
+      const el = document.getElementById("toast");
+      el.textContent = text;
+      el.classList.remove("hidden", "text-emer", "text-cyan", "text-urgent");
+      el.classList.add(kind === "err" ? "text-emer" : (kind === "warn" ? "text-urgent" : "text-cyan"));
+      setTimeout(() => el.classList.add("hidden"), 2200);
+    }
+    function logAction(text) {
+      state.actionLog.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
+      state.actionLog = state.actionLog.slice(0, 25);
+      const r = document.getElementById("reports-log");
+      r.innerHTML = state.actionLog.map((x) => `<div class="py-1 border-b border-slate-700/40">${h(x)}</div>`).join("");
+    }
+
+    async function api(path, options = {}) {
+      const r = await fetch(path, options);
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`);
+      return data;
+    }
+
+    // Endpoints integrated with hospital_server_v1.py
+    // Chart instances
+    let triageChart = null;
+    let arrivalsChart = null;
+    const sparklineCharts = {};
+
+    // ── Leaflet Map ─────────────────────────────────────────
+    const HOSPITAL_COORDS = [48.7758, 9.1829]; // Klinikum Stuttgart
+    let AZURE_KEY = '';
+    let mapInstance = null, mapTileLayer = null, staticHospitalsLayer = null;
+    let _trackMarkerMap = {};
+
+    async function fetchMapsKey() {
+      try {
+        const data = await api('/api/config/maps-key');
+        AZURE_KEY = data.key;
+      } catch (e) { console.warn('No Azure Maps key'); }
+    }
+
+    function initMap() {
+      if (mapInstance) { mapInstance.invalidateSize(); return; }
+      const mapEl = document.getElementById('map');
+      if (!mapEl) return;
+      mapInstance = L.map('map', { center: HOSPITAL_COORDS, zoom: 12, preferCanvas: true });
+
+      mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd', maxZoom: 20, detectRetina: true
+      }).addTo(mapInstance);
+
+      if (AZURE_KEY) {
+        L.tileLayer(`https://atlas.microsoft.com/map/traffic/flow/png?api-version=1.0&style=relative&zoom={z}&x={x}&y={y}&subscription-key=${AZURE_KEY}`, {
+          maxZoom: 19, opacity: 0.6
+        }).addTo(mapInstance);
+      }
+
+      L.marker(HOSPITAL_COORDS, {
+        icon: L.divIcon({
+          html: '<div style="background:#0f172a;color:#22d3ee;padding:5px 11px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.4);border:1.5px solid rgba(34,211,238,.3)">🏥 Klinikum Stuttgart</div>',
+          className: '', iconAnchor: [80, 16],
+        })
+      }).addTo(mapInstance);
+
+      fetchStaticHospitals();
+    }
+
+    async function fetchStaticHospitals() {
+      try {
+        const hospitals = await api('/api/hospitals/all');
+        staticHospitalsLayer = L.layerGroup().addTo(mapInstance);
+        hospitals.forEach(hosp => {
+          if (Math.abs(hosp.lat - HOSPITAL_COORDS[0]) < 0.001 && Math.abs(hosp.lon - HOSPITAL_COORDS[1]) < 0.001) return;
+          const icon = L.divIcon({
+            html: '<div style="background:#334155;color:#e5e7eb;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;border:2px solid #475569;box-shadow:0 2px 4px rgba(0,0,0,0.3);">H</div>',
+            className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+          });
+          const marker = L.marker([hosp.lat, hosp.lon], { icon });
+          marker.bindPopup(`<div style="font-size:13px;font-weight:700;padding:2px;">🏥 ${h(hosp.name)}</div>`);
+          staticHospitalsLayer.addLayer(marker);
+        });
+      } catch (e) { console.warn('Could not load static hospitals', e); }
+    }
+
+    function focusPatientOnMap(pid) {
+      const marker = _trackMarkerMap[pid];
+      if (!marker || !mapInstance) return;
+      mapInstance.flyTo(marker.getLatLng(), 15, { duration: 0.8 });
+      marker.openPopup();
+    }
+    
+    // History for sparklines and deltas
+    const kpiHistory = {
+      total: [],
+      queue: [],
+      emergency: [],
+      urgent: [],
+      routine: [],
+      treatment: [],
+      treated: []
+    };
+
+    async function loadStats() {
+      state.stats = await api("/api/stats");
+      const s = state.stats;
+      const by = s.by_triage_level || {};
+      
+      // Update KPI values with animation
+      updateKPI("k-total", s.total ?? 0, "total");
+      updateKPI("k-queue", s.en_route ?? 0, "queue");
+      updateKPI("k-emergency", (by.IMMEDIATE || 0) + (by.EMERGENCY || 0), "emergency");
+      updateKPI("k-urgent", by.URGENT || 0, "urgent");
+      updateKPI("k-routine", by.STANDARD || 0, "routine");
+      updateKPI("k-treatment", s.in_treatment ?? 0, "treatment");
+      updateKPI("k-treated", s.treated ?? 0, "treated");
+
+      // Update triage chips in In Queue card
+      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      setText('chip-k-imm',  by.IMMEDIATE  ?? 0);
+      setText('chip-k-emg',  by.EMERGENCY  ?? 0);
+      setText('chip-k-urg',  by.URGENT     ?? 0);
+      setText('chip-k-std',  by.STANDARD   ?? 0);
+      setText('chip-k-nurg', by.NON_URGENT ?? 0);
+      
+      // Update charts
+      updateTriageChart(by);
+      updateArrivalsChartV2();
+      updateSparklines();
+      
+      // Update capacity bars
+      const er = Math.min(95, Math.max(0, (s.en_route || 0) * 3));
+      const icu = Math.min(95, Math.max(0, (s.in_treatment || 0) * 2));
+      document.getElementById("cap-er").textContent = `${er}%`;
+      document.getElementById("cap-icu").textContent = `${icu}%`;
+      document.getElementById("cap-er-bar").style.width = `${er}%`;
+      document.getElementById("cap-icu-bar").style.width = `${icu}%`;
+    }
+    
+    function updateKPI(elementId, value, historyKey) {
+      const el = document.getElementById(elementId);
+      const prev = kpiHistory[historyKey].length > 0 ? kpiHistory[historyKey][kpiHistory[historyKey].length - 1] : value;
+      
+      // Add to history
+      kpiHistory[historyKey].push(value);
+      if (kpiHistory[historyKey].length > 20) kpiHistory[historyKey].shift();
+      
+      // Animate value change
+      animateValue(el, prev, value, 500);
+      
+      // Update delta indicator
+      const delta = value - prev;
+      const deltaClass = delta > 0 ? "delta-up" : (delta < 0 ? "delta-down" : "delta-neutral");
+      const deltaSymbol = delta > 0 ? "↑" : (delta < 0 ? "↓" : "→");
+      
+      // Remove existing delta if any
+      const existingDelta = el.parentElement.querySelector('.delta-indicator');
+      if (existingDelta) existingDelta.remove();
+      
+      // Add delta indicator
+      if (delta !== 0) {
+        const deltaEl = document.createElement('span');
+        deltaEl.className = `delta-indicator text-xs ml-2 ${deltaClass}`;
+        deltaEl.textContent = `${deltaSymbol}${Math.abs(delta)}`;
+        el.parentElement.appendChild(deltaEl);
+      }
+    }
+    
+    function animateValue(obj, start, end, duration) {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const value = Math.floor(progress * (end - start) + start);
+        obj.innerHTML = value;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+    
+    function updateTriageChart(by) {
+      const counts = [
+        by.IMMEDIATE || 0,
+        by.EMERGENCY || 0,
+        by.URGENT || 0,
+        by.STANDARD || 0,
+        by.NON_URGENT || 0
+      ];
+      const labels = ["Immediate", "Emergency", "Urgent", "Standard", "Non-Urgent"];
+      const colors = ["#ef4444", "#f59e0b", "#facc15", "#10b981", "#60a5fa"];
+      
+      const options = {
+        series: counts,
+        chart: {
+          type: 'donut',
+          height: 250,
+          background: 'transparent',
+          animations: {
+            enabled: true,
+            easing: 'easeinout',
+            speed: 800
+          }
+        },
+        labels: labels,
+        colors: colors,
+        plotOptions: {
+          pie: {
+            donut: {
+              size: '70%',
+              labels: {
+                show: true,
+                name: { show: false },
+                value: {
+                  show: true,
+                  fontSize: '24px',
+                  fontWeight: 600,
+                  color: '#e5e7eb',
+                  formatter: function(val) { return val; }
+                },
+                total: {
+                  show: true,
+                  showAlways: true,
+                  label: 'Active',
+                  fontSize: '14px',
+                  fontWeight: 400,
+                  color: '#94a3b8',
+                  formatter: function(w) {
+                    return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                  }
+                }
+              }
+            }
+          }
+        },
+        dataLabels: { enabled: false },
+        legend: { show: false },
+        stroke: { show: false },
+        tooltip: {
+          theme: 'dark',
+          y: { formatter: function(val) { return val + ' patients'; } }
+        }
+      };
+      
+      if (triageChart) {
+        triageChart.updateSeries(counts);
+      } else {
+        triageChart = new ApexCharts(document.querySelector("#triage-chart-container"), options);
+        triageChart.render();
+      }
+      
+      // Update legend
+      document.getElementById("triage-legend").innerHTML = labels.map((label, i) => 
+        `<span class="chip" style="color:${colors[i]};border-color:${colors[i]}66">${label} ${counts[i]}</span>`
+      ).join("");
+    }
+    
+    function updateArrivalsChartV2() {
+      const vals = state.arrivalsHistory.length ? state.arrivalsHistory : [0, 0, 0, 0, 0, 0];
+      
+      const options = {
+        series: [{
+          name: 'Arrivals',
+          data: vals
+        }],
+        chart: {
+          type: 'area',
+          height: 150,
+          background: 'transparent',
+          toolbar: { show: false },
+          animations: { enabled: true }
+        },
+        colors: ['#22d3ee'],
+        fill: {
+          type: 'gradient',
+          gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.4,
+            opacityTo: 0.05,
+            stops: [0, 100]
+          }
+        },
+        stroke: { curve: 'smooth', width: 3 },
+        dataLabels: { enabled: false },
+        grid: { show: false },
+        xaxis: { 
+          labels: { show: false },
+          axisBorder: { show: false },
+          axisTicks: { show: false }
+        },
+        yaxis: { 
+          labels: { show: false },
+          axisBorder: { show: false },
+          axisTicks: { show: false }
+        },
+        tooltip: {
+          theme: 'dark',
+          x: { show: false }
+        }
+      };
+      
+      if (arrivalsChart) {
+        arrivalsChart.updateSeries([{ data: vals }]);
+      } else {
+        arrivalsChart = new ApexCharts(document.querySelector("#arrivals-chart-container"), options);
+        arrivalsChart.render();
+      }
+    }
+    
+    function updateSparklines() {
+      const sparkIds = ['total', 'queue', 'emergency', 'urgent', 'routine', 'treatment', 'treated'];
+      const colors = ['#22d3ee', '#22d3ee', '#ef4444', '#f59e0b', '#60a5fa', '#14b8a6', '#10b981'];
+      
+      sparkIds.forEach((id, index) => {
+        const container = document.getElementById(`spark-${id}`);
+        if (!container) return;
+        
+        const data = kpiHistory[id].length > 0 ? kpiHistory[id] : [0, 0, 0, 0, 0];
+        
+        const options = {
+          series: [{ data: data }],
+          chart: {
+            type: 'line',
+            height: 30,
+            width: '100%',
+            sparkline: { enabled: true }
+          },
+          stroke: { curve: 'smooth', width: 2 },
+          colors: [colors[index]],
+          tooltip: { fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: () => '' } }, marker: { show: false } }
+        };
+        
+        if (sparklineCharts[id]) {
+          sparklineCharts[id].updateSeries([{ data: data }]);
+        } else {
+          sparklineCharts[id] = new ApexCharts(container, options);
+          sparklineCharts[id].render();
+        }
+      });
+    }
+
+    async function loadPatients() {
+      // v9-compatible list endpoint; includes incoming + arrived by default.
+      state.patients = await api("/api/patients?sort=triage&limit=100");
+      // Enforce triage floor guardrail
+      state.patients.forEach(p => enforceTriageFloor(p));
+      // Emergency alert check
+      state.patients.forEach(p => {
+        const lvl = normalizeTriage(p.triage_level);
+        if ((lvl === 'IMMEDIATE' || lvl === 'EMERGENCY') && !seenEmergencyIds.has(p.patient_id)) {
+          triggerEmergencyAlert(p);
+        }
+      });
+      // Update nav badge with emergency count
+      const emgCount = state.patients.filter(p => { const l = normalizeTriage(p.triage_level); return l === 'IMMEDIATE' || l === 'EMERGENCY'; }).length;
+      const badge = document.getElementById('nav-emg-badge');
+      if (badge) {
+        if (emgCount > 0) { badge.textContent = emgCount; badge.classList.remove('hidden'); }
+        else { badge.classList.add('hidden'); }
+      }
+      state.arrivalsHistory.push(state.patients.length);
+      state.arrivalsHistory = state.arrivalsHistory.slice(-6);
+      updateArrivalsChartV2();
+      renderIncomingLists();
+      renderTriageTable();
+      renderDoctorPanel();
+    }
+
+    async function loadTracking() {
+      state.tracking = await api("/api/tracking");
+      const pts = state.tracking;
+
+      // Update tracking table
+      const body = document.getElementById("tracking-body");
+      if (body) {
+        body.innerHTML = pts.map((p) => {
+          const lvl = normalizeTriage(p.triage_level);
+          const isIncoming = p.status === 'incoming' || p.status === 'en_route';
+          const distance = p.distance_km != null ? `${p.distance_km.toFixed(1)} km` : '—';
+          const speed = p.speed_kmh != null ? `${p.speed_kmh} km/h` : '—';
+          const lat = p.latitude ?? p.location?.lat;
+          const lon = p.longitude ?? p.location?.lon;
+          return `
+          <tr class="border-b border-slate-700/40 hover:bg-surface/30 transition-colors">
+            <td class="py-3 px-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full ${isIncoming ? 'bg-emer animate-pulse' : 'bg-stable'}"></span>
+                <span class="font-medium">${h(p.full_name || p.patient_id)}</span>
+              </div>
+            </td>
+            <td class="py-3 px-2">
+              <span class="chip ${isIncoming ? 'text-emer border-emer/30' : 'text-stable border-stable/30'} text-xs">
+                ${h(STATUS_LABEL[p.status || "incoming"] || p.status || "incoming")}
+              </span>
+            </td>
+            <td class="py-3 px-2 mono text-text2">${distance}</td>
+            <td class="py-3 px-2 mono ${p.eta_minutes != null && p.eta_minutes <= 5 ? 'text-emer font-bold' : ''}">${p.eta_minutes != null ? `${p.eta_minutes} min` : "—"}</td>
+            <td class="py-3 px-2 mono text-text2">${speed}</td>
+            <td class="py-3 px-2 mono text-xs text-text3">${lat != null && lon != null ? `${Number(lat).toFixed(5)}, ${Number(lon).toFixed(5)}` : "No GPS"}</td>
+            <td class="py-3 px-2 text-text2">${h(p.destination_hospital || "Pending")}</td>
+          </tr>
+        `}).join("");
+      }
+
+      // ── Leaflet markers (real map) ──
+      if (mapInstance) {
+        const currentPids = new Set();
+        pts.forEach(p => {
+          const lat = p.latitude ?? p.location?.lat;
+          const lon = p.longitude ?? p.location?.lon;
+          if (!lat || !lon) return;
+          const pid = p.patient_id || '';
+          currentPids.add(pid);
+
+          const col = TRIAGE_COLOR[normalizeTriage(p.triage_level)] || '#f59e0b';
+          const size = normalizeTriage(p.triage_level) === 'EMERGENCY' || normalizeTriage(p.triage_level) === 'IMMEDIATE' ? 18 : 13;
+          const dur = size === 18 ? '1.2s' : '2.5s';
+          const iconHtml = `<div style="width:${size}px;height:${size}px;background:${col};border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 3px ${col}55,0 2px 6px rgba(0,0,0,.3);animation:marker-pulse ${dur} ease-in-out infinite;"></div>`;
+          const icon = L.divIcon({ html: iconHtml, className: '', iconSize: [size, size], iconAnchor: [size/2, size/2] });
+
+          const nm = p.full_name || p.patient_id;
+          const tc = TRIAGE_CLASS[normalizeTriage(p.triage_level)] || '?';
+          const popupContent = `<div style="min-width:200px;font-family:Inter,sans-serif;padding:4px">
+            <div style="font-weight:800;font-size:14px;margin-bottom:6px;color:#1a202c">${h(nm)}</div>
+            <span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:${col}20;color:${col};border:1px solid ${col}50">${tc} ${normalizeTriage(p.triage_level).replace('_',' ')}</span>
+            ${p.chief_complaint ? `<div style="font-size:12px;color:#334155;margin-top:6px">💬 ${h(p.chief_complaint)}</div>` : ''}
+            <div style="display:flex;gap:10px;margin-top:6px;align-items:center">
+              ${p.eta_minutes ? `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ${p.eta_minutes} min</span>` : '<span style="font-size:12px;font-weight:700;color:#10b981">✅ ARRIVED</span>'}
+              ${p.blood_type ? `<span style="font-size:11px;background:#FFF5F5;color:#9B2C2C;padding:2px 6px;border-radius:4px;border:1px solid #FED7D7">🩸 ${h(p.blood_type)}</span>` : ''}
+            </div>
+          </div>`;
+
+          if (_trackMarkerMap[pid]) {
+            _trackMarkerMap[pid].setLatLng([lat, lon]);
+            _trackMarkerMap[pid].setIcon(icon);
+            if (_trackMarkerMap[pid].getPopup()?.isOpen()) {
+              _trackMarkerMap[pid].setPopupContent(popupContent);
+            } else {
+              _trackMarkerMap[pid].bindPopup(popupContent, { maxWidth: 300 });
+            }
+          } else {
+            const marker = L.marker([lat, lon], { icon }).addTo(mapInstance);
+            marker.bindPopup(popupContent, { maxWidth: 300 });
+            _trackMarkerMap[pid] = marker;
+          }
+        });
+
+        // Remove stale markers
+        for (const pid in _trackMarkerMap) {
+          if (!currentPids.has(pid)) {
+            mapInstance.removeLayer(_trackMarkerMap[pid]);
+            delete _trackMarkerMap[pid];
+          }
+        }
+      }
+
+      // Update patient list sidebar (clickable → focuses on map)
+      const patientList = document.getElementById("tracking-patient-list");
+      if (patientList) {
+        const sorted = [...pts].sort((a, b) => (a.eta_minutes || 999) - (b.eta_minutes || 999));
+        patientList.innerHTML = sorted.map((p) => {
+          const lvl = normalizeTriage(p.triage_level);
+          const isIncoming = p.status === 'incoming' || p.status === 'en_route';
+          const pid = p.patient_id || '';
+          return `
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-surface/50 border border-slate-700/30 hover:border-cyan/30 transition-colors cursor-pointer" onclick="focusPatientOnMap('${h(pid)}')">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                   style="background: ${TRIAGE_COLOR[lvl]}20; color: ${TRIAGE_COLOR[lvl]}; border: 2px solid ${TRIAGE_COLOR[lvl]}66">
+                ${TRIAGE_CLASS[lvl] || '?'}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-medium text-sm truncate">${h(p.full_name || p.patient_id)}</div>
+                <div class="text-xs text-text3 flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full ${isIncoming ? 'bg-emer animate-pulse' : 'bg-stable'}"></span>
+                  ${isIncoming ? 'En Route' : 'Arrived'} • ${p.eta_minutes || '?'} min
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-xs font-semibold mono">${p.distance_km != null ? p.distance_km.toFixed(1) : '—'} km</div>
+                ${p.speed_kmh ? `<div class="text-[10px] text-text3">${p.speed_kmh} km/h</div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join("") || '<div class="text-center py-8 text-text2 text-sm">No active transports</div>';
+      }
+    }
+
+    function setSort(mode, btn) {
+      sortMode = mode;
+      if (btn) {
+        btn.closest('div').querySelectorAll('.sort-btn').forEach(b => {
+          b.classList.remove('active', 'bg-cyan/20', 'text-cyan');
+          b.classList.add('text-text2');
+        });
+        btn.classList.add('active', 'bg-cyan/20', 'text-cyan');
+        btn.classList.remove('text-text2');
+      }
+      renderIncomingLists();
+    }
+
+    function sortPatients(pts) {
+      const sorted = [...pts];
+      if (sortMode === 'eta') {
+        sorted.sort((a, b) => (a.eta_minutes ?? 999) - (b.eta_minutes ?? 999));
+      } else if (sortMode === 'time') {
+        sorted.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      } else {
+        sorted.sort((a, b) => TRIAGE_ORDER.indexOf(normalizeTriage(a.triage_level)) - TRIAGE_ORDER.indexOf(normalizeTriage(b.triage_level)));
+      }
+      return sorted;
+    }
+
+    function renderIncomingLists() {
+      const q = document.getElementById('search-input').value.trim().toLowerCase();
+      let filtered = state.patients.filter((p) => {
+        const text = `${p.patient_id} ${p.full_name || ""} ${p.chief_complaint || ""}`.toLowerCase();
+        return !q || text.includes(q);
+      });
+      filtered = sortPatients(filtered);
+      renderPatientList(filtered);
+      // Also populate the full queue pane with proper event listeners
+      const fullEl = document.getElementById('incoming-list-full');
+      if (fullEl) renderPatientListTo(filtered, fullEl);
+    }
+
+    function renderTriageTable() {
+      const rows = [...state.patients].sort((a, b) => TRIAGE_ORDER.indexOf(normalizeTriage(a.triage_level)) - TRIAGE_ORDER.indexOf(normalizeTriage(b.triage_level)));
+      document.getElementById("triage-body").innerHTML = rows.map((p) => `
+        <tr class="border-b border-slate-700/40">
+          <td class="py-2">${h(p.full_name || p.patient_id)}</td>
+          <td class="py-2">${triageBadge(p.triage_level)}</td>
+          <td class="py-2 mono">${h(p.risk_score ?? "-")}</td>
+          <td class="py-2 mono">${p.eta_minutes != null ? `${h(p.eta_minutes)} min` : "—"}</td>
+          <td class="py-2"><button onclick="viewDoctor('${h(p.patient_id)}')" class="rounded-lg bg-surface2 border border-slate-600 px-3 py-1 text-xs">Review</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderDoctorPanel() {
+      const box = document.getElementById("doctor-panel-list");
+      const lvlOrder = ['IMMEDIATE','EMERGENCY','URGENT','STANDARD','NON_URGENT'];
+      const sorted = [...state.patients].sort((a,b) => lvlOrder.indexOf(normalizeTriage(a.triage_level)) - lvlOrder.indexOf(normalizeTriage(b.triage_level)));
+      box.innerHTML = sorted.map((p) => {
+        const pid = p.patient_id;
+        const lvl = normalizeTriage(p.triage_level);
+        const col = TRIAGE_COLOR[lvl] || '#f59e0b';
+        const mts = MTS_META[lvl] || MTS_META.URGENT;
+        const photo = p.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(pid)}`;
+        return `
+        <div class="rounded-xl border bg-surface2/40 p-4 space-y-3" style="border-color:${col}30">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <img src="${h(photo)}" class="w-12 h-12 rounded-xl object-cover border-2" style="border-color:${col}66" onerror="this.src='https://i.pravatar.cc/60?u=${encodeURIComponent(pid)}'" />
+              <div>
+                <p class="font-semibold">${h(p.full_name || pid)}</p>
+                <p class="text-xs text-text2 mt-0.5">${h(p.chief_complaint || '—')}</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="chip text-xs" style="color:${col};border-color:${col}55;background:${col}15">${lvl}</span>
+                  <span class="text-xs text-text3 mono">Risk: ${p.risk_score ?? '—'}/10</span>
+                  <span class="text-xs text-text3">⏱ ${mts.max_wait} min max wait</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              ${p.eta_minutes != null ? `<div class="text-xl font-bold mono" style="color:${col}">${p.eta_minutes}<span class="text-xs text-text3 ml-0.5">min</span></div>` : ''}
+              ${p.override_action ? `<div class="text-[10px] text-text3 mt-1">Last: ${h(p.override_action)}</div>` : ''}
+            </div>
+          </div>
+          ${p.override_note ? `<div class="text-xs text-text2 italic border-l-2 border-slate-600 pl-3 py-1 bg-surface/40 rounded-r-lg">"${h(p.override_note.split('\n---\n')[0].trim())}"</div>` : ''}
+          <textarea id="override-note-${h(pid)}" placeholder="Clinical note / message to patient (optional)" rows="2"
+            class="w-full rounded-xl bg-surface/60 border border-slate-700/50 px-3 py-2 text-sm text-text1 resize-none leading-relaxed focus:outline-none focus:border-cyan/50 transition-colors placeholder-text3"
+            onfocus="this.style.borderColor='var(--cyan,#22d3ee)'" onblur="this.style.borderColor=''"></textarea>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="triageOverride('${h(pid)}','APPROVE')" class="rounded-lg border border-stable/50 bg-stable/15 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✅ Approve</button>
+            <button onclick="triageOverride('${h(pid)}','UPGRADE')" class="rounded-lg border border-urgent/50 bg-urgent/15 px-3 py-1.5 text-xs font-semibold text-urgent hover:bg-urgent/25 transition-all">⬆ Upgrade</button>
+            <button onclick="triageOverride('${h(pid)}','DOWNGRADE')" class="rounded-lg border border-cyan/50 bg-cyan/15 px-3 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/25 transition-all">⬇ Downgrade</button>
+            <button onclick="setStatus('${h(pid)}','in_treatment')" class="rounded-lg border border-violet-400/50 bg-violet-500/15 px-3 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition-all ml-auto">💊 In Treatment</button>
+          </div>
+          <div id="triage-override-result-${h(pid)}-dp" class="text-xs text-text3 min-h-[1em]"></div>
+        </div>`;
+      }).join("");
+    }
+
+
+    async function setStatus(pid, status) {
+      await api(`/api/patient/${encodeURIComponent(pid)}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+      toast(`Status updated → ${STATUS_LABEL[status] || status}`);
+      logAction(`${pid}: status -> ${status}`);
+      await refreshAll();
+    }
+
+    // ── ENFORCE TRIAGE FLOOR (risk score guardrail) ────────────
+    function enforceTriageFloor(p) {
+      if (!p) return p;
+      const score = parseFloat(p.risk_score) || 0;
+      if (score <= 0) return p;
+      const ORDER = ['IMMEDIATE','EMERGENCY','URGENT','STANDARD','NON_URGENT'];
+      let floor;
+      if      (score >= 9) floor = 'IMMEDIATE';
+      else if (score >= 7) floor = 'EMERGENCY';
+      else if (score >= 5) floor = 'URGENT';
+      else if (score >= 3) floor = 'STANDARD';
+      else                 floor = 'NON_URGENT';
+      const current = normalizeTriage(p.triage_level);
+      if (ORDER.indexOf(current) > ORDER.indexOf(floor)) {
+        console.warn(`[enforceTriageFloor] ${p.patient_id}: ${current} → ${floor} (score=${score})`);
+        p.triage_level              = floor;
+        p._triage_upgraded_by_score = true;
+        p._triage_prev_level        = current;
+      }
+      return p;
+    }
+
+    // ── EMERGENCY ALERT SYSTEM ──────────────────────────────────
+    const seenEmergencyIds = new Set();
+    function triggerEmergencyAlert(p) {
+      seenEmergencyIds.add(p.patient_id);
+      document.body.classList.add('emg-alert');
+      setTimeout(() => document.body.classList.remove('emg-alert'), 7000);
+      // Banner
+      const old = document.getElementById('emg-alert-banner');
+      if (old) old.remove();
+      const banner = document.createElement('div');
+      banner.id = 'emg-alert-banner';
+      banner.className = 'fixed top-0 left-0 right-0 z-[9999] text-white text-center py-4 px-5 font-black text-lg flex items-center justify-center gap-3.5 shadow-2xl border-b-2 border-red-300';
+      banner.style.cssText = 'background:linear-gradient(135deg,#7F1D1D,#B91C1C);animation:emgBannerIn 0.25s ease,emgPulse 0.8s ease-in-out 0.3s 6 alternate;';
+      banner.innerHTML = `<span class="text-2xl" style="animation:emgPulse 0.5s ease-in-out infinite alternate">🚨</span> <span>NEW EMERGENCY — <strong>${h(p.full_name || p.patient_id || 'Unknown')}</strong> · ETA <strong>${p.eta_minutes ?? '?'} min</strong> · <span class="uppercase tracking-wider text-red-300">${h(p.chief_complaint || '')}</span></span><button onclick="this.parentElement.remove()" class="ml-5 bg-white/15 border border-white/30 text-white px-3.5 py-1.5 rounded-lg cursor-pointer font-bold text-sm shrink-0 hover:bg-white/25 transition-all">✕ Dismiss</button>`;
+      document.body.appendChild(banner);
+      // Screen flash overlay
+      const flash = document.createElement('div');
+      flash.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(220,38,38,0.18);pointer-events:none;animation:emgFlash 0.4s ease-out forwards;';
+      document.body.appendChild(flash);
+      setTimeout(() => { if (flash.parentElement) flash.remove(); }, 800);
+      setTimeout(() => { if (banner.parentElement) banner.remove(); }, 12000);
+      // Title flash
+      const origTitle = document.title;
+      let fc = 0;
+      const fi = setInterval(() => {
+        document.title = fc++ % 2 === 0 ? '🚨 EMERGENCY!' : 'ER Dashboard';
+        if (fc >= 20) { clearInterval(fi); document.title = origTitle; }
+      }, 400);
+      // Alarm — 3 loud bursts of double-beep
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const sequences = [
+          [1100, 0.00], [880, 0.14], [1100, 0.32], [880, 0.46],
+          [1100, 0.68], [880, 0.82], [1200, 1.05], [900, 1.20],
+        ];
+        sequences.forEach(([freq, delay]) => {
+          const osc = ctx.createOscillator(), g = ctx.createGain();
+          osc.connect(g); g.connect(ctx.destination);
+          osc.frequency.value = freq; osc.type = 'square';
+          const t = ctx.currentTime + delay;
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.55, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+          osc.start(t); osc.stop(t + 0.13);
+        });
+      } catch(e) {}
+    }
+
+    function confirmDischarge(pid, btn) {
+      const bar = btn.closest('div');
+      if (!bar) return;
+      bar.innerHTML = `
+        <span class="text-xs font-bold text-text2">Confirm discharge?</span>
+        <button onclick="setStatus('${pid}','discharged')" class="ml-2 rounded-lg bg-stable/15 border border-stable/40 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">Yes, Discharge</button>
+        <button onclick="refreshAll()" class="ml-1 rounded-lg bg-surface border border-slate-600 px-3 py-1.5 text-xs text-text2 hover:border-cyan/50 transition-all">Cancel</button>
+      `;
+    }
+
+    async function triageOverride(pid, action) {
+      const resultEl = document.getElementById('triage-override-result-' + pid);
+      if (resultEl) { resultEl.textContent = 'Submitting…'; resultEl.style.color = ''; }
+
+      const p = _patientCache[pid] || state.patients.find((x) => x.patient_id === pid);
+      const cur = normalizeTriage(p?.triage_level || "URGENT");
+      const idx = TRIAGE_ORDER.indexOf(cur);
+      let newLevel = cur;
+      if (action === "UPGRADE") newLevel = idx > 0 ? TRIAGE_ORDER[idx - 1] : cur;
+      if (action === "DOWNGRADE") newLevel = idx < TRIAGE_ORDER.length - 1 ? TRIAGE_ORDER[idx + 1] : cur;
+
+      // Read physician note from textarea if present
+      const noteEl = document.getElementById('override-note-' + pid);
+      const note = (noteEl && noteEl.value.trim()) ? noteEl.value.trim() : 'Physician override via dashboard';
+
+      const body = { action, note };
+      if (action !== "APPROVE") body.new_level = newLevel;
+
+      try {
+        const res = await fetch(`/api/patient/${encodeURIComponent(pid)}/triage`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || res.status);
+
+        const confirmedLevel = normalizeTriage(data.triage_level || newLevel || '');
+        const msg = `✅ Triage updated: ${confirmedLevel}`;
+        if (resultEl) { resultEl.textContent = msg; resultEl.style.color = 'var(--stable, #10b981)'; }
+        toast(msg, 'ok');
+        logAction(`${pid}: triage ${action}${action === 'APPROVE' ? '' : ' -> ' + confirmedLevel}`);
+
+        // In-place card update — update cache then rebuild just this card
+        if (p) {
+          p.triage_level = confirmedLevel;
+          p.override_action = action;
+          p.override_note = note;
+          p.updated_at = new Date().toISOString();
+          _patientCache[pid] = p;
+          enforceTriageFloor(p);
+        }
+        if (window._lastPatients) {
+          const lp = window._lastPatients.find(x => x.patient_id === pid);
+          if (lp) { lp.triage_level = confirmedLevel; enforceTriageFloor(lp); }
+        }
+        const cardEl = document.getElementById('card-' + pid);
+        if (cardEl && p) {
+          const wrap = document.createElement('div');
+          wrap.innerHTML = buildCard(p);
+          const newCard = wrap.firstElementChild;
+          cardEl.replaceWith(newCard);
+          newCard.querySelectorAll('[data-toggle]').forEach(t =>
+            t.addEventListener('click', () => toggleDet(t.dataset.toggle)));
+          newCard.querySelectorAll('[data-tab]').forEach(b =>
+            b.addEventListener('click', () => switchDtab(b.dataset.pid, b.dataset.tab, b)));
+          // Auto-open triage tab so doctor sees the result
+          const triageBtn = newCard.querySelector('[data-tab="triage"]');
+          const triageDet = newCard.querySelector('#det-' + pid);
+          if (triageBtn && triageDet) {
+            triageDet.classList.remove('hidden');
+            switchDtab(pid, 'triage', triageBtn);
+          }
+        }
+        // Only refresh KPI, not full patient list
+        loadStats();
+      } catch(e) {
+        const errMsg = '❌ Override failed: ' + (e.message || 'Unknown error');
+        if (resultEl) { resultEl.textContent = errMsg; resultEl.style.color = 'var(--emer, #ef4444)'; }
+        toast(errMsg, 'err');
+      }
+    }
+
+    async function alertTeam(pid) {
+      toast(`🚨 Team alerted for patient ${pid.slice(0,8)}`, 'warn');
+      logAction(`${pid}: team alerted`);
+    }
+    async function assignBed(pid) {
+      const bedNum = Math.floor(Math.random() * 20) + 1;
+      toast(`🏥 Bed ${bedNum} assigned to patient ${pid.slice(0,8)}`, 'ok');
+      logAction(`${pid}: bed ${bedNum} assigned`);
+    }
+    function viewRoute(pid) {
+      switchTab("tracking");
+      const row = [...document.querySelectorAll("#tracking-body tr")].find((tr) => tr.textContent.includes(pid));
+      if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
+      toast(`Route opened for ${pid}`);
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  REPORTS & ANALYTICS (from v9 — enhanced for v10)
+    // ══════════════════════════════════════════════════════════
+    
+    function switchReportTab(tab, btn) {
+      // Update button states
+      document.querySelectorAll('.rpt-tab-btn').forEach(b => {
+        b.classList.remove('active', 'bg-cyan/20', 'text-cyan');
+        b.classList.add('text-text2');
+      });
+      btn.classList.add('active', 'bg-cyan/20', 'text-cyan');
+      btn.classList.remove('text-text2');
+      
+      // Show selected pane
+      document.querySelectorAll('.rpt-pane').forEach(p => p.classList.add('hidden'));
+      document.getElementById('rpt-' + tab).classList.remove('hidden');
+    }
+
+    async function loadReports() {
+      try {
+        const pts = await api('/api/patients?limit=500&status=all');
+        const stats = await api('/api/stats');
+        buildDailyReport(pts, stats);
+        buildWeeklyReport(pts);
+        buildMonthlyReport(pts, stats);
+        buildYearlyReport(pts, stats);
+      } catch (e) { console.error('Reports failed', e); }
+    }
+
+    function buildDailyReport(pts, stats) {
+      // Total patients
+      document.getElementById('rpt-d-total').textContent = pts.length;
+      
+      // Avg risk score
+      const risks = pts.map(p => p.risk_score).filter(r => r > 0);
+      const avgR = risks.length ? (risks.reduce((a, b) => a + b, 0) / risks.length).toFixed(1) : '—';
+      document.getElementById('rpt-d-risk').textContent = avgR;
+      
+      // Avg ETA
+      const etaVals = pts.map(p => p.eta_minutes).filter(Boolean);
+      const avgETA = etaVals.length ? Math.round(etaVals.reduce((a, b) => a + b, 0) / etaVals.length) + ' min' : '—';
+      document.getElementById('rpt-d-eta').textContent = avgETA;
+      
+      // Photos count
+      document.getElementById('rpt-d-photos').textContent = pts.filter(p => p.photo_count > 0).length;
+      
+      // Triage distribution horizontal bars
+      const imm = pts.filter(p => normalizeTriage(p.triage_level) === 'IMMEDIATE').length;
+      const emg = pts.filter(p => normalizeTriage(p.triage_level) === 'EMERGENCY').length;
+      const urg = pts.filter(p => normalizeTriage(p.triage_level) === 'URGENT').length;
+      const std = pts.filter(p => normalizeTriage(p.triage_level) === 'STANDARD').length;
+      const nurg = pts.filter(p => normalizeTriage(p.triage_level) === 'NON_URGENT').length;
+      const maxV = Math.max(imm, emg, urg, std, nurg, 1);
+      
+      document.getElementById('rpt-d-triage').innerHTML = [
+        ['Immediate', imm, 'I', '#ef4444'],
+        ['Emergency', emg, 'E', '#f59e0b'],
+        ['Urgent', urg, 'U', '#facc15'],
+        ['Standard', std, 'S', '#10b981'],
+        ['Non-Urgent', nurg, 'N', '#60a5fa']
+      ].map(([lbl, n, cls, col]) => `
+        <div class="flex items-center gap-3">
+          <span class="w-20 text-xs text-text2">${lbl}</span>
+          <div class="flex-1 h-5 bg-surface2/50 rounded-full overflow-hidden">
+            <div class="h-full flex items-center justify-end px-2 text-[10px] font-bold text-white transition-all duration-500" 
+                 style="width: ${Math.max(4, (n / maxV) * 100)}%; background: ${col}">${n > 0 ? n : ''}</div>
+          </div>
+        </div>
+      `).join('');
+      
+      // Status breakdown
+      const statusMap = { incoming: 'En Route', arrived: 'Arrived', in_treatment: 'In Treatment', discharged: 'Discharged' };
+      const statusColors = { incoming: 'var(--blue2)', arrived: 'var(--urgent)', in_treatment: 'var(--routine)', discharged: 'var(--stable)' };
+      const counts = {};
+      pts.forEach(p => { const s = (p.status || 'incoming').toLowerCase(); counts[s] = (counts[s] || 0) + 1; });
+      const maxStatus = Math.max(...Object.values(counts), 1);
+      
+      document.getElementById('rpt-d-status').innerHTML = Object.entries(statusMap).filter(([k]) => counts[k]).map(([k, lbl]) => `
+        <div class="flex items-center gap-3">
+          <span class="w-24 text-xs text-text2">${lbl}</span>
+          <div class="flex-1 h-5 bg-surface2/50 rounded-full overflow-hidden">
+            <div class="h-full flex items-center justify-end px-2 text-[10px] font-bold text-white transition-all duration-500" 
+                 style="width: ${Math.max(4, (counts[k] || 0) / maxStatus * 100)}%; background: ${statusColors[k]}">${counts[k] || 0}</div>
+          </div>
+        </div>
+      `).join('');
+      
+      // Risk score histogram
+      const bins = new Array(10).fill(0);
+      pts.forEach(p => { const r = Math.round(p.risk_score); if (r >= 1 && r <= 10) bins[r - 1]++; });
+      const maxB = Math.max(...bins, 1);
+      document.getElementById('rpt-d-risk-dist').innerHTML = bins.map((n, i) => {
+        const col = i >= 6 ? '#ef4444' : i >= 3 ? '#f59e0b' : '#10b981';
+        return `<div class="flex-1 flex flex-col items-center gap-1">
+          <div class="text-[10px] font-bold text-text3">${n || ''}</div>
+          <div class="w-full rounded-t-md transition-all duration-500" style="background: ${col}; height: ${Math.max(4, (n / maxB) * 100)}%;"></div>
+        </div>`;
+      }).join('');
+    }
+
+    function buildWeeklyReport(pts) {
+      // Hourly distribution
+      const hours = new Array(24).fill(0);
+      pts.forEach(p => {
+        const ts = p.timestamp || '';
+        const m = ts.match(/T(\d\d):/);
+        if (m) hours[parseInt(m[1])]++;
+      });
+      const maxH = Math.max(...hours, 1);
+      document.getElementById('rpt-w-hours').innerHTML = hours.map((n, i) => `
+        <div class="flex-1 flex flex-col items-center">
+          <div class="w-full rounded-t-md transition-all duration-500 ${n > 0 ? 'bg-cyan' : 'bg-slate-700'}" style="height: ${Math.max(4, (n / maxH) * 100)}%;"></div>
+          ${i % 6 === 0 ? `<div class="text-[10px] text-text3 mt-1">${i}h</div>` : ''}
+        </div>
+      `).join('');
+      
+      // Weekly triage donut
+      const imm = pts.filter(p => normalizeTriage(p.triage_level) === 'IMMEDIATE').length;
+      const emg = pts.filter(p => normalizeTriage(p.triage_level) === 'EMERGENCY').length;
+      const urg = pts.filter(p => normalizeTriage(p.triage_level) === 'URGENT').length;
+      const std = pts.filter(p => normalizeTriage(p.triage_level) === 'STANDARD').length;
+      const nurg = pts.filter(p => normalizeTriage(p.triage_level) === 'NON_URGENT').length;
+      const total = imm + emg + urg + std + nurg || 1;
+      
+      const donutData = [
+        ['Immediate', Math.round(imm / total * 100), '#ef4444', imm],
+        ['Emergency', Math.round(emg / total * 100), '#f59e0b', emg],
+        ['Urgent', Math.round(urg / total * 100), '#facc15', urg],
+        ['Standard', Math.round(std / total * 100), '#10b981', std],
+        ['Non-Urgent', Math.round(nurg / total * 100), '#60a5fa', nurg]
+      ];
+      
+      document.getElementById('rpt-w-triage').innerHTML = buildDonutChart(donutData, total);
+      
+      // Top complaints
+      const cmap = {};
+      pts.forEach(p => {
+        const c = (p.chief_complaint || p.complaint_text || '').split(/[,\.!?]/)[0].trim().toLowerCase();
+        if (c.length > 2) cmap[c] = (cmap[c] || 0) + 1;
+      });
+      const sorted = Object.entries(cmap).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const maxV = sorted.length ? sorted[0][1] : 1;
+      
+      document.getElementById('rpt-w-complaints').innerHTML = sorted.map(([c, n]) => `
+        <div class="flex items-center gap-3">
+          <span class="flex-1 text-xs text-text2 truncate capitalize">${c.length > 25 ? c.slice(0, 25) + '…' : c}</span>
+          <div class="w-24 h-4 bg-surface2/50 rounded-full overflow-hidden">
+            <div class="h-full bg-cyan rounded-full transition-all duration-500" style="width: ${Math.max(4, (n / maxV) * 100)}%;"></div>
+          </div>
+          <span class="text-xs font-bold w-6 text-right">${n}</span>
+        </div>
+      `).join('') || '<div class="text-text3 text-sm">No complaint data</div>';
+    }
+
+    function buildMonthlyReport(pts, stats) {
+      document.getElementById('rpt-m-total').textContent = pts.length;
+      
+      const risks = pts.map(p => p.risk_score).filter(r => r > 0);
+      const avgR = risks.length ? (risks.reduce((a, b) => a + b, 0) / risks.length).toFixed(1) : '—';
+      document.getElementById('rpt-m-risk').textContent = avgR;
+      
+      const dischargeRate = pts.length ? Math.round(pts.filter(p => p.status === 'discharged').length / pts.length * 100) + '%' : '—';
+      document.getElementById('rpt-m-discharge').textContent = dischargeRate;
+      
+      document.getElementById('rpt-m-highrisk').textContent = pts.filter(p => (p.risk_score || 0) >= 7).length;
+      
+      // Avg treatment duration
+      const durs = pts.filter(p => p.treatment_started_at && p.discharged_at).map(p => {
+        const start = new Date(p.treatment_started_at), end = new Date(p.discharged_at);
+        return (end - start) / 60000;
+      }).filter(d => d > 0 && d < 1440);
+      document.getElementById('rpt-m-treat').textContent = durs.length ? Math.round(durs.reduce((a, b) => a + b, 0) / durs.length) + ' min' : '—';
+      
+      // Top conditions
+      const cmap = {};
+      pts.forEach(p => (p.suspected_conditions || []).forEach(c => { if (c) cmap[c] = (cmap[c] || 0) + 1; }));
+      const top = Object.entries(cmap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const maxV = top.length ? top[0][1] : 1;
+      
+      document.getElementById('rpt-m-conds').innerHTML = top.length
+        ? top.map(([c, n]) => `
+            <div class="flex items-center gap-3">
+              <span class="flex-1 text-xs text-text2 truncate">${h(c)}</span>
+              <div class="w-24 h-4 bg-surface2/50 rounded-full overflow-hidden">
+                <div class="h-full bg-cyan rounded-full transition-all duration-500" style="width: ${Math.max(4, (n / maxV) * 100)}%;"></div>
+              </div>
+              <span class="text-xs font-bold w-6 text-right">${n}</span>
+            </div>
+          `).join('')
+        : '<div class="text-text3 text-sm">No condition data yet</div>';
+    }
+
+    function buildYearlyReport(pts, stats) {
+      document.getElementById('rpt-y-total').textContent = pts.length;
+      
+      const emg = pts.filter(p => p.triage_level === 'EMERGENCY').length;
+      document.getElementById('rpt-y-emg').textContent = pts.length ? Math.round(emg / pts.length * 100) + '%' : '—';
+      
+      const risks = pts.map(p => p.risk_score).filter(r => r > 0);
+      const avgR = risks.length ? (risks.reduce((a, b) => a + b, 0) / risks.length).toFixed(1) : '—';
+      document.getElementById('rpt-y-risk').textContent = avgR;
+      
+      const treatRate = pts.length ? Math.round(pts.filter(p => p.status === 'discharged').length / pts.length * 100) + '%' : '—';
+      document.getElementById('rpt-y-treat').textContent = treatRate;
+    }
+
+    async function loadLiveStats() {
+      try {
+        const [stats, pts] = await Promise.all([api('/api/stats'), api('/api/patients?limit=100')]);
+        const risks = pts.map(p => p.risk_score).filter(r => r > 0);
+        const avgRisk = risks.length ? (risks.reduce((a, b) => a + b, 0) / risks.length).toFixed(1) : '—';
+        const avgRiskColor = avgRisk >= 7 ? '#ef4444' : avgRisk >= 4 ? '#f59e0b' : '#10b981';
+        const wGPS = pts.filter(p => p.latitude || p.location?.lat).length;
+        const wPhoto = pts.filter(p => p.photo_count > 0).length;
+        const etaVals = pts.map(p => p.eta_minutes).filter(Boolean);
+        const avgETA = etaVals.length ? Math.round(etaVals.reduce((a, b) => a + b, 0) / etaVals.length) + ' min' : '—';
+        const consent = pts.length ? Math.round(pts.filter(p => p.data_consent).length / pts.length * 100) + '%' : '—';
+        
+        const imm = pts.filter(p => normalizeTriage(p.triage_level) === 'IMMEDIATE').length;
+        const emg = pts.filter(p => normalizeTriage(p.triage_level) === 'EMERGENCY').length;
+        const urg = pts.filter(p => normalizeTriage(p.triage_level) === 'URGENT').length;
+        const std = pts.filter(p => normalizeTriage(p.triage_level) === 'STANDARD').length;
+        const nurg = pts.filter(p => normalizeTriage(p.triage_level) === 'NON_URGENT').length;
+        const treating = stats.in_treatment || 0;
+        const total = imm + emg + urg + std + nurg || 1;
+        const discharged = pts.filter(p => (p.status || '').toLowerCase() === 'discharged').length;
+        
+        // MTS 5-Level Grid
+        const mtsData = [
+          ['Immediate', imm, '#ef4444'],
+          ['Emergency', emg, '#f59e0b'],
+          ['Urgent', urg, '#facc15'],
+          ['Standard', std, '#10b981'],
+          ['Non-Urgent', nurg, '#60a5fa'],
+          ['In Treatment', treating, '#22d3ee']
+        ];
+        
+        document.getElementById('stats-mts-grid').innerHTML = mtsData.map(([lbl, n, col]) => `
+          <div class="text-center rounded-xl p-3 border-2" style="background: ${col}15; border-color: ${col}40;">
+            <div class="text-2xl font-bold" style="color: ${col}; font-family: var(--font-display);">${n}</div>
+            <div class="text-[10px] font-bold uppercase tracking-wider mt-1" style="color: ${col};">● ${lbl}</div>
+          </div>
+        `).join('');
+        
+        // Donut chart
+        const donutData = [
+          ['Immediate', Math.round(imm / total * 100), '#ef4444', imm],
+          ['Emergency', Math.round(emg / total * 100), '#f59e0b', emg],
+          ['Urgent', Math.round(urg / total * 100), '#facc15', urg],
+          ['Standard', Math.round(std / total * 100), '#10b981', std],
+          ['Non-Urgent', Math.round(nurg / total * 100), '#60a5fa', nurg]
+        ];
+        document.getElementById('stats-donut').innerHTML = buildDonutChart(donutData, total, 56);
+        document.getElementById('stats-legend').innerHTML = donutData.map(([lbl, pct, col, n]) => `
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full" style="background: ${col}"></div>
+            <span class="text-text2 flex-1">${lbl}</span>
+            <span class="font-bold">${pct}%</span>
+            <span class="text-text3">(${n})</span>
+          </div>
+        `).join('');
+        
+        // Key metrics
+        document.getElementById('stats-metrics').innerHTML = [
+          ['Avg Risk', avgRisk, avgRiskColor, '/10'],
+          ['Avg ETA', avgETA, '#22d3ee', ''],
+          ['Consent', consent, '#10b981', ''],
+          ['GPS Tracked', `${wGPS}/${pts.length}`, '#94a3b8', '']
+        ].map(([lbl, val, col, sub]) => `
+          <div class="text-center rounded-xl p-3 bg-surface/60 border border-slate-700/30">
+            <div class="text-2xl font-bold" style="color: ${col}">${val}</div>
+            <div class="text-[10px] uppercase text-text3 font-bold mt-1">${lbl} ${sub}</div>
+          </div>
+        `).join('');
+        
+        // Status flow bar
+        const flowData = [
+          ['Incoming', imm + emg + urg + std + nurg, '#64748B'],
+          ['In Treatment', treating, '#1D4ED8'],
+          ['Discharged', discharged, '#047857']
+        ].filter(([, n]) => n > 0);
+        const total2 = (imm + emg + urg + std + nurg + treating + discharged) || 1;
+        
+        document.getElementById('stats-flow').innerHTML = flowData.map(([lbl, n, col]) => {
+          const pct = Math.max(8, Math.round(n / total2 * 100));
+          return `<div class="flex flex-col items-center justify-center text-white font-bold text-xs transition-all duration-500 hover:opacity-90" 
+                       style="flex: ${pct}; background: ${col}; min-width: 60px;">
+            <span>${n}</span>
+            <span class="text-[10px] opacity-80">${lbl}</span>
+          </div>`;
+        }).join('');
+      } catch (e) { console.error('Stats failed', e); }
+    }
+
+    // Donut chart SVG builder
+    function buildDonutChart(segments, centerLabel = '', size = 128) {
+      const r = size / 2 - 12, cx = size / 2, cy = size / 2;
+      let offset = 0;
+      const circ = 2 * Math.PI * r;
+      const arcs = segments.filter(([, pct]) => pct > 0).map(([label, pct, color]) => {
+        const dash = (pct / 100) * circ;
+        const arc = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="10"
+          stroke-dasharray="${Math.max(0, dash - 2)} ${circ - Math.max(0, dash - 2) + 2}"
+          stroke-dashoffset="${-offset}" stroke-linecap="round"/>`;
+        offset += dash; return arc;
+      });
+      return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform: rotate(-90deg);">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#334155" stroke-width="10"/>
+        ${arcs.join('')}
+        <text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="14" font-weight="bold" fill="white">${centerLabel}</text>
+        <text x="${cx}" y="${cy + 12}" text-anchor="middle" font-size="9" fill="#94a3b8">total</text>
+      </svg>`;
+    }
+
+    function exportReportsCSV() {
+      const rows = state.patients.map(p => ({
+        ID: p.patient_id,
+        Name: p.full_name || '',
+        Status: p.status || 'incoming',
+        Triage: p.triage_level || '',
+        'Risk Score': p.risk_score || '',
+        'ETA (min)': p.eta_minutes || '',
+        'Chief Complaint': p.chief_complaint || '',
+        Language: p.language || ''
+      }));
+      if (!rows.length) { toast('No data to export', 'err'); return; }
+      const headers = Object.keys(rows[0]);
+      const csv = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] || '')).join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `vitalnav_report_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+      URL.revokeObjectURL(url);
+      toast('CSV exported successfully', 'ok');
+    }
+    function viewDoctor(pid) {
+      switchTab("doctor");
+      // Wait for panel render then scroll + highlight
+      setTimeout(() => {
+        const cards = [...document.querySelectorAll("#doctor-panel-list > div")];
+        const card = cards.find(el => el.innerHTML.includes(pid));
+        if (card) {
+          card.scrollIntoView({ behavior: "smooth", block: "center" });
+          card.style.outline = '2px solid rgba(34,211,238,.7)';
+          card.style.boxShadow = '0 0 20px rgba(34,211,238,.25)';
+          setTimeout(() => { card.style.outline = ''; card.style.boxShadow = ''; }, 2000);
+        }
+      }, 100);
+    }
+
+    function switchTab(tab) {
+      state.activeTab = tab;
+      document.querySelectorAll(".pane").forEach((p) => p.classList.add("hidden-pane"));
+      document.getElementById(`pane-${tab}`)?.classList.remove("hidden-pane");
+      document.querySelectorAll("#side-nav [data-tab]").forEach((b) => b.classList.remove("active-nav"));
+      document.querySelector(`#side-nav [data-tab="${tab}"]`)?.classList.add("active-nav");
+      
+      // Load tab-specific data
+      if (tab === 'tracking') { initMap(); loadTracking(); }
+      if (tab === 'reports') loadReports();
+      if (tab === 'analytics') loadLiveStats();
+      if (tab === 'admin') loadAdminTable();
+    }
+
+    async function refreshAll() {
+      try {
+        await Promise.all([loadStats(), loadPatients(), loadTracking()]);
+        document.getElementById("sync-text").textContent = `Synced ${new Date().toLocaleTimeString()}`;
+      } catch (e) {
+        toast(`Backend error: ${e.message}`, "err");
+      }
+    }
+
+    // Extended state from v9
+    const _patientCache = {};
+    let compactMode = false;
+    let _privacyOn = false;
+    let activeKpiFilter = null;
+    let sortMode = 'triage';
+    const STATUS_MAP = { incoming: '🚗 En Route', arrived: '🏥 Arrived', in_treatment: '💊 In Treatment', discharged: '✅ Discharged' };
+    
+    // Language strings
+    const UI_STRINGS = {
+      en: { queueLabel: 'In Queue', orderedBy: 'Queue', emergency: 'Emergency', urgent: 'Urgent', routine: 'Routine', stable: 'Stable', critical: 'Critical' },
+      de: { queueLabel: 'In Warteschlange', orderedBy: 'Warteschlange', emergency: 'Notfall', urgent: 'Dringend', routine: 'Routine', stable: 'Stabil', critical: 'Kritisch' }
+    };
+    let _currentLang = 'en';
+
+    // ── PATIENT CARD RENDERING (from v9) ───────────────────────────
+    function renderPatientListTo(patients, el) {
+      if (!el) return;
+      if (!patients || !patients.length) {
+        el.innerHTML = '<div class="text-center py-12 text-text2"><div class="text-4xl mb-3">📋</div><div>No incoming patients</div></div>';
+        return;
+      }
+      // Full rebuild for secondary container (no smart-diff needed, always fresh)
+      el.innerHTML = '';
+      patients.forEach(p => {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = buildCard(p);
+        const card = wrap.firstElementChild;
+        if (card) {
+          el.appendChild(card);
+          card.querySelectorAll('[data-toggle]').forEach(t =>
+            t.addEventListener('click', () => toggleDet(t.dataset.toggle)));
+          card.querySelectorAll('[data-tab]').forEach(btn =>
+            btn.addEventListener('click', () => switchDtab(btn.dataset.pid, btn.dataset.tab, btn)));
+        }
+      });
+    }
+
+    function renderPatientList(patients) {
+      const el = document.getElementById('incoming-list');
+      if (!patients || !patients.length) {
+        el.innerHTML = '<div class="text-center py-12 text-text2"><div class="text-4xl mb-3">📋</div><div>No incoming patients</div></div>';
+        return;
+      }
+      window._lastPatients = patients;
+      patients.forEach(p => { if (p.patient_id) _patientCache[p.patient_id] = p; });
+
+      const newIds = new Set(patients.map(p => p.patient_id).filter(Boolean));
+
+      // 1. Remove cards no longer in the list
+      el.querySelectorAll('[id^="card-"]').forEach(card => {
+        const pid = card.id.slice(5);
+        if (!newIds.has(pid)) card.remove();
+      });
+
+      // 2. For each patient: patch existing card OR append new one
+      patients.forEach(p => {
+        const pid = p.patient_id; if (!pid) return;
+        const existing = document.getElementById('card-' + pid);
+        const eta = p.eta_minutes;
+        const etaCls = eta && eta <= 5 ? 'text-emer font-bold' : eta && eta <= 10 ? 'text-urgent font-semibold' : 'text-text2';
+        const status = p.status || 'incoming';
+        const lvl = normalizeTriage(p.triage_level);
+        const tc = TRIAGE_CLASS[lvl] || 'U';
+        const col = TRIAGE_COLOR[lvl] || '#f59e0b';
+
+        if (existing) {
+          // ── Patch triage class on card border ──
+          ['triage-I','triage-E','triage-U','triage-S','triage-N'].forEach(c => existing.classList.remove(c));
+          existing.classList.add('triage-' + tc);
+
+          // ── Patch ETA ──
+          const etaEl = existing.querySelector(`[data-eta="${pid}"]`);
+          if (etaEl) {
+            etaEl.className = `text-3xl font-bold mono ${etaCls}`;
+            etaEl.textContent = eta != null ? eta : '—';
+          }
+
+          // ── Patch status pill ──
+          const pillEl = existing.querySelector(`[data-status-pill="${pid}"]`);
+          if (pillEl) {
+            pillEl.style.background = status === 'discharged' ? 'rgba(16,185,129,.15)' : status === 'in_treatment' ? 'rgba(139,92,246,.15)' : 'rgba(96,165,250,.15)';
+            pillEl.style.color = status === 'discharged' ? '#10b981' : status === 'in_treatment' ? '#a78bfa' : '#60a5fa';
+            pillEl.textContent = STATUS_LABEL[status] || status;
+          }
+
+          // ── Patch quick actions bar ──
+          const qaWrap = existing.querySelector(`[data-qa-bar="${pid}"]`);
+          if (qaWrap) {
+            const s = status.toLowerCase();
+            let newQa = '';
+            if (s === 'incoming' || s === 'arrived') {
+              newQa = `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-slate-800/20"><span class="text-[10px] font-bold uppercase tracking-wider text-text3">Quick:</span><button onclick="setStatus('${pid}','in_treatment')" class="rounded-lg bg-violet-500/15 border border-violet-400/40 px-3 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition-all">💊 In Treatment</button><button onclick="setStatus('${pid}','discharged')" class="rounded-lg bg-stable/15 border border-stable/40 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✓ Discharge</button></div>`;
+            } else if (s === 'in_treatment') {
+              const ts = p.treatment_started_at ? ' · since ' + fmtTime(p.treatment_started_at) : '';
+              newQa = `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-violet-500/5"><span class="text-xs font-bold text-violet-300">💊 In Treatment${ts}</span><button onclick="confirmDischarge('${pid}',this)" class="ml-auto rounded-lg bg-stable/15 border border-stable/40 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✓ Discharge</button></div>`;
+            } else {
+              const ts = p.discharged_at ? ' · ' + fmtTime(p.discharged_at) : '';
+              newQa = `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-stable/5"><span class="text-xs font-bold text-stable">✅ Discharged${ts}</span><button onclick="setStatus('${pid}','in_treatment')" class="ml-auto rounded-lg bg-surface border border-slate-600 px-3 py-1.5 text-xs text-text2 hover:border-cyan/50 transition-all">↩ Re-admit</button></div>`;
+            }
+            qaWrap.innerHTML = newQa;
+          }
+
+          // Do NOT reorder — patch in-place to preserve expand state
+        } else {
+          // New card: full render + attach listeners
+          const wrap = document.createElement('div');
+          wrap.innerHTML = buildCard(p);
+          const card = wrap.firstElementChild;
+          el.appendChild(card);
+          card.querySelectorAll('[data-toggle]').forEach(t =>
+            t.addEventListener('click', () => toggleDet(t.dataset.toggle)));
+          card.querySelectorAll('[data-tab]').forEach(btn =>
+            btn.addEventListener('click', () => switchDtab(btn.dataset.pid, btn.dataset.tab, btn)));
+        }
+      });
+    }
+
+    // MTS metadata for triage detail display
+    const MTS_META = {
+      IMMEDIATE:  { level: 1, mts_color: 'RED',    max_wait: 0,   subtitle: 'Level 1 — MTS Red — Immediate' },
+      EMERGENCY:  { level: 2, mts_color: 'ORANGE', max_wait: 10,  subtitle: 'Level 2 — MTS Orange — Max wait: 10 min' },
+      URGENT:     { level: 3, mts_color: 'YELLOW', max_wait: 30,  subtitle: 'Level 3 — MTS Yellow — Max wait: 30 min' },
+      STANDARD:   { level: 4, mts_color: 'GREEN',  max_wait: 90,  subtitle: 'Level 4 — MTS Green — Max wait: 90 min' },
+      NON_URGENT: { level: 5, mts_color: 'BLUE',   max_wait: 120, subtitle: 'Level 5 — MTS Blue — Max wait: 120 min' },
+    };
+    const FLAG_EMOJI = { DE:'🇩🇪', TR:'🇹🇷', UK:'🇬🇧', GB:'🇬🇧', FR:'🇫🇷', IT:'🇮🇹', ES:'🇪🇸', NL:'🇳🇱', PL:'🇵🇱', RU:'🇷🇺' };
+    const LANG_NAME = { 'de-DE':'Deutsch','tr-TR':'Türkçe','en-GB':'English','en-US':'English','fr-FR':'Français','ar-SA':'العربية','es-ES':'Español','it-IT':'Italiano','nl-NL':'Nederlands','pl-PL':'Polski','ru-RU':'Русский','zh-CN':'中文' };
+
+    function condName(c) { if (!c) return ''; if (typeof c === 'object') return c.condition || c.name || c.icd10 || ''; return String(c); }
+    function fmtTime(iso) { if (!iso) return ''; try { const d = new Date(iso); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); } catch { return ''; } }
+
+    function getAllergyText(p) {
+      if (!p.allergies) return 'None Identified';
+      if (Array.isArray(p.allergies)) return p.allergies.map(a => typeof a === 'object' ? (a.name || a.allergen || 'Unknown') : a).join(', ');
+      if (typeof p.allergies === 'object') return p.allergies.name || p.allergies.allergen || 'Record Found';
+      return p.allergies;
+    }
+
+    function buildPrep(p) {
+      const lvl = normalizeTriage(p.triage_level);
+      const base = {
+        IMMEDIATE: [
+          'ACTIVATE FULL RESUSCITATION TEAM NOW',
+          'Clear Resus Bay — all staff to positions',
+          'Defibrillator powered on, pads attached',
+          'Two large-bore IV lines (14G or 16G) — both arms',
+          'Cross-match blood — 6 units O-neg ready',
+          'Alert on-call anaesthetist, cardiologist, and surgeon',
+          'Notify ICU — bed reservation immediate',
+          '12-lead ECG running, continuous monitoring',
+          'Airway trolley and intubation kit at head of bed',
+          'Portable chest X-ray team on standby',
+          'Rapid infuser / Level 1 device available',
+        ],
+        EMERGENCY: [
+          'Activate resuscitation team immediately',
+          'Prepare Resus Bay 1',
+          'Defibrillator charged and ready',
+          'Two large-bore IV lines',
+          'Cross-match blood — 4 units O-neg',
+          'Alert on-call cardiologist/surgeon',
+          'Notify ICU of potential admission',
+          '12-lead ECG machine ready',
+          'Portable chest X-ray on standby',
+        ],
+        URGENT: [
+          'Assign acute-care bed',
+          'Alert attending physician',
+          'Monitoring: ECG, SpO\u2082, NIBP',
+          'IV access trolley at bedside',
+          'Blood draw kit prepared',
+          'Pre-request relevant imaging if indicated',
+        ],
+        STANDARD: [
+          'Assign assessment room',
+          'Brief nursing staff on presentation',
+          'Standard vitals kit (BP, pulse ox, thermometer)',
+          'Triage documentation ready',
+          'IV access if clinically indicated',
+        ],
+        NON_URGENT: [
+          'Register patient and assign waiting area seat',
+          'Brief reception staff',
+          'Standard vitals on arrival',
+          'Triage documentation ready',
+          'Advise estimated wait time to patient',
+        ],
+      }[lvl] || ['Assign appropriate bay', 'Alert attending physician'];
+      const conds = (p.suspected_conditions || []).map(condName).join(', ');
+      if (conds) base.push('Suspected: ' + conds);
+      const fl = (p.red_flags || []).filter(f => f !== 'none_identified');
+      if (fl.length) base.push('Red flags: ' + fl.map(f => f.replace(/_/g, ' ')).join(', '));
+      return base;
+    }
+
+    function buildCard(p) {
+      const pid = p.patient_id || '';
+      _patientCache[pid] = p;
+      if (compactMode) return buildCompactCard(p);
+
+      const lvl = normalizeTriage(p.triage_level);
+      const tc = TRIAGE_CLASS[lvl] || 'U';
+      const col = TRIAGE_COLOR[lvl] || '#f59e0b';
+      const photo = p.profile_photo_url || `https://i.pravatar.cc/100?u=${encodeURIComponent(pid)}`;
+      const eta = p.eta_minutes;
+      const etaCls = eta && eta <= 5 ? 'text-emer font-bold' : eta && eta <= 10 ? 'text-urgent font-semibold' : 'text-text2';
+      const status = p.status || 'incoming';
+
+      const age = p.age ?? '—';
+      const bmi = p.vitals?.bmi || (p.weight_kg && p.height_cm ? (p.weight_kg / ((p.height_cm/100) ** 2)).toFixed(1) : '—');
+      const blood = p.blood_type || '—';
+      const weight = p.weight_kg ? p.weight_kg + ' kg' : '—';
+      const heightVal = p.height_cm ? p.height_cm + ' cm' : '—';
+      const sex = p.sex || '—';
+      const hn = p.health_number || '';
+      const nat = p.nationality || '';
+      const lang = LANG_NAME[p.language] || p.language || '';
+      const qa = p.qa_transcript || [];
+      const flags = (p.red_flags || []).filter(f => f && f !== 'none_identified');
+      const conds = (p.suspected_conditions || []).map(condName).filter(Boolean);
+      const dest = p.destination_hospital || '';
+      const allergyText = getAllergyText(p);
+      const mts = MTS_META[lvl] || MTS_META.URGENT;
+
+      // Assessment fields (V9 parity)
+      const asmt = (() => { const r = p.assessment; if (!r) return ''; if (typeof r === 'object') return r.patient_summary_en || r.clinical_report || r.summary || r.text || ''; return String(r); })();
+      const clinicalReport = (() => { const r = p.assessment; if (!r || typeof r !== 'object') return p.clinical_report || ''; return r.clinical_report || p.clinical_report || ''; })();
+      const sourceGuidelines = (() => { const r = p.assessment; if (!r || typeof r !== 'object') return []; return r.source_guidelines || []; })();
+
+      // Quick status actions (V9 parity)
+      const qaBarHTML = (() => {
+        const s = status.toLowerCase();
+        if (s === 'incoming' || s === 'arrived') {
+          return `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-slate-800/20">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-text3">Quick:</span>
+            <button onclick="setStatus('${h(pid)}','in_treatment')" class="rounded-lg bg-violet-500/15 border border-violet-400/40 px-3 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition-all">💊 In Treatment</button>
+            <button onclick="setStatus('${h(pid)}','discharged')" class="rounded-lg bg-stable/15 border border-stable/40 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✓ Discharge</button>
+          </div>`;
+        } else if (s === 'in_treatment') {
+          const ts = p.treatment_started_at ? ' · since ' + fmtTime(p.treatment_started_at) : '';
+          return `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-violet-500/5">
+            <span class="text-xs font-bold text-violet-300">💊 In Treatment${ts}</span>
+            <button onclick="confirmDischarge('${h(pid)}',this)" class="ml-auto rounded-lg bg-stable/15 border border-stable/40 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✓ Discharge</button>
+          </div>`;
+        } else {
+          const ts = p.discharged_at ? ' · ' + fmtTime(p.discharged_at) : '';
+          return `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-stable/5">
+            <span class="text-xs font-bold text-stable">✅ Discharged${ts}</span>
+            <button onclick="setStatus('${h(pid)}','in_treatment')" class="ml-auto rounded-lg bg-surface border border-slate-600 px-3 py-1.5 text-xs text-text2 hover:border-cyan/50 transition-all">↩ Re-admit</button>
+          </div>`;
+        }
+      })();
+
+      // Prep checklist
+      const prepItems = buildPrep(p);
+
+      return `
+        <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-surface2/60 to-surface/40 backdrop-blur-sm p-0 overflow-hidden triage-${tc}" id="card-${pid}">
+          <!-- PREMIUM HEADER -->
+          <div class="p-5 bg-gradient-to-r from-slate-800/50 to-slate-900/50">
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div class="flex items-start gap-4">
+                <div class="relative group shrink-0">
+                  <img src="${h(photo)}" alt="Patient" class="patient-photo w-32 h-32 rounded-2xl object-cover border-2 border-slate-600/50 shadow-lg group-hover:border-cyan/50 transition-all cursor-pointer" onclick="openMediaLightbox('${h(photo)}','${h(pid)}',0)" />
+                  <div class="absolute -bottom-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-lg" style="background:${col}20;color:${col};border:2px solid ${col}66">
+                    ${sex === 'female' ? '♀' : sex === 'male' ? '♂' : '⚤'}
+                  </div>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-xl font-bold text-white mb-1 truncate patient-name">${h(p.full_name || pid)}</h3>
+                  <p class="text-text2 text-sm mb-2 truncate">${h(p.chief_complaint || 'No complaint recorded')}</p>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="chip triage-${tc} text-xs px-2.5 py-1" style="color:${col};border-color:${col}66;background:${col}15">
+                      ${tc} • Risk: ${p.risk_score ?? '—'}/10
+                    </span>
+                    ${p._triage_upgraded_by_score ? `<span class="text-[10px] font-bold text-urgent bg-urgent/10 border border-urgent/30 rounded-full px-2 py-0.5">⚠️ AUTO-UPGRADED</span>` : ''}
+                    <span class="text-[10px] text-text3">${mts.subtitle}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <div data-eta="${h(pid)}" class="text-3xl font-bold mono ${etaCls}">${eta != null ? eta : '—'}</div>
+                <div class="text-[10px] text-text3 uppercase tracking-wider">minutes ETA</div>
+                <div class="mt-2"><span data-status-pill="${h(pid)}" class="inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider" style="background:${status === 'discharged' ? 'rgba(16,185,129,.15)' : status === 'in_treatment' ? 'rgba(139,92,246,.15)' : 'rgba(96,165,250,.15)'};color:${status === 'discharged' ? '#10b981' : status === 'in_treatment' ? '#a78bfa' : '#60a5fa'}">${STATUS_LABEL[status] || status}</span></div>
+              </div>
+            </div>
+
+            <!-- ETA Progress Bar -->
+            <div class="mb-4 rounded-full bg-slate-700/40 h-1.5 overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" style="width:${eta != null ? Math.min(100, Math.max(3, 100 - (eta / 60) * 100)) : (status === 'arrived' || status === 'in_treatment' || status === 'discharged' ? 100 : 0)}%;background:${col}"></div>
+            </div>
+
+            <!-- Vitals + Allergy Row -->
+            <div class="flex flex-wrap gap-2 mb-4">
+              <div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">🎂</span><div><span class="text-[10px] uppercase tracking-wider text-text3">Age</span><span class="text-sm font-semibold ml-1">${h(age)}${typeof age === 'number' ? '<span class="text-xs text-text3">y</span>' : ''}</span></div></div>
+              <div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">⚖️</span><div><span class="text-[10px] uppercase tracking-wider text-text3">BMI</span><span class="text-sm font-semibold ml-1">${h(bmi)}</span></div></div>
+              <div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">🩸</span><div><span class="text-[10px] uppercase tracking-wider text-text3">Blood</span><span class="text-sm font-semibold ml-1 text-emer">${h(blood)}</span></div></div>
+              <div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">📏</span><div><span class="text-[10px] uppercase tracking-wider text-text3">Height</span><span class="text-sm font-semibold ml-1">${h(heightVal)}</span></div></div>
+              ${weight !== '—' ? `<div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">🏋️</span><div><span class="text-[10px] uppercase tracking-wider text-text3">Weight</span><span class="text-sm font-semibold ml-1">${h(weight)}</span></div></div>` : ''}
+              ${allergyText !== 'None Identified' ? `<div class="flex items-center gap-1.5 bg-urgent/10 rounded-lg px-2.5 py-1.5 border border-urgent/30"><span class="text-base">⚠️</span><div><span class="text-[10px] uppercase tracking-wider text-urgent">Allergies</span><span class="text-sm font-semibold ml-1 text-urgent">${h(allergyText)}</span></div></div>` : ''}
+            </div>
+
+            ${flags.length > 0 ? `
+            <div class="mb-4 rounded-xl bg-gradient-to-r from-emer/15 to-emer/5 border border-emer/30 p-3">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-emer mb-1.5">🚨 CRITICAL RED FLAGS (${flags.length})</div>
+              <div class="text-sm text-emer/90 font-semibold">${flags.map(f => h(f.replace(/_/g, ' '))).join(' • ')}</div>
+            </div>` : ''}
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full animate-pulse" style="background:${col}"></span>
+                  <span class="text-xs text-text2">${STATUS_MAP[status] || status}</span>
+                </div>
+                <div class="text-xs text-text3">ID: ${h(pid.slice(0, 8))}</div>
+                ${nat ? `<span class="text-xs text-text3">${FLAG_EMOJI[nat] || ''} ${h(nat)}</span>` : ''}
+                ${dest ? `<div class="text-xs text-text3">→ ${h(dest)}</div>` : ''}
+              </div>
+              <div class="flex gap-2 ml-auto">
+                <button onclick="alertTeam('${h(pid)}')" class="flex items-center gap-1 rounded-lg bg-emer/15 border border-emer/40 px-2.5 py-1.5 text-xs font-semibold text-emer hover:bg-emer/25 transition-all"><span>🚨</span> Alert</button>
+                <button onclick="assignBed('${h(pid)}')" class="flex items-center gap-1 rounded-lg bg-urgent/15 border border-urgent/40 px-2.5 py-1.5 text-xs font-semibold text-urgent hover:bg-urgent/25 transition-all"><span>🏥</span> Bed</button>
+                <button onclick="viewRoute('${h(pid)}')" class="flex items-center gap-1 rounded-lg bg-cyan/15 border border-cyan/40 px-2.5 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/25 transition-all"><span>🗺️</span> Route</button>
+                <button data-toggle="${h(pid)}" class="flex items-center gap-1.5 rounded-lg bg-surface border border-slate-600 px-3 py-1.5 text-xs text-text2 hover:border-cyan/50 hover:text-cyan transition-all"><span>📋</span> Details <span class="text-[10px]">▼</span></button>
+              </div>
+            </div>
+          </div>
+
+          <div data-qa-bar="${h(pid)}">${qaBarHTML}</div>
+
+          <!-- EXPANDABLE DETAILS -->
+          <div class="hidden border-t border-slate-700/50 bg-surface/30" id="det-${pid}">
+            <div class="flex gap-1 p-2 border-b border-slate-700/30 bg-slate-800/30 overflow-x-auto">
+              <button data-pid="${h(pid)}" data-tab="visit" class="dtab-btn active flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium bg-cyan/20 text-cyan border border-cyan/30 whitespace-nowrap"><span>📋</span> This Visit</button>
+              <button data-pid="${h(pid)}" data-tab="summary" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>🤖</span> AI Summary</button>
+              <button data-pid="${h(pid)}" data-tab="triage" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>🏥</span> Triage Review</button>
+              <button data-pid="${h(pid)}" data-tab="history" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>🗂️</span> Medical History</button>
+              <button data-pid="${h(pid)}" data-tab="prep" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>⚡</span> Pre-Arrival</button>
+              ${clinicalReport ? `<button data-pid="${h(pid)}" data-tab="doctor" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>🩺</span> AiVoN Report</button>` : ''}
+              <button data-pid="${h(pid)}" data-tab="media" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>📸</span> Media</button>
+            </div>
+
+            <!-- TAB: This Visit -->
+            <div id="dtab-${pid}-visit" class="dtab-content p-4 space-y-4">
+              <!-- Patient Details Grid -->
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">👤</span><span class="text-xs uppercase tracking-wider text-text3 font-semibold">Patient Details</span></div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Full Name</div><div class="text-sm font-semibold">${h(p.full_name || pid)}</div></div>
+                  <div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Age / Sex</div><div class="text-sm font-semibold">${h(age)} / ${h(sex)}</div></div>
+                  <div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Blood Type</div><div class="text-sm font-semibold text-emer">${h(blood)}</div></div>
+                  ${hn ? `<div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Health No.</div><div class="text-sm font-semibold text-cyan mono">${h(hn)}</div></div>` : ''}
+                  ${lang ? `<div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Language</div><div class="text-sm font-semibold">${h(lang)}</div></div>` : ''}
+                  <div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Data Consent</div><div class="text-sm font-semibold ${p.data_consent ? 'text-stable' : 'text-emer'}">${p.data_consent ? '✅ Given' : '❌ Not given'}</div></div>
+                  ${dest ? `<div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Destination</div><div class="text-sm font-semibold">${h(dest)}</div></div>` : ''}
+                </div>
+              </div>
+
+              ${p.complaint_text ? `
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">🎙️</span><span class="text-xs uppercase tracking-wider text-text3 font-semibold">Voice Transcript</span></div>
+                <div class="bg-gradient-to-r from-cyan/10 to-teal/10 rounded-xl p-4 border-l-4 border-cyan/50">
+                  <p class="text-text1 text-sm italic leading-relaxed">"${h(p.chief_complaint || p.complaint_text)}"</p>
+                  ${p.complaint_text !== p.chief_complaint && p.complaint_text ? `<p class="text-xs text-text3 mt-2 italic">${h(p.complaint_text)}</p>` : ''}
+                  ${p.detected_language || p.language ? `<p class="text-xs text-text3 mt-2">Language: ${h(p.detected_language || p.language)}</p>` : ''}
+                </div>
+              </div>` : ''}
+
+              ${((p.illness_media_urls && p.illness_media_urls.length) || p.photo_count > 0) ? `
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">📸</span><span class="text-xs uppercase tracking-wider text-text3 font-semibold">Patient Media (${p.illness_media_urls?.length || p.photo_count})</span></div>
+                <div class="flex gap-2 flex-wrap">
+                  ${Array.from({ length: p.illness_media_urls?.length || p.photo_count || 0 }, (_, i) =>
+                    `<img src="/api/illness_photo/${encodeURIComponent(pid)}/${i}" class="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 border border-slate-600" onclick="openMediaLightbox('/api/illness_photo/${encodeURIComponent(pid)}/${i}','${h(pid)}',${i})" onerror="this.style.display='none'" />`
+                  ).join('')}
+                </div>
+              </div>` : ''}
+
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">💬</span><span class="text-xs uppercase tracking-wider text-text3 font-semibold">Follow-up Q&A (${qa.length})</span></div>
+                ${qa.length ? `<div class="space-y-3">${qa.map((q, i) => `
+                  <div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30">
+                    <div class="flex items-start gap-2">
+                      <span class="text-xs font-bold text-cyan mt-0.5">Q${i+1}</span>
+                      <div class="flex-1">
+                        <p class="text-sm text-text1 font-medium">${h(q.question_en || q.question || '—')}</p>
+                        <p class="text-sm text-text2 mt-1 pl-3 border-l-2 border-slate-600"><strong>${h(q.answer || '—')}</strong></p>
+                        ${q.original_answer && q.original_answer !== q.answer ? `<p class="text-xs text-text3 mt-1 pl-3 italic">${h(q.original_answer)}</p>` : ''}
+                      </div>
+                    </div>
+                  </div>`).join('')}</div>` : '<p class="text-sm text-text3 italic">No Q&A recorded for this visit.</p>'}
+              </div>
+
+              <!-- Status Update -->
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">🔄</span><span class="text-xs uppercase tracking-wider text-text3 font-semibold">Update Status</span></div>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="setStatus('${h(pid)}','in_treatment')" class="rounded-lg bg-violet-500/15 border border-violet-400/40 px-3 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition-all">💊 In Treatment</button>
+                  <button onclick="setStatus('${h(pid)}','discharged')" class="rounded-lg bg-stable/15 border border-stable/40 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✅ Discharge</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB: AI Summary -->
+            <div id="dtab-${pid}-summary" class="dtab-content hidden p-4 space-y-4">
+              ${asmt ? `
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">🤖</span><span class="text-xs uppercase tracking-wider text-text3 font-semibold">Patient Summary</span></div>
+                <div class="text-sm text-text2 leading-relaxed">${h(asmt)}</div>
+              </div>` : ''}
+
+              ${p.triage_reasoning ? `
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">🧠</span><span class="text-xs uppercase tracking-wider text-text3 font-semibold">AI Assessment Reasoning</span></div>
+                <p class="text-sm text-text2 leading-relaxed">${h(p.triage_reasoning)}</p>
+              </div>` : ''}
+
+              ${flags.length ? `
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">🚨</span><span class="text-xs uppercase tracking-wider text-text3 font-semibold">Clinical Red Flags</span></div>
+                <div class="flex flex-wrap gap-2">${flags.map(f => `<span class="chip border-emer/40 text-emer text-xs px-2.5 py-1">⚠ ${h(f.replace(/_/g,' '))}</span>`).join('')}</div>
+              </div>` : ''}
+
+              ${conds.length ? `
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">🔬</span><span class="text-xs uppercase tracking-wider text-text3 font-semibold">Suspected Conditions</span></div>
+                <div class="flex flex-wrap gap-2">${conds.map(c => `<span class="chip border-urgent/40 text-urgent text-xs px-2.5 py-1">${h(c)}</span>`).join('')}</div>
+              </div>` : ''}
+
+              ${!asmt && !p.triage_reasoning ? '<p class="text-sm text-text3 italic">No AI summary available.</p>' : ''}
+            </div>
+
+            <!-- TAB: Triage Review -->
+            <div id="dtab-${pid}-triage" class="dtab-content hidden p-4 space-y-4">
+              <!-- MTS Level + Risk Score + Max Wait -->
+              <div class="grid grid-cols-3 gap-3">
+                <div class="rounded-xl bg-surface2/40 border-2 p-4 text-center" style="border-color:${col}40">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-text3 mb-2">MTS Level</div>
+                  <div class="text-2xl font-bold" style="color:${col}">${mts.level} — ${mts.mts_color}</div>
+                  <div class="text-xs text-text3 mt-1">${mts.subtitle}</div>
+                </div>
+                <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4 text-center">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-text3 mb-2">AI Risk Score</div>
+                  <div class="text-2xl font-bold" style="color:${col}">${p.risk_score ?? '—'}/10</div>
+                  ${p.condition_summary ? `<div class="text-xs text-text3 mt-1">${h(p.condition_summary)}</div>` : ''}
+                </div>
+                <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4 text-center">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-text3 mb-2">Max Wait Time</div>
+                  <div class="text-2xl font-bold text-white">${p.max_wait_minutes != null ? p.max_wait_minutes : mts.max_wait} min</div>
+                  <div class="text-xs text-text3 mt-1">Per MTS protocol</div>
+                </div>
+              </div>
+
+              <!-- Physician Review History -->
+              ${p.override_action ? `
+              <div class="rounded-xl bg-surface2/40 border p-4 space-y-2" style="border-color:${col}40">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold">📋 Physician Review History</div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="chip text-xs font-bold px-3 py-1" style="color:${col};border-color:${col}40;background:${col}15">${h(p.override_action)}</span>
+                  ${p.updated_at ? `<span class="text-xs text-text3">🕒 ${new Date(p.updated_at).toLocaleString()}</span>` : ''}
+                </div>
+                ${p.override_note ? `<div class="space-y-1 mt-2">${p.override_note.split('\n---\n').map(entry => `<div class="text-xs text-text2 italic border-l-2 border-slate-600 pl-3 py-1">"${h(entry.trim())}"</div>`).join('')}</div>` : ''}
+              </div>` : ''}
+
+              <!-- Physician Override -->
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4 space-y-3">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold">Physician Override</div>
+                <textarea id="override-note-${h(pid)}" placeholder="Clinical justification / note to patient (optional)" rows="2"
+                  class="w-full rounded-xl bg-surface/60 border border-slate-700/50 px-3 py-2 text-sm text-text1 resize-y leading-relaxed focus:outline-none focus:border-cyan/50 transition-colors placeholder-text3"
+                  onfocus="this.style.borderColor='var(--cyan,#22d3ee)'" onblur="this.style.borderColor=''"></textarea>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="triageOverride('${h(pid)}','APPROVE')" class="flex items-center gap-1.5 rounded-xl bg-stable/15 border border-stable/40 px-4 py-2 text-sm font-semibold text-stable hover:bg-stable/25 transition-all">✅ Approve AI Triage</button>
+                  <button onclick="triageOverride('${h(pid)}','UPGRADE')" class="flex items-center gap-1.5 rounded-xl bg-urgent/15 border border-urgent/40 px-4 py-2 text-sm font-semibold text-urgent hover:bg-urgent/25 transition-all">⬆ Upgrade Severity</button>
+                  <button onclick="triageOverride('${h(pid)}','DOWNGRADE')" class="flex items-center gap-1.5 rounded-xl bg-cyan/15 border border-cyan/40 px-4 py-2 text-sm font-semibold text-cyan hover:bg-cyan/25 transition-all">⬇ Downgrade Severity</button>
+                </div>
+                <div id="triage-override-result-${h(pid)}" class="text-xs text-text3 min-h-[1.2em]"></div>
+              </div>
+            </div>
+            
+            <!-- Tab Content: Medical History -->
+            <div id="dtab-${pid}-history" class="dtab-content hidden p-4 space-y-4">
+              <div class="animate-pulse text-text2">Loading medical history...</div>
+            </div>
+            
+            <!-- Tab Content: Pre-Arrival Prep -->
+            <div id="dtab-${pid}-prep" class="dtab-content hidden p-4 space-y-4">
+              <!-- Checklist from buildPrep -->
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-lg">⚡</span>
+                  <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Pre-Arrival Checklist (${prepItems.length} items)</span>
+                </div>
+                <div class="space-y-2">
+                  ${prepItems.map((item, i) => `
+                  <label class="flex items-start gap-3 p-2.5 rounded-lg bg-surface/60 border border-slate-700/30 cursor-pointer hover:bg-surface2/60 transition-all group">
+                    <input type="checkbox" class="mt-1 w-4 h-4 rounded accent-cyan shrink-0" onchange="this.closest('label').classList.toggle('opacity-50',this.checked);this.closest('label').classList.toggle('line-through',this.checked)" />
+                    <span class="text-sm text-text2 group-hover:text-text1 transition-colors">${h(item)}</span>
+                  </label>`).join('')}
+                </div>
+              </div>
+
+              ${(p.do_list?.length || p.dont_list?.length) ? `
+              <!-- Patient-Specific DO / DON'T -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${p.do_list?.length ? `
+                <div class="rounded-xl bg-gradient-to-br from-stable/10 to-stable/5 border border-stable/30 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <span class="w-8 h-8 rounded-full bg-stable/20 flex items-center justify-center text-lg">✅</span>
+                    <span class="text-sm font-semibold text-stable">DO</span>
+                  </div>
+                  <ul class="space-y-2">
+                    ${p.do_list.map(d => `<li class="text-sm text-text2 flex items-start gap-2"><span class="text-stable mt-0.5">•</span> ${h(d)}</li>`).join('')}
+                  </ul>
+                </div>` : ''}
+                ${p.dont_list?.length ? `
+                <div class="rounded-xl bg-gradient-to-br from-emer/10 to-red-500/5 border border-emer/30 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <span class="w-8 h-8 rounded-full bg-emer/20 flex items-center justify-center text-lg">❌</span>
+                    <span class="text-sm font-semibold text-urgent">DON'T</span>
+                  </div>
+                  <ul class="space-y-2">
+                    ${p.dont_list.map(d => `<li class="text-sm text-text2 flex items-start gap-2"><span class="text-urgent mt-0.5">•</span> ${h(d)}</li>`).join('')}
+                  </ul>
+                </div>` : ''}
+              </div>` : ''}
+            </div>
+            
+            <!-- Tab Content: AiVoN Doctor Report -->
+            <div id="dtab-${pid}-doctor" class="dtab-content hidden p-4 space-y-4">
+              ${clinicalReport ? `
+              <div class="rounded-xl bg-gradient-to-br from-violet-500/10 to-cyan/5 border border-violet-400/30 p-4">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-lg">🩺</span>
+                  <span class="text-xs uppercase tracking-wider text-text3 font-semibold">AiVoN Clinical Report</span>
+                </div>
+                <div class="text-sm text-text2 leading-relaxed whitespace-pre-line">${h(clinicalReport)}</div>
+              </div>` : ''}
+
+              ${sourceGuidelines.length ? `
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-lg">📚</span>
+                  <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Source Guidelines (${sourceGuidelines.length})</span>
+                </div>
+                <div class="space-y-2">
+                  ${sourceGuidelines.map(g => `
+                  <div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30">
+                    <div class="text-sm font-medium text-cyan">${h(g.title || g.name || g)}</div>
+                    ${g.relevance ? `<div class="text-xs text-text3 mt-1">${h(g.relevance)}</div>` : ''}
+                    ${g.excerpt ? `<div class="text-xs text-text2 mt-1 italic border-l-2 border-cyan/30 pl-2">${h(g.excerpt)}</div>` : ''}
+                  </div>`).join('')}
+                </div>
+              </div>` : ''}
+
+              ${!clinicalReport && !sourceGuidelines.length ? '<p class="text-sm text-text3 italic">No AiVoN clinical report available for this patient.</p>' : ''}
+            </div>
+
+            <!-- Tab Content: Media -->
+            <div id="dtab-${pid}-media" class="dtab-content hidden p-4">
+              <div class="flex gap-2 flex-wrap" id="media-${pid}">
+                <div class="text-text2 text-sm">Loading media...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function buildCompactCard(p) {
+      const pid = p.patient_id || '';
+      const lvl = normalizeTriage(p.triage_level);
+      const tc = TRIAGE_CLASS[lvl] || 'U';
+      const eta = p.eta_minutes;
+      const etaCls = eta && eta <= 5 ? 'text-emer' : eta && eta <= 10 ? 'text-urgent' : 'text-text2';
+      return `
+        <div class="flex items-center justify-between p-3 rounded-lg bg-surface2/40 border border-slate-700/30 triage-${tc} cursor-pointer" onclick="toggleCompactDetail('${h(pid)}')">
+          <div class="flex items-center gap-3">
+            <span class="chip triage-${tc}" style="color:${TRIAGE_COLOR[lvl]};border-color:${TRIAGE_COLOR[lvl]}66">${tc}</span>
+            <span class="font-medium">${h(p.full_name || pid)}</span>
+            <span class="text-sm text-text2">${h(p.chief_complaint || '').substring(0, 30)}${p.chief_complaint?.length > 30 ? '...' : ''}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            ${p.risk_score != null ? `<span class="chip text-xs" style="color:${TRIAGE_COLOR[lvl]}">⚡${p.risk_score}</span>` : ''}
+            <span class="${etaCls} font-bold">${eta != null ? eta + 'm' : '—'}</span>
+            <span class="text-xs text-text2">▼</span>
+          </div>
+        </div>
+        <div id="compact-det-${pid}" class="hidden border-x border-b border-slate-700/30 rounded-b-lg p-3 bg-surface2/20"></div>
+      `;
+    }
+
+    function toggleDet(pid) {
+      const det = document.getElementById('det-' + pid);
+      if (det) det.classList.toggle('hidden');
+    }
+
+    function toggleCompactDetail(pid) {
+      const det = document.getElementById('compact-det-' + pid);
+      if (!det) return;
+      const isOpen = !det.classList.contains('hidden');
+      if (isOpen) {
+        det.classList.add('hidden');
+      } else {
+        const p = _patientCache[pid];
+        if (p && !det.dataset.loaded) {
+          const lvl = normalizeTriage(p.triage_level);
+          const col = TRIAGE_COLOR[lvl] || '#f59e0b';
+          const allergyText = getAllergyText(p);
+          const flags = (p.red_flags || []).filter(f => f && f !== 'none_identified');
+          const asmt = (() => { const r = p.assessment; if (!r) return ''; if (typeof r === 'object') return r.patient_summary_en || r.clinical_report || r.summary || ''; return String(r); })();
+          det.innerHTML = `
+            <div class="space-y-2 pt-1">
+              <!-- Vitals row -->
+              <div class="flex flex-wrap gap-1.5">
+                ${p.age != null ? `<span class="chip text-xs">🎂 ${p.age}y</span>` : ''}
+                ${p.sex ? `<span class="chip text-xs">${p.sex === 'female' ? '♀' : '♂'}</span>` : ''}
+                ${p.blood_type ? `<span class="chip text-xs text-emer border-emer/30">🩸 ${h(p.blood_type)}</span>` : ''}
+                ${p.weight_kg ? `<span class="chip text-xs">⚖️ ${p.weight_kg}kg</span>` : ''}
+                ${allergyText !== 'None Identified' ? `<span class="chip text-xs text-urgent border-urgent/30">⚠️ ${h(allergyText)}</span>` : ''}
+                ${p.nationality ? `<span class="chip text-xs">${FLAG_EMOJI[p.nationality] || ''} ${h(p.nationality)}</span>` : ''}
+              </div>
+              <!-- Red flags -->
+              ${flags.length ? `<div class="text-xs text-emer font-semibold">🚨 ${flags.map(f => f.replace(/_/g,' ')).join(' • ')}</div>` : ''}
+              <!-- AI summary -->
+              ${asmt ? `<div class="text-xs text-text2 leading-relaxed line-clamp-2 border-l-2 border-cyan/30 pl-2">${h(asmt)}</div>` : ''}
+              <!-- Quick actions -->
+              <div class="flex flex-wrap gap-1.5 pt-1 border-t border-slate-700/30">
+                <button onclick="setStatus('${h(pid)}','in_treatment')" class="rounded-lg bg-violet-500/15 border border-violet-400/40 px-2.5 py-1 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition-all">💊 In Treatment</button>
+                <button onclick="confirmDischarge('${h(pid)}',this)" class="rounded-lg bg-stable/15 border border-stable/40 px-2.5 py-1 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✓ Discharge</button>
+                <button onclick="alertTeam('${h(pid)}')" class="rounded-lg bg-emer/15 border border-emer/40 px-2.5 py-1 text-xs text-emer hover:bg-emer/25 transition-all">🚨 Alert</button>
+                <button onclick="viewRoute('${h(pid)}')" class="rounded-lg bg-cyan/15 border border-cyan/40 px-2.5 py-1 text-xs text-cyan hover:bg-cyan/25 transition-all">🗺️ Route</button>
+                <button onclick="toggleCompactMode(); toggleDet('${h(pid)}')" class="rounded-lg bg-surface border border-slate-600 px-2.5 py-1 text-xs text-text2 hover:border-cyan/50 transition-all ml-auto">📋 Full Details</button>
+              </div>
+            </div>`;
+          det.dataset.loaded = '1';
+        }
+        det.classList.remove('hidden');
+      }
+    }
+
+    function toggleCompactMode() {
+      if (compactMode) toggleCompact();
+    }
+
+    function buildQuickActions(p) {
+      const pid = p.patient_id;
+      return `
+        <div class="flex flex-wrap gap-2 mt-2">
+          <button onclick="alertTeam('${h(pid)}')" class="rounded bg-emer/20 border border-emer/50 px-2 py-1 text-xs text-emer">🚨 Alert</button>
+          <button onclick="assignBed('${h(pid)}')" class="rounded bg-urgent/20 border border-urgent/50 px-2 py-1 text-xs text-urgent">🏥 Assign Bed</button>
+          <button onclick="viewRoute('${h(pid)}')" class="rounded bg-cyan/20 border border-cyan/50 px-2 py-1 text-xs text-cyan">🗺️ Route</button>
+        </div>
+      `;
+    }
+
+    function switchDtab(pid, tab, btn) {
+      // Hide all tabs for this patient
+      document.querySelectorAll(`[id^="dtab-${pid}-"]`).forEach(el => el.classList.add('hidden'));
+      // Show selected tab
+      const selected = document.getElementById(`dtab-${pid}-${tab}`);
+      if (selected) {
+        selected.classList.remove('hidden');
+        // Load health record if needed (history tab)
+        if (tab === 'history' && !selected.dataset.loaded) {
+          loadHealthRecord(pid, selected);
+        }
+        // Load media if needed
+        if (tab === 'media' && !selected.dataset.loaded) {
+          loadMediaForPatient(pid, selected);
+        }
+        selected.dataset.loaded = '1';
+      }
+      // Update button styles
+      const container = btn.closest('div');
+      container.querySelectorAll('.dtab-btn').forEach(b => {
+        b.classList.remove('active', 'bg-cyan/20', 'text-cyan', 'border-cyan/30');
+        b.classList.add('text-text2');
+      });
+      btn.classList.add('active', 'bg-cyan/20', 'text-cyan', 'border-cyan/30');
+      btn.classList.remove('text-text2');
+    }
+
+    async function loadHealthRecord(pid, container) {
+      const p = _patientCache[pid];
+      if (!p || !p.health_number) {
+        container.innerHTML = '<div class="text-text2 p-4">No health record available</div>';
+        return;
+      }
+      try {
+        const rec = await api(`/api/health_record/${encodeURIComponent(p.health_number)}`);
+        const bmi = rec.bmi || (rec.weight_kg && rec.height_cm ? (rec.weight_kg / ((rec.height_cm/100) ** 2)).toFixed(1) : '—');
+        
+        container.innerHTML = `
+          <div class="space-y-4">
+            <!-- Vitals Summary -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
+                <div class="text-2xl mb-1">🩸</div>
+                <div class="text-lg font-bold">${h(rec.blood_type || '—')}</div>
+                <div class="text-[10px] uppercase tracking-wider text-text3">Blood Type</div>
+              </div>
+              <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
+                <div class="text-2xl mb-1">⚖️</div>
+                <div class="text-lg font-bold">${h(rec.weight_kg ? rec.weight_kg + ' <span class="text-xs text-text3">kg</span>' : '—')}</div>
+                <div class="text-[10px] uppercase tracking-wider text-text3">Weight</div>
+              </div>
+              <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
+                <div class="text-2xl mb-1">📏</div>
+                <div class="text-lg font-bold">${h(rec.height_cm ? rec.height_cm + ' <span class="text-xs text-text3">cm</span>' : '—')}</div>
+                <div class="text-[10px] uppercase tracking-wider text-text3">Height</div>
+              </div>
+              <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
+                <div class="text-2xl mb-1">📊</div>
+                <div class="text-lg font-bold">${h(bmi)}</div>
+                <div class="text-[10px] uppercase tracking-wider text-text3">BMI</div>
+              </div>
+            </div>
+            
+            ${rec.conditions?.length ? `
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">🏥</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Medical Conditions (${rec.conditions.length})</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                ${rec.conditions.map(c => `<span class="chip bg-urgent/10 border-urgent/30 text-urgent px-3 py-1.5">${h(c)}</span>`).join('')}
+              </div>
+            </div>` : ''}
+            
+            ${rec.allergies?.length ? `
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">⚠️</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Allergies (${rec.allergies.length})</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                ${rec.allergies.map(a => `<span class="chip bg-emer/10 border-emer/30 text-emer px-3 py-1.5">${h(a)}</span>`).join('')}
+              </div>
+            </div>` : ''}
+            
+            ${rec.medications?.length ? `
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">💊</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Current Medications (${rec.medications.length})</span>
+              </div>
+              <div class="space-y-2">
+                ${rec.medications.map(m => `
+                  <div class="flex items-center gap-3 p-2 rounded-lg bg-surface/60 border border-slate-700/30">
+                    <span class="w-8 h-8 rounded-full bg-cyan/20 flex items-center justify-center text-cyan text-sm">💉</span>
+                    <div class="flex-1">
+                      <div class="text-sm font-medium">${h(m.name || m)}</div>
+                      ${m.dosage ? `<div class="text-xs text-text3">${h(m.dosage)}</div>` : ''}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>` : ''}
+            
+            <!-- Recent Vitals -->
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">📈</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Latest Vitals</span>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                ${rec.vitals?.[0] ? `
+                  ${rec.vitals[0].bp_systolic ? `<div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Blood Pressure</div><div class="text-lg font-semibold">${h(rec.vitals[0].bp_systolic)}/${h(rec.vitals[0].bp_diastolic)} <span class="text-xs text-text3">mmHg</span></div></div>` : ''}
+                  ${rec.vitals[0].heart_rate ? `<div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Heart Rate</div><div class="text-lg font-semibold">${h(rec.vitals[0].heart_rate)} <span class="text-xs text-text3">bpm</span></div></div>` : ''}
+                  ${rec.vitals[0].temperature ? `<div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Temperature</div><div class="text-lg font-semibold">${h(rec.vitals[0].temperature)} <span class="text-xs text-text3">°C</span></div></div>` : ''}
+                  ${rec.vitals[0].spo2 ? `<div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">SpO2</div><div class="text-lg font-semibold">${h(rec.vitals[0].spo2)}<span class="text-xs text-text3">%</span></div></div>` : ''}
+                ` : '<div class="text-sm text-text3 col-span-3">No recent vitals recorded</div>'}
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        container.innerHTML = '<div class="text-text2 p-4">Failed to load health record</div>';
+      }
+    }
+
+    async function loadMediaForPatient(pid, container) {
+      const mediaContainer = container.querySelector(`#media-${pid}`) || container;
+      let html = '';
+      for (let i = 0; i < 5; i++) {
+        try {
+          const r = await fetch(`/api/illness_photo/${encodeURIComponent(pid)}/${i}/type`);
+          if (!r.ok) break;
+          const data = await r.json();
+          if (data.kind === 'image') {
+            html += `<img src="/api/illness_photo/${encodeURIComponent(pid)}/${i}" class="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80" onclick="openMediaLightbox('/api/illness_photo/${encodeURIComponent(pid)}/${i}','${h(pid)}',${i})" />`;
+          } else if (data.kind === 'video') {
+            html += `<div class="w-20 h-20 bg-surface rounded-lg flex items-center justify-center cursor-pointer hover:bg-surface2" onclick="openMediaLightbox('/api/illness_photo/${encodeURIComponent(pid)}/${i}','${h(pid)}',${i})">▶️</div>`;
+          }
+        } catch { break; }
+      }
+      mediaContainer.innerHTML = html || '<div class="text-text2 text-sm">No media available</div>';
+    }
+
+    // ── ADMIN PANEL ────────────────────────────────────────────
+    async function loadAdminTable() {
+      try {
+        const pts = await api('/api/patients?limit=500&status=all');
+        const el = document.getElementById('admin-pt-table');
+        if (!pts.length) { el.innerHTML = '<div class="text-center py-8 text-text2"><div class="text-4xl mb-3">⚙️</div><div>Queue is empty</div></div>'; return; }
+        el.innerHTML = `<table class="w-full text-sm">
+          <thead><tr class="text-left text-xs uppercase tracking-wider text-text3 border-b border-slate-700/50">
+            <th class="py-3 px-2">Patient ID</th><th class="py-3 px-2">Full Name</th><th class="py-3 px-2">Health No.</th>
+            <th class="py-3 px-2">Triage</th><th class="py-3 px-2">Risk</th><th class="py-3 px-2">Language</th>
+            <th class="py-3 px-2">Status</th><th class="py-3 px-2">Treatment Started</th><th class="py-3 px-2">Discharged</th>
+            <th class="py-3 px-2">Medical History</th>
+          </tr></thead>
+          <tbody>${pts.map(p => {
+            const pid = p.patient_id || '';
+            const treatTs = p.treatment_started_at ? fmtTime(p.treatment_started_at) : '—';
+            const disTs = p.discharged_at ? fmtTime(p.discharged_at) : '—';
+            const lvl = normalizeTriage(p.triage_level);
+            const col = TRIAGE_COLOR[lvl] || '#f59e0b';
+            const tc = TRIAGE_CLASS[lvl] || 'U';
+            const hasMH = p.health_number;
+            const st = p.status || 'incoming';
+            const stCol = st === 'discharged' ? '#10b981' : st === 'in_treatment' ? '#a78bfa' : '#60a5fa';
+            return `<tr class="border-b border-slate-700/30 hover:bg-surface/30 transition-colors">
+              <td class="py-2.5 px-2 mono text-xs text-text3">${h(pid.slice(0,12))}...</td>
+              <td class="py-2.5 px-2 font-semibold">${h(p.full_name || '—')}</td>
+              <td class="py-2.5 px-2 mono text-xs text-cyan">${h(p.health_number || '—')}</td>
+              <td class="py-2.5 px-2"><span class="chip text-xs" style="color:${col};border-color:${col}66">${tc}</span></td>
+              <td class="py-2.5 px-2 mono">${p.risk_score != null ? p.risk_score + '/10' : '—'}</td>
+              <td class="py-2.5 px-2 text-xs text-text2">${h(LANG_NAME[p.language] || p.language || '—')}</td>
+              <td class="py-2.5 px-2"><span class="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase" style="background:${stCol}15;color:${stCol}">${STATUS_LABEL[st] || st}</span></td>
+              <td class="py-2.5 px-2 mono text-xs text-violet-300">${h(treatTs)}</td>
+              <td class="py-2.5 px-2 mono text-xs text-stable">${h(disTs)}</td>
+              <td class="py-2.5 px-2">${hasMH ? `<button onclick="toggleAdminMH('${h(pid)}',this)" class="rounded-lg bg-surface2 border border-slate-600 px-2.5 py-1 text-xs hover:border-cyan/50 transition-all">📋 View</button>` : '<span class="text-text3 text-xs">—</span>'}</td>
+            </tr>
+            <tr id="admh-${h(pid)}" class="hidden">
+              <td colspan="10" class="p-0">
+                <div id="admh-body-${h(pid)}" class="p-4 bg-surface2/60 border-t border-slate-700/30 text-sm">
+                  <div class="animate-pulse text-text2">Loading...</div>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>`;
+        pts.forEach(p => { if (p.patient_id) _patientCache[p.patient_id] = p; });
+      } catch (e) { console.error('Admin table failed', e); }
+    }
+
+    async function toggleAdminMH(pid, btn) {
+      const row = document.getElementById('admh-' + pid);
+      const body = document.getElementById('admh-body-' + pid);
+      if (!row) return;
+      const isOpen = !row.classList.contains('hidden');
+      row.classList.toggle('hidden');
+      btn.textContent = isOpen ? '📋 View' : '▲ Close';
+      if (!isOpen && body && !body.dataset.loaded) {
+        const p = _patientCache[pid];
+        if (!p || !p.health_number) { body.innerHTML = '<div class="text-text3">No health record available</div>'; return; }
+        try {
+          const rec = await api(`/api/health_record/${encodeURIComponent(p.health_number)}`);
+          body.innerHTML = `
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+              ${rec.blood_type ? `<div class="rounded-lg bg-surface/60 p-2 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Blood</div><div class="font-semibold text-emer">${h(rec.blood_type)}</div></div>` : ''}
+              ${rec.weight_kg ? `<div class="rounded-lg bg-surface/60 p-2 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Weight</div><div class="font-semibold">${rec.weight_kg} kg</div></div>` : ''}
+              ${rec.height_cm ? `<div class="rounded-lg bg-surface/60 p-2 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Height</div><div class="font-semibold">${rec.height_cm} cm</div></div>` : ''}
+            </div>
+            ${rec.conditions?.length ? `<div class="mb-2"><span class="text-xs text-text3 font-semibold">Conditions:</span> <span class="text-sm">${rec.conditions.map(c => h(c)).join(', ')}</span></div>` : ''}
+            ${rec.allergies?.length ? `<div class="mb-2"><span class="text-xs text-text3 font-semibold">Allergies:</span> <span class="text-sm text-emer">${rec.allergies.map(a => h(a)).join(', ')}</span></div>` : ''}
+            ${rec.medications?.length ? `<div><span class="text-xs text-text3 font-semibold">Medications:</span> <span class="text-sm">${rec.medications.map(m => h(typeof m === 'object' ? m.name || m : m)).join(', ')}</span></div>` : ''}
+          `;
+          body.dataset.loaded = '1';
+        } catch (e) { body.innerHTML = '<div class="text-text3">Failed to load health record</div>'; }
+      }
+    }
+
+    async function seedPatients() {
+      try {
+        const r = await api('/api/admin/seed', { method: 'POST' });
+        toast('🌱 Seeded ' + (r.seeded || 'demo') + ' patients', 'ok');
+        refreshAll();
+        if (state.activeTab === 'admin') loadAdminTable();
+      } catch (e) { toast('Seed failed: ' + e.message, 'err'); }
+    }
+
+    async function clearQueue() {
+      if (!confirm('Clear ALL patients? This cannot be undone.')) return;
+      try {
+        await api('/api/admin/clear', { method: 'POST' });
+        toast('🗑 Queue cleared', 'ok');
+        refreshAll();
+        if (state.activeTab === 'admin') loadAdminTable();
+      } catch (e) { toast('Clear failed: ' + e.message, 'err'); }
+    }
+
+    // ── KPI FILTERING ────────────────────────────────────────────
+    function toggleKpiFilter(filter) {
+      const same = activeKpiFilter === filter;
+      activeKpiFilter = same ? null : filter;
+
+      // Clear all active highlights
+      document.querySelectorAll('.kpi-active').forEach(el => el.classList.remove('kpi-active'));
+      document.querySelectorAll('.triage-chip').forEach(c => {
+        c.style.outline = '';
+        c.style.boxShadow = '';
+      });
+
+      if (activeKpiFilter) {
+        // Highlight matching KPI card
+        const cardMap = { all:'kpi-total', en_route:'kpi-queue', emergency:'kpi-emergency',
+          urgent:'kpi-urgent', standard:'kpi-routine', in_treatment:'kpi-treatment', discharged:'kpi-treated' };
+        const chipMap = { immediate:'chip-immediate', emergency:'chip-emergency', urgent:'chip-urgent',
+          standard:'chip-standard', non_urgent:'chip-non_urgent' };
+        const cardId = cardMap[activeKpiFilter];
+        if (cardId) document.getElementById(cardId)?.classList.add('kpi-active');
+        const chipId = chipMap[activeKpiFilter];
+        if (chipId) {
+          const chip = document.getElementById(chipId);
+          if (chip) { chip.style.outline = '2px solid currentColor'; chip.style.boxShadow = '0 0 8px currentColor'; }
+          // Also highlight parent In Queue card
+          document.getElementById('kpi-queue')?.classList.add('kpi-active');
+        }
+        // Switch to incoming tab
+        if (state.activeTab !== 'incoming') switchTab('incoming');
+      }
+
+      if (!activeKpiFilter || activeKpiFilter === 'all') {
+        renderIncomingLists();
+      } else if (['discharged', 'in_treatment'].includes(activeKpiFilter)) {
+        fetchFilteredStatus(activeKpiFilter);
+      } else {
+        // Triage/route instant filter on current patient list
+        const triageMap = { immediate:'IMMEDIATE', emergency:'EMERGENCY', urgent:'URGENT',
+          standard:'STANDARD', non_urgent:'NON_URGENT' };
+        const targetTriage = triageMap[activeKpiFilter];
+        const filtered = state.patients.filter(p => {
+          const lvl = normalizeTriage(p.triage_level);
+          if (activeKpiFilter === 'en_route') return p.status === 'incoming' || p.status === 'en_route' || p.status === 'arrived';
+          if (targetTriage) return lvl === targetTriage;
+          return true;
+        });
+        renderPatientList(filtered);
+      }
+    }
+
+    async function fetchFilteredStatus(statusFilter) {
+      const el = document.getElementById('incoming-list');
+      el.innerHTML = '<div class="text-center py-8 text-text2"><div class="animate-pulse">Loading...</div></div>';
+      try {
+        const pts = await api(`/api/patients?limit=500&sort=${sortMode}&status=${encodeURIComponent(statusFilter)}`);
+        pts.forEach(p => { if (p.patient_id) _patientCache[p.patient_id] = p; });
+        renderPatientList(pts);
+      } catch(e) {
+        el.innerHTML = '<div class="text-center py-8 text-text2">Failed to load patients</div>';
+      }
+    }
+
+    // ── PRIVACY MODE ─────────────────────────────────────────────
+    function togglePrivacy() {
+      _privacyOn = !_privacyOn;
+      document.body.classList.toggle('pii-blur', _privacyOn);
+      const btn = document.getElementById('privacyBtn');
+      if (btn) {
+        btn.classList.toggle('active', _privacyOn);
+        btn.textContent = _privacyOn ? '🔓 PII Hidden' : '🔒 Privacy';
+      }
+      toast(_privacyOn ? 'Privacy ON — hover to reveal' : 'Privacy OFF', _privacyOn ? 'warn' : 'ok');
+    }
+
+    // ── COMPACT MODE ─────────────────────────────────────────────
+    function toggleCompact() {
+      compactMode = !compactMode;
+      const btn = document.getElementById('compactToggleBtn');
+      if (btn) { 
+        btn.textContent = compactMode ? '▤ Full View' : '☰ Compact'; 
+        btn.classList.toggle('active', compactMode); 
+      }
+      renderIncomingLists();
+    }
+
+    // ── SIDEBAR TOGGLE ───────────────────────────────────────────
+    let sidebarCollapsed = false;
+    function toggleSidebar() {
+      sidebarCollapsed = !sidebarCollapsed;
+      const sidebar = document.getElementById('sidebar');
+      const chevron = document.getElementById('sidebar-chevron');
+      if (sidebar) {
+        sidebar.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+      }
+      if (chevron) {
+        // Rotate chevron based on collapsed state
+        chevron.style.transform = sidebarCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+      }
+      toast(sidebarCollapsed ? 'Sidebar collapsed' : 'Sidebar expanded', 'ok');
+    }
+
+    // ── LANGUAGE SWITCHER ──────────────────────────────────────
+    function setLang(lang) {
+      if (!UI_STRINGS[lang]) return;
+      _currentLang = lang;
+      toast('🌐 Language: ' + lang.toUpperCase(), 'ok');
+    }
+
+    // ── MEDIA LIGHTBOX ─────────────────────────────────────────
+    let _lbPid = null, _lbIdx = 0, _lbCount = 0;
+
+    async function openMediaLightbox(url, pid, idx) {
+      _lbPid = pid;
+      _lbIdx = idx;
+      // Count available media
+      if (_lbCount === 0 || _lbPid !== pid) {
+        _lbCount = 0;
+        for (let i = 0; i < 10; i++) {
+          try {
+            const r = await fetch(`/api/illness_photo/${encodeURIComponent(pid)}/${i}/type`);
+            if (!r.ok) break;
+            _lbCount = i + 1;
+          } catch { break; }
+        }
+      }
+      _renderLightboxItem(pid, idx);
+      const lb = document.getElementById('mediaLightbox');
+      if (lb) {
+        lb.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeMediaLightbox() {
+      const lb = document.getElementById('mediaLightbox');
+      if (lb) lb.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    function _renderLightboxItem(pid, idx) {
+      const content = document.getElementById('mediaLightboxContent');
+      const nav = document.getElementById('mediaLightboxNav');
+      if (!content) return;
+      
+      content.innerHTML = `<img src="/api/illness_photo/${encodeURIComponent(pid)}/${idx}" class="max-w-full max-h-[80vh] rounded-lg" />`;
+      
+      if (nav && _lbCount > 1) {
+        nav.innerHTML = `
+          <button onclick="_lbIdx=Math.max(0,_lbIdx-1);_renderLightboxItem('${h(pid)}',_lbIdx)" class="px-3 py-1 rounded bg-surface border border-slate-600 text-text2">← Prev</button>
+          <span class="text-text2">${_lbIdx + 1} / ${_lbCount}</span>
+          <button onclick="_lbIdx=Math.min(_lbCount-1,_lbIdx+1);_renderLightboxItem('${h(pid)}',_lbIdx)" class="px-3 py-1 rounded bg-surface border border-slate-600 text-text2">Next →</button>
+        `;
+      }
+    }
+
+    // ── CSS INJECTION FOR PII BLUR ─────────────────────────────
+    const piiStyles = document.createElement('style');
+    piiStyles.textContent = `
+      .pii-blur .patient-name { filter: blur(5px); transition: filter 0.2s; }
+      .pii-blur .patient-name:hover { filter: blur(0); }
+      .pii-blur .patient-photo { filter: blur(8px); transition: filter 0.2s; }
+      .pii-blur .patient-photo:hover { filter: blur(0); }
+    `;
+    document.head.appendChild(piiStyles);
+
+    function tickClock() {
+      document.getElementById("clock-text").textContent = new Date().toLocaleString();
+    }
+
+    document.getElementById("side-nav").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-tab]");
+      if (btn) switchTab(btn.dataset.tab);
+    });
+    document.getElementById("search-input").addEventListener("input", renderIncomingLists);
+    document.getElementById("open-incoming-btn").addEventListener("click", () => switchTab("incoming"));
+
+    window.alertTeam = alertTeam;
+    window.assignBed = assignBed;
+    window.viewRoute = viewRoute;
+    window.viewDoctor = viewDoctor;
+    window.triageOverride = triageOverride;
+    window.toggleDet = toggleDet;
+    window.toggleCompactDetail = toggleCompactDetail;
+    window.switchDtab = switchDtab;
+    window.openMediaLightbox = openMediaLightbox;
+    window.closeMediaLightbox = closeMediaLightbox;
+    window._renderLightboxItem = _renderLightboxItem;
+    window.togglePrivacy = togglePrivacy;
+    window.toggleCompact = toggleCompact;
+    window.toggleSidebar = toggleSidebar;
+    window.refreshAll = refreshAll;
+    window.setLang = setLang;
+    window.toggleKpiFilter = toggleKpiFilter;
+    window.switchReportTab = switchReportTab;
+    window.loadReports = loadReports;
+    window.loadLiveStats = loadLiveStats;
+    window.exportReportsCSV = exportReportsCSV;
+    window.focusPatientOnMap = focusPatientOnMap;
+
+    fetchMapsKey();
+    tickClock();
+    refreshAll();
+    setInterval(refreshAll, 8000);
+  </script>
+</body>
+</html>

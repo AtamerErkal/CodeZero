@@ -137,6 +137,8 @@ class HospitalQueue:
                 ("photo_count", "INTEGER DEFAULT 0"),
                 ("complaint_text", "TEXT DEFAULT ''"),
                 ("ai_triage_level", "TEXT"),
+                ("amb_eta_patient", "INTEGER"),
+                ("amb_dispatch_at", "TEXT"),
             ]:
                 try:
                     conn.execute(f"ALTER TABLE patient_queue ADD COLUMN {col_def[0]} {col_def[1]}")
@@ -453,14 +455,38 @@ class HospitalQueue:
             logger.error("Failed to override patient triage: %s", exc)
             return False
 
+    def setup_ambulance_dispatch(self, patient_id: str, note: str, eta_to_patient: int) -> bool:
+        """Atomically set ALL ambulance fields in one SQL call.
+
+        Sets override_action, note, dispatch timestamp, amb_eta_patient, and
+        eta_minutes together so the movement thread never sees a partial state.
+        """
+        try:
+            conn = self._get_connection()
+            now = datetime.now(timezone.utc).isoformat()
+            conn.execute(
+                "UPDATE patient_queue SET "
+                "override_action='AMBULANCE', override_note=?, "
+                "amb_dispatch_at=?, amb_eta_patient=?, eta_minutes=?, updated_at=? "
+                "WHERE patient_id=?",
+                (note, now, eta_to_patient, eta_to_patient, now, patient_id),
+            )
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as exc:
+            logger.error("setup_ambulance_dispatch failed: %s", exc)
+            return False
+
     def set_dispatch_note(self, patient_id: str, note: str) -> bool:
         """Store an ambulance dispatch note without touching triage_level."""
         try:
             conn = self._get_connection()
             now = datetime.now(timezone.utc).isoformat()
             conn.execute(
-                "UPDATE patient_queue SET override_action='AMBULANCE', override_note=?, updated_at=? WHERE patient_id=?",
-                (note, now, patient_id),
+                "UPDATE patient_queue SET override_action='AMBULANCE', override_note=?, "
+                "amb_dispatch_at=?, updated_at=? WHERE patient_id=?",
+                (note, now, now, patient_id),
             )
             conn.commit()
             conn.close()
@@ -468,6 +494,19 @@ class HospitalQueue:
         except Exception as exc:
             logger.error("set_dispatch_note failed: %s", exc)
             return False
+
+    def update_amb_eta_patient(self, patient_id: str, eta_minutes: int) -> None:
+        """Store the ambulance-to-patient leg ETA (separate from total round-trip)."""
+        try:
+            conn = self._get_connection()
+            conn.execute(
+                "UPDATE patient_queue SET amb_eta_patient=? WHERE patient_id=?",
+                (eta_minutes, patient_id),
+            )
+            conn.commit()
+            conn.close()
+        except Exception as exc:
+            logger.error("update_amb_eta_patient failed: %s", exc)
 
     def update_eta(self, patient_id: str, eta_minutes: int) -> None:
         """Overwrite eta_minutes for a patient (e.g. to store ambulance round-trip ETA)."""
