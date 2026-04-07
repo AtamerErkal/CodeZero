@@ -121,6 +121,518 @@
     body.emg-alert { animation: edgeGlow 1s ease-in-out 6 alternate; }
     /* KPI active highlight */
     .kpi-active { outline: 2px solid rgba(34,211,238,.6) !important; box-shadow: 0 0 20px rgba(34,211,238,.2) !important; }
+    .theme-toggle-btn {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      padding: 2px;
+    }
+    .theme-toggle-btn:hover {
+      border-color: rgba(34, 211, 238, 0.5);
+      box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
+    }
+    .theme-toggle-btn.light-mode {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      border-color: rgba(100, 116, 139, 0.4);
+    }
+    .theme-toggle-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #22d3ee 0%, #14b8a6 100%);
+      box-shadow: 0 2px 8px rgba(34, 211, 238, 0.4);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+    .theme-toggle-btn.light-mode .theme-toggle-thumb {
+      transform: translateX(22px);
+      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    }
+    /* Light mode theme variables - Health Matrix Professional Look */
+    html.light-mode {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #f1f5f9;
+      --bg-surface: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: rgba(203, 213, 225, 0.6);
+    }
+    html.light-mode body {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      color: #334155;
+    }
+    html.light-mode .glass {
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+    html.light-mode .glass:hover {
+      border-color: rgba(148, 163, 184, 0.6);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+    html.light-mode .text-text1 { color: #1e293b; }
+    html.light-mode .text-text2 { color: #64748b; }
+    html.light-mode .text-text3 { color: #94a3b8; }
+    html.light-mode .bg-surface { background-color: #ffffff; }
+    html.light-mode .bg-surface2 { background-color: #f8fafc; }
+    html.light-mode .border-slate-700\/50 { border-color: rgba(226, 232, 240, 0.9); }
+    html.light-mode .border-slate-700\/30 { border-color: rgba(226, 232, 240, 0.6); }
+    html.light-mode .border-slate-600 { border-color: rgba(203, 213, 225, 0.9); }
+    html.light-mode .border-slate-600\/70 { border-color: rgba(203, 213, 225, 0.8); }
+    html.light-mode .border-slate-600\/80 { border-color: rgba(203, 213, 225, 0.9); }
+    html.light-mode .bg-slate-800\/50 { background-color: rgba(248, 250, 252, 0.9); }
+    html.light-mode .bg-slate-900\/50 { background-color: rgba(241, 245, 249, 0.9); }
+    html.light-mode .bg-slate-800\/30 { background-color: rgba(248, 250, 252, 0.7); }
+    html.light-mode .bg-slate-700\/50 { background-color: rgba(241, 245, 249, 0.8); }
+    html.light-mode .bg-slate-700 { background-color: #f1f5f9; }
+    html.light-mode .bg-slate-700\/40 { background-color: rgba(241, 245, 249, 0.6); }
+    html.light-mode .bg-slate-700\/30 { background-color: rgba(241, 245, 249, 0.5); }
+    html.light-mode header {
+      background: rgba(255, 255, 255, 0.98);
+      border-color: rgba(226, 232, 240, 0.9);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    html.light-mode aside,
+    html.light-mode #sidebar {
+      background: #68c0a4 !important;
+      background-image: none !important;
+      background-color: #68c0a4 !important;
+      border-color: rgba(255, 255, 255, 0.15) !important;
+      width: 220px !important;
+      min-width: 220px !important;
+      max-width: 220px !important;
+      display: flex !important;
+    }
+    html.light-mode aside.hidden,
+    html.light-mode aside.sidebar-collapsed,
+    html.light-mode #sidebar.hidden,
+    html.light-mode #sidebar.sidebar-collapsed {
+      display: flex !important;
+    }
+    html.light-mode aside .text-text1,
+    html.light-mode aside .text-text2,
+    html.light-mode aside .sidebar-brand-text p,
+    html.light-mode aside .sidebar-label,
+    html.light-mode aside .nav-btn {
+      color: #ffffff !important;
+    }
+    html.light-mode aside .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.15) !important;
+      color: #ffffff !important;
+    }
+    html.light-mode aside .active-nav {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1)) !important;
+      border: 1px solid rgba(255, 255, 255, 0.6) !important;
+      color: #ffffff !important;
+    }
+    html.light-mode aside .system-health {
+      background: rgba(255, 255, 255, 0.15) !important;
+      border-color: rgba(255, 255, 255, 0.25) !important;
+    }
+    html.light-mode aside .system-health .text-teal {
+      color: #a7f3d0 !important;
+    }
+    html.light-mode .sidebar-toggle {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    html.light-mode .sidebar-toggle:hover {
+      background: rgba(255, 255, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
+    html.light-mode .chip {
+      background: rgba(241, 245, 249, 0.9);
+      border-color: rgba(203, 213, 225, 0.8);
+      color: #475569;
+    }
+    html.light-mode input, html.light-mode textarea {
+      background-color: #ffffff;
+      border-color: rgba(203, 213, 225, 0.9);
+      color: #334155;
+    }
+    html.light-mode input::placeholder, html.light-mode textarea::placeholder {
+      color: #94a3b8;
+    }
+    /* KPI Cards - Pastel Health Colors */
+    html.light-mode #kpi-cards article {
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 16px;
+    }
+    html.light-mode #kpi-total { background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-color: rgba(59, 130, 246, 0.3); }
+    html.light-mode #kpi-total .text-text2 { color: #3b82f6; }
+    html.light-mode #kpi-total .mono { color: #1d4ed8; }
+    
+    html.light-mode #kpi-queue { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border-color: rgba(245, 158, 11, 0.3); }
+    html.light-mode #kpi-queue .text-text2 { color: #f59e0b; }
+    html.light-mode #kpi-queue .mono { color: #b45309; }
+    
+    html.light-mode #kpi-emergency { background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); border-color: rgba(239, 68, 68, 0.3); }
+    html.light-mode #kpi-emergency .text-text2 { color: #ef4444; }
+    html.light-mode #kpi-emergency .mono { color: #b91c1c; }
+    
+    html.light-mode #kpi-urgent { background: linear-gradient(135deg, #ffedd5 0%, #fff7ed 100%); border-color: rgba(249, 115, 22, 0.3); }
+    html.light-mode #kpi-urgent .text-text2 { color: #f97316; }
+    html.light-mode #kpi-urgent .mono { color: #c2410c; }
+    
+    html.light-mode #kpi-routine { background: linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%); border-color: rgba(99, 102, 241, 0.3); }
+    html.light-mode #kpi-routine .text-text2 { color: #6366f1; }
+    html.light-mode #kpi-routine .mono { color: #4338ca; }
+    
+    html.light-mode #kpi-treatment { background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%); border-color: rgba(16, 185, 129, 0.3); }
+    html.light-mode #kpi-treatment .text-text2 { color: #10b981; }
+    html.light-mode #kpi-treatment .mono { color: #047857; }
+    
+    html.light-mode #kpi-treated { background: linear-gradient(135deg, #ccfbf1 0%, #f0fdfa 100%); border-color: rgba(20, 184, 166, 0.3); }
+    html.light-mode #kpi-treated .text-text2 { color: #14b8a6; }
+    html.light-mode #kpi-treated .mono { color: #0f766e; }
+    
+    html.light-mode .glow-cyan { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); }
+    html.light-mode .glow-emergency { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15); }
+    html.light-mode .glow-urgent { box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15); }
+    html.light-mode .glow-routine { box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15); }
+    html.light-mode .glow-stable { box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15); }
+    html.light-mode .glow-teal { box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15); }
+    
+    /* Triage chips in light mode */
+    html.light-mode .triage-chip {
+      background: #ffffff;
+      border-width: 1px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Clock styling for light mode */
+    html.light-mode .modern-clock {
+      background: linear-gradient(135deg, #0891b2 0%, #0d9488 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+      font-weight: 700;
+    }
+    html.light-mode .modern-date {
+      color: #64748b;
+    }
+    html.light-mode .clock-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(226, 232, 240, 0.9);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    html.light-mode .clock-container:hover {
+      border-color: rgba(34, 211, 238, 0.4);
+      box-shadow: 0 4px 12px rgba(34, 211, 238, 0.08);
+    }
+    
+    /* Sidebar brand in light mode */
+    html.light-mode .sidebar-brand-text p:first-child {
+      color: #ffffff;
+    }
+    html.light-mode .sidebar-brand-text p:last-child {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    /* Patient Cards in Light Mode - Triage Level Pastel Colors */
+    html.light-mode [id^="card-"] {
+      border: 1px solid rgba(226, 232, 240, 0.9) !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+    }
+    /* Immediate - Very Light Red/Pink */
+    html.light-mode [id^="card-"].triage-I {
+      background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 50%, #ffffff 100%) !important;
+      border-color: rgba(239, 68, 68, 0.25) !important;
+      box-shadow: 0 1px 3px rgba(239, 68, 68, 0.06), 0 4px 12px rgba(239, 68, 68, 0.04) !important;
+    }
+    html.light-mode [id^="card-"].triage-I > div,
+    html.light-mode [id^="card-"].triage-I .p-5,
+    html.light-mode [id^="card-"].triage-I [class*="bg-surface"],
+    html.light-mode [id^="card-"].triage-I [class*="bg-slate-"] {
+      background: transparent !important;
+    }
+    /* Emergency - Very Light Orange */
+    html.light-mode [id^="card-"].triage-E {
+      background: linear-gradient(135deg, #fff7ed 0%, #fffaf5 50%, #ffffff 100%) !important;
+      border-color: rgba(249, 115, 22, 0.25) !important;
+      box-shadow: 0 1px 3px rgba(249, 115, 22, 0.06), 0 4px 12px rgba(249, 115, 22, 0.04) !important;
+    }
+    html.light-mode [id^="card-"].triage-E > div,
+    html.light-mode [id^="card-"].triage-E .p-5,
+    html.light-mode [id^="card-"].triage-E [class*="bg-surface"],
+    html.light-mode [id^="card-"].triage-E [class*="bg-slate-"] {
+      background: transparent !important;
+    }
+    /* Urgent - Very Light Yellow */
+    html.light-mode [id^="card-"].triage-U {
+      background: linear-gradient(135deg, #fefce8 0%, #fffdf5 50%, #ffffff 100%) !important;
+      border-color: rgba(234, 179, 8, 0.25) !important;
+      box-shadow: 0 1px 3px rgba(234, 179, 8, 0.06), 0 4px 12px rgba(234, 179, 8, 0.04) !important;
+    }
+    html.light-mode [id^="card-"].triage-U > div,
+    html.light-mode [id^="card-"].triage-U .p-5,
+    html.light-mode [id^="card-"].triage-U [class*="bg-surface"],
+    html.light-mode [id^="card-"].triage-U [class*="bg-slate-"] {
+      background: transparent !important;
+    }
+    /* Standard - Very Light Green */
+    html.light-mode [id^="card-"].triage-S {
+      background: linear-gradient(135deg, #f0fdf4 0%, #f5fff8 50%, #ffffff 100%) !important;
+      border-color: rgba(34, 197, 94, 0.25) !important;
+      box-shadow: 0 1px 3px rgba(34, 197, 94, 0.06), 0 4px 12px rgba(34, 197, 94, 0.04) !important;
+    }
+    html.light-mode [id^="card-"].triage-S > div,
+    html.light-mode [id^="card-"].triage-S .p-5,
+    html.light-mode [id^="card-"].triage-S [class*="bg-surface"],
+    html.light-mode [id^="card-"].triage-S [class*="bg-slate-"] {
+      background: transparent !important;
+    }
+    /* Non-Urgent - Very Light Blue */
+    html.light-mode [id^="card-"].triage-N {
+      background: linear-gradient(135deg, #eff6ff 0%, #f5f9ff 50%, #ffffff 100%) !important;
+      border-color: rgba(59, 130, 246, 0.25) !important;
+      box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06), 0 4px 12px rgba(59, 130, 246, 0.04) !important;
+    }
+    html.light-mode [id^="card-"].triage-N > div,
+    html.light-mode [id^="card-"].triage-N .p-5,
+    html.light-mode [id^="card-"].triage-N [class*="bg-surface"],
+    html.light-mode [id^="card-"].triage-N [class*="bg-slate-"] {
+      background: transparent !important;
+    }
+    /* Common styles for all cards */
+    html.light-mode [id^="card-"] h3,
+    html.light-mode [id^="card-"] .patient-name,
+    html.light-mode [id^="card-"] .text-white {
+      color: #1e293b !important;
+    }
+    html.light-mode [id^="card-"] .text-text2,
+    html.light-mode [id^="card-"] .text-text3 {
+      color: #64748b !important;
+    }
+    html.light-mode [id^="card-"] .chip,
+    html.light-mode [id^="card-"] [class*="rounded-lg"].bg-surface,
+    html.light-mode [id^="card-"] .bg-surface\/60 {
+      background: rgba(255, 255, 255, 0.7) !important;
+      border: 1px solid rgba(203, 213, 225, 0.5) !important;
+      backdrop-filter: blur(4px);
+    }
+    /* Details panel */
+    html.light-mode [id^="det-"] {
+      background: rgba(255, 255, 255, 0.5) !important;
+      border-top: 1px solid rgba(226, 232, 240, 0.6) !important;
+    }
+    html.light-mode [id^="det-"] > div {
+      background: transparent !important;
+    }
+    html.light-mode [id^="det-"] [class*="bg-surface"],
+    html.light-mode [id^="det-"] [class*="bg-slate-"] {
+      background: rgba(255, 255, 255, 0.6) !important;
+      border-color: rgba(226, 232, 240, 0.5) !important;
+    }
+    html.light-mode [id^="det-"] button[class*="dtab-btn"] {
+      background: rgba(255, 255, 255, 0.6) !important;
+      border-color: rgba(203, 213, 225, 0.5) !important;
+      color: #64748b !important;
+    }
+    html.light-mode [id^="det-"] button[class*="dtab-btn"].active {
+      background: rgba(34, 211, 238, 0.1) !important;
+      border-color: rgba(34, 211, 238, 0.4) !important;
+      color: #0891b2 !important;
+    }
+    /* QA Bar at bottom */
+    html.light-mode [id^="card-"] [data-qa-bar] > div {
+      background: rgba(255, 255, 255, 0.4) !important;
+      border-color: rgba(226, 232, 240, 0.4) !important;
+    }
+    /* Doctor Panel specific - Override cards - STRONG SELECTORS */
+    html.light-mode #pane-doctor .rounded-2xl,
+    html.light-mode #doctor-panel-list > div,
+    html.light-mode #pane-doctor article,
+    html.light-mode #doctor-panel-list article {
+      background: #ffffff !important;
+      border-color: rgba(226, 232, 240, 0.9) !important;
+    }
+    html.light-mode #pane-doctor .rounded-2xl [class*="bg-gradient"],
+    html.light-mode #doctor-panel-list [class*="bg-gradient"],
+    html.light-mode #pane-doctor .rounded-2xl [class*="bg-slate"],
+    html.light-mode #doctor-panel-list [class*="bg-slate"],
+    html.light-mode #pane-doctor .rounded-2xl [class*="bg-surface"],
+    html.light-mode #doctor-panel-list [class*="bg-surface"] {
+      background: transparent !important;
+      background-image: none !important;
+    }
+    html.light-mode #pane-doctor .triage-I,
+    html.light-mode #doctor-panel-list .triage-I,
+    html.light-mode #pane-doctor [class*="triage-I"] {
+      background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%) !important;
+      border: 2px solid rgba(239, 68, 68, 0.3) !important;
+    }
+    html.light-mode #pane-doctor .triage-E,
+    html.light-mode #doctor-panel-list .triage-E,
+    html.light-mode #pane-doctor [class*="triage-E"] {
+      background: linear-gradient(135deg, #fff7ed 0%, #fffaf5 100%) !important;
+      border: 2px solid rgba(249, 115, 22, 0.3) !important;
+    }
+    html.light-mode #pane-doctor .triage-U,
+    html.light-mode #doctor-panel-list .triage-U,
+    html.light-mode #pane-doctor [class*="triage-U"] {
+      background: linear-gradient(135deg, #fefce8 0%, #fffdf5 100%) !important;
+      border: 2px solid rgba(234, 179, 8, 0.3) !important;
+    }
+    html.light-mode #pane-doctor .triage-S,
+    html.light-mode #doctor-panel-list .triage-S,
+    html.light-mode #pane-doctor [class*="triage-S"] {
+      background: linear-gradient(135deg, #f0fdf4 0%, #f5fff8 100%) !important;
+      border: 2px solid rgba(34, 197, 94, 0.3) !important;
+    }
+    html.light-mode #pane-doctor .triage-N,
+    html.light-mode #doctor-panel-list .triage-N,
+    html.light-mode #pane-doctor [class*="triage-N"] {
+      background: linear-gradient(135deg, #eff6ff 0%, #f5f9ff 100%) !important;
+      border: 2px solid rgba(59, 130, 246, 0.3) !important;
+    }
+    html.light-mode #pane-doctor .rounded-2xl h3,
+    html.light-mode #doctor-panel-list h3,
+    html.light-mode #pane-doctor .rounded-2xl .text-white,
+    html.light-mode #doctor-panel-list .text-white {
+      color: #1e293b !important;
+    }
+    html.light-mode #pane-doctor .rounded-2xl textarea,
+    html.light-mode #doctor-panel-list textarea {
+      background-color: #ffffff !important;
+      border: 1px solid rgba(203, 213, 225, 0.8) !important;
+    }
+    /* Sort buttons in Incoming Patients */
+    html.light-mode .sort-btn {
+      background: rgba(241, 245, 249, 0.8) !important;
+      color: #64748b !important;
+      border: 1px solid rgba(203, 213, 225, 0.6) !important;
+    }
+    html.light-mode .sort-btn.active {
+      background: rgba(34, 211, 238, 0.15) !important;
+      color: #0891b2 !important;
+      border-color: rgba(34, 211, 238, 0.4) !important;
+    }
+    html.light-mode .bg-surface\/60 {
+      background: rgba(255, 255, 255, 0.8) !important;
+    }
+    .modern-clock {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      font-variant-numeric: tabular-nums;
+      color: #22d3ee;
+      text-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+      line-height: 1.1;
+    }
+    html.light-mode .modern-clock {
+      color: #047857;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    .modern-date {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #cbd5e1;
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+    html.light-mode .modern-date {
+      color: #374151;
+    }
+    .clock-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+    .clock-container:hover {
+      border-color: rgba(34, 211, 238, 0.5);
+      box-shadow: 0 0 25px rgba(34, 211, 238, 0.2);
+    }
+    html.light-mode .clock-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(104, 192, 164, 0.4);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    html.light-mode .clock-container:hover {
+      border-color: rgba(104, 192, 164, 0.6);
+      box-shadow: 0 4px 16px rgba(104, 192, 164, 0.15);
+    }
+    /* Tracking section - Light mode overrides */
+    html.light-mode #tracking-patient-list > div {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+      border: 1px solid rgba(226, 232, 240, 0.9) !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    }
+    html.light-mode #tracking-patient-list > div:hover {
+      border-color: rgba(34, 211, 238, 0.5) !important;
+      box-shadow: 0 4px 12px rgba(34, 211, 238, 0.1) !important;
+    }
+    html.light-mode #pane-tracking article,
+    html.light-mode #pane-tracking .glass {
+      background: #ffffff !important;
+      border-color: rgba(226, 232, 240, 0.9) !important;
+    }
+    html.light-mode #tracking-body tr {
+      border-color: rgba(226, 232, 240, 0.6) !important;
+    }
+    html.light-mode #tracking-body tr:hover {
+      background: rgba(241, 245, 249, 0.8) !important;
+    }
+    html.light-mode #tracking-body td {
+      color: #334155 !important;
+    }
+    html.light-mode #tracking-body .text-text2,
+    html.light-mode #tracking-body .text-text3 {
+      color: #64748b !important;
+    }
+    html.light-mode #tracking-patient-list .text-text3 {
+      color: #64748b !important;
+    }
+    
+    /* Tracking cards with triage colors */
+    html.light-mode #tracking-patient-list > div:has(.triage-I),
+    html.light-mode #pane-tracking .triage-I {
+      background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%) !important;
+      border-color: rgba(239, 68, 68, 0.3) !important;
+    }
+    html.light-mode #tracking-patient-list > div:has(.triage-E),
+    html.light-mode #pane-tracking .triage-E {
+      background: linear-gradient(135deg, #fff7ed 0%, #fffaf5 100%) !important;
+      border-color: rgba(249, 115, 22, 0.3) !important;
+    }
+    html.light-mode #tracking-patient-list > div:has(.triage-U),
+    html.light-mode #pane-tracking .triage-U {
+      background: linear-gradient(135deg, #fefce8 0%, #fffdf5 100%) !important;
+      border-color: rgba(234, 179, 8, 0.3) !important;
+    }
+    html.light-mode #tracking-patient-list > div:has(.triage-S),
+    html.light-mode #pane-tracking .triage-S {
+      background: linear-gradient(135deg, #f0fdf4 0%, #f5fff8 100%) !important;
+      border-color: rgba(34, 197, 94, 0.3) !important;
+    }
+    html.light-mode #tracking-patient-list > div:has(.triage-N),
+    html.light-mode #pane-tracking .triage-N {
+      background: linear-gradient(135deg, #eff6ff 0%, #f5f9ff 100%) !important;
+      border-color: rgba(59, 130, 246, 0.3) !important;
+    }
+    
     /* Leaflet popup dark theme override */
     .leaflet-popup-content-wrapper { background: #1e293b !important; color: #e5e7eb !important; border-radius: 12px !important; border: 1px solid rgba(148,163,184,.22) !important; box-shadow: 0 10px 30px rgba(2,8,23,.5) !important; }
     .leaflet-popup-tip { background: #1e293b !important; }
@@ -129,7 +641,7 @@
 </head>
 <body class="min-h-screen text-text1">
   <div class="flex min-h-screen">
-    <aside id="sidebar" class="hidden xl:flex xl:w-[280px] flex-col border-r border-slate-700/50 bg-surface/60 px-5 py-6 backdrop-blur-md transition-all duration-300 relative">
+    <aside id="sidebar" class="hidden xl:flex xl:w-[240px] flex-col border-r border-slate-700/50 bg-surface/60 px-5 py-6 backdrop-blur-md transition-all duration-300 relative">
       <div class="sidebar-toggle" onclick="toggleSidebar()">
         <svg id="sidebar-chevron" class="w-4 h-4 text-text2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -205,19 +717,12 @@
             <span class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-slate-600 px-2 py-0.5 text-xs text-text2">⌘K</span>
           </div>
           <div class="flex items-center gap-2 md:gap-3">
-            <!-- Sync Status -->
-            <div class="flex items-center gap-2 rounded-xl border border-slate-600/80 bg-surface2/70 px-3 py-2">
-              <span class="relative flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-teal"></span>
-              </span>
-              <span class="text-xs text-text2" id="sync-text">Syncing...</span>
-              <button onclick="refreshAll()" class="ml-1 p-1 rounded hover:bg-slate-700/50 transition-colors" title="Refresh now">
-                <svg class="w-4 h-4 text-text2 hover:text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-              </button>
-            </div>
+            <!-- Dark/Light Mode Toggle -->
+            <button id="themeToggle" onclick="toggleTheme()" class="theme-toggle-btn" title="Toggle Dark/Light Mode">
+              <div class="theme-toggle-thumb">
+                <span id="themeIcon">🌙</span>
+              </div>
+            </button>
             <!-- Language -->
             <div class="flex rounded-xl border border-slate-600/80 bg-surface2/70 p-1 text-xs">
               <button onclick="setLang('en')" class="rounded-lg px-3 py-1 text-cyan bg-cyan/20">EN</button>
@@ -255,7 +760,11 @@
             <h1 class="text-2xl font-bold tracking-tight md:text-3xl">Hospital Command Center</h1>
             <p class="text-sm text-text2">Live emergency triage and patient routing overview</p>
           </div>
-          <div class="chip text-teal mono" id="clock-text"></div>
+          <!-- Modern Clock Display -->
+          <div class="clock-container flex flex-col items-end">
+            <div class="modern-clock" id="clock-time">--:--:--</div>
+            <div class="modern-date" id="clock-date">---</div>
+          </div>
         </div>
 
         <div id="pane-dashboard" class="pane">
@@ -1030,17 +1539,19 @@
       if (body) {
         body.innerHTML = pts.map((p) => {
           const lvl = normalizeTriage(p.triage_level);
+          const tc = TRIAGE_CLASS[lvl] || '?';
+          const triageClass = `triage-${tc}`;
           const isIncoming = p.status === 'incoming' || p.status === 'en_route';
           const distance = p.distance_km != null ? `${p.distance_km.toFixed(1)} km` : '—';
           const speed = p.speed_kmh != null ? `${p.speed_kmh} km/h` : '—';
           const lat = p.latitude ?? p.location?.lat;
           const lon = p.longitude ?? p.location?.lon;
           return `
-          <tr class="border-b border-slate-700/40 hover:bg-surface/30 transition-colors">
+          <tr class="border-b border-slate-700/40 hover:bg-surface/30 transition-colors ${triageClass}">
             <td class="py-3 px-2">
               <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full ${isIncoming ? 'bg-emer animate-pulse' : 'bg-stable'}"></span>
-                <span class="font-medium">${h(p.full_name || p.patient_id)}</span>
+                <span class="font-medium" style="color: inherit;">${h(p.full_name || p.patient_id)}</span>
               </div>
             </td>
             <td class="py-3 px-2">
@@ -1048,11 +1559,11 @@
                 ${h(STATUS_LABEL[p.status || "incoming"] || p.status || "incoming")}
               </span>
             </td>
-            <td class="py-3 px-2 mono text-text2">${distance}</td>
+            <td class="py-3 px-2 mono" style="color: #64748b;">${distance}</td>
             <td class="py-3 px-2 mono ${p.eta_minutes != null && p.eta_minutes <= 5 ? 'text-emer font-bold' : ''}">${p.eta_minutes != null ? `${p.eta_minutes} min` : "—"}</td>
-            <td class="py-3 px-2 mono text-text2">${speed}</td>
-            <td class="py-3 px-2 mono text-xs text-text3">${lat != null && lon != null ? `${Number(lat).toFixed(5)}, ${Number(lon).toFixed(5)}` : "No GPS"}</td>
-            <td class="py-3 px-2 text-text2">${h(p.destination_hospital || "Pending")}</td>
+            <td class="py-3 px-2 mono" style="color: #64748b;">${speed}</td>
+            <td class="py-3 px-2 mono text-xs" style="color: #94a3b8;">${lat != null && lon != null ? `${Number(lat).toFixed(5)}, ${Number(lon).toFixed(5)}` : "No GPS"}</td>
+            <td class="py-3 px-2" style="color: #64748b;">${h(p.destination_hospital || "Pending")}</td>
           </tr>
         `}).join("");
       }
@@ -1117,9 +1628,10 @@
           const lvl = normalizeTriage(p.triage_level);
           const isIncoming = p.status === 'incoming' || p.status === 'en_route';
           const pid = p.patient_id || '';
+          const triageClass = `triage-${TRIAGE_CLASS[lvl] || 'U'}`;
           return `
-            <div class="flex items-center gap-3 p-3 rounded-xl bg-surface/50 border border-slate-700/30 hover:border-cyan/30 transition-colors cursor-pointer" onclick="focusPatientOnMap('${h(pid)}')">
-              <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-surface/50 border border-slate-700/30 hover:border-cyan/30 transition-colors cursor-pointer ${triageClass}" onclick="focusPatientOnMap('${h(pid)}')">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${triageClass}"
                    style="background: ${TRIAGE_COLOR[lvl]}20; color: ${TRIAGE_COLOR[lvl]}; border: 2px solid ${TRIAGE_COLOR[lvl]}66">
                 ${TRIAGE_CLASS[lvl] || '?'}
               </div>
@@ -1195,43 +1707,55 @@
       const box = document.getElementById("doctor-panel-list");
       const lvlOrder = ['IMMEDIATE','EMERGENCY','URGENT','STANDARD','NON_URGENT'];
       const sorted = [...state.patients].sort((a,b) => lvlOrder.indexOf(normalizeTriage(a.triage_level)) - lvlOrder.indexOf(normalizeTriage(b.triage_level)));
+      
+      // Pastel colors matching Incoming Patients cards
+      const triageCardColors = {
+        'IMMEDIATE':  { bg: 'linear-gradient(135deg, #fef2f2 0%, #fff5f5 50%, #ffffff 100%)', border: 'rgba(239, 68, 68, 0.25)', class: 'triage-I' },
+        'EMERGENCY':  { bg: 'linear-gradient(135deg, #fff7ed 0%, #fffaf5 50%, #ffffff 100%)', border: 'rgba(249, 115, 22, 0.25)', class: 'triage-E' },
+        'URGENT':     { bg: 'linear-gradient(135deg, #fefce8 0%, #fffdf5 50%, #ffffff 100%)', border: 'rgba(234, 179, 8, 0.25)', class: 'triage-U' },
+        'STANDARD':   { bg: 'linear-gradient(135deg, #f0fdf4 0%, #f5fff8 50%, #ffffff 100%)', border: 'rgba(34, 197, 94, 0.25)', class: 'triage-S' },
+        'NON_URGENT': { bg: 'linear-gradient(135deg, #eff6ff 0%, #f5f9ff 50%, #ffffff 100%)', border: 'rgba(59, 130, 246, 0.25)', class: 'triage-N' }
+      };
+      
       box.innerHTML = sorted.map((p) => {
         const pid = p.patient_id;
         const lvl = normalizeTriage(p.triage_level);
         const col = TRIAGE_COLOR[lvl] || '#f59e0b';
+        const tc = TRIAGE_CLASS[lvl] || 'U';
         const mts = MTS_META[lvl] || MTS_META.URGENT;
         const photo = p.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(pid)}`;
+        const cardColors = triageCardColors[lvl] || triageCardColors['URGENT'];
         return `
-        <div class="rounded-xl border bg-surface2/40 p-4 space-y-3" style="border-color:${col}30">
+        <div class="rounded-xl border p-4 space-y-3 ${cardColors.class}" style="background: ${cardColors.bg}; border-color: ${cardColors.border}; border-width: 1px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);">
           <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3">
               <img src="${h(photo)}" class="w-12 h-12 rounded-xl object-cover border-2" style="border-color:${col}66" onerror="this.src='https://i.pravatar.cc/60?u=${encodeURIComponent(pid)}'" />
               <div>
-                <p class="font-semibold">${h(p.full_name || pid)}</p>
-                <p class="text-xs text-text2 mt-0.5">${h(p.chief_complaint || '—')}</p>
+                <p class="font-semibold" style="color: #1e293b;">${h(p.full_name || pid)}</p>
+                <p class="text-xs mt-0.5" style="color: #64748b;">${h(p.chief_complaint || '—')}</p>
                 <div class="flex items-center gap-2 mt-1">
-                  <span class="chip text-xs" style="color:${col};border-color:${col}55;background:${col}15">${lvl}</span>
-                  <span class="text-xs text-text3 mono">Risk: ${p.risk_score ?? '—'}/10</span>
-                  <span class="text-xs text-text3">⏱ ${mts.max_wait} min max wait</span>
+                  <span class="chip text-xs" style="color:${col};border-color:${col}55;background:${col}15">${tc} • Risk: ${p.risk_score ?? '—'}/10</span>
+                  <span class="text-xs" style="color: #94a3b8;">⏱ ${mts.max_wait} min max wait</span>
                 </div>
               </div>
             </div>
             <div class="text-right shrink-0">
-              ${p.eta_minutes != null ? `<div class="text-xl font-bold mono" style="color:${col}">${p.eta_minutes}<span class="text-xs text-text3 ml-0.5">min</span></div>` : ''}
-              ${p.override_action ? `<div class="text-[10px] text-text3 mt-1">Last: ${h(p.override_action)}</div>` : ''}
+              ${p.eta_minutes != null ? `<div class="text-xl font-bold mono" style="color:${col};">${p.eta_minutes}<span class="text-xs" style="color: #94a3b8;">min</span></div>` : ''}
+              ${p.override_action ? `<div class="text-[10px]" style="color: #94a3b8;">Last: ${h(p.override_action)}</div>` : ''}
             </div>
           </div>
-          ${p.override_note ? `<div class="text-xs text-text2 italic border-l-2 border-slate-600 pl-3 py-1 bg-surface/40 rounded-r-lg">"${h(p.override_note.split('\n---\n')[0].trim())}"</div>` : ''}
+          ${p.override_note ? `<div class="text-xs italic border-l-2 pl-3 py-1 rounded-r-lg" style="color: #64748b; border-color: #cbd5e1; background: rgba(255,255,255,0.6);">"${h(p.override_note.split('\n---\n')[0].trim())}"</div>` : ''}
           <textarea id="override-note-${h(pid)}" placeholder="Clinical note / message to patient (optional)" rows="2"
-            class="w-full rounded-xl bg-surface/60 border border-slate-700/50 px-3 py-2 text-sm text-text1 resize-none leading-relaxed focus:outline-none focus:border-cyan/50 transition-colors placeholder-text3"
-            onfocus="this.style.borderColor='var(--cyan,#22d3ee)'" onblur="this.style.borderColor=''"></textarea>
+            class="w-full rounded-xl px-3 py-2 text-sm resize-none leading-relaxed focus:outline-none transition-colors placeholder-text3"
+            style="background: #ffffff; border: 1px solid rgba(203, 213, 225, 0.8); color: #334155;"
+            onfocus="this.style.borderColor='${col}'" onblur="this.style.borderColor='rgba(203, 213, 225, 0.8)'"></textarea>
           <div class="flex flex-wrap gap-2">
-            <button onclick="triageOverride('${h(pid)}','APPROVE')" class="rounded-lg border border-stable/50 bg-stable/15 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✅ Approve</button>
-            <button onclick="triageOverride('${h(pid)}','UPGRADE')" class="rounded-lg border border-urgent/50 bg-urgent/15 px-3 py-1.5 text-xs font-semibold text-urgent hover:bg-urgent/25 transition-all">⬆ Upgrade</button>
-            <button onclick="triageOverride('${h(pid)}','DOWNGRADE')" class="rounded-lg border border-cyan/50 bg-cyan/15 px-3 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/25 transition-all">⬇ Downgrade</button>
-            <button onclick="setStatus('${h(pid)}','in_treatment')" class="rounded-lg border border-violet-400/50 bg-violet-500/15 px-3 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition-all ml-auto">💊 In Treatment</button>
+            <button onclick="triageOverride('${h(pid)}','APPROVE')" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all" style="border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.15); color: #10b981;">✅ Approve</button>
+            <button onclick="triageOverride('${h(pid)}','UPGRADE')" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all" style="border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.15); color: #f59e0b;">⬆ Upgrade</button>
+            <button onclick="triageOverride('${h(pid)}','DOWNGRADE')" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all" style="border-color: rgba(34, 211, 238, 0.5); background: rgba(34, 211, 238, 0.15); color: #0891b2;">⬇ Downgrade</button>
+            <button onclick="setStatus('${h(pid)}','in_treatment')" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ml-auto" style="border-color: rgba(139, 92, 246, 0.5); background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">💊 In Treatment</button>
           </div>
-          <div id="triage-override-result-${h(pid)}-dp" class="text-xs text-text3 min-h-[1em]"></div>
+          <div id="triage-override-result-${h(pid)}-dp" class="text-xs min-h-[1em]" style="color: #94a3b8;"></div>
         </div>`;
       }).join("");
     }
@@ -2848,9 +3372,67 @@
     `;
     document.head.appendChild(piiStyles);
 
-    function tickClock() {
-      document.getElementById("clock-text").textContent = new Date().toLocaleString();
+    // ── THEME TOGGLE ───────────────────────────────────────────
+    let isDarkMode = true;
+    function toggleTheme() {
+      isDarkMode = !isDarkMode;
+      const html = document.documentElement;
+      const btn = document.getElementById('themeToggle');
+      const icon = document.getElementById('themeIcon');
+      
+      if (isDarkMode) {
+        html.classList.remove('light-mode');
+        btn.classList.remove('light-mode');
+        icon.textContent = '🌙';
+        toast('🌙 Dark mode enabled', 'ok');
+      } else {
+        html.classList.add('light-mode');
+        btn.classList.add('light-mode');
+        icon.textContent = '☀️';
+        toast('☀️ Light mode enabled', 'ok');
+      }
+      
+      // Save preference
+      localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
     }
+    
+    // Load saved theme preference
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'light') {
+        isDarkMode = false;
+        document.documentElement.classList.add('light-mode');
+        const btn = document.getElementById('themeToggle');
+        if (btn) btn.classList.add('light-mode');
+        const icon = document.getElementById('themeIcon');
+        if (icon) icon.textContent = '☀️';
+      }
+    }
+
+    // ── CLOCK ─────────────────────────────────────────────────
+    function tickClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false 
+      });
+      const dateStr = now.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      }).toUpperCase();
+      
+      const timeEl = document.getElementById('clock-time');
+      const dateEl = document.getElementById('clock-date');
+      
+      if (timeEl) timeEl.textContent = timeStr;
+      if (dateEl) dateEl.textContent = dateStr;
+    }
+    
+    // Start the continuous clock
+    setInterval(tickClock, 1000);
 
     document.getElementById("side-nav").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-tab]");
@@ -2873,6 +3455,7 @@
     window.togglePrivacy = togglePrivacy;
     window.toggleCompact = toggleCompact;
     window.toggleSidebar = toggleSidebar;
+    window.toggleTheme = toggleTheme;
     window.refreshAll = refreshAll;
     window.setLang = setLang;
     window.toggleKpiFilter = toggleKpiFilter;
@@ -2883,6 +3466,7 @@
     window.focusPatientOnMap = focusPatientOnMap;
 
     fetchMapsKey();
+    loadTheme();
     tickClock();
     refreshAll();
     setInterval(refreshAll, 8000);
