@@ -298,6 +298,13 @@
     html.light-mode #kpi-treated .text-text2 { color: #14b8a6; }
     html.light-mode #kpi-treated .mono { color: #0f766e; }
     
+    /* New Resource KPIs - Light Mode */
+    html.light-mode .glass.rounded-2xl.p-4 { background: #ffffff; border: 1px solid rgba(226, 232, 240, 0.9); }
+    html.light-mode .text-green-400 { color: #10b981; }
+    html.light-mode .text-blue-400 { color: #3b82f6; }
+    html.light-mode .text-amber-400 { color: #f59e0b; }
+    html.light-mode .text-purple-400 { color: #8b5cf6; }
+    
     html.light-mode .glow-cyan { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); }
     html.light-mode .glow-emergency { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15); }
     html.light-mode .glow-urgent { box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15); }
@@ -633,10 +640,12 @@
       border-color: rgba(59, 130, 246, 0.3) !important;
     }
     
-    /* Leaflet popup dark theme override */
-    .leaflet-popup-content-wrapper { background: #1e293b !important; color: #e5e7eb !important; border-radius: 12px !important; border: 1px solid rgba(148,163,184,.22) !important; box-shadow: 0 10px 30px rgba(2,8,23,.5) !important; }
-    .leaflet-popup-tip { background: #1e293b !important; }
-    .leaflet-popup-close-button { color: #94a3b8 !important; }
+    /* Leaflet popup — theme-adaptive */
+    .leaflet-popup-content-wrapper { background: var(--surface2) !important; color: var(--text1) !important; border-radius: 14px !important; border: 1px solid rgba(148,163,184,.22) !important; box-shadow: 0 10px 30px rgba(2,8,23,.45) !important; }
+    .leaflet-popup-tip { background: var(--surface2) !important; }
+    .leaflet-popup-close-button { color: var(--text3) !important; font-size: 18px !important; top: 8px !important; right: 10px !important; }
+    .leaflet-popup-content { margin: 12px 14px !important; }
+    html.light-mode .leaflet-popup-content-wrapper { box-shadow: 0 8px 24px rgba(0,0,0,.14) !important; }
   </style>
 </head>
 <body class="min-h-screen text-text1">
@@ -661,26 +670,22 @@
       </div>
 
       <nav class="space-y-1 text-sm text-text2" id="side-nav">
-        <button data-tab="dashboard" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left active-nav flex items-center gap-3">
+        <button data-tab="dashboard" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left active-nav flex items-center gap-3 relative">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
           <span class="sidebar-label">Dashboard</span>
-        </button>
-        <button data-tab="incoming" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3 relative">
-          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-          <span class="sidebar-label">Incoming Patients</span>
           <span id="nav-emg-badge" class="hidden absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full bg-emer text-white text-[10px] font-bold flex items-center justify-center px-1 animate-pulse"></span>
         </button>
         <button data-tab="tracking" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           <span class="sidebar-label">Live Tracking</span>
         </button>
-        <button data-tab="triage" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
-          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span class="sidebar-label">Triage Queue</span>
-        </button>
-        <button data-tab="doctor" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+                <button data-tab="doctor" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
           <span class="sidebar-label">Doctor Panel</span>
+        </button>
+        <button data-tab="bed" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          <span class="sidebar-label">Bed Management</span>
         </button>
         <button data-tab="reports" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -724,9 +729,10 @@
               </div>
             </button>
             <!-- Language -->
-            <div class="flex rounded-xl border border-slate-600/80 bg-surface2/70 p-1 text-xs">
-              <button onclick="setLang('en')" class="rounded-lg px-3 py-1 text-cyan bg-cyan/20">EN</button>
-              <button onclick="setLang('de')" class="rounded-lg px-3 py-1 text-text2 hover:text-text1">DE</button>
+            <div id="lang-switcher" class="flex rounded-xl border border-slate-600/80 bg-surface2/70 p-1 text-xs">
+              <button onclick="setLang('en',this)" data-lang="en" class="lang-btn active rounded-lg px-3 py-1 text-cyan bg-cyan/20">EN</button>
+              <button onclick="setLang('tr',this)" data-lang="tr" class="lang-btn rounded-lg px-3 py-1 text-text2 hover:text-text1">TR</button>
+              <button onclick="setLang('de',this)" data-lang="de" class="lang-btn rounded-lg px-3 py-1 text-text2 hover:text-text1">DE</button>
             </div>
             <!-- Privacy -->
             <button id="privacyBtn" onclick="togglePrivacy()" class="flex items-center gap-1.5 rounded-xl border border-slate-600/80 bg-surface2/70 px-3 py-2 text-xs text-text2 hover:border-cyan/50 transition-all">
@@ -769,50 +775,113 @@
 
         <div id="pane-dashboard" class="pane">
           <div class="grid grid-cols-1 gap-6 2xl:grid-cols-12">
-            <div class="2xl:col-span-8 space-y-6">
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" id="kpi-cards">
-                <article onclick="toggleKpiFilter('all')" class="glass rounded-2xl p-4 glow-cyan cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-total"><p class="text-xs uppercase tracking-wide text-text2">Total Patients</p><p id="k-total" class="mono mt-2 text-3xl font-bold">—</p><div id="spark-total" class="sparkline-container"></div></article>
-                <article class="glass rounded-2xl p-4 glow-cyan" id="kpi-queue">
-                  <div class="flex items-start justify-between cursor-pointer" onclick="toggleKpiFilter('en_route')">
-                    <div>
-                      <p class="text-xs uppercase tracking-wide text-text2">In Queue</p>
-                      <p id="k-queue" class="mono mt-2 text-3xl font-bold">—</p>
+            <div class="2xl:col-span-9 space-y-6">
+              <!-- Row 1: compact stat cards — Total | En Route | Under Treatment | Discharged -->
+              <div class="grid grid-cols-2 xl:grid-cols-4 gap-3" id="kpi-cards">
+                <article onclick="setTopFilter('all')" id="kpi-total" class="glass rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all group">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text3" data-i18n="kpi_total">Total Patients</p>
+                      <p id="k-total" class="mono text-5xl font-bold mt-1.5">—</p>
                     </div>
-                    <div id="spark-queue" class="sparkline-container w-20"></div>
-                  </div>
-                  <!-- Triage chips — V9 parity -->
-                  <div class="flex flex-wrap gap-1 mt-3" id="kpi-triage-chips">
-                    <button onclick="toggleKpiFilter('immediate');event.stopPropagation()" id="chip-immediate" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#ef4444;border-color:#ef444440;background:#ef444415"><span id="chip-k-imm">—</span> ☠ IMM</button>
-                    <button onclick="toggleKpiFilter('emergency');event.stopPropagation()" id="chip-emergency" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#f59e0b;border-color:#f59e0b40;background:#f59e0b15"><span id="chip-k-emg">—</span> 🚑 EMG</button>
-                    <button onclick="toggleKpiFilter('urgent');event.stopPropagation()" id="chip-urgent" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#facc15;border-color:#facc1540;background:#facc1515"><span id="chip-k-urg">—</span> ⚡ URG</button>
-                    <button onclick="toggleKpiFilter('standard');event.stopPropagation()" id="chip-standard" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#10b981;border-color:#10b98140;background:#10b98115"><span id="chip-k-std">—</span> ✅ STD</button>
-                    <button onclick="toggleKpiFilter('non_urgent');event.stopPropagation()" id="chip-non_urgent" class="triage-chip flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold border transition-all hover:opacity-90" style="color:#60a5fa;border-color:#60a5fa40;background:#60a5fa15"><span id="chip-k-nurg">—</span> 📋 N-URG</button>
+                    <div class="shrink-0 rounded-xl bg-cyan/15 p-2.5 group-hover:bg-cyan/25 transition-colors">
+                      <svg class="w-5 h-5 text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
                   </div>
                 </article>
-                <article onclick="toggleKpiFilter('emergency')" class="glass rounded-2xl p-4 glow-emergency cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-emergency"><p class="text-xs uppercase tracking-wide text-text2 text-emer">Emergency</p><p id="k-emergency" class="mono mt-2 text-3xl font-bold text-emer">—</p><div id="spark-emergency" class="sparkline-container"></div></article>
-                <article onclick="toggleKpiFilter('urgent')" class="glass rounded-2xl p-4 glow-urgent cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-urgent"><p class="text-xs uppercase tracking-wide text-text2 text-urgent">Urgent</p><p id="k-urgent" class="mono mt-2 text-3xl font-bold text-urgent">—</p><div id="spark-urgent" class="sparkline-container"></div></article>
-                <article onclick="toggleKpiFilter('standard')" class="glass rounded-2xl p-4 glow-routine cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-routine"><p class="text-xs uppercase tracking-wide text-text2">Routine</p><p id="k-routine" class="mono mt-2 text-3xl font-bold text-routine">—</p><div id="spark-routine" class="sparkline-container"></div></article>
-                <article onclick="toggleKpiFilter('in_treatment')" class="glass rounded-2xl p-4 glow-teal cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-treatment"><p class="text-xs uppercase tracking-wide text-text2">Under Treatment</p><p id="k-treatment" class="mono mt-2 text-3xl font-bold text-teal">—</p><div id="spark-treatment" class="sparkline-container"></div></article>
-                <article onclick="toggleKpiFilter('discharged')" class="glass rounded-2xl p-4 glow-stable sm:col-span-2 xl:col-span-2 cursor-pointer hover:scale-[1.02] transition-transform" id="kpi-treated"><p class="text-xs uppercase tracking-wide text-text2">Treated Today</p><p id="k-treated" class="mono mt-2 text-3xl font-bold text-stable">—</p><div id="spark-treated" class="sparkline-container"></div></article>
+
+                <article onclick="setTopFilter('en_route')" id="kpi-enroute" class="glass rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all group">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text3" data-i18n="kpi_queue">En Route</p>
+                      <p id="k-queue" class="mono text-5xl font-bold mt-1.5 text-cyan">—</p>
+                    </div>
+                    <div class="shrink-0 rounded-xl bg-cyan/15 p-2.5 group-hover:bg-cyan/25 transition-colors">
+                      <svg class="w-5 h-5 text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+                    </div>
+                  </div>
+                </article>
+
+                <article onclick="setTopFilter('in_treatment')" id="kpi-treatment" class="glass rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all group">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text3" data-i18n="kpi_treatment">Under Treatment</p>
+                      <p id="k-treatment" class="mono text-5xl font-bold mt-1.5 text-teal">—</p>
+                    </div>
+                    <div class="shrink-0 rounded-xl bg-teal/15 p-2.5 group-hover:bg-teal/25 transition-colors">
+                      <svg class="w-5 h-5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    </div>
+                  </div>
+                </article>
+
+                <article onclick="setTopFilter('discharged')" id="kpi-treated" class="glass rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all group">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text3" data-i18n="kpi_treated">Discharged</p>
+                      <p id="k-treated" class="mono text-5xl font-bold mt-1.5 text-stable">—</p>
+                    </div>
+                    <div class="shrink-0 rounded-xl bg-stable/15 p-2.5 group-hover:bg-stable/25 transition-colors">
+                      <svg class="w-5 h-5 text-stable" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                  </div>
+                </article>
               </div>
+
+              
+              <!-- Row 2: Triage Breakdown (dynamic, linked to selected top KPI) -->
+              <article class="glass rounded-2xl p-4" id="kpi-queue">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="flex items-center gap-2.5">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-text3">Triage Breakdown</p>
+                    <span id="kpi-breakdown-label" class="text-[10px] bg-surface2/60 border border-slate-700/50 rounded-full px-2 py-0.5 text-text2">All Patients</span>
+                  </div>
+                  <div class="flex-1 h-2 rounded-full overflow-hidden bg-slate-700/50 hidden sm:block" id="triage-prop-bar"></div>
+                </div>
+                <div class="grid grid-cols-5 gap-2" id="kpi-triage-chips">
+                  <button onclick="setTriageFilter('immediate');event.stopPropagation()" id="chip-immediate" class="triage-chip rounded-xl border p-3 text-left transition-all hover:scale-[1.02]" style="color:#ef4444;border-color:#ef444440;background:#ef444415">
+                    <div class="text-[9px] font-bold uppercase tracking-wider mb-2" style="opacity:.75">☠ Immediate</div>
+                    <p class="text-2xl font-bold mono leading-none" id="chip-k-imm">—</p>
+                    <p class="text-[9px] text-text3 mt-1.5">patients</p>
+                  </button>
+                  <button onclick="setTriageFilter('emergency');event.stopPropagation()" id="chip-emergency" class="triage-chip rounded-xl border p-3 text-left transition-all hover:scale-[1.02]" style="color:#f59e0b;border-color:#f59e0b40;background:#f59e0b15">
+                    <div class="text-[9px] font-bold uppercase tracking-wider mb-2" style="opacity:.75">🚑 Emergency</div>
+                    <p class="text-2xl font-bold mono leading-none" id="chip-k-emg">—</p>
+                    <p class="text-[9px] text-text3 mt-1.5">patients</p>
+                  </button>
+                  <button onclick="setTriageFilter('urgent');event.stopPropagation()" id="chip-urgent" class="triage-chip rounded-xl border p-3 text-left transition-all hover:scale-[1.02]" style="color:#facc15;border-color:#facc1540;background:#facc1515">
+                    <div class="text-[9px] font-bold uppercase tracking-wider mb-2" style="opacity:.75">⚡ Urgent</div>
+                    <p class="text-2xl font-bold mono leading-none" id="chip-k-urg">—</p>
+                    <p class="text-[9px] text-text3 mt-1.5">patients</p>
+                  </button>
+                  <button onclick="setTriageFilter('standard');event.stopPropagation()" id="chip-standard" class="triage-chip rounded-xl border p-3 text-left transition-all hover:scale-[1.02]" style="color:#10b981;border-color:#10b98140;background:#10b98115">
+                    <div class="text-[9px] font-bold uppercase tracking-wider mb-2" style="opacity:.75">✅ Standard</div>
+                    <p class="text-2xl font-bold mono leading-none" id="chip-k-std">—</p>
+                    <p class="text-[9px] text-text3 mt-1.5">patients</p>
+                  </button>
+                  <button onclick="setTriageFilter('non_urgent');event.stopPropagation()" id="chip-non_urgent" class="triage-chip rounded-xl border p-3 text-left transition-all hover:scale-[1.02]" style="color:#60a5fa;border-color:#60a5fa40;background:#60a5fa15">
+                    <div class="text-[9px] font-bold uppercase tracking-wider mb-2" style="opacity:.75">📋 Non-Urgent</div>
+                    <p class="text-2xl font-bold mono leading-none" id="chip-k-nurg">—</p>
+                    <p class="text-[9px] text-text3 mt-1.5">patients</p>
+                  </button>
+                </div>
+              </article>
 
               <article class="glass rounded-2xl p-5">
                 <div class="mb-4 flex items-center justify-between">
-                  <h2 class="text-lg font-semibold">Incoming Patients</h2>
-                  <button id="open-incoming-btn" class="rounded-xl border border-cyan/40 bg-cyan/10 px-3 py-2 text-xs text-cyan">Open Full Queue</button>
+                  <h2 class="text-lg font-semibold" id="patient-list-title">All Patients</h2>
+                  <div class="flex items-center gap-1 bg-surface/60 rounded-xl border border-slate-700/50 p-1">
+                    <button onclick="setSort('risk',this)" class="sort-btn active rounded-lg px-3 py-1.5 text-xs font-medium bg-cyan/20 text-cyan" data-i18n="sort_risk">By Risk Score</button>
+                    <button onclick="setSort('eta',this)" class="sort-btn rounded-lg px-3 py-1.5 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50" data-i18n="sort_eta">By ETA</button>
+                    <button onclick="setSort('time',this)" class="sort-btn rounded-lg px-3 py-1.5 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50" data-i18n="sort_time">By Time</button>
+                  </div>
                 </div>
                 <div id="incoming-list" class="space-y-3"></div>
               </article>
             </div>
-            <div class="2xl:col-span-4 space-y-6">
+            <div class="2xl:col-span-3 space-y-6">
               <article class="glass rounded-2xl p-5">
-                <h2 class="text-lg font-semibold">Triage Distribution</h2>
+                <h2 class="text-lg font-semibold" id="triage-dist-title">Triage Distribution</h2>
                 <div class="mt-4" id="triage-chart-container" style="height: 250px;"></div>
-                <div class="mt-2 grid grid-cols-2 gap-2 text-xs" id="triage-legend"></div>
-              </article>
-              <article class="glass rounded-2xl p-5">
-                <h2 class="text-lg font-semibold">Arrivals (Last 24 Hours)</h2>
-                <div class="mt-4" id="arrivals-chart-container" style="height: 150px;"></div>
               </article>
               <article class="glass rounded-2xl p-5">
                 <h2 class="text-lg font-semibold">Capacity</h2>
@@ -821,23 +890,65 @@
                   <div><div class="mb-1 flex justify-between text-text2"><span>ICU</span><span id="cap-icu">0%</span></div><div class="h-2 rounded-full bg-slate-700"><div id="cap-icu-bar" class="h-2 rounded-full bg-teal" style="width:0%"></div></div></div>
                 </div>
               </article>
+
+              <!-- Resource Status KPIs -->
+              <div class="grid grid-cols-2 gap-3">
+                <article class="glass rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all group">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text3">Available Doctors</p>
+                      <p id="k-doctors" class="mono text-3xl font-bold mt-1.5 text-green-400">3</p>
+                      <p class="text-xs text-text3 mt-1">Avg Response: 5.3 min</p>
+                    </div>
+                    <div class="shrink-0 rounded-xl bg-green-500/15 p-2.5 group-hover:bg-green-500/25 transition-colors">
+                      <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="glass rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all group">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text3">Available Beds</p>
+                      <p id="k-beds" class="mono text-3xl font-bold mt-1.5 text-blue-400">4</p>
+                      <p class="text-xs text-text3 mt-1">ICU: 1 • ER: 2 • GW: 1</p>
+                    </div>
+                    <div class="shrink-0 rounded-xl bg-blue-500/15 p-2.5 group-hover:bg-blue-500/25 transition-colors">
+                      <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="glass rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all group">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text3">Recent Assignments</p>
+                      <p id="k-assignments" class="mono text-3xl font-bold mt-1.5 text-amber-400">7</p>
+                      <p class="text-xs text-text3 mt-1">Last 2 hours</p>
+                    </div>
+                    <div class="shrink-0 rounded-xl bg-amber-500/15 p-2.5 group-hover:bg-amber-500/25 transition-colors">
+                      <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="glass rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all group">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text3">System Load</p>
+                      <p id="k-load" class="mono text-3xl font-bold mt-1.5 text-purple-400">62%</p>
+                      <p class="text-xs text-text3 mt-1">Optimal: 60-80%</p>
+                    </div>
+                    <div class="shrink-0 rounded-xl bg-purple-500/15 p-2.5 group-hover:bg-purple-500/25 transition-colors">
+                      <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </div>
+                  </div>
+                </article>
+              </div>
             </div>
           </div>
         </div>
 
-        <div id="pane-incoming" class="pane hidden-pane">
-          <article class="glass rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-semibold">Incoming Patients (Live)</h2>
-              <div class="flex items-center gap-1 bg-surface/60 rounded-xl border border-slate-700/50 p-1">
-                <button onclick="setSort('triage',this)" class="sort-btn active rounded-lg px-3 py-1.5 text-xs font-medium bg-cyan/20 text-cyan">By Triage</button>
-                <button onclick="setSort('eta',this)" class="sort-btn rounded-lg px-3 py-1.5 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50">By ETA</button>
-                <button onclick="setSort('time',this)" class="sort-btn rounded-lg px-3 py-1.5 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50">By Time</button>
-              </div>
-            </div>
-            <div id="incoming-list-full" class="space-y-3"></div>
-          </article>
-        </div>
 
         <div id="pane-tracking" class="pane hidden-pane">
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -888,23 +999,84 @@
           </article>
         </div>
 
-        <div id="pane-triage" class="pane hidden-pane">
-          <article class="glass rounded-2xl p-5">
-            <h2 class="text-lg font-semibold mb-3">Triage Queue</h2>
-            <div class="overflow-auto">
-              <table class="w-full text-sm">
-                <thead class="text-text2"><tr><th class="text-left py-2">Patient</th><th class="text-left py-2">Level</th><th class="text-left py-2">Risk</th><th class="text-left py-2">ETA</th><th class="text-left py-2">Action</th></tr></thead>
-                <tbody id="triage-body"></tbody>
-              </table>
-            </div>
-          </article>
+        <div id="pane-doctor" class="pane hidden-pane">
+          <div class="grid grid-cols-1 gap-6">
+            <article class="glass rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold">Doctor Panel</h2>
+                <span class="text-xs text-text3">Real-time doctor workload</span>
+              </div>
+              <div id="doctor-panel-list" class="space-y-4"></div>
+            </article>
+          </div>
         </div>
 
-        <div id="pane-doctor" class="pane hidden-pane">
-          <article class="glass rounded-2xl p-5">
-            <h2 class="text-lg font-semibold mb-3">Doctor Panel (Override Center)</h2>
-            <div id="doctor-panel-list" class="space-y-3"></div>
-          </article>
+        <div id="pane-bed" class="pane hidden-pane">
+          <div class="grid grid-cols-1 gap-6">
+            <!-- Header with Stats -->
+            <article class="glass rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold">Bed Management</h2>
+                <span class="text-xs text-text3">Hospital bed occupancy & assignments</span>
+              </div>
+              <div class="grid grid-cols-4 gap-4">
+                <div class="text-center">
+                  <div class="text-2xl font-bold mono text-cyan" id="bed-total">0</div>
+                  <div class="text-xs text-text3 mt-1">Total Beds</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl font-bold mono text-green-400" id="bed-available">0</div>
+                  <div class="text-xs text-text3 mt-1">Available</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl font-bold mono text-red-400" id="bed-occupied">0</div>
+                  <div class="text-xs text-text3 mt-1">Occupied</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl font-bold mono text-amber-400" id="bed-maintenance">0</div>
+                  <div class="text-xs text-text3 mt-1">Maintenance</div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Filters -->
+            <article class="glass rounded-2xl p-4">
+              <div class="flex items-center gap-4 flex-wrap">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-text3">Department:</span>
+                  <select id="bed-filter-department" class="bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5 text-xs text-text2">
+                    <option value="">All</option>
+                    <option value="ICU">ICU</option>
+                    <option value="ER">ER</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-text3">Type:</span>
+                  <select id="bed-filter-type" class="bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5 text-xs text-text2">
+                    <option value="">All</option>
+                    <option value="ICU">ICU</option>
+                    <option value="ER">ER</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-text3">Status:</span>
+                  <select id="bed-filter-status" class="bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5 text-xs text-text2">
+                    <option value="">All</option>
+                    <option value="available">Available</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="maintenance">Maintenance</option>
+                  </select>
+                </div>
+              </div>
+            </article>
+
+            <!-- Bed Grid -->
+            <article class="glass rounded-2xl p-5">
+              <div id="bed-management-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </article>
+          </div>
         </div>
 
         <div id="pane-reports" class="pane hidden-pane space-y-6">
@@ -996,7 +1168,7 @@
 
           <!-- Monthly Reports -->
           <div id="rpt-monthly" class="rpt-pane hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
               <div class="glass rounded-2xl p-5">
                 <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Monthly Volume</div>
                 <div class="text-4xl font-bold text-white mono" id="rpt-m-total">—</div>
@@ -1016,6 +1188,11 @@
                 <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Avg Treatment Time</div>
                 <div class="text-4xl font-bold text-cyan mono" id="rpt-m-treat">—</div>
                 <div class="text-xs text-text2 mt-1">Admission to discharge</div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-text3 font-semibold mb-2">Avg Risk Score</div>
+                <div class="text-4xl font-bold mono" id="rpt-m-risk" style="color:var(--urgent)">—</div>
+                <div class="text-xs text-text2 mt-1">Out of 10</div>
               </div>
             </div>
             <div class="glass rounded-2xl p-5 mt-4">
@@ -1143,7 +1320,9 @@
       tracking: [],
       stats: null,
       arrivalsHistory: [],
-      actionLog: []
+      actionLog: [],
+      patientActions: {}, // patient_id -> array of actions
+      filteredPatients: {}   // cache for fetchFilteredStatus results (keyed by status/filter)
     };
 
     function normalizeTriage(level) {
@@ -1173,7 +1352,147 @@
       state.actionLog.unshift(`[${new Date().toLocaleTimeString()}] ${text}`);
       state.actionLog = state.actionLog.slice(0, 25);
       const r = document.getElementById("reports-log");
-      r.innerHTML = state.actionLog.map((x) => `<div class="py-1 border-b border-slate-700/40">${h(x)}</div>`).join("");
+      if (r) r.innerHTML = state.actionLog.map((x) => `<div class="py-1 border-b border-slate-700/40">${h(x)}</div>`).join("");
+    }
+
+    // Patient Action Logging System
+    function logPatientAction(patientId, actionType, details = {}) {
+      if (!state.patientActions[patientId]) {
+        state.patientActions[patientId] = [];
+      }
+      
+      const action = {
+        id: Date.now() + Math.random(),
+        type: actionType,
+        timestamp: new Date().toISOString(),
+        ...details
+      };
+      
+      state.patientActions[patientId].push(action);
+      savePatientActionsToStorage();
+      
+      // Also log to general action log
+      logAction(`${actionType}: ${patientId.slice(0, 8)} - ${details.message || ''}`);
+    }
+
+    function savePatientActionsToStorage() {
+      try {
+        localStorage.setItem('patientActions', JSON.stringify(state.patientActions));
+      } catch (e) {
+        console.warn('Failed to save patient actions to storage:', e);
+      }
+    }
+
+    function saveDoctorAssignmentsToStorage() {
+      try {
+        const assignments = state.patients.filter(p => p.assigned_doctor_id).map(p => ({
+          patient_id: p.patient_id,
+          assigned_doctor: p.assigned_doctor,
+          assigned_doctor_id: p.assigned_doctor_id,
+          doctor_assigned_at: p.doctor_assigned_at
+        }));
+        localStorage.setItem('doctorAssignments', JSON.stringify(assignments));
+        console.log('Doctor assignments saved to storage:', assignments);
+      } catch (e) {
+        console.warn('Failed to save doctor assignments to storage:', e);
+      }
+    }
+
+    function loadDoctorAssignmentsFromStorage() {
+      try {
+        const stored = localStorage.getItem('doctorAssignments');
+        if (stored) {
+          const assignments = JSON.parse(stored);
+          console.log('Loading doctor assignments from storage:', assignments);
+          assignments.forEach(assignment => {
+            const patient = state.patients.find(p => p.patient_id === assignment.patient_id);
+            if (patient) {
+              patient.assigned_doctor = assignment.assigned_doctor;
+              patient.assigned_doctor_id = assignment.assigned_doctor_id;
+              patient.doctor_assigned_at = assignment.doctor_assigned_at;
+            }
+          });
+          console.log('Doctor assignments applied to patients');
+        }
+      } catch (e) {
+        console.warn('Failed to load doctor assignments from storage:', e);
+      }
+    }
+
+    function loadPatientActionsFromStorage() {
+      try {
+        const stored = localStorage.getItem('patientActions');
+        if (stored) {
+          state.patientActions = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.warn('Failed to load patient actions from storage:', e);
+      }
+    }
+
+    function getPatientActions(patientId) {
+      return state.patientActions[patientId] || [];
+    }
+
+    function calculatePatientStatistics(patientId) {
+      const actions = getPatientActions(patientId);
+      if (actions.length === 0) return null;
+      
+      const stats = {
+        entryTime: null,
+        doctorAssignedTime: null,
+        arrivalTime: null,
+        dischargeTime: null,
+        timeToDoctor: null,
+        timeToArrival: null,
+        timeToDischarge: null,
+        hospitalStayDuration: null,
+        messagesCount: 0,
+        bedAssignments: 0,
+        triageChanges: 0
+      };
+      
+      actions.forEach(action => {
+        switch (action.type) {
+          case 'patient_entry':
+            stats.entryTime = action.timestamp;
+            break;
+          case 'doctor_assigned':
+            stats.doctorAssignedTime = action.timestamp;
+            break;
+          case 'patient_arrived':
+            stats.arrivalTime = action.timestamp;
+            break;
+          case 'discharged':
+            stats.dischargeTime = action.timestamp;
+            break;
+          case 'message_sent':
+            stats.messagesCount++;
+            break;
+          case 'bed_assigned':
+            stats.bedAssignments++;
+            break;
+          case 'triage_changed':
+            stats.triageChanges++;
+            break;
+        }
+      });
+      
+      // Calculate time differences
+      if (stats.entryTime && stats.doctorAssignedTime) {
+        stats.timeToDoctor = (new Date(stats.doctorAssignedTime) - new Date(stats.entryTime)) / 1000 / 60; // minutes
+      }
+      if (stats.entryTime && stats.arrivalTime) {
+        stats.timeToArrival = (new Date(stats.arrivalTime) - new Date(stats.entryTime)) / 1000 / 60; // minutes
+      }
+      if (stats.entryTime && stats.dischargeTime) {
+        stats.timeToDischarge = (new Date(stats.dischargeTime) - new Date(stats.entryTime)) / 1000 / 60; // minutes
+      }
+      if (stats.arrivalTime && stats.dischargeTime) {
+        stats.hospitalStayDuration = (new Date(stats.dischargeTime) - new Date(stats.arrivalTime)) / 1000 / 60; // minutes
+      }
+      
+      return stats;
     }
 
     async function api(path, options = {}) {
@@ -1278,18 +1597,40 @@
       updateKPI("k-treatment", s.in_treatment ?? 0, "treatment");
       updateKPI("k-treated", s.treated ?? 0, "treated");
 
-      // Update triage chips in In Queue card
-      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-      setText('chip-k-imm',  by.IMMEDIATE  ?? 0);
-      setText('chip-k-emg',  by.EMERGENCY  ?? 0);
-      setText('chip-k-urg',  by.URGENT     ?? 0);
-      setText('chip-k-std',  by.STANDARD   ?? 0);
-      setText('chip-k-nurg', by.NON_URGENT ?? 0);
+      // Update Resource KPIs
+      const availableDoctors = doctorsData.filter(d => d.availability === 'available').length;
+      const avgResponseTime = doctorsData.reduce((sum, d) => sum + d.response_time, 0) / doctorsData.length;
+      const availableBeds = bedsData.filter(b => b.status === 'available').length;
+      const icuBeds = bedsData.filter(b => b.type === 'ICU' && b.status === 'available').length;
+      const erBeds = bedsData.filter(b => b.type === 'ER' && b.status === 'available').length;
+      const gwBeds = bedsData.filter(b => b.type === 'General' && b.status === 'available').length;
       
-      // Update charts
-      updateTriageChart(by);
-      updateArrivalsChartV2();
-      updateSparklines();
+      document.getElementById('k-doctors').textContent = availableDoctors;
+      document.getElementById('k-beds').textContent = availableBeds;
+      document.querySelector('#k-beds').parentElement.querySelector('.text-xs').textContent = `ICU: ${icuBeds} • ER: ${erBeds} • GW: ${gwBeds}`;
+      document.querySelector('#k-doctors').parentElement.querySelector('.text-xs').textContent = `Avg Response: ${avgResponseTime.toFixed(1)} min`;
+      
+      // Calculate system load (patients / (doctors + beds))
+      const totalResources = doctorsData.length + bedsData.length;
+      const systemLoad = Math.round((state.patients.length / totalResources) * 100);
+      document.getElementById('k-load').textContent = `${systemLoad}%`;
+      
+      // Simulate recent assignments (would come from actual assignment history)
+      const recentAssignments = Math.floor(Math.random() * 10) + 3;
+      document.getElementById('k-assignments').textContent = recentAssignments;
+      
+      // Update bed management panel if active
+      if (state.activeTab === 'bed') {
+        renderBedManagementPanel();
+      }
+
+      // Update triage breakdown (dynamic — filtered by active top KPI)
+      updateTriageBreakdown(activeTopFilter || 'all');
+
+      // Update charts - use filtered data based on active KPI
+      const chartBy = calculateTriageCounts(activeTopFilter || 'all');
+      updateTriageChart(chartBy);
+      // updateArrivalsChartV2(); // Arrivals section removed
       
       // Update capacity bars
       const er = Math.min(95, Math.max(0, (s.en_route || 0) * 3));
@@ -1302,6 +1643,7 @@
     
     function updateKPI(elementId, value, historyKey) {
       const el = document.getElementById(elementId);
+      if (!el) { kpiHistory[historyKey].push(value); if (kpiHistory[historyKey].length > 20) kpiHistory[historyKey].shift(); return; }
       const prev = kpiHistory[historyKey].length > 0 ? kpiHistory[historyKey][kpiHistory[historyKey].length - 1] : value;
       
       // Add to history
@@ -1343,13 +1685,39 @@
       window.requestAnimationFrame(step);
     }
     
+    function calculateTriageCounts(filter) {
+      const countFrom = (pts) => {
+        const b = {};
+        pts.forEach(p => { const l = normalizeTriage(p.triage_level); b[l] = (b[l] || 0) + 1; });
+        return b;
+      };
+
+      if (!filter || filter === 'all') {
+        const cached = state.filteredPatients['all'];
+        return (cached && cached.length > 0) ? countFrom(cached) : ((state.stats && state.stats.by_triage_level) || {});
+      } else {
+        const pts = state.filteredPatients[filter] || [];
+        return countFrom(pts);
+      }
+    }
+
     function updateTriageChart(by) {
+      // Get triage counts based on active top filter
+      const topFilter = state.activeTopFilter || 'all';
+      
+      // If 'by' is passed, use it directly (it should already be filtered)
+      // Otherwise, calculate based on current filter
+      let byFilter = by;
+      if (!byFilter) {
+        byFilter = calculateTriageCounts(topFilter);
+      }
+
       const counts = [
-        by.IMMEDIATE || 0,
-        by.EMERGENCY || 0,
-        by.URGENT || 0,
-        by.STANDARD || 0,
-        by.NON_URGENT || 0
+        byFilter.IMMEDIATE || 0,
+        byFilter.EMERGENCY || 0,
+        byFilter.URGENT || 0,
+        byFilter.STANDARD || 0,
+        byFilter.NON_URGENT || 0
       ];
       const labels = ["Immediate", "Emergency", "Urgent", "Standard", "Non-Urgent"];
       const colors = ["#ef4444", "#f59e0b", "#facc15", "#10b981", "#60a5fa"];
@@ -1358,12 +1726,19 @@
         series: counts,
         chart: {
           type: 'donut',
-          height: 250,
+          height: 320,
           background: 'transparent',
           animations: {
             enabled: true,
             easing: 'easeinout',
             speed: 800
+          },
+          dropShadow: {
+            enabled: true,
+            top: 0,
+            left: 0,
+            blur: 10,
+            opacity: 0.5
           }
         },
         labels: labels,
@@ -1371,54 +1746,80 @@
         plotOptions: {
           pie: {
             donut: {
-              size: '70%',
+              size: '65%',
               labels: {
                 show: true,
-                name: { show: false },
-                value: {
-                  show: true,
-                  fontSize: '24px',
-                  fontWeight: 600,
-                  color: '#e5e7eb',
-                  formatter: function(val) { return val; }
-                },
                 total: {
                   show: true,
-                  showAlways: true,
-                  label: 'Active',
-                  fontSize: '14px',
-                  fontWeight: 400,
+                  label: 'Total',
+                  fontSize: '16px',
+                  fontFamily: 'Inter, Manrope, "Segoe UI", sans-serif',
+                  fontWeight: 500,
                   color: '#94a3b8',
                   formatter: function(w) {
                     return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                  }
+                },
+                value: {
+                  show: true,
+                  fontSize: '42px',
+                  fontFamily: 'Inter, Manrope, "Segoe UI", sans-serif',
+                  fontWeight: 700,
+                  color: '#f1f5f9',
+                  formatter: function(val) {
+                    return val;
                   }
                 }
               }
             }
           }
         },
-        dataLabels: { enabled: false },
-        legend: { show: false },
-        stroke: { show: false },
+        stroke: {
+          show: true,
+          width: 2,
+          colors: ['transparent']
+        },
+        dataLabels: {
+          enabled: false
+        },
+        legend: {
+          show: false
+        },
         tooltip: {
           theme: 'dark',
-          y: { formatter: function(val) { return val + ' patients'; } }
+          y: {
+            formatter: function(val, opts) {
+              const label = opts.w.globals.labels[opts.seriesIndex];
+              return `${label}: ${val}`;
+            }
+          }
         }
       };
       
       if (triageChart) {
+        triageChart.updateOptions({ series: counts, labels: labels, colors: colors });
         triageChart.updateSeries(counts);
       } else {
         triageChart = new ApexCharts(document.querySelector("#triage-chart-container"), options);
         triageChart.render();
       }
       
-      // Update legend
-      document.getElementById("triage-legend").innerHTML = labels.map((label, i) => 
-        `<span class="chip" style="color:${colors[i]};border-color:${colors[i]}66">${label} ${counts[i]}</span>`
-      ).join("");
+      // Legend removed per user request
     }
-    
+
+    function updateTriageChartForFilter(filter) {
+      // Check if chart container exists
+      const chartContainer = document.querySelector("#triage-chart-container");
+      if (!chartContainer) {
+        console.warn('Chart container not found, skipping chart update');
+        return;
+      }
+
+      // Use calculateTriageCounts to get filtered data and update the chart
+      const byFilter = calculateTriageCounts(filter);
+      updateTriageChart(byFilter);
+    }
+
     function updateArrivalsChartV2() {
       const vals = state.arrivalsHistory.length ? state.arrivalsHistory : [0, 0, 0, 0, 0, 0];
       
@@ -1504,30 +1905,75 @@
     }
 
     async function loadPatients() {
-      // v9-compatible list endpoint; includes incoming + arrived by default.
-      state.patients = await api("/api/patients?sort=triage&limit=100");
-      // Enforce triage floor guardrail
+      console.log('loadPatients called');
+      // Backend only returns active/en-route patients by default.
+      // Fetch all three status groups in parallel so every filter works.
+      const [active, inTreatment, discharged] = await Promise.all([
+        api("/api/patients?limit=500&sort=triage"),
+        api("/api/patients?limit=500&sort=triage&status=in_treatment"),
+        api("/api/patients?limit=500&sort=triage&status=discharged")
+      ]);
+      console.log('Patient data loaded');
+
+      // Merge & deduplicate by patient_id
+      const seen = new Set();
+      state.patients = [...active, ...inTreatment, ...discharged].filter(p => {
+        if (!p.patient_id || seen.has(p.patient_id)) return false;
+        seen.add(p.patient_id);
+        return true;
+      });
+      console.log('Patients merged, total:', state.patients.length);
+
       state.patients.forEach(p => enforceTriageFloor(p));
+      console.log('Triage floor enforced');
+
       // Emergency alert check
+      console.log('Checking emergency alerts');
       state.patients.forEach(p => {
         const lvl = normalizeTriage(p.triage_level);
         if ((lvl === 'IMMEDIATE' || lvl === 'EMERGENCY') && !seenEmergencyIds.has(p.patient_id)) {
           triggerEmergencyAlert(p);
         }
       });
+      console.log('Emergency alerts checked');
+
       // Update nav badge with emergency count
+      console.log('Updating nav badge');
       const emgCount = state.patients.filter(p => { const l = normalizeTriage(p.triage_level); return l === 'IMMEDIATE' || l === 'EMERGENCY'; }).length;
       const badge = document.getElementById('nav-emg-badge');
       if (badge) {
         if (emgCount > 0) { badge.textContent = emgCount; badge.classList.remove('hidden'); }
         else { badge.classList.add('hidden'); }
       }
+      console.log('Nav badge updated');
+
+      // Build status-partitioned datasets from the fetched groups directly
+      console.log('Building filtered patients datasets');
+      state.filteredPatients['all']          = state.patients;
+      state.filteredPatients['en_route']     = active.filter(p => ['incoming','en_route','arrived'].includes(p.status));
+      state.filteredPatients['in_treatment'] = inTreatment;
+      state.filteredPatients['discharged']   = discharged;
+      console.log('Filtered patients datasets built');
+
       state.arrivalsHistory.push(state.patients.length);
       state.arrivalsHistory = state.arrivalsHistory.slice(-6);
-      updateArrivalsChartV2();
-      renderIncomingLists();
+      console.log('Arrivals history updated');
+      
+      // updateArrivalsChartV2(); // Arrivals section removed
+      console.log('Arrivals chart update skipped (section removed)');
+      
+      applyCurrentFilter();
+      console.log('Current filter applied');
+      
       renderTriageTable();
+      console.log('Triage table rendered');
+      
+      // Restore doctor assignments from localStorage before rendering
+      loadDoctorAssignmentsFromStorage();
+      
+      console.log('About to call renderDoctorPanel');
       renderDoctorPanel();
+      console.log('renderDoctorPanel call completed');
     }
 
     async function loadTracking() {
@@ -1578,21 +2024,37 @@
           const pid = p.patient_id || '';
           currentPids.add(pid);
 
-          const col = TRIAGE_COLOR[normalizeTriage(p.triage_level)] || '#f59e0b';
-          const size = normalizeTriage(p.triage_level) === 'EMERGENCY' || normalizeTriage(p.triage_level) === 'IMMEDIATE' ? 18 : 13;
+          const lvl = normalizeTriage(p.triage_level);
+          const col = TRIAGE_COLOR[lvl] || '#f59e0b';
+          const tc = TRIAGE_CLASS[lvl] || '?';
+          const nm = p.full_name || p.patient_id;
+          const photo = p.profile_photo_url || `https://i.pravatar.cc/80?u=${encodeURIComponent(pid)}`;
+          // Status ground truth: use p.status, not eta_minutes
+          const isArrived = p.status === 'arrived' || p.status === 'in_treatment' || p.status === 'discharged';
+          const size = (lvl === 'IMMEDIATE' || lvl === 'EMERGENCY') ? 18 : 13;
           const dur = size === 18 ? '1.2s' : '2.5s';
-          const iconHtml = `<div style="width:${size}px;height:${size}px;background:${col};border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 3px ${col}55,0 2px 6px rgba(0,0,0,.3);animation:marker-pulse ${dur} ease-in-out infinite;"></div>`;
+          // Arrived patients get a static marker, en-route patients pulse
+          const iconHtml = isArrived
+            ? `<div style="width:${size}px;height:${size}px;background:${col};border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 3px ${col}44,0 2px 6px rgba(0,0,0,.3);opacity:.7;"></div>`
+            : `<div style="width:${size}px;height:${size}px;background:${col};border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 3px ${col}55,0 2px 6px rgba(0,0,0,.3);animation:marker-pulse ${dur} ease-in-out infinite;"></div>`;
           const icon = L.divIcon({ html: iconHtml, className: '', iconSize: [size, size], iconAnchor: [size/2, size/2] });
 
-          const nm = p.full_name || p.patient_id;
-          const tc = TRIAGE_CLASS[normalizeTriage(p.triage_level)] || '?';
-          const popupContent = `<div style="min-width:200px;font-family:Inter,sans-serif;padding:4px">
-            <div style="font-weight:800;font-size:14px;margin-bottom:6px;color:#1a202c">${h(nm)}</div>
-            <span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:${col}20;color:${col};border:1px solid ${col}50">${tc} ${normalizeTriage(p.triage_level).replace('_',' ')}</span>
-            ${p.chief_complaint ? `<div style="font-size:12px;color:#334155;margin-top:6px">💬 ${h(p.chief_complaint)}</div>` : ''}
-            <div style="display:flex;gap:10px;margin-top:6px;align-items:center">
-              ${p.eta_minutes ? `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ${p.eta_minutes} min</span>` : '<span style="font-size:12px;font-weight:700;color:#10b981">✅ ARRIVED</span>'}
-              ${p.blood_type ? `<span style="font-size:11px;background:#FFF5F5;color:#9B2C2C;padding:2px 6px;border-radius:4px;border:1px solid #FED7D7">🩸 ${h(p.blood_type)}</span>` : ''}
+          const etaLabel = isArrived
+            ? `<span style="font-size:12px;font-weight:700;color:#10b981">✓ Arrived</span>`
+            : `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ${p.eta_minutes != null ? p.eta_minutes + ' min' : 'En Route'}</span>`;
+
+          const popupContent = `<div style="min-width:220px;font-family:Inter,sans-serif">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <img src="${h(photo)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid ${col};flex-shrink:0" onerror="this.style.display='none'" />
+              <div>
+                <div style="font-weight:700;font-size:14px;color:var(--text1);line-height:1.2">${h(nm)}</div>
+                <span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:${col}22;color:${col};border:1px solid ${col}55">${tc} ${lvl.replace('_',' ')}</span>
+              </div>
+            </div>
+            ${p.chief_complaint ? `<div style="font-size:12px;color:var(--text2);margin-bottom:10px;padding-left:2px">💬 ${h(p.chief_complaint)}</div>` : ''}
+            <div style="display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px solid rgba(148,163,184,.18)">
+              ${etaLabel}
+              ${p.blood_type ? `<span style="font-size:11px;padding:2px 7px;border-radius:6px;font-weight:700;background:#ef444422;color:#ef4444;border:1px solid #ef444440">🩸 ${h(p.blood_type)}</span>` : ''}
             </div>
           </div>`;
 
@@ -1623,27 +2085,38 @@
       // Update patient list sidebar (clickable → focuses on map)
       const patientList = document.getElementById("tracking-patient-list");
       if (patientList) {
-        const sorted = [...pts].sort((a, b) => (a.eta_minutes || 999) - (b.eta_minutes || 999));
+        // Sort: en-route first (by ETA), arrived last
+        const sorted = [...pts].sort((a, b) => {
+          const aArr = a.status === 'arrived' || a.status === 'in_treatment' || a.status === 'discharged';
+          const bArr = b.status === 'arrived' || b.status === 'in_treatment' || b.status === 'discharged';
+          if (aArr !== bArr) return aArr ? 1 : -1;
+          return (a.eta_minutes ?? 999) - (b.eta_minutes ?? 999);
+        });
         patientList.innerHTML = sorted.map((p) => {
           const lvl = normalizeTriage(p.triage_level);
-          const isIncoming = p.status === 'incoming' || p.status === 'en_route';
           const pid = p.patient_id || '';
-          const triageClass = `triage-${TRIAGE_CLASS[lvl] || 'U'}`;
+          const col = TRIAGE_COLOR[lvl];
+          // Use p.status as ground truth (not eta_minutes)
+          const isArrived = p.status === 'arrived' || p.status === 'in_treatment' || p.status === 'discharged';
+          const statusLabel = isArrived ? 'Arrived' : 'En Route';
+          const etaText = isArrived ? '—' : (p.eta_minutes != null ? p.eta_minutes + ' min' : '? min');
           return `
-            <div class="flex items-center gap-3 p-3 rounded-xl bg-surface/50 border border-slate-700/30 hover:border-cyan/30 transition-colors cursor-pointer ${triageClass}" onclick="focusPatientOnMap('${h(pid)}')">
-              <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${triageClass}"
-                   style="background: ${TRIAGE_COLOR[lvl]}20; color: ${TRIAGE_COLOR[lvl]}; border: 2px solid ${TRIAGE_COLOR[lvl]}66">
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-surface/50 border border-slate-700/30 hover:border-cyan/30 transition-colors cursor-pointer" onclick="focusPatientOnMap('${h(pid)}')">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                   style="background:${col}20;color:${col};border:2px solid ${col}66">
                 ${TRIAGE_CLASS[lvl] || '?'}
               </div>
               <div class="flex-1 min-w-0">
                 <div class="font-medium text-sm truncate">${h(p.full_name || p.patient_id)}</div>
-                <div class="text-xs text-text3 flex items-center gap-2">
-                  <span class="w-1.5 h-1.5 rounded-full ${isIncoming ? 'bg-emer animate-pulse' : 'bg-stable'}"></span>
-                  ${isIncoming ? 'En Route' : 'Arrived'} • ${p.eta_minutes || '?'} min
+                <div class="text-xs flex items-center gap-1.5 mt-0.5">
+                  <span class="w-1.5 h-1.5 rounded-full shrink-0 ${isArrived ? 'bg-stable' : 'bg-emer animate-pulse'}"></span>
+                  <span class="${isArrived ? 'text-stable' : 'text-emer'} font-medium">${statusLabel}</span>
+                  <span class="text-text3">•</span>
+                  <span class="text-text3">${etaText}</span>
                 </div>
               </div>
               <div class="text-right shrink-0">
-                <div class="text-xs font-semibold mono">${p.distance_km != null ? p.distance_km.toFixed(1) : '—'} km</div>
+                <div class="text-xs font-semibold mono text-text2">${p.distance_km != null ? p.distance_km.toFixed(1) + ' km' : '— km'}</div>
                 ${p.speed_kmh ? `<div class="text-[10px] text-text3">${p.speed_kmh} km/h</div>` : ''}
               </div>
             </div>
@@ -1662,7 +2135,7 @@
         btn.classList.add('active', 'bg-cyan/20', 'text-cyan');
         btn.classList.remove('text-text2');
       }
-      renderIncomingLists();
+      applyCurrentFilter();
     }
 
     function sortPatients(pts) {
@@ -1671,6 +2144,8 @@
         sorted.sort((a, b) => (a.eta_minutes ?? 999) - (b.eta_minutes ?? 999));
       } else if (sortMode === 'time') {
         sorted.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      } else if (sortMode === 'risk') {
+        sorted.sort((a, b) => (b.risk_score ?? 0) - (a.risk_score ?? 0));
       } else {
         sorted.sort((a, b) => TRIAGE_ORDER.indexOf(normalizeTriage(a.triage_level)) - TRIAGE_ORDER.indexOf(normalizeTriage(b.triage_level)));
       }
@@ -1678,21 +2153,130 @@
     }
 
     function renderIncomingLists() {
+      // Default view: all patients with search applied
       const q = document.getElementById('search-input').value.trim().toLowerCase();
-      let filtered = state.patients.filter((p) => {
+      const source = state.filteredPatients['all'] || state.patients;
+      let filtered = source.filter((p) => {
         const text = `${p.patient_id} ${p.full_name || ""} ${p.chief_complaint || ""}`.toLowerCase();
         return !q || text.includes(q);
       });
       filtered = sortPatients(filtered);
       renderPatientList(filtered);
-      // Also populate the full queue pane with proper event listeners
-      const fullEl = document.getElementById('incoming-list-full');
-      if (fullEl) renderPatientListTo(filtered, fullEl);
+    }
+
+    // ── HIERARCHICAL FILTER SYSTEM ───────────────────────────────
+    // Top KPI (setTopFilter) sets the primary context: which STATUS group to show.
+    // Triage chip (setTriageFilter) sets a secondary sub-filter within that context.
+    // They are independent: clicking a chip never changes top KPI counts/breakdown.
+
+    // Applies both active filters to produce the rendered patient list
+    function applyCurrentFilter() {
+      const top    = activeTopFilter;
+      const triage = activeTriageFilter;
+
+      // Determine source from top-level filter
+      const source = (top && state.filteredPatients[top]) ? state.filteredPatients[top]
+                   : (state.filteredPatients['all'] || state.patients);
+
+      // Build upper-case triage map for sub-filter
+      const triageUpperMap = { immediate:'IMMEDIATE', emergency:'EMERGENCY', urgent:'URGENT',
+                               standard:'STANDARD', non_urgent:'NON_URGENT' };
+      const targetLevel = triage ? triageUpperMap[triage] : null;
+
+      // Apply triage sub-filter + search
+      const q = document.getElementById('search-input')?.value.trim().toLowerCase() || '';
+      let filtered = source.filter(p => {
+        if (q) {
+          const text = `${p.patient_id} ${p.full_name || ''} ${p.chief_complaint || ''}`.toLowerCase();
+          if (!text.includes(q)) return false;
+        }
+        if (targetLevel && normalizeTriage(p.triage_level) !== targetLevel) return false;
+        return true;
+      });
+
+      // Update heading
+      updateListTitle(top || 'all', triage);
+
+      renderPatientList(sortPatients(filtered));
+    }
+
+    // Updates the patient list heading — shows "En Route — Immediate" style hierarchy
+    function updateListTitle(topFilter, triageFilter) {
+      const el = document.getElementById('patient-list-title');
+      if (!el) return;
+      const topTitles    = { all:'All Patients', en_route:'En Route', in_treatment:'Under Treatment', discharged:'Discharged' };
+      const triageTitles = { immediate:'Immediate', emergency:'Emergency', urgent:'Urgent', standard:'Standard', non_urgent:'Non-Urgent' };
+      const topLabel    = topTitles[topFilter]    || 'All Patients';
+      const triageLabel = triageTitles[triageFilter] || null;
+      el.textContent = triageLabel ? `${topLabel} — ${triageLabel}` : topLabel;
+    }
+
+    // Updates triage chip counts and prop bar for the selected TOP context only
+    // (sub-filter / triage chip does NOT change these counts)
+    function updateTriageBreakdown(topFilter) {
+      const countFrom = (pts) => {
+        const b = {};
+        pts.forEach(p => { const l = normalizeTriage(p.triage_level); b[l] = (b[l] || 0) + 1; });
+        return b;
+      };
+
+      let by = {};
+      if (!topFilter || topFilter === 'all') {
+        const cached = state.filteredPatients['all'];
+        by = (cached && cached.length > 0) ? countFrom(cached) : ((state.stats && state.stats.by_triage_level) || {});
+      } else {
+        const pts = state.filteredPatients[topFilter] || [];
+        by = countFrom(pts);
+      }
+
+      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      setText('chip-k-imm',  by.IMMEDIATE  ?? 0);
+      setText('chip-k-emg',  by.EMERGENCY  ?? 0);
+      setText('chip-k-urg',  by.URGENT     ?? 0);
+      setText('chip-k-std',  by.STANDARD   ?? 0);
+      setText('chip-k-nurg', by.NON_URGENT ?? 0);
+
+      // Update proportional bar
+      const imm = by.IMMEDIATE || 0, emg = by.EMERGENCY || 0, urg = by.URGENT || 0, std = by.STANDARD || 0, nurg = by.NON_URGENT || 0;
+      const triageTotal = imm + emg + urg + std + nurg || 1;
+      const propBar = document.getElementById('triage-prop-bar');
+      if (propBar) {
+        propBar.innerHTML = [[imm,'#ef4444'],[emg,'#f59e0b'],[urg,'#facc15'],[std,'#10b981'],[nurg,'#60a5fa']]
+          .filter(([n]) => n > 0)
+          .map(([n, col]) => `<div style="width:${n/triageTotal*100}%;background:${col}" class="h-full transition-all duration-700"></div>`)
+          .join('');
+      }
+
+      // Update Triage Distribution section
+      const titleEl = document.getElementById('triage-dist-title');
+      if (titleEl) {
+        // Update title based on selected KPI
+        const filterNames = {
+          all: 'Total Patients',
+          en_route: 'En Route',
+          in_treatment: 'Under Treatment',
+          discharged: 'Discharged'
+        };
+        titleEl.textContent = `${filterNames[topFilter] || 'Total Patients'} Distribution`;
+      }
+
+      // Update context badge
+      const labelTitles = { all:'All Patients', en_route:'En Route', in_treatment:'Under Treatment', discharged:'Discharged' };
+      const labelEl = document.getElementById('kpi-breakdown-label');
+      if (labelEl) labelEl.textContent = labelTitles[topFilter] || 'All Patients';
     }
 
     function renderTriageTable() {
+      console.log('renderTriageTable called');
       const rows = [...state.patients].sort((a, b) => TRIAGE_ORDER.indexOf(normalizeTriage(a.triage_level)) - TRIAGE_ORDER.indexOf(normalizeTriage(b.triage_level)));
-      document.getElementById("triage-body").innerHTML = rows.map((p) => `
+      console.log('Patients sorted for triage table');
+      const triageBody = document.getElementById("triage-body");
+      console.log('triage-body element:', triageBody);
+      if (!triageBody) {
+        console.log('triage-body element not found, skipping renderTriageTable');
+        return;
+      }
+      triageBody.innerHTML = rows.map((p) => `
         <tr class="border-b border-slate-700/40">
           <td class="py-2">${h(p.full_name || p.patient_id)}</td>
           <td class="py-2">${triageBadge(p.triage_level)}</td>
@@ -1701,63 +2285,298 @@
           <td class="py-2"><button onclick="viewDoctor('${h(p.patient_id)}')" class="rounded-lg bg-surface2 border border-slate-600 px-3 py-1 text-xs">Review</button></td>
         </tr>
       `).join("");
+      console.log('Triage table HTML set');
     }
 
     function renderDoctorPanel() {
+      console.log('renderDoctorPanel called');
       const box = document.getElementById("doctor-panel-list");
-      const lvlOrder = ['IMMEDIATE','EMERGENCY','URGENT','STANDARD','NON_URGENT'];
-      const sorted = [...state.patients].sort((a,b) => lvlOrder.indexOf(normalizeTriage(a.triage_level)) - lvlOrder.indexOf(normalizeTriage(b.triage_level)));
+      console.log('doctor-panel-list element:', box);
       
-      // Pastel colors matching Incoming Patients cards
-      const triageCardColors = {
-        'IMMEDIATE':  { bg: 'linear-gradient(135deg, #fef2f2 0%, #fff5f5 50%, #ffffff 100%)', border: 'rgba(239, 68, 68, 0.25)', class: 'triage-I' },
-        'EMERGENCY':  { bg: 'linear-gradient(135deg, #fff7ed 0%, #fffaf5 50%, #ffffff 100%)', border: 'rgba(249, 115, 22, 0.25)', class: 'triage-E' },
-        'URGENT':     { bg: 'linear-gradient(135deg, #fefce8 0%, #fffdf5 50%, #ffffff 100%)', border: 'rgba(234, 179, 8, 0.25)', class: 'triage-U' },
-        'STANDARD':   { bg: 'linear-gradient(135deg, #f0fdf4 0%, #f5fff8 50%, #ffffff 100%)', border: 'rgba(34, 197, 94, 0.25)', class: 'triage-S' },
-        'NON_URGENT': { bg: 'linear-gradient(135deg, #eff6ff 0%, #f5f9ff 50%, #ffffff 100%)', border: 'rgba(59, 130, 246, 0.25)', class: 'triage-N' }
-      };
+      // Get patients assigned to beds and match with doctors
+      const bedAssignments = state.patients.filter(p => p.assigned_bed);
+      console.log('Bed assignments:', bedAssignments.length);
       
-      box.innerHTML = sorted.map((p) => {
-        const pid = p.patient_id;
-        const lvl = normalizeTriage(p.triage_level);
-        const col = TRIAGE_COLOR[lvl] || '#f59e0b';
-        const tc = TRIAGE_CLASS[lvl] || 'U';
-        const mts = MTS_META[lvl] || MTS_META.URGENT;
-        const photo = p.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(pid)}`;
-        const cardColors = triageCardColors[lvl] || triageCardColors['URGENT'];
+      // If no bed assignments, use all patients for demo
+      const availablePatients = bedAssignments.length > 0 ? bedAssignments : state.patients;
+      
+      box.innerHTML = doctorsData.map(doctor => {
+        const loadPercentage = (doctor.current_patients / doctor.max_patients) * 100;
+        const loadColor = loadPercentage < 50 ? 'green' : loadPercentage < 80 ? 'amber' : 'red';
+        
+        // Get patients assigned to this doctor (manual assignment only)
+        const assignedPatients = availablePatients.filter(p => {
+          // Show patients that have doctor assignment OR bed assignment matching doctor's department
+          const hasDoctorAssignment = p.assigned_doctor_id === doctor.id;
+          const hasBedAssignment = p.assigned_bed && p.assigned_bed.includes(doctor.department);
+          const result = hasDoctorAssignment || hasBedAssignment;
+          console.log(`Patient ${p.patient_id}: assigned_doctor_id=${p.assigned_doctor_id}, doctor.id=${doctor.id}, hasDoctorAssignment=${hasDoctorAssignment}, hasBedAssignment=${hasBedAssignment}, result=${result}`);
+          return result;
+        });
+        
+        // Update current_patients based on actual assignments
+        doctor.current_patients = assignedPatients.length;
+        
         return `
-        <div class="rounded-xl border p-4 space-y-3 ${cardColors.class}" style="background: ${cardColors.bg}; border-color: ${cardColors.border}; border-width: 1px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);">
-          <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <img src="${h(photo)}" class="w-12 h-12 rounded-xl object-cover border-2" style="border-color:${col}66" onerror="this.src='https://i.pravatar.cc/60?u=${encodeURIComponent(pid)}'" />
-              <div>
-                <p class="font-semibold" style="color: #1e293b;">${h(p.full_name || pid)}</p>
-                <p class="text-xs mt-0.5" style="color: #64748b;">${h(p.chief_complaint || '—')}</p>
-                <div class="flex items-center gap-2 mt-1">
-                  <span class="chip text-xs" style="color:${col};border-color:${col}55;background:${col}15">${tc} • Risk: ${p.risk_score ?? '—'}/10</span>
-                  <span class="text-xs" style="color: #94a3b8;">⏱ ${mts.max_wait} min max wait</span>
-                </div>
+        <div class="glass rounded-xl border border-slate-700/50 p-5 hover:border-cyan/50 transition-all">
+          <!-- Doctor Header -->
+          <div class="flex items-start gap-4 mb-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan/20 to-blue/20 border-2 border-cyan/30 flex items-center justify-center text-xl font-bold text-cyan shadow-lg shadow-cyan/10">
+              ${doctor.name.split(' ').map(n => n[0]).join('')}
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="font-bold text-xl">${doctor.name}</h3>
+                ${doctor.availability === 'available' ? '<span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shadow-lg shadow-green-500/50"></span>' : '<span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>'}
+              </div>
+              <p class="text-sm text-cyan font-medium">${doctor.specialization}</p>
+              <div class="flex items-center gap-3 mt-2 text-xs text-text3">
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  ${doctor.location}
+                </span>
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Avg: ${doctor.response_time} min
+                </span>
               </div>
             </div>
+            
+            <!-- Load Indicator -->
             <div class="text-right shrink-0">
-              ${p.eta_minutes != null ? `<div class="text-xl font-bold mono" style="color:${col};">${p.eta_minutes}<span class="text-xs" style="color: #94a3b8;">min</span></div>` : ''}
-              ${p.override_action ? `<div class="text-[10px]" style="color: #94a3b8;">Last: ${h(p.override_action)}</div>` : ''}
+              <div class="text-xs text-text3 mb-1 font-medium">LOAD</div>
+              <div class="text-3xl font-bold mono text-${loadColor}-400">${doctor.current_patients}<span class="text-lg text-text3">/${doctor.max_patients}</span></div>
+              <div class="w-24 h-2.5 bg-slate-700 rounded-full mt-2 overflow-hidden">
+                <div class="h-full rounded-full bg-${loadColor}-500 transition-all duration-500 shadow-lg shadow-${loadColor}-500/30" style="width: ${loadPercentage}%"></div>
+              </div>
             </div>
           </div>
-          ${p.override_note ? `<div class="text-xs italic border-l-2 pl-3 py-1 rounded-r-lg" style="color: #64748b; border-color: #cbd5e1; background: rgba(255,255,255,0.6);">"${h(p.override_note.split('\n---\n')[0].trim())}"</div>` : ''}
-          <textarea id="override-note-${h(pid)}" placeholder="Clinical note / message to patient (optional)" rows="2"
-            class="w-full rounded-xl px-3 py-2 text-sm resize-none leading-relaxed focus:outline-none transition-colors placeholder-text3"
-            style="background: #ffffff; border: 1px solid rgba(203, 213, 225, 0.8); color: #334155;"
-            onfocus="this.style.borderColor='${col}'" onblur="this.style.borderColor='rgba(203, 213, 225, 0.8)'"></textarea>
-          <div class="flex flex-wrap gap-2">
-            <button onclick="triageOverride('${h(pid)}','APPROVE')" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all" style="border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.15); color: #10b981;">✅ Approve</button>
-            <button onclick="triageOverride('${h(pid)}','UPGRADE')" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all" style="border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.15); color: #f59e0b;">⬆ Upgrade</button>
-            <button onclick="triageOverride('${h(pid)}','DOWNGRADE')" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all" style="border-color: rgba(34, 211, 238, 0.5); background: rgba(34, 211, 238, 0.15); color: #0891b2;">⬇ Downgrade</button>
-            <button onclick="setStatus('${h(pid)}','in_treatment')" class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ml-auto" style="border-color: rgba(139, 92, 246, 0.5); background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">💊 In Treatment</button>
+          
+          <!-- Skills -->
+          <div class="flex gap-2 mb-4 flex-wrap">
+            ${doctor.skills.map(skill => `<span class="text-xs bg-slate-700/50 border border-slate-600/50 px-2.5 py-1 rounded-full text-text2 font-medium">${skill}</span>`).join('')}
           </div>
-          <div id="triage-override-result-${h(pid)}-dp" class="text-xs min-h-[1em]" style="color: #94a3b8;"></div>
-        </div>`;
-      }).join("");
+          
+          <!-- Assigned Patients -->
+          ${assignedPatients.length > 0 ? `
+          <div class="mt-4 pt-4 border-t border-slate-700/50">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-text3 uppercase tracking-wider flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                Assigned Patients
+              </span>
+              <span class="text-xs bg-cyan/20 border border-cyan/30 text-cyan px-2.5 py-1 rounded-full font-bold">${assignedPatients.length}</span>
+            </div>
+            <div class="space-y-2">
+              ${assignedPatients.map(patient => {
+                const triageColor = TRIAGE_COLOR[normalizeTriage(patient.triage_level)] || '#f59e0b';
+                const triageClass = TRIAGE_CLASS[normalizeTriage(patient.triage_level)] || 'U';
+                const triageBg = `background: ${triageColor}15`;
+                const actions = getPatientActions(patient.patient_id);
+                const stats = calculatePatientStatistics(patient.patient_id);
+                return `
+                <div class="flex items-center gap-3 bg-slate-800/40 rounded-xl p-3 border border-slate-700/40 hover:border-cyan/30 transition-all">
+                  <img src="${h(patient.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(patient.patient_id)}`)}" class="w-10 h-10 rounded-xl object-cover border-2 border-slate-600/50" onerror="this.src='https://i.pravatar.cc/60?u=${encodeURIComponent(patient.patient_id)}'" />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <p class="text-sm font-semibold truncate">${h(patient.full_name || patient.patient_id)}</p>
+                      <span class="chip text-[10px] font-bold px-1.5 py-0.5 rounded" style="color:${triageColor};border-color:${triageColor}40;${triageBg}">${triageClass}</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-0.5">
+                      <p class="text-xs text-text3 truncate">${h(patient.chief_complaint || '—')}</p>
+                      ${patient.assigned_bed ? `<span class="text-xs text-cyan/70 font-medium">${patient.assigned_bed}</span>` : ''}
+                    </div>
+                    ${stats ? `
+                    <div class="flex items-center gap-2 mt-1 text-[10px] text-text3">
+                      ${stats.timeToDoctor !== null ? `<span>→ Dr: ${stats.timeToDoctor.toFixed(0)}m</span>` : ''}
+                      ${stats.hospitalStayDuration !== null ? `<span>Stay: ${stats.hospitalStayDuration.toFixed(0)}m</span>` : ''}
+                      ${stats.messagesCount > 0 ? `<span>Msgs: ${stats.messagesCount}</span>` : ''}
+                    </div>
+                    ` : ''}
+                  </div>
+                  <div class="shrink-0 flex items-center gap-2">
+                    ${patient.eta_minutes != null ? `
+                    <div class="text-lg font-bold mono" style="color:${triageColor}">${patient.eta_minutes}<span class="text-xs text-text3 ml-0.5">min</span></div>
+                    ` : ''}
+                    <button onclick="openMessageModal('${h(patient.patient_id)}')" class="w-8 h-8 rounded-lg bg-green-500/20 border border-green-500/30 text-green-400 flex items-center justify-center hover:bg-green-500/30 transition-all" title="Send Message">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    </button>
+                  </div>
+                </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+          ` : `
+          <div class="mt-4 pt-4 border-t border-slate-700/50 text-center py-4">
+            <svg class="w-8 h-8 mx-auto text-text3 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <p class="text-xs text-text3 italic">No patients assigned</p>
+          </div>
+          `}
+        </div>
+        `;
+      }).join('');
+    }
+
+    function renderSidebarBedPlanning() {
+      const bedGrid = document.getElementById('sidebar-bed-grid');
+      const bedStats = document.getElementById('sidebar-bed-stats');
+      
+      if (!bedGrid || !bedStats) return; // Don't render if elements don't exist
+      
+      // Render mini bed grid
+      bedGrid.innerHTML = bedsData.slice(0, 8).map(bed => {
+        const statusColor = bed.status === 'available' ? 'bg-green-500/30 border-green-500/50' : bed.status === 'occupied' ? 'bg-red-500/30 border-red-500/50' : 'bg-amber-500/30 border-amber-500/50';
+        return `<div class="h-8 rounded-md ${statusColor} border flex items-center justify-center text-[8px] font-medium text-text2" title="${bed.id}: ${bed.status}">${bed.id.split('-')[1] || bed.id.slice(-2)}</div>`;
+      }).join('');
+      
+      // Render occupancy stats
+      const overallOccupancy = Math.round((bedsData.filter(b => b.status === 'occupied').length / bedsData.length) * 100);
+      const icuOccupied = bedsData.filter(b => b.type === 'ICU').filter(b => b.status === 'occupied').length;
+      const icuTotal = bedsData.filter(b => b.type === 'ICU').length;
+      const erOccupied = bedsData.filter(b => b.type === 'ER').filter(b => b.status === 'occupied').length;
+      const erTotal = bedsData.filter(b => b.type === 'ER').length;
+      const generalOccupied = bedsData.filter(b => b.type === 'General').filter(b => b.status === 'occupied').length;
+      const generalTotal = bedsData.filter(b => b.type === 'General').length;
+      
+      bedStats.innerHTML = `
+        <div class="flex justify-between items-center">
+          <span class="text-text3">Overall Occupancy</span>
+          <span class="font-semibold text-cyan">${overallOccupancy}%</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-text3">ICU</span>
+          <span class="font-semibold text-red-400">${icuOccupied}/${icuTotal}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-text3">ER</span>
+          <span class="font-semibold text-amber-400">${erOccupied}/${erTotal}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-text3">General</span>
+          <span class="font-semibold text-blue-400">${generalOccupied}/${generalTotal}</span>
+        </div>
+      `;
+    }
+
+    function renderBedManagementPanel() {
+      const grid = document.getElementById('bed-management-grid');
+      const departmentFilter = document.getElementById('bed-filter-department').value;
+      const typeFilter = document.getElementById('bed-filter-type').value;
+      const statusFilter = document.getElementById('bed-filter-status').value;
+      
+      // Update stats
+      document.getElementById('bed-total').textContent = bedsData.length;
+      document.getElementById('bed-available').textContent = bedsData.filter(b => b.status === 'available').length;
+      document.getElementById('bed-occupied').textContent = bedsData.filter(b => b.status === 'occupied').length;
+      document.getElementById('bed-maintenance').textContent = bedsData.filter(b => b.status === 'maintenance').length;
+      
+      // Filter beds
+      let filteredBeds = bedsData;
+      if (departmentFilter) filteredBeds = filteredBeds.filter(b => b.department === departmentFilter);
+      if (typeFilter) filteredBeds = filteredBeds.filter(b => b.type === typeFilter);
+      if (statusFilter) filteredBeds = filteredBeds.filter(b => b.status === statusFilter);
+      
+      // Render bed cards
+      grid.innerHTML = filteredBeds.map(bed => {
+        const statusColor = bed.status === 'available' ? 'green' : bed.status === 'occupied' ? 'red' : 'amber';
+        const statusBg = bed.status === 'available' ? 'bg-green-500/10 border-green-500/30' : bed.status === 'occupied' ? 'bg-red-500/10 border-red-500/30' : 'bg-amber-500/10 border-amber-500/30';
+        
+        // Find patient assigned to this bed
+        const patient = state.patients.find(p => p.assigned_bed === bed.id);
+        
+        // Find doctor assigned to this patient
+        const doctor = patient ? doctorsData.find(d => d.assigned_patients && d.assigned_patients.includes(patient.patient_id)) : null;
+        
+        // Calculate duration if patient is assigned
+        let duration = '—';
+        let assignmentTime = '—';
+        if (patient && patient.bed_assigned_at) {
+          const assignedTime = new Date(patient.bed_assigned_at);
+          const now = new Date();
+          const hours = Math.floor((now - assignedTime) / (1000 * 60 * 60));
+          if (hours < 24) {
+            duration = `${hours}h`;
+          } else {
+            const days = Math.floor(hours / 24);
+            duration = `${days}d`;
+          }
+          assignmentTime = assignedTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        return `
+        <div class="glass rounded-xl border ${statusBg} p-4 hover:border-cyan/50 transition-all">
+          <!-- Header -->
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-semibold text-lg">${bed.id}</h3>
+                <span class="text-xs px-2 py-0.5 rounded-full text-${statusColor}-400 bg-${statusColor}-500/20 capitalize">${bed.status}</span>
+              </div>
+              <p class="text-xs text-text3 mt-1">${bed.type} • ${bed.location}</p>
+            </div>
+            <div class="flex gap-1">
+              ${bed.equipment.map(eq => {
+                const icon = eq === 'ventilator' ? 'V' : eq === 'monitor' ? 'M' : 'O';
+                return `<span class="w-6 h-6 bg-slate-700 rounded-lg flex items-center justify-center text-[10px] text-text2" title="${eq}">${icon}</span>`;
+              }).join('')}
+            </div>
+          </div>
+          
+          ${patient ? `
+          <!-- Patient Info -->
+          <div class="mt-3 pt-3 border-t border-slate-700/50">
+            <div class="flex items-center gap-3 mb-2">
+              <img src="${h(patient.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(patient.patient_id)}`)}" class="w-10 h-10 rounded-lg object-cover border-2 border-cyan/30" onerror="this.src='https://i.pravatar.cc/60?u=${encodeURIComponent(patient.patient_id)}'" />
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-sm truncate">${h(patient.full_name || patient.patient_id)}</p>
+                <p class="text-xs text-text3 truncate">${h(patient.chief_complaint || 'No complaint')}</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 text-xs mb-2">
+              <div class="flex justify-between">
+                <span class="text-text3">Duration:</span>
+                <span class="font-medium">${duration}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text3">Assigned:</span>
+                <span class="font-medium">${assignmentTime}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text3">Triage:</span>
+                <span class="font-medium">${normalizeTriage(patient.triage_level)}</span>
+              </div>
+            </div>
+            
+            ${doctor ? `
+            <div class="flex items-center gap-2 bg-slate-800/50 rounded-lg p-2 mb-2">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 flex items-center justify-center text-[10px] font-bold text-purple-400">
+                ${doctor.name.split(' ').map(n => n[0]).join('')}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-medium truncate">${doctor.name}</p>
+                <p class="text-[10px] text-text3 truncate">${doctor.specialization}</p>
+              </div>
+            </div>
+            ` : '<p class="text-xs text-text3 italic mb-2">No doctor assigned</p>'}
+            
+            <button onclick="dischargePatient('${bed.id}', '${patient.patient_id}')" class="w-full text-xs bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-all">
+              Discharge Patient
+            </button>
+          </div>
+          ` : `
+          <!-- Empty State -->
+          <div class="mt-3 pt-3 border-t border-slate-700/50 text-center">
+            <p class="text-xs text-text3 italic">No patient assigned</p>
+            <button onclick="assignBed('${bed.id}')" class="mt-2 text-xs bg-cyan/10 border border-cyan/30 text-cyan px-3 py-1.5 rounded-lg hover:bg-cyan/20 transition-all">
+              Assign Patient
+            </button>
+          </div>
+          `}
+        </div>
+        `;
+      }).join('');
     }
 
 
@@ -1925,15 +2744,531 @@
       }
     }
 
+    // Sample data for doctors
+    const doctorsData = [
+      {
+        id: "DR001",
+        name: "Dr. Sarah Miller",
+        specialization: "Emergency Medicine",
+        department: "ER",
+        current_patients: 3,
+        max_patients: 8,
+        availability: "available",
+        skills: ["trauma", "cardiac", "pediatric"],
+        location: "ER Room 3",
+        response_time: 5
+      },
+      {
+        id: "DR002",
+        name: "Dr. Robert Johnson",
+        specialization: "Cardiology",
+        department: "Cardiology",
+        current_patients: 5,
+        max_patients: 6,
+        availability: "available",
+        skills: ["cardiac", "arrhythmia"],
+        location: "Room C-201",
+        response_time: 8
+      },
+      {
+        id: "DR003",
+        name: "Dr. Emily Lee",
+        specialization: "Emergency Medicine",
+        department: "ER",
+        current_patients: 2,
+        max_patients: 8,
+        availability: "available",
+        skills: ["general", "trauma"],
+        location: "ER Room 1",
+        response_time: 3
+      }
+    ];
+
+    let selectedDoctor = null;
+    let selectedBed = null;
+
     async function alertTeam(pid) {
-      toast(`🚨 Team alerted for patient ${pid.slice(0,8)}`, 'warn');
-      logAction(`${pid}: team alerted`);
+      const patient = state.patients.find(p => p.patient_id === pid);
+      if (!patient) {
+        toast('Patient not found', 'err');
+        return;
+      }
+
+      // Populate patient info
+      document.getElementById('alertPatientId').textContent = pid.slice(0, 8);
+      document.getElementById('alertPatientId').setAttribute('data-full-id', pid);
+      document.getElementById('alertPatientName').textContent = patient.full_name || pid;
+      
+      const triageLevel = normalizeTriage(patient.triage_level);
+      const triageColor = TRIAGE_COLOR[triageLevel] || '#f59e0b';
+      
+      document.getElementById('alertTriageLevel').textContent = triageLevel;
+      document.getElementById('alertTriageLevel').style.background = `${triageColor}20`;
+      document.getElementById('alertTriageLevel').style.color = triageColor;
+      document.getElementById('alertChiefComplaint').textContent = patient.chief_complaint || 'No complaint recorded';
+      document.getElementById('alertVitals').textContent = `BP: ${patient.bp || 'N/A'}, HR: ${patient.hr || 'N/A'}, SpO2: ${patient.spo2 || 'N/A'}`;
+      document.getElementById('alertETA').textContent = patient.eta_minutes ? `${patient.eta_minutes} min` : 'Arrived';
+      
+      // Set recommendation based on triage
+      let recommendation = 'Emergency Medicine';
+      if (triageLevel === '1' || patient.chief_complaint?.toLowerCase().includes('chest')) {
+        recommendation = 'Cardiology or Emergency Medicine';
+      } else if (triageLevel === '2' || patient.chief_complaint?.toLowerCase().includes('breathing')) {
+        recommendation = 'Emergency Medicine with Respiratory experience';
+      }
+      document.getElementById('alertRecommendation').textContent = recommendation;
+      
+      // Populate doctor list
+      const doctorList = document.getElementById('doctorList');
+      const availableDoctors = doctorsData.filter(d => d.availability === 'available');
+      document.getElementById('availableDoctorsCount').textContent = `${availableDoctors.length} available`;
+      
+      doctorList.innerHTML = availableDoctors.map((doctor, index) => {
+        const loadPercentage = (doctor.current_patients / doctor.max_patients) * 100;
+        const loadColor = loadPercentage < 50 ? 'bg-green-500' : loadPercentage < 80 ? 'bg-amber-500' : 'bg-red-500';
+        const isBestMatch = index === 0; // First doctor is best match for demo
+        
+        return `
+          <div class="doctor-card ${isBestMatch ? 'bg-gradient-to-r from-green-900/20 to-green-800/10 border-green-500/30' : 'bg-slate-800/50 border-slate-700/50'} border rounded-xl p-4 cursor-pointer transition-all" onclick="selectDoctor('${doctor.id}')">
+            <div class="flex items-start justify-between">
+              <div class="flex gap-3">
+                <div class="w-10 h-10 ${isBestMatch ? 'bg-green-500' : 'bg-blue-500'} rounded-full flex items-center justify-center text-sm font-bold">${doctor.name.split(' ').map(n => n[0]).join('')}</div>
+                <div>
+                  <h4 class="font-semibold ${isBestMatch ? 'text-green-400' : ''}">${doctor.name}</h4>
+                  <p class="text-xs text-slate-400">${doctor.specialization}</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    ${isBestMatch ? '<span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">Best Match</span>' : ''}
+                    <span class="text-xs text-slate-400">${doctor.location}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs text-slate-400">Load</div>
+                <div class="text-sm font-semibold">${doctor.current_patients}/${doctor.max_patients}</div>
+                <div class="w-12 h-1 bg-slate-700 rounded-full mt-1">
+                  <div class="${loadColor} h-full rounded-full" style="width: ${loadPercentage}%"></div>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-3">
+              ${doctor.skills.map(skill => `<span class="text-xs bg-slate-700/50 px-2 py-1 rounded">${skill}</span>`).join('')}
+              <span class="text-xs bg-slate-700/50 px-2 py-1 rounded">${doctor.response_time} min avg</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Reset selection
+      selectedDoctor = null;
+      document.getElementById('assignDoctorBtn').disabled = true;
+      
+      // Show modal
+      document.getElementById('alertModal').classList.remove('hidden');
     }
+
+    function selectDoctor(doctorId) {
+      console.log('selectDoctor called with:', doctorId);
+      selectedDoctor = doctorId;
+      console.log('selectedDoctor set to:', selectedDoctor);
+      const btn = document.getElementById('assignDoctorBtn');
+      console.log('assignDoctorBtn element:', btn);
+      if (btn) {
+        btn.disabled = false;
+        console.log('assignDoctorBtn enabled');
+      }
+      
+      // Update visual selection
+      document.querySelectorAll('.doctor-card').forEach(card => {
+        card.classList.remove('ring-2', 'ring-cyan-500');
+      });
+      event.currentTarget.classList.add('ring-2', 'ring-cyan-500');
+    }
+
+    function closeAlertModal() {
+      document.getElementById('alertModal').classList.add('hidden');
+      selectedDoctor = null;
+    }
+
+    function assignSelectedDoctor() {
+      console.log('assignSelectedDoctor called');
+      console.log('selectedDoctor:', selectedDoctor);
+      if (!selectedDoctor) {
+        toast('Please select a doctor', 'warn');
+        return;
+      }
+      
+      const doctor = doctorsData.find(d => d.id === selectedDoctor);
+      console.log('doctor found:', doctor);
+      const patientIdEl = document.getElementById('alertPatientId');
+      const patientId = patientIdEl.getAttribute('data-full-id') || patientIdEl.textContent;
+      console.log('patientId from modal:', patientId);
+      const patient = state.patients.find(p => p.patient_id === patientId);
+      console.log('patient found:', patient);
+      
+      if (!patient) {
+        toast('Patient not found', 'err');
+        return;
+      }
+      
+      // Store doctor assignment in patient data
+      patient.assigned_doctor = doctor.name;
+      patient.assigned_doctor_id = doctor.id;
+      patient.doctor_assigned_at = new Date().toISOString();
+      console.log('Patient data updated:', patient);
+      
+      // Save doctor assignments to localStorage
+      saveDoctorAssignmentsToStorage();
+      
+      // Log doctor assignment action
+      logPatientAction(patientId, 'doctor_assigned', {
+        doctorId: doctor.id,
+        doctorName: doctor.name,
+        message: `Assigned to Dr. ${doctor.name}`
+      });
+      
+      toast(`🚨 ${doctor.name} assigned to patient ${patientId}`, 'ok');
+      logAction(`${patientId}: assigned to ${doctor.name}`);
+      
+      // Update doctor's load
+      doctor.current_patients++;
+      
+      closeAlertModal();
+      
+      // Refresh views
+      renderIncomingLists();
+      if (state.activeTab === 'doctor') {
+        renderDoctorPanel();
+      }
+    }
+    // Sample data for beds
+    const bedsData = [
+      { id: "ICU-101", type: "ICU", department: "ICU", status: "available", patient_id: null, equipment: ["ventilator", "monitor", "oxygen"], priority_level: 1, location: "ICU Wing A" },
+      { id: "ICU-102", type: "ICU", department: "ICU", status: "occupied", patient_id: "PAT-045", equipment: ["ventilator", "monitor", "oxygen"], priority_level: 1, location: "ICU Wing A" },
+      { id: "ICU-103", type: "ICU", department: "ICU", status: "maintenance", patient_id: null, equipment: ["ventilator", "monitor", "oxygen"], priority_level: 1, location: "ICU Wing A", maintenance_until: "14:00" },
+      { id: "ER-205", type: "ER", department: "ER", status: "available", patient_id: null, equipment: ["monitor", "oxygen"], priority_level: 2, location: "ER Wing B" },
+      { id: "ER-206", type: "ER", department: "ER", status: "available", patient_id: null, equipment: ["monitor"], priority_level: 2, location: "ER Wing B" },
+      { id: "GW-311", type: "General", department: "General", status: "available", patient_id: null, equipment: ["oxygen"], priority_level: 3, location: "General Ward C" }
+    ];
+
     async function assignBed(pid) {
-      const bedNum = Math.floor(Math.random() * 20) + 1;
-      toast(`🏥 Bed ${bedNum} assigned to patient ${pid.slice(0,8)}`, 'ok');
-      logAction(`${pid}: bed ${bedNum} assigned`);
+      const patient = state.patients.find(p => p.patient_id === pid);
+      if (!patient) {
+        toast('Patient not found', 'err');
+        return;
+      }
+
+      // Populate patient info
+      document.getElementById('bedPatientId').textContent = pid.slice(0, 8);
+      document.getElementById('bedPatientId').setAttribute('data-full-id', pid);
+      document.getElementById('bedPatientName').textContent = patient.full_name || 'Unknown';
+      document.getElementById('bedPatientComplaint').textContent = patient.chief_complaint || 'No complaint';
+      document.getElementById('bedPatientInitials').textContent = (patient.full_name || patient.patient_id).split(' ').map(n => n[0]).join('');
+      
+      // Render bed grid
+      renderBedGrid();
+      
+      // Reset selection
+      selectedBed = null;
+      document.getElementById('assignBedBtn').disabled = true;
+      
+      // Show modal
+      document.getElementById('bedModal').classList.remove('hidden');
     }
+
+    function renderBedGrid() {
+      const bedGrid = document.getElementById('bedGrid');
+      console.log('renderBedGrid called, bedGrid element:', bedGrid);
+      const departmentFilter = document.getElementById('bedDepartmentFilter').value;
+      const typeFilter = document.getElementById('bedTypeFilter').value;
+      const equipmentFilter = document.getElementById('bedEquipmentFilter').value;
+      
+      let filteredBeds = bedsData;
+      
+      if (departmentFilter) {
+        filteredBeds = filteredBeds.filter(bed => bed.department === departmentFilter);
+      }
+      
+      if (typeFilter) {
+        filteredBeds = filteredBeds.filter(bed => bed.type === typeFilter);
+      }
+      
+      if (equipmentFilter) {
+        filteredBeds = filteredBeds.filter(bed => bed.equipment.includes(equipmentFilter));
+      }
+      
+      bedGrid.innerHTML = filteredBeds.map(bed => {
+        const statusColor = bed.status === 'available' ? 'green' : bed.status === 'occupied' ? 'red' : 'amber';
+        const isRecommended = bed.status === 'available' && bed.type === 'ICU'; // ICU beds recommended for demo
+        
+        return `
+          <div class="bed-card ${bed.status === 'available' ? 'bg-slate-800/50 border-slate-700/50 cursor-pointer' : 'bg-slate-800/30 border-slate-600/50 opacity-60'} ${isRecommended ? 'bg-gradient-to-br from-red-900/20 to-red-800/10 border-red-500/30' : ''} border rounded-xl p-3 transition-all" onclick="${bed.status === 'available' ? `window.selectBed('${bed.id}')` : ''}">
+            <div class="text-center">
+              <div class="text-lg font-bold ${bed.status === 'available' ? '' : 'text-slate-500'} ${isRecommended ? 'text-red-400' : ''}">${bed.id}</div>
+              <div class="text-xs text-slate-400 mt-1">${bed.type === 'ICU' ? 'Intensive Care' : bed.type === 'ER' ? 'Emergency' : 'General Ward'}</div>
+              <div class="w-full h-2 bg-slate-700 rounded-full mt-2">
+                <div class="w-full h-full bg-${statusColor}-500 rounded-full"></div>
+              </div>
+              <div class="text-xs text-${statusColor}-400 mt-1 capitalize">${bed.status}</div>
+              <div class="flex gap-1 justify-center mt-2">
+                ${bed.equipment.map(eq => {
+                  const icon = eq === 'ventilator' ? 'V' : eq === 'monitor' ? 'M' : 'O';
+                  return `<span class="w-4 h-4 bg-slate-700 rounded-full flex items-center justify-center text-[8px]">${icon}</span>`;
+                }).join('')}
+              </div>
+              ${bed.status === 'occupied' ? `<div class="text-xs text-slate-500 mt-2">${bed.patient_id}</div>` : ''}
+              ${bed.status === 'maintenance' ? `<div class="text-xs text-amber-400 mt-2">Until ${bed.maintenance_until}</div>` : ''}
+              ${isRecommended ? `<div class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded mt-2">Recommended</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterBeds() {
+      renderBedGrid();
+    }
+
+    function selectBed(bedId) {
+      console.log('selectBed called with bedId:', bedId);
+      selectedBed = bedId;
+      const btn = document.getElementById('assignBedBtn');
+      console.log('Button element:', btn);
+      if (btn) {
+        btn.disabled = false;
+        console.log('Button enabled');
+      }
+      
+      // Update visual selection
+      document.querySelectorAll('.bed-card').forEach(card => {
+        card.classList.remove('ring-2', 'ring-cyan-500');
+      });
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.add('ring-2', 'ring-cyan-500');
+      } else {
+        // If event is not available, find the bed card by data attribute
+        const bedCard = document.querySelector(`.bed-card[onclick*="${bedId}"]`);
+        if (bedCard) {
+          bedCard.classList.add('ring-2', 'ring-cyan-500');
+        }
+      }
+    }
+
+    function closeBedModal() {
+      document.getElementById('bedModal').classList.add('hidden');
+      selectedBed = null;
+    }
+
+    // Messaging Modal Functions
+    let currentMessagePatientId = null;
+
+    function openMessageModal(patientId) {
+      const patient = state.patients.find(p => p.patient_id === patientId);
+      if (!patient) {
+        toast('Patient not found', 'err');
+        return;
+      }
+
+      currentMessagePatientId = patientId;
+      
+      document.getElementById('messagePatientId').textContent = patientId.slice(0, 8);
+      document.getElementById('messagePatientName').textContent = patient.full_name || patientId;
+      document.getElementById('messagePatientComplaint').textContent = patient.chief_complaint || '—';
+      document.getElementById('messagePatientPhoto').src = patient.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(patientId)}`;
+      
+      // Load message history
+      const actions = getPatientActions(patientId);
+      const messageActions = actions.filter(a => a.type === 'message_sent');
+      const messageHistoryEl = document.getElementById('messageHistory');
+      
+      if (messageActions.length > 0) {
+        messageHistoryEl.innerHTML = messageActions.map(action => `
+          <div class="bg-slate-700/50 rounded-lg p-2 text-xs">
+            <div class="flex justify-between mb-1">
+              <span class="text-cyan font-medium">${action.sender || 'Doctor'}</span>
+              <span class="text-text3">${new Date(action.timestamp).toLocaleTimeString()}</span>
+            </div>
+            <p class="text-text2">${action.message}</p>
+          </div>
+        `).join('');
+      } else {
+        messageHistoryEl.innerHTML = '<p class="text-xs text-text3 italic">No messages yet</p>';
+      }
+      
+      document.getElementById('newMessageText').value = '';
+      document.getElementById('messageTriageLevel').value = '';
+      
+      document.getElementById('messageModal').classList.remove('hidden');
+    }
+
+    function closeMessageModal() {
+      document.getElementById('messageModal').classList.add('hidden');
+      currentMessagePatientId = null;
+    }
+
+    function sendMessage() {
+      if (!currentMessagePatientId) {
+        toast('No patient selected', 'err');
+        return;
+      }
+
+      const messageText = document.getElementById('newMessageText').value.trim();
+      const newTriageLevel = document.getElementById('messageTriageLevel').value;
+      
+      if (!messageText && !newTriageLevel) {
+        toast('Please enter a message or select a triage level', 'warn');
+        return;
+      }
+
+      const patient = state.patients.find(p => p.patient_id === currentMessagePatientId);
+      if (!patient) {
+        toast('Patient not found', 'err');
+        return;
+      }
+
+      // Log message action
+      if (messageText) {
+        logPatientAction(currentMessagePatientId, 'message_sent', {
+          message: messageText,
+          sender: 'Doctor'
+        });
+      }
+
+      // Update triage level if changed
+      if (newTriageLevel) {
+        const oldTriageLevel = patient.triage_level;
+        patient.triage_level = newTriageLevel;
+        
+        logPatientAction(currentMessagePatientId, 'triage_changed', {
+          from: oldTriageLevel,
+          to: newTriageLevel,
+          message: `Triage level changed from ${oldTriageLevel} to ${newTriageLevel}`
+        });
+        
+        toast(`Triage level updated to ${newTriageLevel}`, 'ok');
+      }
+
+      if (messageText) {
+        toast('Message sent successfully', 'ok');
+      }
+
+      // Refresh message history
+      const actions = getPatientActions(currentMessagePatientId);
+      const messageActions = actions.filter(a => a.type === 'message_sent');
+      const messageHistoryEl = document.getElementById('messageHistory');
+      
+      if (messageActions.length > 0) {
+        messageHistoryEl.innerHTML = messageActions.map(action => `
+          <div class="bg-slate-700/50 rounded-lg p-2 text-xs">
+            <div class="flex justify-between mb-1">
+              <span class="text-cyan font-medium">${action.sender || 'Doctor'}</span>
+              <span class="text-text3">${new Date(action.timestamp).toLocaleTimeString()}</span>
+            </div>
+            <p class="text-text2">${action.message}</p>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('newMessageText').value = '';
+      document.getElementById('messageTriageLevel').value = '';
+
+      // Refresh views
+      renderIncomingLists();
+      if (state.activeTab === 'doctor') {
+        renderDoctorPanel();
+      }
+    }
+
+    function dischargePatient(bedId, patientId) {
+      const bed = bedsData.find(b => b.id === bedId);
+      const patient = state.patients.find(p => p.patient_id === patientId);
+      
+      if (!bed || !patient) {
+        toast('Bed or patient not found', 'err');
+        return;
+      }
+      
+      // Update bed status
+      bed.status = 'available';
+      bed.patient_id = null;
+      
+      // Update patient
+      patient.assigned_bed = null;
+      patient.bed_assigned_at = null;
+      patient.status = 'discharged';
+      
+      // Log patient action
+      logPatientAction(patientId, 'discharged', {
+        bedId: bed.id,
+        message: `Discharged from bed ${bed.id}`
+      });
+      
+      // Save to localStorage
+      saveBedAssignmentsToStorage();
+      
+      toast(`🏥 Patient ${patientId.slice(0, 8)} discharged from ${bed.id}`, 'ok');
+      logAction(`${patientId}: discharged from ${bed.id}`);
+      
+      // Refresh views
+      renderBedManagementPanel();
+      renderIncomingLists();
+    }
+
+    function assignSelectedBed() {
+      console.log('assignSelectedBed called, selectedBed:', selectedBed);
+      console.log('Patients before assignment:', state.patients.filter(p => p.assigned_bed).map(p => ({id: p.patient_id, bed: p.assigned_bed})));
+      console.log('Beds before assignment:', bedsData.filter(b => b.status === 'occupied').map(b => ({id: b.id, patient: b.patient_id})));
+      
+      if (!selectedBed) {
+        toast('Please select a bed', 'warn');
+        return;
+      }
+      
+      const bed = bedsData.find(b => b.id === selectedBed);
+      const patientIdElement = document.getElementById('bedPatientId');
+      const patientId = patientIdElement.getAttribute('data-full-id') || patientIdElement.textContent;
+      const patient = state.patients.find(p => p.patient_id === patientId);
+      
+      console.log('Bed:', bed, 'Patient ID:', patientId, 'Patient:', patient);
+      
+      if (!patient) {
+        toast('Patient not found', 'err');
+        return;
+      }
+      
+      // Update bed status
+      bed.status = 'occupied';
+      bed.patient_id = patientId;
+      
+      // Update patient with bed assignment
+      patient.assigned_bed = bed.id;
+      patient.bed_assigned_at = new Date().toISOString();
+      patient.status = 'in_treatment';
+      
+      console.log('Patients after assignment:', state.patients.filter(p => p.assigned_bed).map(p => ({id: p.patient_id, bed: p.assigned_bed})));
+      console.log('Beds after assignment:', bedsData.filter(b => b.status === 'occupied').map(b => ({id: b.id, patient: b.patient_id})));
+      
+      // Log patient action
+      logPatientAction(patientId, 'bed_assigned', {
+        bedId: bed.id,
+        message: `Assigned to bed ${bed.id}`
+      });
+      
+      // Save to localStorage
+      saveBedAssignmentsToStorage();
+      
+      toast(`🏥 Bed ${bed.id} assigned to patient ${patientId.slice(0, 8)}`, 'ok');
+      logAction(`${patientId}: bed ${bed.id} assigned`);
+      
+      // Close modal
+      closeBedModal();
+      
+      // Refresh views
+      renderIncomingLists();
+      if (state.activeTab === 'bed') {
+        renderBedManagementPanel();
+      }
+    }
+
     function viewRoute(pid) {
       switchTab("tracking");
       const row = [...document.querySelectorAll("#tracking-body tr")].find((tr) => tr.textContent.includes(pid));
@@ -2135,16 +3470,32 @@
 
     function buildYearlyReport(pts, stats) {
       document.getElementById('rpt-y-total').textContent = pts.length;
-      
+
       const emg = pts.filter(p => p.triage_level === 'EMERGENCY').length;
       document.getElementById('rpt-y-emg').textContent = pts.length ? Math.round(emg / pts.length * 100) + '%' : '—';
-      
+
       const risks = pts.map(p => p.risk_score).filter(r => r > 0);
       const avgR = risks.length ? (risks.reduce((a, b) => a + b, 0) / risks.length).toFixed(1) : '—';
       document.getElementById('rpt-y-risk').textContent = avgR;
-      
+
       const treatRate = pts.length ? Math.round(pts.filter(p => p.status === 'discharged').length / pts.length * 100) + '%' : '—';
       document.getElementById('rpt-y-treat').textContent = treatRate;
+
+      // Language distribution
+      const lmap = {};
+      pts.forEach(p => { const l = p.language || 'unknown'; lmap[l] = (lmap[l] || 0) + 1; });
+      const topL = Object.entries(lmap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      const maxL = topL.length ? topL[0][1] : 1;
+      document.getElementById('rpt-y-lang').innerHTML = topL.length
+        ? topL.map(([l, n]) => `
+          <div class="flex items-center gap-3">
+            <span class="w-28 text-xs text-text2 truncate">${h(LANG_NAME[l] || l)}</span>
+            <div class="flex-1 h-4 bg-surface2/50 rounded-full overflow-hidden">
+              <div class="h-full bg-cyan rounded-full transition-all duration-500" style="width:${Math.max(4, n / maxL * 100)}%"></div>
+            </div>
+            <span class="text-xs font-bold w-6 text-right">${n}</span>
+          </div>`).join('')
+        : '<div class="text-text3 text-sm">No language data yet</div>';
     }
 
     async function loadLiveStats() {
@@ -2302,12 +3653,84 @@
       if (tab === 'reports') loadReports();
       if (tab === 'analytics') loadLiveStats();
       if (tab === 'admin') loadAdminTable();
+      if (tab === 'bed') renderBedManagementPanel();
+    }
+
+    // Store local bed assignments to preserve across refreshes
+    const localBedAssignments = new Map(); // bedId -> patientId
+    const localPatientAssignments = new Map(); // patientId -> {assigned_bed, bed_assigned_at, status}
+
+    // Load bed assignments from localStorage
+    function loadBedAssignmentsFromStorage() {
+      try {
+        const stored = localStorage.getItem('bedAssignments');
+        console.log('Loading from localStorage:', stored);
+        if (stored) {
+          const assignments = JSON.parse(stored);
+          console.log('Assignments to restore:', assignments);
+          assignments.forEach(assignment => {
+            const patient = state.patients.find(p => p.patient_id === assignment.patientId);
+            console.log('Finding patient', assignment.patientId, 'found:', !!patient);
+            if (patient) {
+              patient.assigned_bed = assignment.bedId;
+              patient.bed_assigned_at = assignment.bed_assigned_at;
+              patient.status = assignment.status;
+              console.log('Patient updated:', patient.patient_id, '->', assignment.bedId);
+            }
+            const bed = bedsData.find(b => b.id === assignment.bedId);
+            if (bed) {
+              bed.status = 'occupied';
+              bed.patient_id = assignment.patientId;
+              console.log('Bed updated:', bed.id, '->', assignment.patientId);
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to load bed assignments from storage:', e);
+      }
+    }
+
+    // Save bed assignments to localStorage
+    function saveBedAssignmentsToStorage() {
+      try {
+        const assignments = [];
+        state.patients.forEach(p => {
+          if (p.assigned_bed) {
+            assignments.push({
+              patientId: p.patient_id,
+              bedId: p.assigned_bed,
+              bed_assigned_at: p.bed_assigned_at,
+              status: p.status
+            });
+          }
+        });
+        console.log('Saving to localStorage:', assignments);
+        localStorage.setItem('bedAssignments', JSON.stringify(assignments));
+        console.log('Saved to localStorage:', localStorage.getItem('bedAssignments'));
+      } catch (e) {
+        console.warn('Failed to save bed assignments to storage:', e);
+      }
     }
 
     async function refreshAll() {
       try {
-        await Promise.all([loadStats(), loadPatients(), loadTracking()]);
-        document.getElementById("sync-text").textContent = `Synced ${new Date().toLocaleTimeString()}`;
+        // Check if any bed assignments exist
+        const hasBedAssignments = state.patients.some(p => p.assigned_bed);
+        
+        if (hasBedAssignments) {
+          // Skip patient refresh to preserve local assignments
+          await Promise.all([loadStats(), loadTracking()]);
+        } else {
+          await Promise.all([loadStats(), loadPatients(), loadTracking()]);
+        }
+        
+        const syncEl = document.getElementById("sync-text");
+        if (syncEl) syncEl.textContent = `Synced ${new Date().toLocaleTimeString()}`;
+        
+        // Refresh bed management panel if active
+        if (state.activeTab === 'bed') {
+          renderBedManagementPanel();
+        }
       } catch (e) {
         toast(`Backend error: ${e.message}`, "err");
       }
@@ -2317,14 +3740,28 @@
     const _patientCache = {};
     let compactMode = false;
     let _privacyOn = false;
-    let activeKpiFilter = null;
-    let sortMode = 'triage';
+    let activeTopFilter = null;    // 'all' | 'en_route' | 'in_treatment' | 'discharged'
+    let activeTriageFilter = null; // 'immediate' | 'emergency' | 'urgent' | 'standard' | 'non_urgent'
+    let sortMode = 'risk';
     const STATUS_MAP = { incoming: '🚗 En Route', arrived: '🏥 Arrived', in_treatment: '💊 In Treatment', discharged: '✅ Discharged' };
     
     // Language strings
     const UI_STRINGS = {
-      en: { queueLabel: 'In Queue', orderedBy: 'Queue', emergency: 'Emergency', urgent: 'Urgent', routine: 'Routine', stable: 'Stable', critical: 'Critical' },
-      de: { queueLabel: 'In Warteschlange', orderedBy: 'Warteschlange', emergency: 'Notfall', urgent: 'Dringend', routine: 'Routine', stable: 'Stabil', critical: 'Kritisch' }
+      en: {
+        kpi_total: 'Total Patients', kpi_queue: 'En Route', kpi_treatment: 'Under Treatment', kpi_treated: 'Discharged',
+        sort_risk: 'By Risk Score', sort_eta: 'By ETA', sort_time: 'By Time (Newest)',
+        emergency: 'Emergency', urgent: 'Urgent', routine: 'Routine', stable: 'Stable', critical: 'Critical'
+      },
+      tr: {
+        kpi_total: 'Toplam Hasta', kpi_queue: 'Yolda', kpi_treatment: 'Tedavide', kpi_treated: 'Taburcu',
+        sort_risk: 'Risk Skoru', sort_eta: 'ETA', sort_time: 'En Yeni Önce',
+        emergency: 'Acil', urgent: 'Acil', routine: 'Rutin', stable: 'Stabil', critical: 'Kritik'
+      },
+      de: {
+        kpi_total: 'Gesamtpatienten', kpi_queue: 'Unterwegs', kpi_treatment: 'In Behandlung', kpi_treated: 'Entlassen',
+        sort_risk: 'Risiko-Score', sort_eta: 'ETA', sort_time: 'Neueste zuerst',
+        emergency: 'Notfall', urgent: 'Dringend', routine: 'Routine', stable: 'Stabil', critical: 'Kritisch'
+      }
     };
     let _currentLang = 'en';
 
@@ -2354,13 +3791,18 @@
     function renderPatientList(patients) {
       const el = document.getElementById('incoming-list');
       if (!patients || !patients.length) {
-        el.innerHTML = '<div class="text-center py-12 text-text2"><div class="text-4xl mb-3">📋</div><div>No incoming patients</div></div>';
+        el.innerHTML = '<div class="text-center py-12 text-text2"><div class="text-4xl mb-3">📋</div><div>No patients found</div></div>';
         return;
       }
       window._lastPatients = patients;
       patients.forEach(p => { if (p.patient_id) _patientCache[p.patient_id] = p; });
 
       const newIds = new Set(patients.map(p => p.patient_id).filter(Boolean));
+
+      // 0. Clear any non-card elements (Loading... spinner, error messages etc.)
+      Array.from(el.children).forEach(child => {
+        if (!child.id || !child.id.startsWith('card-')) child.remove();
+      });
 
       // 1. Remove cards no longer in the list
       el.querySelectorAll('[id^="card-"]').forEach(card => {
@@ -2416,7 +3858,6 @@
             qaWrap.innerHTML = newQa;
           }
 
-          // Do NOT reorder — patch in-place to preserve expand state
         } else {
           // New card: full render + attach listeners
           const wrap = document.createElement('div');
@@ -2428,6 +3869,12 @@
           card.querySelectorAll('[data-tab]').forEach(btn =>
             btn.addEventListener('click', () => switchDtab(btn.dataset.pid, btn.dataset.tab, btn)));
         }
+      });
+
+      // 3. Reorder DOM cards to match the sorted array — preserves expand state (element is moved, not rebuilt)
+      patients.forEach(p => {
+        const card = document.getElementById('card-' + p.patient_id);
+        if (card) el.appendChild(card); // appendChild on existing node moves it to the end in sorted order
       });
     }
 
@@ -2571,73 +4018,112 @@
       const prepItems = buildPrep(p);
 
       return `
-        <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-surface2/60 to-surface/40 backdrop-blur-sm p-0 overflow-hidden triage-${tc}" id="card-${pid}">
-          <!-- PREMIUM HEADER -->
-          <div class="p-5 bg-gradient-to-r from-slate-800/50 to-slate-900/50">
-            <div class="flex items-start justify-between gap-4 mb-4">
-              <div class="flex items-start gap-4">
-                <div class="relative group shrink-0">
-                  <img src="${h(photo)}" alt="Patient" class="patient-photo w-32 h-32 rounded-2xl object-cover border-2 border-slate-600/50 shadow-lg group-hover:border-cyan/50 transition-all cursor-pointer" onclick="openMediaLightbox('${h(photo)}','${h(pid)}',0)" />
-                  <div class="absolute -bottom-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-lg" style="background:${col}20;color:${col};border:2px solid ${col}66">
-                    ${sex === 'female' ? '♀' : sex === 'male' ? '♂' : '⚤'}
-                  </div>
-                </div>
-                <div class="min-w-0">
-                  <h3 class="text-xl font-bold text-white mb-1 truncate patient-name">${h(p.full_name || pid)}</h3>
-                  <p class="text-text2 text-sm mb-2 truncate">${h(p.chief_complaint || 'No complaint recorded')}</p>
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="chip triage-${tc} text-xs px-2.5 py-1" style="color:${col};border-color:${col}66;background:${col}15">
-                      ${tc} • Risk: ${p.risk_score ?? '—'}/10
-                    </span>
-                    ${p._triage_upgraded_by_score ? `<span class="text-[10px] font-bold text-urgent bg-urgent/10 border border-urgent/30 rounded-full px-2 py-0.5">⚠️ AUTO-UPGRADED</span>` : ''}
-                    <span class="text-[10px] text-text3">${mts.subtitle}</span>
-                  </div>
+        <div class="rounded-xl border border-slate-700/50 bg-slate-800/40 backdrop-blur-sm overflow-hidden triage-${tc} patient-card-modern" id="card-${pid}" style="border-left: 4px solid ${col}">
+          <!-- MODERN HEADER -->
+          <div class="p-5">
+            <div class="flex items-start gap-5">
+              <!-- Larger Photo with Triage Badge -->
+              <div class="relative shrink-0">
+                <img src="${h(photo)}" alt="Patient" class="w-20 h-20 rounded-2xl object-cover border-2 border-slate-600/50 shadow-lg hover:border-cyan/50 transition-all cursor-pointer" onclick="openMediaLightbox('${h(photo)}','${h(pid)}',0)" />
+                <div class="absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm" style="background:${col};color:#000;border:1px solid ${col}">
+                  ${tc}
                 </div>
               </div>
-              <div class="text-right shrink-0">
-                <div data-eta="${h(pid)}" class="text-3xl font-bold mono ${etaCls}">${eta != null ? eta : '—'}</div>
-                <div class="text-[10px] text-text3 uppercase tracking-wider">minutes ETA</div>
-                <div class="mt-2"><span data-status-pill="${h(pid)}" class="inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider" style="background:${status === 'discharged' ? 'rgba(16,185,129,.15)' : status === 'in_treatment' ? 'rgba(139,92,246,.15)' : 'rgba(96,165,250,.15)'};color:${status === 'discharged' ? '#10b981' : status === 'in_treatment' ? '#a78bfa' : '#60a5fa'}">${STATUS_LABEL[status] || status}</span></div>
+
+              <!-- Patient Info -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-xl font-bold text-white truncate patient-name">${h(p.full_name || pid)}</h3>
+                      ${p.assigned_doctor ? `
+                      <span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan/20 text-cyan border border-cyan/30">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        ${h(p.assigned_doctor)}
+                      </span>
+                      ` : ''}
+                    </div>
+                    <p class="text-text2 text-base truncate mt-1">${h(p.chief_complaint || 'No complaint recorded')}</p>
+                    ${p.doctor_assigned_at ? `
+                    <p class="text-[10px] text-cyan/70 mt-0.5">Assigned at ${new Date(p.doctor_assigned_at).toLocaleTimeString()}</p>
+                    ` : ''}
+                    <!-- Level and Risk Badge -->
+                    <div class="flex items-center gap-2 mt-2">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style="background:${col}20;color:${col};border:1px solid ${col}60">
+                        <span>Level ${lvl}</span>
+                        <span class="w-px h-3 bg-current opacity-40"></span>
+                        <span>Risk: ${p.risk_score ?? '—'}/10</span>
+                      </span>
+                      ${p._triage_upgraded_by_score ? `<span class="text-[10px] font-bold text-urgent bg-urgent/15 border border-urgent/30 rounded-full px-2 py-0.5">⚠️ AUTO-UPGRADED</span>` : ''}
+                    </div>
+                  </div>
+                  <!-- Compact ETA & Status -->
+                  <div class="text-right shrink-0 flex flex-col items-end">
+                    <div class="flex items-baseline gap-1">
+                      <span data-eta="${h(pid)}" class="text-2xl font-bold mono ${etaCls}">${eta != null ? eta : '—'}</span>
+                      <span class="text-xs text-text3">min</span>
+                    </div>
+                    <span data-status-pill="${h(pid)}" class="inline-block rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider mt-1" style="background:${status === 'discharged' ? 'rgba(16,185,129,.2)' : status === 'in_treatment' ? 'rgba(139,92,246,.2)' : 'rgba(96,165,250,.2)'};color:${status === 'discharged' ? '#34d399' : status === 'in_treatment' ? '#c4b5fd' : '#93c5fd'}">${STATUS_LABEL[status] || status}</span>
+                  </div>
+                </div>
+
+                <!-- ETA Progress -->
+                <div class="mt-3 rounded-full bg-slate-700/40 h-1.5 overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-500" style="width:${eta != null ? Math.min(100, Math.max(3, 100 - (eta / 60) * 100)) : (status === 'arrived' || status === 'in_treatment' || status === 'discharged' ? 100 : 0)}%;background:${col}"></div>
+                </div>
+
+                <!-- Vitals Row - Larger Text -->
+                <div class="flex flex-wrap items-center gap-2 mt-3 text-sm">
+                  <span class="text-text3 text-xs uppercase tracking-wider">Vitals:</span>
+                  <span class="font-medium text-text1">${h(age)}<span class="text-xs text-text3">y</span></span>
+                  <span class="text-slate-600">•</span>
+                  <span class="font-medium text-text1">BMI ${h(bmi)}</span>
+                  <span class="text-slate-600">•</span>
+                  <span class="font-medium text-emer">${h(blood)}</span>
+                  ${allergyText !== 'None Identified' ? `<span class="text-slate-600">•</span><span class="font-medium text-urgent flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>${h(allergyText)}</span>` : ''}
+                </div>
               </div>
             </div>
 
-            <!-- ETA Progress Bar -->
-            <div class="mb-4 rounded-full bg-slate-700/40 h-1.5 overflow-hidden">
-              <div class="h-full rounded-full transition-all duration-500" style="width:${eta != null ? Math.min(100, Math.max(3, 100 - (eta / 60) * 100)) : (status === 'arrived' || status === 'in_treatment' || status === 'discharged' ? 100 : 0)}%;background:${col}"></div>
-            </div>
-
-            <!-- Vitals + Allergy Row -->
-            <div class="flex flex-wrap gap-2 mb-4">
-              <div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">🎂</span><div><span class="text-[10px] uppercase tracking-wider text-text3">Age</span><span class="text-sm font-semibold ml-1">${h(age)}${typeof age === 'number' ? '<span class="text-xs text-text3">y</span>' : ''}</span></div></div>
-              <div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">⚖️</span><div><span class="text-[10px] uppercase tracking-wider text-text3">BMI</span><span class="text-sm font-semibold ml-1">${h(bmi)}</span></div></div>
-              <div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">🩸</span><div><span class="text-[10px] uppercase tracking-wider text-text3">Blood</span><span class="text-sm font-semibold ml-1 text-emer">${h(blood)}</span></div></div>
-              <div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">📏</span><div><span class="text-[10px] uppercase tracking-wider text-text3">Height</span><span class="text-sm font-semibold ml-1">${h(heightVal)}</span></div></div>
-              ${weight !== '—' ? `<div class="flex items-center gap-1.5 bg-surface/60 rounded-lg px-2.5 py-1.5 border border-slate-700/50"><span class="text-base">🏋️</span><div><span class="text-[10px] uppercase tracking-wider text-text3">Weight</span><span class="text-sm font-semibold ml-1">${h(weight)}</span></div></div>` : ''}
-              ${allergyText !== 'None Identified' ? `<div class="flex items-center gap-1.5 bg-urgent/10 rounded-lg px-2.5 py-1.5 border border-urgent/30"><span class="text-base">⚠️</span><div><span class="text-[10px] uppercase tracking-wider text-urgent">Allergies</span><span class="text-sm font-semibold ml-1 text-urgent">${h(allergyText)}</span></div></div>` : ''}
-            </div>
-
+            <!-- Collapsible Red Flags -->
             ${flags.length > 0 ? `
-            <div class="mb-4 rounded-xl bg-gradient-to-r from-emer/15 to-emer/5 border border-emer/30 p-3">
-              <div class="text-[10px] font-bold uppercase tracking-wider text-emer mb-1.5">🚨 CRITICAL RED FLAGS (${flags.length})</div>
-              <div class="text-sm text-emer/90 font-semibold">${flags.map(f => h(f.replace(/_/g, ' '))).join(' • ')}</div>
+            <div class="mt-4 rounded-lg border-l-3 p-3" style="border-color:${col};background:linear-gradient(90deg, ${col}15, transparent);border-left-width:3px">
+              <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('svg:last-child').classList.toggle('rotate-180')" class="flex items-center gap-2 w-full text-left">
+                <svg class="w-5 h-5 text-emer transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <span class="text-sm font-bold text-emer">${flags.length} Critical Flag${flags.length > 1 ? 's' : ''}</span>
+                <svg class="w-4 h-4 text-text3 ml-auto transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div class="hidden mt-2 pt-2 border-t border-slate-700/30">
+                <p class="text-sm text-emer/90 font-medium leading-relaxed">${flags.map(f => h(f.replace(/_/g, ' '))).join(' • ')}</p>
+              </div>
             </div>` : ''}
 
-            <!-- Action Buttons -->
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full animate-pulse" style="background:${col}"></span>
-                  <span class="text-xs text-text2">${STATUS_MAP[status] || status}</span>
-                </div>
-                <div class="text-xs text-text3">ID: ${h(pid.slice(0, 8))}</div>
-                ${nat ? `<span class="text-xs text-text3">${FLAG_EMOJI[nat] || ''} ${h(nat)}</span>` : ''}
-                ${dest ? `<div class="text-xs text-text3">→ ${h(dest)}</div>` : ''}
+            <!-- Modern Action Bar -->
+            <div class="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-700/30">
+              <div class="flex items-center gap-2 text-xs text-text3">
+                <span class="w-2 h-2 rounded-full animate-pulse" style="background:${col}"></span>
+                <span class="font-medium">${STATUS_MAP[status] || status}</span>
+                <span class="text-slate-600">|</span>
+                <span class="mono">${h(pid.slice(0, 8))}</span>
+                ${nat ? `<span class="text-slate-600">|</span><span>${FLAG_EMOJI[nat] || ''} ${h(nat)}</span>` : ''}
               </div>
-              <div class="flex gap-2 ml-auto">
-                <button onclick="alertTeam('${h(pid)}')" class="flex items-center gap-1 rounded-lg bg-emer/15 border border-emer/40 px-2.5 py-1.5 text-xs font-semibold text-emer hover:bg-emer/25 transition-all"><span>🚨</span> Alert</button>
-                <button onclick="assignBed('${h(pid)}')" class="flex items-center gap-1 rounded-lg bg-urgent/15 border border-urgent/40 px-2.5 py-1.5 text-xs font-semibold text-urgent hover:bg-urgent/25 transition-all"><span>🏥</span> Bed</button>
-                <button onclick="viewRoute('${h(pid)}')" class="flex items-center gap-1 rounded-lg bg-cyan/15 border border-cyan/40 px-2.5 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/25 transition-all"><span>🗺️</span> Route</button>
-                <button data-toggle="${h(pid)}" class="flex items-center gap-1.5 rounded-lg bg-surface border border-slate-600 px-3 py-1.5 text-xs text-text2 hover:border-cyan/50 hover:text-cyan transition-all"><span>📋</span> Details <span class="text-[10px]">▼</span></button>
+              <div class="flex items-center gap-2">
+                <button onclick="alertTeam('${h(pid)}')" class="flex items-center gap-1.5 rounded-md bg-emer/10 border border-emer/30 px-3 py-1.5 text-xs font-semibold text-emer hover:bg-emer/20 transition-all" title="Doctor Assign">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                  <span>Doctor Assign</span>
+                </button>
+                <button onclick="assignBed('${h(pid)}')" class="flex items-center gap-1.5 rounded-md bg-urgent/10 border border-urgent/30 px-3 py-1.5 text-xs font-semibold text-urgent hover:bg-urgent/20 transition-all" title="Assign Bed">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                  <span>Bed Planning</span>
+                </button>
+                <button onclick="viewRoute('${h(pid)}')" class="flex items-center gap-1.5 rounded-md bg-cyan/10 border border-cyan/30 px-3 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/20 transition-all" title="View Route">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                  <span>See Map</span>
+                </button>
+                <button data-toggle="${h(pid)}" class="flex items-center gap-1.5 rounded-md bg-slate-700/50 border border-slate-600 px-3 py-1.5 text-xs font-semibold text-text2 hover:border-cyan/50 hover:text-cyan transition-all ml-1">
+                  <span>Details</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
               </div>
             </div>
           </div>
@@ -2651,9 +4137,9 @@
               <button data-pid="${h(pid)}" data-tab="summary" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>🤖</span> AI Summary</button>
               <button data-pid="${h(pid)}" data-tab="triage" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>🏥</span> Triage Review</button>
               <button data-pid="${h(pid)}" data-tab="history" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>🗂️</span> Medical History</button>
+              <button data-pid="${h(pid)}" data-tab="actions" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>📊</span> Actions</button>
               <button data-pid="${h(pid)}" data-tab="prep" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>⚡</span> Pre-Arrival</button>
               ${clinicalReport ? `<button data-pid="${h(pid)}" data-tab="doctor" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>🩺</span> AiVoN Report</button>` : ''}
-              <button data-pid="${h(pid)}" data-tab="media" class="dtab-btn flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-text2 hover:text-text1 hover:bg-surface2/50 whitespace-nowrap"><span>📸</span> Media</button>
             </div>
 
             <!-- TAB: This Visit -->
@@ -2798,6 +4284,46 @@
               <div class="animate-pulse text-text2">Loading medical history...</div>
             </div>
             
+            <!-- Tab Content: Actions -->
+            <div id="dtab-${pid}-actions" class="dtab-content hidden p-4 space-y-4">
+              <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">📊</span>
+                    <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Action History</span>
+                  </div>
+                  <button onclick="openMessageModal('${h(pid)}')" class="text-xs bg-green-500/20 border border-green-500/30 text-green-400 px-3 py-1.5 rounded-lg hover:bg-green-500/30 transition-all">
+                    💬 Send Message
+                  </button>
+                </div>
+                
+                <!-- Statistics -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30">
+                    <div class="text-[10px] uppercase text-text3">Time to Doctor</div>
+                    <div class="text-sm font-semibold text-cyan" id="stats-time-to-doctor-${h(pid)}">—</div>
+                  </div>
+                  <div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30">
+                    <div class="text-[10px] uppercase text-text3">Time to Arrival</div>
+                    <div class="text-sm font-semibold text-amber-400" id="stats-time-to-arrival-${h(pid)}">—</div>
+                  </div>
+                  <div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30">
+                    <div class="text-[10px] uppercase text-text3">Hospital Stay</div>
+                    <div class="text-sm font-semibold text-purple-400" id="stats-hospital-stay-${h(pid)}">—</div>
+                  </div>
+                  <div class="rounded-lg bg-surface/60 p-2.5 border border-slate-700/30">
+                    <div class="text-[10px] uppercase text-text3">Messages</div>
+                    <div class="text-sm font-semibold text-green-400" id="stats-messages-${h(pid)}">—</div>
+                  </div>
+                </div>
+                
+                <!-- Timeline -->
+                <div id="action-timeline-${h(pid)}" class="space-y-2">
+                  <div class="text-xs text-text3 italic">No actions recorded yet</div>
+                </div>
+              </div>
+            </div>
+            
             <!-- Tab Content: Pre-Arrival Prep -->
             <div id="dtab-${pid}-prep" class="dtab-content hidden p-4 space-y-4">
               <!-- Checklist from buildPrep -->
@@ -2871,12 +4397,6 @@
               ${!clinicalReport && !sourceGuidelines.length ? '<p class="text-sm text-text3 italic">No AiVoN clinical report available for this patient.</p>' : ''}
             </div>
 
-            <!-- Tab Content: Media -->
-            <div id="dtab-${pid}-media" class="dtab-content hidden p-4">
-              <div class="flex gap-2 flex-wrap" id="media-${pid}">
-                <div class="text-text2 text-sm">Loading media...</div>
-              </div>
-            </div>
           </div>
         </div>
       `;
@@ -2886,22 +4406,40 @@
       const pid = p.patient_id || '';
       const lvl = normalizeTriage(p.triage_level);
       const tc = TRIAGE_CLASS[lvl] || 'U';
+      const col = TRIAGE_COLOR[lvl] || '#f59e0b';
       const eta = p.eta_minutes;
       const etaCls = eta && eta <= 5 ? 'text-emer' : eta && eta <= 10 ? 'text-urgent' : 'text-text2';
+      const photo = p.profile_photo_url || `https://i.pravatar.cc/100?u=${encodeURIComponent(pid)}`;
+      const status = p.status || 'incoming';
       return `
-        <div class="flex items-center justify-between p-3 rounded-lg bg-surface2/40 border border-slate-700/30 triage-${tc} cursor-pointer" onclick="toggleCompactDetail('${h(pid)}')">
-          <div class="flex items-center gap-3">
-            <span class="chip triage-${tc}" style="color:${TRIAGE_COLOR[lvl]};border-color:${TRIAGE_COLOR[lvl]}66">${tc}</span>
-            <span class="font-medium">${h(p.full_name || pid)}</span>
-            <span class="text-sm text-text2">${h(p.chief_complaint || '').substring(0, 30)}${p.chief_complaint?.length > 30 ? '...' : ''}</span>
-          </div>
-          <div class="flex items-center gap-3">
-            ${p.risk_score != null ? `<span class="chip text-xs" style="color:${TRIAGE_COLOR[lvl]}">⚡${p.risk_score}</span>` : ''}
-            <span class="${etaCls} font-bold">${eta != null ? eta + 'm' : '—'}</span>
-            <span class="text-xs text-text2">▼</span>
+        <div class="rounded-lg border border-slate-700/40 bg-slate-800/30 overflow-hidden cursor-pointer hover:bg-slate-800/50 transition-all compact-card-modern" style="border-left: 3px solid ${col}" id="compact-${pid}" onclick="toggleCompactDetail('${h(pid)}')">
+          <div class="flex items-center gap-3 p-3">
+            <!-- Small Photo -->
+            <img src="${h(photo)}" alt="Patient" class="w-10 h-10 rounded-lg object-cover border border-slate-600/50 shrink-0" />
+
+            <!-- Main Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-sm text-white truncate">${h(p.full_name || pid)}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style="background:${col}20;color:${col};border:1px solid ${col}50">${tc}</span>
+                ${p._triage_upgraded_by_score ? `<svg class="w-3.5 h-3.5 text-urgent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>` : ''}
+              </div>
+              <p class="text-xs text-text2 truncate mt-0.5">${h(p.chief_complaint || 'No complaint recorded')}</p>
+            </div>
+
+            <!-- Right Side: ETA & Status -->
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="text-right">
+                <div class="text-lg font-bold mono ${etaCls} leading-none">${eta != null ? eta : '—'}</div>
+                <div class="text-[9px] text-text3 uppercase">min</div>
+              </div>
+              <div class="w-px h-6 bg-slate-700/50"></div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style="background:${status === 'discharged' ? 'rgba(16,185,129,.15)' : status === 'in_treatment' ? 'rgba(139,92,246,.15)' : 'rgba(96,165,250,.15)'};color:${status === 'discharged' ? '#34d399' : status === 'in_treatment' ? '#c4b5fd' : '#93c5fd'}">${STATUS_LABEL[status] || status}</span>
+              <svg class="w-4 h-4 text-text3 transition-transform" id="compact-chevron-${pid}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
           </div>
         </div>
-        <div id="compact-det-${pid}" class="hidden border-x border-b border-slate-700/30 rounded-b-lg p-3 bg-surface2/20"></div>
+        <div id="compact-det-${pid}" class="hidden border-x border-b border-slate-700/30 rounded-b-lg p-3 bg-slate-800/20 mx-1 mb-1"></div>
       `;
     }
 
@@ -2912,10 +4450,12 @@
 
     function toggleCompactDetail(pid) {
       const det = document.getElementById('compact-det-' + pid);
+      const chevron = document.getElementById('compact-chevron-' + pid);
       if (!det) return;
       const isOpen = !det.classList.contains('hidden');
       if (isOpen) {
         det.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
       } else {
         const p = _patientCache[pid];
         if (p && !det.dataset.loaded) {
@@ -2925,32 +4465,46 @@
           const flags = (p.red_flags || []).filter(f => f && f !== 'none_identified');
           const asmt = (() => { const r = p.assessment; if (!r) return ''; if (typeof r === 'object') return r.patient_summary_en || r.clinical_report || r.summary || ''; return String(r); })();
           det.innerHTML = `
-            <div class="space-y-2 pt-1">
-              <!-- Vitals row -->
-              <div class="flex flex-wrap gap-1.5">
-                ${p.age != null ? `<span class="chip text-xs">🎂 ${p.age}y</span>` : ''}
-                ${p.sex ? `<span class="chip text-xs">${p.sex === 'female' ? '♀' : '♂'}</span>` : ''}
-                ${p.blood_type ? `<span class="chip text-xs text-emer border-emer/30">🩸 ${h(p.blood_type)}</span>` : ''}
-                ${p.weight_kg ? `<span class="chip text-xs">⚖️ ${p.weight_kg}kg</span>` : ''}
-                ${allergyText !== 'None Identified' ? `<span class="chip text-xs text-urgent border-urgent/30">⚠️ ${h(allergyText)}</span>` : ''}
-                ${p.nationality ? `<span class="chip text-xs">${FLAG_EMOJI[p.nationality] || ''} ${h(p.nationality)}</span>` : ''}
+            <div class="space-y-2">
+              <!-- Compact Vitals -->
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                <span class="text-text3">Vitals:</span>
+                <span class="text-text1">${p.age != null ? p.age + 'y' : '—'}</span>
+                <span class="text-slate-600">•</span>
+                <span class="text-text1">${p.sex === 'female' ? '♀' : p.sex === 'male' ? '♂' : '⚤'}</span>
+                <span class="text-slate-600">•</span>
+                <span class="text-emer font-medium">${p.blood_type || '—'}</span>
+                ${allergyText !== 'None Identified' ? `<span class="text-slate-600">•</span><span class="text-urgent font-medium flex items-center gap-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>${h(allergyText)}</span>` : ''}
+                ${p.nationality ? `<span class="text-slate-600">•</span><span class="text-text2">${FLAG_EMOJI[p.nationality] || ''} ${h(p.nationality)}</span>` : ''}
               </div>
-              <!-- Red flags -->
-              ${flags.length ? `<div class="text-xs text-emer font-semibold">🚨 ${flags.map(f => f.replace(/_/g,' ')).join(' • ')}</div>` : ''}
+
+              <!-- Red flags - compact -->
+              ${flags.length ? `
+              <div class="flex items-start gap-1.5 rounded-md p-2" style="background:${col}10;border-left:2px solid ${col}">
+                <svg class="w-4 h-4 text-emer shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <p class="text-xs text-emer font-medium">${flags.map(f => h(f.replace(/_/g,' '))).join(' • ')}</p>
+              </div>` : ''}
+
               <!-- AI summary -->
               ${asmt ? `<div class="text-xs text-text2 leading-relaxed line-clamp-2 border-l-2 border-cyan/30 pl-2">${h(asmt)}</div>` : ''}
-              <!-- Quick actions -->
-              <div class="flex flex-wrap gap-1.5 pt-1 border-t border-slate-700/30">
-                <button onclick="setStatus('${h(pid)}','in_treatment')" class="rounded-lg bg-violet-500/15 border border-violet-400/40 px-2.5 py-1 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition-all">💊 In Treatment</button>
-                <button onclick="confirmDischarge('${h(pid)}',this)" class="rounded-lg bg-stable/15 border border-stable/40 px-2.5 py-1 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✓ Discharge</button>
-                <button onclick="alertTeam('${h(pid)}')" class="rounded-lg bg-emer/15 border border-emer/40 px-2.5 py-1 text-xs text-emer hover:bg-emer/25 transition-all">🚨 Alert</button>
-                <button onclick="viewRoute('${h(pid)}')" class="rounded-lg bg-cyan/15 border border-cyan/40 px-2.5 py-1 text-xs text-cyan hover:bg-cyan/25 transition-all">🗺️ Route</button>
-                <button onclick="toggleCompactMode(); toggleDet('${h(pid)}')" class="rounded-lg bg-surface border border-slate-600 px-2.5 py-1 text-xs text-text2 hover:border-cyan/50 transition-all ml-auto">📋 Full Details</button>
+
+              <!-- Modern Quick Actions -->
+              <div class="flex items-center gap-1.5 pt-2 border-t border-slate-700/30">
+                <button onclick="event.stopPropagation(); setStatus('${h(pid)}','in_treatment')" class="flex-1 rounded-md bg-violet-500/10 border border-violet-400/30 px-2 py-1 text-[11px] font-medium text-violet-300 hover:bg-violet-500/20 transition-all">In Treatment</button>
+                <button onclick="event.stopPropagation(); confirmDischarge('${h(pid)}',this)" class="flex-1 rounded-md bg-stable/10 border border-stable/30 px-2 py-1 text-[11px] font-medium text-stable hover:bg-stable/20 transition-all">Discharge</button>
+                <button onclick="event.stopPropagation(); alertTeam('${h(pid)}')" class="rounded-md bg-emer/10 border border-emer/30 p-1 text-emer hover:bg-emer/20 transition-all" title="Alert">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                </button>
+                <button onclick="event.stopPropagation(); viewRoute('${h(pid)}')" class="rounded-md bg-cyan/10 border border-cyan/30 p-1 text-cyan hover:bg-cyan/20 transition-all" title="Route">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                </button>
+                <button onclick="event.stopPropagation(); toggleCompactMode(); toggleDet('${h(pid)}')" class="rounded-md bg-slate-700/50 border border-slate-600 px-2 py-1 text-[11px] text-text2 hover:border-cyan/50 hover:text-cyan transition-all">Full →</button>
               </div>
             </div>`;
           det.dataset.loaded = '1';
         }
         det.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
       }
     }
 
@@ -2984,6 +4538,10 @@
         if (tab === 'media' && !selected.dataset.loaded) {
           loadMediaForPatient(pid, selected);
         }
+        // Load action history if needed (actions tab)
+        if (tab === 'actions' && !selected.dataset.loaded) {
+          loadActionHistory(pid, selected);
+        }
         selected.dataset.loaded = '1';
       }
       // Update button styles
@@ -2994,6 +4552,80 @@
       });
       btn.classList.add('active', 'bg-cyan/20', 'text-cyan', 'border-cyan/30');
       btn.classList.remove('text-text2');
+    }
+
+    function loadActionHistory(pid, container) {
+      const stats = calculatePatientStatistics(pid);
+      const actions = getPatientActions(pid);
+      
+      // Update statistics
+      if (stats) {
+        const timeToDoctorEl = document.getElementById(`stats-time-to-doctor-${pid}`);
+        const timeToArrivalEl = document.getElementById(`stats-time-to-arrival-${pid}`);
+        const hospitalStayEl = document.getElementById(`stats-hospital-stay-${pid}`);
+        const messagesEl = document.getElementById(`stats-messages-${pid}`);
+        
+        if (timeToDoctorEl) {
+          timeToDoctorEl.textContent = stats.timeToDoctor !== null ? `${stats.timeToDoctor.toFixed(0)} min` : '—';
+        }
+        if (timeToArrivalEl) {
+          timeToArrivalEl.textContent = stats.timeToArrival !== null ? `${stats.timeToArrival.toFixed(0)} min` : '—';
+        }
+        if (hospitalStayEl) {
+          hospitalStayEl.textContent = stats.hospitalStayDuration !== null ? `${stats.hospitalStayDuration.toFixed(0)} min` : '—';
+        }
+        if (messagesEl) {
+          messagesEl.textContent = stats.messagesCount > 0 ? stats.messagesCount : '—';
+        }
+      }
+      
+      // Update timeline
+      const timelineEl = document.getElementById(`action-timeline-${pid}`);
+      if (timelineEl) {
+        if (actions.length > 0) {
+          timelineEl.innerHTML = actions.map(action => {
+            const actionTypeColors = {
+              patient_entry: 'text-blue-400',
+              doctor_assigned: 'text-cyan-400',
+              patient_arrived: 'text-green-400',
+              bed_assigned: 'text-purple-400',
+              message_sent: 'text-amber-400',
+              triage_changed: 'text-urgent',
+              discharged: 'text-stable'
+            };
+            const actionTypeIcons = {
+              patient_entry: '📥',
+              doctor_assigned: '👨‍⚕️',
+              patient_arrived: '🏥',
+              bed_assigned: '🛏️',
+              message_sent: '💬',
+              triage_changed: '🔄',
+              discharged: '✅'
+            };
+            const color = actionTypeColors[action.type] || 'text-text2';
+            const icon = actionTypeIcons[action.type] || '📌';
+            
+            return `
+            <div class="flex items-start gap-3 p-3 rounded-lg bg-surface/60 border border-slate-700/30">
+              <div class="w-8 h-8 rounded-full bg-surface2 flex items-center justify-center shrink-0">
+                <span class="text-sm">${icon}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xs font-semibold ${color}">${action.type.replace(/_/g, ' ').toUpperCase()}</span>
+                  <span class="text-[10px] text-text3">${new Date(action.timestamp).toLocaleString()}</span>
+                </div>
+                <p class="text-xs text-text2">${action.message || 'No details'}</p>
+                ${action.bedId ? `<p class="text-[10px] text-text3 mt-1">Bed: ${action.bedId}</p>` : ''}
+                ${action.from && action.to ? `<p class="text-[10px] text-text3 mt-1">Triage: ${action.from} → ${action.to}</p>` : ''}
+              </div>
+            </div>
+            `;
+          }).join('');
+        } else {
+          timelineEl.innerHTML = '<div class="text-xs text-text3 italic">No actions recorded yet</div>';
+        }
+      }
     }
 
     async function loadHealthRecord(pid, container) {
@@ -3011,22 +4643,22 @@
             <!-- Vitals Summary -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
-                <div class="text-2xl mb-1">🩸</div>
+                <div class="flex justify-center mb-2"><svg class="w-6 h-6 text-emer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
                 <div class="text-lg font-bold">${h(rec.blood_type || '—')}</div>
                 <div class="text-[10px] uppercase tracking-wider text-text3">Blood Type</div>
               </div>
               <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
-                <div class="text-2xl mb-1">⚖️</div>
+                <div class="flex justify-center mb-2"><svg class="w-6 h-6 text-text2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg></div>
                 <div class="text-lg font-bold">${h(rec.weight_kg ? rec.weight_kg + ' <span class="text-xs text-text3">kg</span>' : '—')}</div>
                 <div class="text-[10px] uppercase tracking-wider text-text3">Weight</div>
               </div>
               <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
-                <div class="text-2xl mb-1">📏</div>
+                <div class="flex justify-center mb-2"><svg class="w-6 h-6 text-text2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg></div>
                 <div class="text-lg font-bold">${h(rec.height_cm ? rec.height_cm + ' <span class="text-xs text-text3">cm</span>' : '—')}</div>
                 <div class="text-[10px] uppercase tracking-wider text-text3">Height</div>
               </div>
               <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
-                <div class="text-2xl mb-1">📊</div>
+                <div class="flex justify-center mb-2"><svg class="w-6 h-6 text-text2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
                 <div class="text-lg font-bold">${h(bmi)}</div>
                 <div class="text-[10px] uppercase tracking-wider text-text3">BMI</div>
               </div>
@@ -3208,62 +4840,77 @@
     }
 
     // ── KPI FILTERING ────────────────────────────────────────────
-    function toggleKpiFilter(filter) {
-      const same = activeKpiFilter === filter;
-      activeKpiFilter = same ? null : filter;
+    // ── TOP KPI CARD CLICK ───────────────────────────────────────
+    function setTopFilter(filter) {
+      const same = activeTopFilter === filter;
+      activeTopFilter = same ? null : filter;
+      activeTriageFilter = null; // always reset sub-filter when top context changes
 
-      // Clear all active highlights
+      // Clear ALL highlights
       document.querySelectorAll('.kpi-active').forEach(el => el.classList.remove('kpi-active'));
-      document.querySelectorAll('.triage-chip').forEach(c => {
-        c.style.outline = '';
-        c.style.boxShadow = '';
-      });
+      document.querySelectorAll('.triage-chip').forEach(c => { c.style.outline = ''; c.style.boxShadow = ''; });
 
-      if (activeKpiFilter) {
-        // Highlight matching KPI card
-        const cardMap = { all:'kpi-total', en_route:'kpi-queue', emergency:'kpi-emergency',
-          urgent:'kpi-urgent', standard:'kpi-routine', in_treatment:'kpi-treatment', discharged:'kpi-treated' };
-        const chipMap = { immediate:'chip-immediate', emergency:'chip-emergency', urgent:'chip-urgent',
-          standard:'chip-standard', non_urgent:'chip-non_urgent' };
-        const cardId = cardMap[activeKpiFilter];
-        if (cardId) document.getElementById(cardId)?.classList.add('kpi-active');
-        const chipId = chipMap[activeKpiFilter];
-        if (chipId) {
-          const chip = document.getElementById(chipId);
-          if (chip) { chip.style.outline = '2px solid currentColor'; chip.style.boxShadow = '0 0 8px currentColor'; }
-          // Also highlight parent In Queue card
-          document.getElementById('kpi-queue')?.classList.add('kpi-active');
-        }
-        // Switch to incoming tab
-        if (state.activeTab !== 'incoming') switchTab('incoming');
+      // Highlight selected top card
+      if (activeTopFilter) {
+        const cardMap = { all:'kpi-total', en_route:'kpi-enroute', in_treatment:'kpi-treatment', discharged:'kpi-treated' };
+        document.getElementById(cardMap[activeTopFilter])?.classList.add('kpi-active');
+        if (state.activeTab !== 'dashboard') switchTab('dashboard');
       }
 
-      if (!activeKpiFilter || activeKpiFilter === 'all') {
-        renderIncomingLists();
-      } else if (['discharged', 'in_treatment'].includes(activeKpiFilter)) {
-        fetchFilteredStatus(activeKpiFilter);
-      } else {
-        // Triage/route instant filter on current patient list
-        const triageMap = { immediate:'IMMEDIATE', emergency:'EMERGENCY', urgent:'URGENT',
-          standard:'STANDARD', non_urgent:'NON_URGENT' };
-        const targetTriage = triageMap[activeKpiFilter];
-        const filtered = state.patients.filter(p => {
-          const lvl = normalizeTriage(p.triage_level);
-          if (activeKpiFilter === 'en_route') return p.status === 'incoming' || p.status === 'en_route' || p.status === 'arrived';
-          if (targetTriage) return lvl === targetTriage;
-          return true;
-        });
-        renderPatientList(filtered);
-      }
+      // Save selected KPI filter to localStorage
+      localStorage.setItem('selectedKpiFilter', activeTopFilter || 'all');
+
+      // Breakdown reflects the top context; list reflects top+triage
+      updateTriageBreakdown(activeTopFilter || 'all');
+      // Update triage chart with filtered data
+      updateTriageChartForFilter(activeTopFilter || 'all');
+      applyCurrentFilter();
     }
+
+    // ── TRIAGE CHIP CLICK ────────────────────────────────────────
+    function setTriageFilter(filter) {
+      const same = activeTriageFilter === filter;
+      activeTriageFilter = same ? null : filter;
+
+      // Only touch chip highlights — top card highlight stays unchanged
+      document.querySelectorAll('.triage-chip').forEach(c => { c.style.outline = ''; c.style.boxShadow = ''; });
+      if (activeTriageFilter) {
+        const chipMap = { immediate:'chip-immediate', emergency:'chip-emergency', urgent:'chip-urgent',
+                          standard:'chip-standard', non_urgent:'chip-non_urgent' };
+        const chip = document.getElementById(chipMap[activeTriageFilter]);
+        if (chip) { chip.style.outline = '2px solid currentColor'; chip.style.boxShadow = '0 0 8px currentColor'; }
+        if (state.activeTab !== 'dashboard') switchTab('dashboard');
+      }
+
+      // Breakdown does NOT change — it still shows the top-context distribution
+      // Only the list below gets filtered
+      applyCurrentFilter();
+    }
+
+    // Legacy alias kept for any external calls
+    function toggleKpiFilter(filter) { setTopFilter(filter); }
 
     async function fetchFilteredStatus(statusFilter) {
       const el = document.getElementById('incoming-list');
-      el.innerHTML = '<div class="text-center py-8 text-text2"><div class="animate-pulse">Loading...</div></div>';
+      if (!el) return;
+      // Only show Loading spinner if the list has no patient cards yet (first load / filter switch)
+      const hasCards = el.querySelector('[id^="card-"]');
+      if (!hasCards) {
+        el.innerHTML = '<div class="text-center py-8 text-text2"><div class="animate-pulse">Loading...</div></div>';
+      }
       try {
-        const pts = await api(`/api/patients?limit=500&sort=${sortMode}&status=${encodeURIComponent(statusFilter)}`);
+        const url = statusFilter && statusFilter !== 'all'
+          ? `/api/patients?limit=500&sort=${sortMode}&status=${encodeURIComponent(statusFilter)}`
+          : `/api/patients?limit=500&sort=${sortMode}`;
+        const pts = await api(url);
         pts.forEach(p => { if (p.patient_id) _patientCache[p.patient_id] = p; });
+        // Store fetched patients so updateTriageBreakdown can use them
+        if (!state.filteredPatients) state.filteredPatients = {};
+        const key = statusFilter || 'all';
+        state.filteredPatients[key] = pts;
         renderPatientList(pts);
+        // Refresh triage breakdown using the freshly fetched data
+        updateTriageBreakdown(activeTopFilter || 'all');
       } catch(e) {
         el.innerHTML = '<div class="text-center py-8 text-text2">Failed to load patients</div>';
       }
@@ -3309,10 +4956,23 @@
     }
 
     // ── LANGUAGE SWITCHER ──────────────────────────────────────
-    function setLang(lang) {
+    function setLang(lang, btn) {
       if (!UI_STRINGS[lang]) return;
       _currentLang = lang;
-      toast('🌐 Language: ' + lang.toUpperCase(), 'ok');
+      // Update button active states
+      document.querySelectorAll('.lang-btn').forEach(b => {
+        const active = b.dataset.lang === lang;
+        b.classList.toggle('text-cyan', active);
+        b.classList.toggle('bg-cyan/20', active);
+        b.classList.toggle('text-text2', !active);
+      });
+      // Apply translations to all data-i18n elements
+      const strings = UI_STRINGS[lang];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (strings[key]) el.textContent = strings[key];
+      });
+      toast('🌐 ' + lang.toUpperCase(), 'ok');
     }
 
     // ── MEDIA LIGHTBOX ─────────────────────────────────────────
@@ -3439,11 +5099,13 @@
       if (btn) switchTab(btn.dataset.tab);
     });
     document.getElementById("search-input").addEventListener("input", renderIncomingLists);
-    document.getElementById("open-incoming-btn").addEventListener("click", () => switchTab("incoming"));
 
     window.alertTeam = alertTeam;
     window.assignBed = assignBed;
     window.viewRoute = viewRoute;
+    window.selectDoctor = selectDoctor;
+    window.assignSelectedDoctor = assignSelectedDoctor;
+    window.closeAlertModal = closeAlertModal;
     window.viewDoctor = viewDoctor;
     window.triageOverride = triageOverride;
     window.toggleDet = toggleDet;
@@ -3459,17 +5121,286 @@
     window.refreshAll = refreshAll;
     window.setLang = setLang;
     window.toggleKpiFilter = toggleKpiFilter;
+    window.setTopFilter = setTopFilter;
+    window.setTriageFilter = setTriageFilter;
     window.switchReportTab = switchReportTab;
     window.loadReports = loadReports;
     window.loadLiveStats = loadLiveStats;
     window.exportReportsCSV = exportReportsCSV;
     window.focusPatientOnMap = focusPatientOnMap;
+    window.renderBedManagementPanel = renderBedManagementPanel;
+    window.selectBed = selectBed;
+    window.assignSelectedBed = assignSelectedBed;
+    window.dischargePatient = dischargePatient;
+    window.openMessageModal = openMessageModal;
+    window.closeMessageModal = closeMessageModal;
+    window.sendMessage = sendMessage;
 
-    fetchMapsKey();
-    loadTheme();
-    tickClock();
-    refreshAll();
-    setInterval(refreshAll, 8000);
+    (async function init() {
+      fetchMapsKey();
+      loadTheme();
+      tickClock();
+      loadPatientActionsFromStorage();
+      
+      // Load saved KPI filter before refreshAll
+      const savedKpiFilter = localStorage.getItem('selectedKpiFilter');
+      if (savedKpiFilter && savedKpiFilter !== 'all') {
+        activeTopFilter = savedKpiFilter;
+      }
+      
+      await refreshAll();
+      loadBedAssignmentsFromStorage();
+      loadDoctorAssignmentsFromStorage();
+      
+      // Apply saved KPI filter after data is loaded
+      if (savedKpiFilter && savedKpiFilter !== 'all') {
+        console.log('Applying saved KPI filter:', activeTopFilter);
+        const cardMap = { all:'kpi-total', en_route:'kpi-enroute', in_treatment:'kpi-treatment', discharged:'kpi-treated' };
+        document.getElementById(cardMap[activeTopFilter])?.classList.add('kpi-active');
+        updateTriageBreakdown(activeTopFilter);
+        applyCurrentFilter();
+        
+        // Delay chart update to ensure chart is initialized
+        setTimeout(() => {
+          console.log('Attempting to update triage chart for filter:', activeTopFilter);
+          console.log('triageChart exists:', typeof triageChart !== 'undefined');
+          console.log('Chart container exists:', !!document.querySelector('#triage-chart-container'));
+          
+          // Calculate and log triage counts for this filter
+          const countFrom = (pts) => {
+            const b = {};
+            pts.forEach(p => { const l = normalizeTriage(p.triage_level); b[l] = (b[l] || 0) + 1; });
+            return b;
+          };
+          const pts = state.filteredPatients[activeTopFilter] || [];
+          const by = countFrom(pts);
+          console.log('Triage counts for filter', activeTopFilter, ':', by);
+          console.log('Number of patients:', pts.length);
+          
+          try {
+            updateTriageChartForFilter(activeTopFilter);
+            console.log('Triage chart updated successfully');
+          } catch (e) {
+            console.warn('Error updating triage chart:', e);
+          }
+        }, 1000);
+      }
+      
+      setInterval(refreshAll, 8000);
+    })();
+    
+    // Bed management filter event listeners
+    document.getElementById('bed-filter-department').addEventListener('change', renderBedManagementPanel);
+    document.getElementById('bed-filter-type').addEventListener('change', renderBedManagementPanel);
+    document.getElementById('bed-filter-status').addEventListener('change', renderBedManagementPanel);
   </script>
-</body>
+<!-- Alert Modal -->
+  <div id="alertModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass rounded-2xl p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold flex items-center gap-2">
+          <span class="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">!</span>
+          Doctor Assignment - Patient <span id="alertPatientId"></span>
+        </h2>
+        <button onclick="closeAlertModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Patient Info -->
+        <div class="space-y-4">
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+            <h3 class="font-semibold text-lg mb-2" id="alertPatientName">Loading...</h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Triage Level:</span>
+                <span id="alertTriageLevel" class="px-2 py-1 bg-amber-500/20 text-amber-400 rounded text-xs font-bold">Loading...</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Chief Complaint:</span>
+                <span id="alertChiefComplaint">Loading...</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Vitals:</span>
+                <span id="alertVitals">Loading...</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">ETA:</span>
+                <span id="alertETA" class="text-amber-400 font-bold">Loading...</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+            <p class="text-xs text-red-400 font-semibold">Recommended Specialization:</p>
+            <p class="text-sm text-red-300" id="alertRecommendation">Loading...</p>
+          </div>
+        </div>
+        
+        <!-- Doctor List -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold">Available Doctors</h3>
+            <span class="text-xs text-slate-400" id="availableDoctorsCount">Loading...</span>
+          </div>
+          
+          <div id="doctorList" class="space-y-3">
+            <!-- Doctor cards will be inserted here -->
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-3 mt-6">
+        <button onclick="closeAlertModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">Cancel</button>
+        <button id="assignDoctorBtn" onclick="assignSelectedDoctor()" class="px-6 py-2 bg-green-600 hover:bg-green-500 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Assign Doctor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bed Modal -->
+  <div id="bedModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass rounded-2xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold flex items-center gap-2">
+          <span class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">B</span>
+          Bed Assignment - Patient <span id="bedPatientId"></span>
+        </h2>
+        <button onclick="closeBedModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Patient Info -->
+      <div class="bg-slate-800/50 rounded-lg p-3 mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan/20 to-blue/20 border border-cyan/30 flex items-center justify-center text-sm font-bold text-cyan">
+            <span id="bedPatientInitials">—</span>
+          </div>
+          <div>
+            <p class="font-medium" id="bedPatientName">—</p>
+            <p class="text-xs text-text3" id="bedPatientComplaint">—</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Filter Bar -->
+      <div class="flex gap-3 mb-4 flex-wrap">
+        <select id="bedDepartmentFilter" onchange="filterBeds()" class="bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm">
+          <option value="">All Departments</option>
+          <option value="ER">Emergency Room</option>
+          <option value="ICU">Intensive Care</option>
+          <option value="General">General Ward</option>
+        </select>
+        <select id="bedTypeFilter" onchange="filterBeds()" class="bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm">
+          <option value="">All Bed Types</option>
+          <option value="ICU">ICU Bed</option>
+          <option value="ER">ER Bed</option>
+          <option value="General">General Bed</option>
+        </select>
+        <select id="bedEquipmentFilter" onchange="filterBeds()" class="bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm">
+          <option value="">Equipment Needed</option>
+          <option value="ventilator">Ventilator</option>
+          <option value="monitor">Monitor</option>
+          <option value="oxygen">Oxygen</option>
+        </select>
+      </div>
+      
+      <!-- Bed Grid -->
+      <div id="bedGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+        <!-- Bed cards will be inserted here -->
+      </div>
+      
+      <!-- Legend -->
+      <div class="flex gap-4 mt-4 text-xs">
+        <div class="flex items-center gap-1">
+          <div class="w-3 h-3 bg-green-500 rounded"></div>
+          <span>Available</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <div class="w-3 h-3 bg-red-500 rounded"></div>
+          <span>Occupied</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <div class="w-3 h-3 bg-amber-500 rounded"></div>
+          <span>Maintenance</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="text-slate-400">V=Ventilator, M=Monitor, O=Oxygen</span>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-3 mt-6">
+        <button onclick="closeBedModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">Cancel</button>
+        <button id="assignBedBtn" onclick="assignSelectedBed()" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Assign Bed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messaging Modal -->
+  <div id="messageModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold flex items-center gap-2">
+          <span class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">💬</span>
+          Doctor Communication - Patient <span id="messagePatientId"></span>
+        </h2>
+        <button onclick="closeMessageModal()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Patient Info -->
+      <div class="bg-slate-800/50 rounded-lg p-3 mb-4">
+        <div class="flex items-center gap-3">
+          <img id="messagePatientPhoto" src="" class="w-10 h-10 rounded-lg object-cover border-2 border-cyan/30" />
+          <div>
+            <p class="font-medium" id="messagePatientName">—</p>
+            <p class="text-xs text-text3" id="messagePatientComplaint">—</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Message History -->
+      <div class="bg-slate-800/30 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
+        <h3 class="text-sm font-semibold text-text3 mb-2">Message History</h3>
+        <div id="messageHistory" class="space-y-2">
+          <p class="text-xs text-text3 italic">No messages yet</p>
+        </div>
+      </div>
+      
+      <!-- New Message -->
+      <div class="space-y-3">
+        <div>
+          <label class="text-sm font-medium text-text2 mb-1 block">Message</label>
+          <textarea id="newMessageText" rows="3" class="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 text-sm resize-none" placeholder="Type your message to the patient..."></textarea>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium text-text2 mb-1 block">Update Triage Level (Optional)</label>
+          <select id="messageTriageLevel" class="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm">
+            <option value="">No Change</option>
+            <option value="IMMEDIATE">IMMEDIATE</option>
+            <option value="EMERGENCY">EMERGENCY</option>
+            <option value="URGENT">URGENT</option>
+            <option value="STANDARD">STANDARD</option>
+            <option value="NON_URGENT">NON_URGENT</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-3 mt-6">
+        <button onclick="closeMessageModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">Cancel</button>
+        <button onclick="sendMessage()" class="px-6 py-2 bg-green-600 hover:bg-green-500 rounded-lg font-semibold transition-colors">Send Message</button>
+      </div>
+    </div>
+  </div>
+
+  </body>
 </html>
