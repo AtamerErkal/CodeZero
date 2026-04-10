@@ -3706,12 +3706,12 @@
         // MTS 5-LEVEL CONSTANTS (v13)
         // ═══════════════════════════════════════════════════════════
         const MTS_META = {
-            IMMEDIATE:  { level:1, color:'#FF0000', textColor:'white',   cls:'imm',  badge:'lvl-imm',  emoji:'&#x1F534;', max_wait:0,   label:'IMMEDIATE',  subtitle:'Level 1 \u2014 MTS Red' },
-            EMERGENCY:  { level:2, color:'#FF8C00', textColor:'white',   cls:'emg',  badge:'lvl-emg',  emoji:'&#x1F7E0;', max_wait:10,  label:'EMERGENCY',  subtitle:'Level 2 \u2014 MTS Orange' },
-            URGENT:     { level:3, color:'#FFD700', textColor:'#1a1a2e', cls:'urg',  badge:'lvl-urg',  emoji:'&#x1F7E1;', max_wait:30,  label:'URGENT',     subtitle:'Level 3 \u2014 MTS Yellow' },
-            STANDARD:   { level:4, color:'#28A745', textColor:'white',   cls:'std',  badge:'lvl-std',  emoji:'&#x1F7E2;', max_wait:90,  label:'STANDARD',   subtitle:'Level 4 \u2014 MTS Green' },
-            NON_URGENT: { level:5, color:'#007BFF', textColor:'white',   cls:'nurg', badge:'lvl-nurg', emoji:'&#x1F535;', max_wait:120, label:'NON-URGENT', subtitle:'Level 5 \u2014 MTS Blue' },
-            ROUTINE:    { level:4, color:'#28A745', textColor:'white',   cls:'std',  badge:'lvl-std',  emoji:'&#x1F7E2;', max_wait:90,  label:'STANDARD',   subtitle:'Level 4 \u2014 MTS Green' },
+            IMMEDIATE:  { level:1, color:'#FF0000', textColor:'white',   cls:'imm',  badge:'lvl-imm',  emoji:'&#x1F534;', max_wait:0,   label:'Immediate',   subtitle:'Level 1 \u2014 MTS Red' },
+            EMERGENCY:  { level:2, color:'#FF8C00', textColor:'white',   cls:'emg',  badge:'lvl-emg',  emoji:'&#x1F7E0;', max_wait:10,  label:'Very Urgent', subtitle:'Level 2 \u2014 MTS Orange' },
+            URGENT:     { level:3, color:'#FFD700', textColor:'#1a1a2e', cls:'urg',  badge:'lvl-urg',  emoji:'&#x1F7E1;', max_wait:30,  label:'Urgent',      subtitle:'Level 3 \u2014 MTS Yellow' },
+            STANDARD:   { level:4, color:'#28A745', textColor:'white',   cls:'std',  badge:'lvl-std',  emoji:'&#x1F7E2;', max_wait:90,  label:'Standard',    subtitle:'Level 4 \u2014 MTS Green' },
+            NON_URGENT: { level:5, color:'#007BFF', textColor:'white',   cls:'nurg', badge:'lvl-nurg', emoji:'&#x1F535;', max_wait:120, label:'Non-urgent',  subtitle:'Level 5 \u2014 MTS Blue' },
+            ROUTINE:    { level:4, color:'#28A745', textColor:'white',   cls:'std',  badge:'lvl-std',  emoji:'&#x1F7E2;', max_wait:90,  label:'Standard',    subtitle:'Level 4 \u2014 MTS Green' },
         };
 
         function normalizeTriage(lvl) {
@@ -4081,8 +4081,8 @@
                 te_imm_required: 'Immediate response required',
                 te_imm_notified: 'Emergency services have been notified. Do not delay.',
                 te_continue: 'Continue',
-                lvl_IMMEDIATE: 'IMMEDIATE', lvl_EMERGENCY: 'EMERGENCY',
-                lvl_URGENT: 'URGENT', lvl_STANDARD: 'STANDARD', lvl_NON_URGENT: 'NON-URGENT',
+                lvl_IMMEDIATE: 'Immediate', lvl_EMERGENCY: 'Very Urgent',
+                lvl_URGENT: 'Urgent', lvl_STANDARD: 'Standard', lvl_NON_URGENT: 'Non-urgent',
                 level_word: 'Level',
                 contact_sending: 'Sending…', contact_notified: 'Contact Notified'
             },
@@ -4280,8 +4280,8 @@
                 te_imm_required: 'Sofortige Reaktion erforderlich',
                 te_imm_notified: 'Notfalldienste wurden benachrichtigt. Keine Verzögerung.',
                 te_continue: 'Weiter',
-                lvl_IMMEDIATE: 'SOFORT', lvl_EMERGENCY: 'NOTFALL',
-                lvl_URGENT: 'DRINGEND', lvl_STANDARD: 'STANDARD', lvl_NON_URGENT: 'NICHT DRINGEND',
+                lvl_IMMEDIATE: 'Sofortige Hilfe (Lebensgefahr)', lvl_EMERGENCY: 'Sehr dringend',
+                lvl_URGENT: 'Dringend', lvl_STANDARD: 'Normal', lvl_NON_URGENT: 'Nicht dringend',
                 level_word: 'Stufe',
                 contact_sending: 'Wird gesendet…', contact_notified: 'Kontakt benachrichtigt'
             },
@@ -4479,8 +4479,8 @@
                 te_imm_required: 'Acil müdahale gerekiyor',
                 te_imm_notified: 'Acil servisler haberdar edildi. Gecikmeyiniz.',
                 te_continue: 'Devam',
-                lvl_IMMEDIATE: 'ACİL', lvl_EMERGENCY: 'ACİL MÜDAHALE',
-                lvl_URGENT: 'ACELİ', lvl_STANDARD: 'STANDART', lvl_NON_URGENT: 'ACİL DEĞİL',
+                lvl_IMMEDIATE: 'Immediate / Resüsitasyon', lvl_EMERGENCY: 'Çok Acil',
+                lvl_URGENT: 'Acil', lvl_STANDARD: 'Standart / Az Acil', lvl_NON_URGENT: 'Acil Olmayan',
                 level_word: 'Düzey',
                 contact_sending: 'Gönderiliyor…', contact_notified: 'Kişi Bilgilendirildi'
             },
@@ -5600,20 +5600,20 @@
         // ═══════════════════════════════════════════════════════════
         function renderTriageBanner() {
             const a = S.assessment || {}; const lvl = normalizeTriage(a.triage_level);
-            let cls, title, sub;
-            if (lvl === 'IMMEDIATE')       { cls = 'imm'; title = t('tr_imm_title'); sub = t('tr_imm_sub'); }
-            else if (lvl === 'EMERGENCY')  { cls = 'emg'; title = t('tr_emg_title'); sub = t('tr_emg_sub'); }
-            else if (lvl === 'URGENT')     { cls = 'urg'; title = t('tr_urg_title'); sub = t('tr_urg_sub'); }
-            else if (lvl === 'STANDARD')   { cls = 'std'; title = t('tr_std_title'); sub = t('tr_std_sub'); }
-            else if (lvl === 'NON_URGENT') { cls = 'nurg'; title = t('tr_nurg_title'); sub = t('tr_nurg_sub'); }
-            else                           { cls = 'rtn'; title = t('tr_rtn_title'); sub = t('tr_rtn_sub'); }
+            const meta = MTS_META[lvl] || MTS_META.URGENT;
 
-            let html = `<div class="triage-banner ${cls}"><div class="triage-title">${title}</div><div class="triage-sub">${sub}</div></div>`;
+            // ── Assessment Result header (large, prominent — replaces page-triage-explain) ──
+            let html = `
+            <div style="background:${meta.color};margin:-24px -20px 0;padding:22px 20px 20px;color:${meta.textColor};margin-bottom:0;">
+                <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">&#x1F3E5; ${t('te_result_label')}</div>
+                <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">${meta.emoji} ${meta.label}</div>
+                <div style="font-size:0.85rem;font-weight:600;opacity:0.9;">${meta.subtitle}</div>
+            </div>`;
 
-            // Show a clear warning if this assessment came from the mock engine
+            // ── Mock warning ──
             if (a.ai_mode === 'mock' || a.ai_mode === 'fallback' || (a.clinical_report && a.clinical_report.includes('mock evaluation'))) {
                 html += `
-                <div style="background:#7c2d12; border:1px solid #dc2626; border-radius:12px; padding:14px 16px; margin-bottom:20px; display:flex; align-items:flex-start; gap:10px;">
+                <div style="background:#7c2d12; border:1px solid #dc2626; border-radius:12px; padding:14px 16px; margin:12px 0; display:flex; align-items:flex-start; gap:10px;">
                     <span style="font-size:1.2rem;">⚠️</span>
                     <div>
                         <div style="font-weight:700; color:#fca5a5; font-size:.85rem; margin-bottom:3px;">DEMO / MOCK MODE — NOT A REAL AI ASSESSMENT</div>
@@ -5625,25 +5625,27 @@
                 </div>`;
             }
 
+            // ── AiVoN Assessment box — strip "Would you like..." CTA from summary ──
             if (a.patient_summary) {
+                const cleaned = stripAiCTA(a.patient_summary);
                 const shortSummary = (function (txt, max) {
                     const sents = txt.match(/[^.!?]+[.!?]+/g) || [txt];
                     return sents.slice(0, max).join(' ').trim();
-                })(a.patient_summary, 3);
+                })(cleaned, 3);
 
                 html += `
-                <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 20px; margin-bottom:14px; box-shadow:var(--sh-sm);">
+                <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 20px; margin:14px 0; box-shadow:var(--sh-sm);">
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                         <div style="background:rgba(13,148,136,0.12); color:#0D9488; width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                             <i data-lucide="bot" style="width:16px; height:16px;"></i>
                         </div>
                         <h3 style="font-size:1rem; font-weight:800; color:var(--text); margin:0; letter-spacing:-.01em;">${t('tr_aiVoNOverview')}</h3>
                     </div>
-                    <p style="font-size:0.875rem; color:var(--text-2); line-height:1.6; margin:0; font-weight:500;">
-                        ${escHtml(shortSummary)}
-                    </p>
-                </div>
-                `;
+                    <p style="font-size:0.875rem; color:var(--text-2); line-height:1.6; margin:0 0 12px; font-weight:500;">${escHtml(shortSummary)}</p>
+                    <div style="display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--border);font-size:0.8rem;font-weight:700;color:${meta.color};">
+                        <span style="font-size:1rem;">👇</span> ${t('tr_selectHospital')}
+                    </div>
+                </div>`;
             }
 
             document.getElementById('triageBanner').innerHTML = html;
@@ -6191,6 +6193,12 @@
         // PART 1: TRIAGE EXPLANATION CARD (v13)
         // ═══════════════════════════════════════════════════════════
         function showTriageExplanationCard() {
+            // Skip intermediate explain screen — go directly to destination page.
+            // Assessment Result header is now rendered on each destination page.
+            onTriageExplainContinue();
+        }
+
+        function _showTriageExplanationCard_UNUSED() {
             const a = S.assessment || {};
             const lvl = normalizeTriage(a.triage_level);
 
@@ -6280,6 +6288,44 @@
                     if (countdown <= 0) { clearInterval(timer); onTriageExplainContinue(); }
                 }, 1000);
             }
+        } // end _showTriageExplanationCard_UNUSED
+
+        // Helper: strip AI-generated routing CTAs from patient summary text
+        function stripAiCTA(text) {
+            if (!text) return '';
+            // Split into sentences, filter out routing/navigation CTA sentences
+            const CTA_PATTERNS = [
+                // English
+                /would you like/i,
+                /can (?:i|we) help/i,
+                /i (?:can|could) help you find/i,
+                /recommend.*(?:nearest|closest|emergency|ER)/i,
+                /(?:nearest|closest) (?:emergency|ER|hospital)/i,
+                /arrival time.*(?:sent|forward|notif)/i,
+                /(?:clinical|medical) summary.*(?:sent|forward|hospital)/i,
+                /head (?:to|toward).*(?:ER|emergency|hospital)/i,
+                // Turkish
+                /en yakın acil/i,
+                /acil servis[ei]/i,
+                /başvurmanızı öneri/i,
+                /yardımcı olabilirim/i,
+                /hastaneyi bulmanıza/i,
+                /varış zamanınız/i,
+                /klinik özetiniz/i,
+                /hastaneye önceden/i,
+                /uygun hastaneyi/i,
+                // German
+                /nächste(?:n|r)? Notaufnahme/i,
+                /geeignetste(?:n|s)? Krankenhaus/i,
+                /helfen.*Krankenhaus/i,
+                /Krankenhaus.*finden/i,
+                /Ankunftszeit.*(?:weitergeleitet|gesendet)/i,
+                /klinische(?:n|r)? Zusammenfassung.*(?:Krankenhaus|gesendet)/i,
+            ];
+            // Tokenise on sentence boundaries (. ! ? or ; followed by space/end)
+            const sentences = text.split(/(?<=[.!?;])\s+/);
+            const filtered = sentences.filter(s => !CTA_PATTERNS.some(p => p.test(s)));
+            return filtered.join(' ').trim();
         }
 
         function onTriageExplainContinue() {
@@ -6333,12 +6379,20 @@
         function showEmergencyTransportQuestion() {
             const content = document.getElementById('outcomeEmgContent');
             if (!content) return;
+            const a = S.assessment || {};
+            const condSummary = a.condition_summary || (a.patient_summary ? stripAiCTA(a.patient_summary) : '');
             content.innerHTML = `
-            <div style="background:#FF8C00;margin:-24px -20px 0;padding:22px 20px 18px;color:white;margin-bottom:0;">
-                <div style="font-size:1.1rem;font-weight:900;letter-spacing:-0.01em;margin-bottom:4px;">${t('emg_header')}</div>
-                <div style="font-size:0.88rem;font-weight:600;opacity:0.92;">${t('emg_header_sub')}</div>
+            <div style="background:#FF8C00;margin:-24px -20px 0;padding:22px 20px 20px;color:white;margin-bottom:0;">
+                <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">&#x1F3E5; ${t('te_result_label')}</div>
+                <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">🟠 Very Urgent</div>
+                <div style="font-size:0.85rem;font-weight:600;opacity:0.9;">${t('emg_header_sub')}</div>
             </div>
             <div style="padding:0 0 28px;">
+            ${condSummary ? `
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;margin-top:14px;margin-bottom:4px;">
+                <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;">&#x1F4CB; ${t('te_found')}</div>
+                <p style="font-size:0.88rem;color:var(--text);font-weight:500;line-height:1.55;font-style:italic;margin:0;">"${escHtml(condSummary)}"</p>
+            </div>` : ''}
             <div style="background:var(--card);border:1.5px solid rgba(255,140,0,0.3);border-radius:var(--r-lg);padding:20px;margin-top:16px;margin-bottom:20px;">
                 <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:8px;">${t('emg_transport_q')}</div>
                 <div style="font-size:0.88rem;color:var(--text-2);margin-bottom:18px;line-height:1.5;">${t('emg_transport_hint')}</div>
@@ -6396,7 +6450,7 @@
             const headerColor = meta.color;
             const gradEnd = isImmediate ? '#FF4500' : '#FFD700';
 
-            const condSummary = a.condition_summary || a.patient_summary || '';
+            const condSummary = a.condition_summary || (a.patient_summary ? stripAiCTA(a.patient_summary) : '');
             const reasoning = a.reasoning || getDefaultReasoning(lvl);
             const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO[isImmediate ? 'IMMEDIATE' : 'EMERGENCY'] || []).slice(0, 4);
             const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT[isImmediate ? 'IMMEDIATE' : 'EMERGENCY'] || []).slice(0, 4);
@@ -6405,42 +6459,21 @@
             if (!content) return;
 
             content.innerHTML = `
-            <div style="background:${headerColor};margin:-24px -20px 0;padding:20px 20px 18px;color:${meta.textColor};">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                    <span class="mts-badge ${meta.badge}">${meta.emoji} ${tLevel(lvl)}</span>
-                    <span style="font-size:0.72rem;opacity:0.85;font-weight:700;">${t('level_word')} ${meta.level}</span>
-                </div>
-                <div style="font-size:1rem;font-weight:900;">${isImmediate ? t('amb_header_imm') : t('amb_header_emg')}</div>
-                ${isImmediate ? `<div style="font-size:0.8rem;font-weight:600;opacity:0.9;margin-top:4px;">${t('amb_do_not_move')}</div>` : ''}
+            <div style="background:${headerColor};margin:-24px -20px 0;padding:22px 20px 20px;color:${meta.textColor};">
+                <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">&#x1F3E5; ${t('te_result_label')}</div>
+                <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">${meta.emoji} ${meta.label}</div>
+                <div style="font-size:0.85rem;font-weight:700;margin-top:4px;">${isImmediate ? t('amb_header_imm') : t('amb_header_emg')}</div>
+                ${isImmediate ? `<div style="font-size:0.78rem;font-weight:600;opacity:0.85;margin-top:3px;">${t('amb_do_not_move')}</div>` : ''}
             </div>
             <div style="padding:0 0 28px;">
 
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-top:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-                <span style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-3);">${t('amb_aivon_title')}</span>
-                <span style="font-size:0.88rem;font-weight:900;color:${headerColor};">&Lambda;<span style="color:var(--accent);">i</span>VoN</span>
-            </div>
-
             ${condSummary ? `
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:10px;">
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-top:16px;margin-bottom:10px;">
                 <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4CB; ${t('te_found')}</div>
                 <p style="font-size:0.9rem;color:var(--text);font-weight:500;line-height:1.55;font-style:italic;margin:0;">"${escHtml(condSummary)}"</p>
             </div>` : ''}
 
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:10px;">
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4A1; ${t('te_why')}</div>
-                <p style="font-size:0.88rem;color:var(--text-2);line-height:1.6;margin:0;">${escHtml(reasoning)}</p>
-            </div>
-
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;">
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">&#x1F4CC; ${t('te_do')}</div>
-                ${doList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x2705;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
-                ${dontList.length ? `
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--danger-text);margin-top:14px;margin-bottom:12px;">&#x26D4; ${t('te_avoid')}</div>
-                ${dontList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x274C;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
-                ` : ''}
-            </div>
-
-            <div style="background:var(--card);border:1.5px solid ${headerColor}40;border-radius:var(--r-lg);padding:20px;margin-bottom:14px;">
+            <div style="background:var(--card);border:1.5px solid ${headerColor}40;border-radius:var(--r-lg);padding:20px;margin-top:${condSummary ? '0' : '16px'};margin-bottom:14px;">
                 <div style="font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-3);margin-bottom:6px;">&#x1F691; ${t('amb_en_route')}</div>
                 <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:2px;">${hospName}</div>
                 ${hospAddr ? `<div style="font-size:0.8rem;color:var(--text-2);margin-bottom:14px;">&#x1F4CD; ${hospAddr}</div>` : '<div style="margin-bottom:14px;"></div>'}
@@ -6452,6 +6485,15 @@
                 <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-3);margin-top:3px;">
                     <span>${t('amb_dispatched')}</span><span>${t('amb_arriving')}</span>
                 </div>
+            </div>
+
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;">
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">&#x1F4CC; ${t('te_do')}</div>
+                ${doList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x2705;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
+                ${dontList.length ? `
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--danger-text);margin-top:14px;margin-bottom:12px;">&#x26D4; ${t('te_avoid')}</div>
+                ${dontList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x274C;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
+                ` : ''}
             </div>
 
             <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;">
@@ -6532,13 +6574,14 @@
             const a = S.assessment || {};
             const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO.STANDARD).slice(0, 4);
             const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT.STANDARD).slice(0, 3);
-            const condSummary = a.condition_summary || a.patient_summary || '';
+            const condSummary = a.condition_summary || (a.patient_summary ? stripAiCTA(a.patient_summary) : '');
             const content = document.getElementById('outcomeStdContent');
             if (!content) return;
             content.innerHTML = `
-            <div style="background:#28A745;margin:-24px -20px 0;padding:22px 20px 16px;color:white;margin-bottom:0;">
-                <div style="font-size:1rem;font-weight:900;">${t('std_header_title')}</div>
-                <div style="font-size:0.85rem;font-weight:600;opacity:0.9;margin-top:4px;">${t('std_header_sub')}</div>
+            <div style="background:#28A745;margin:-24px -20px 0;padding:22px 20px 20px;color:white;margin-bottom:0;">
+                <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">&#x1F3E5; ${t('te_result_label')}</div>
+                <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">🟢 Standard</div>
+                <div style="font-size:0.85rem;font-weight:600;opacity:0.9;">${t('std_header_sub')}</div>
             </div>
             <div style="padding:0 0 28px;">
             <div style="background:var(--card);border:1.5px solid rgba(40,167,69,0.25);border-radius:var(--r-lg);padding:20px;margin-top:16px;margin-bottom:14px;">
@@ -6566,13 +6609,14 @@
             const a = S.assessment || {};
             const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO.NON_URGENT).slice(0, 4);
             const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT.NON_URGENT).slice(0, 3);
-            const condSummary = a.condition_summary || a.patient_summary || '';
+            const condSummary = a.condition_summary || (a.patient_summary ? stripAiCTA(a.patient_summary) : '');
             const content = document.getElementById('outcomeNurgContent');
             if (!content) return;
             content.innerHTML = `
-            <div style="background:#007BFF;margin:-24px -20px 0;padding:22px 20px 16px;color:white;margin-bottom:0;">
-                <div style="font-size:1rem;font-weight:900;">${t('nurg_header_title')}</div>
-                <div style="font-size:0.85rem;font-weight:600;opacity:0.9;margin-top:4px;">${t('nurg_header_sub')}</div>
+            <div style="background:#007BFF;margin:-24px -20px 0;padding:22px 20px 20px;color:white;margin-bottom:0;">
+                <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">&#x1F3E5; ${t('te_result_label')}</div>
+                <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">🔵 Non-urgent</div>
+                <div style="font-size:0.85rem;font-weight:600;opacity:0.9;">${t('nurg_header_sub')}</div>
             </div>
             <div style="padding:0 0 28px;">
             <div style="background:var(--card);border:1.5px solid rgba(0,123,255,0.2);border-radius:var(--r-lg);padding:20px;margin-top:16px;margin-bottom:14px;">
