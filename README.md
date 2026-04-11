@@ -36,11 +36,13 @@ A **two-sided AI platform**: patients describe symptoms via voice before arrival
 <td width="25%" align="center">
 
 ### 📈 Impact
-- Pre-hospital triage in **< 5 min**
-- **5-level MTS** assessment with AI rationale
-- Live GPS tracking for **IMMEDIATE / EMERGENCY** patients
-- Physician override loop — human always in control
-- Works fully **offline** (zero Azure credentials needed)
+- 🕐 **ER is briefed before you arrive** — before the patient walks in, doctors already have: triage level, risk score, chief complaint, injury photos, voice transcript, medical history, allergies & current medications
+- 🌍 **Patient speaks their language, doctor reads theirs** — a patient describes symptoms in Turkish, the ER receives a full clinical summary in English (or German, or any language)
+- 🗺️ **All incoming patients tracked live on a map** — GPS positions updated every 4 seconds; colour-coded by severity; ER sees the full incoming caseload at a glance
+- 🏥 **Routed to the best available hospital** — not just the nearest, but ranked by real ETA + occupancy; a full ER is deprioritised automatically
+- 🚑 **Ambulance dispatched instantly for critical cases** — IMMEDIATE patients get an in-app ambulance tracker with named hospital and arrival countdown, while the ER receives the dispatch note simultaneously
+- 👨‍⚕️ **Physician can override AI before patient arrives** — upgrade, downgrade, or approve triage level from the dashboard; decision reflected on the patient's screen in real time
+- 📶 **Works with zero infrastructure** — no Azure account needed; full demo mode with offline AI fallback, 440-hospital database, and browser-based voice input
 
 </td>
 <td width="25%" align="center">
