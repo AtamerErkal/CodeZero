@@ -1,8 +1,8 @@
 <div align="center">
-  <img src="docs/images/banner.png" alt="CodeZero Banner" width="100%"/>
+  <img src="docs/images/banner.png" alt="VitalNav.Ai Banner" width="100%"/>
   <br/>
   
-  # CodeZero ⚡🏥
+  # VitalNav.Ai ⚡🏥
   **AI-Powered Pre-Hospital Triage System**  
   Voice-First + RAG + Real-time GPS + Manchester Triage System
 
@@ -32,14 +32,14 @@
 
 ---
 
-## 🧠 What is CodeZero?
+## 🧠 What is VitalNav.Ai?
 
-**CodeZero** is a full-stack, AI-powered pre-hospital triage platform with two complementary interfaces:
+**VitalNav.Ai** is a full-stack, AI-powered pre-hospital triage platform with two complementary interfaces:
 
 - **VitalNavAI** — a mobile-first patient app where anyone can describe their emergency via voice or text, answer AI-guided clinical questions, and receive a 5-level Manchester Triage System (MTS) assessment.
 - **ER Command Center** — a real-time hospital dashboard where ER staff see incoming patients, their AI-assessed triage level, live GPS location, estimated arrival time, physician override controls, and notes — *before* the patient arrives.
 
-Unlike simple symptom checkers, CodeZero creates a **live two-way bridge** between patient and hospital. An **Expert-in-the-Loop** mechanism allows ER physicians to review, approve, upgrade or adjust the AI triage decision in real time.
+Unlike simple symptom checkers, VitalNav.Ai creates a **live two-way bridge** between patient and hospital. An **Expert-in-the-Loop** mechanism allows ER physicians to review, approve, upgrade or adjust the AI triage decision in real time.
 
 <br/>
 
@@ -65,7 +65,7 @@ A visual progress bar guides patients through: Language → Welcome → Complain
 The patient's live position streams continuously to the ER dashboard via `watchPosition`. The map shows each incoming patient's exact location and trajectory, updated every 4 seconds. IMMEDIATE/EMERGENCY patients have in-app animated ambulance tracking. STANDARD/NON_URGENT patients are excluded from the server simulation (they navigate themselves).
 
 ### 🏥 Live ER Command Center
-Multi-panel dashboard with sortable patient cards (by Triage Level, ETA, Risk Score, Newest), KPI strip, full-screen Leaflet map, statistics charts, and PDF-ready reports. Emergency patient arrivals trigger a prominent full-width alert banner. Ambulance dispatch events are annotated directly on patient cards with estimated hospital arrival time.
+Multi-panel dashboard with sortable patient cards (by Risk Score, ETA, Time), KPI strip, triage breakdown chips, full-screen Leaflet map, resource status KPIs, statistics charts, and CSV export. Emergency patient arrivals trigger a prominent full-width alert banner. Ambulance dispatch events are annotated directly on patient cards with estimated hospital arrival time.
 
 ### 👨‍⚕️ Expert-in-the-Loop Physician Review
 After AI triage, a physician polling card appears on the patient's screen. ER doctors can **APPROVE**, **UPGRADE**, or **ADJUST** the triage level with a clinical note. The patient's screen updates in real-time to reflect the physician's decision, cumulative notes are preserved chronologically.
@@ -122,21 +122,22 @@ After AI triage, a physician polling card appears on the patient's screen. ER do
   ╰──────────────────────────────────────────────────────────────────────╯
 
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  📊 KPI Strip   Total | 🚨 Immediate | ⚡ Urgent | ✅ Standard       │
+  │  📊 KPI Strip   Total | En Route | Under Treatment | Discharged      │
   │  🔔 Alert Banner  EMERGENCY arriving in 4 min — Suspected DVT        │
   ├────────────────────────┬────────────────────────────────────────────┤
   │  📋 Patient Cards      │  🗺️ Live Leaflet Map                        │
   │                        │                                            │
-  │  Sort: Triage│ETA│Risk │  Patient pins with triage colour coding     │
-  │  Filter: All | Status  │  Real-time GPS tracks (updates every 4s)   │
-  │                        │  Route lines to hospital                   │
-  │  ┌───────────────────┐ │                                            │
-  │  │ 🚨 VN-2026-4821   │ │                                            │
-  │  │ Chest Pain · 22F  │ ├────────────────────────────────────────────┤
-  │  │ ETA: 6 min        │ │  📈 Statistics Panel                       │
-  │  │ 🚑 Ambulance note │ │  📄 Reports Tab                            │
-  │  │ 👨‍⚕️ Dr note (log) │ │                                            │
-  │  └───────────────────┘ │                                            │
+  │  Sort: Risk│ETA│Time   │  Patient pins with triage colour coding     │
+  │  Filter: By Triage     │  Real-time GPS tracks (updates every 4s)   │
+  │  Level (click chips)   │  Route lines to hospital                   │
+  │                        │                                            │
+  │  ┌───────────────────┐ │  ┌─────────────────────────────────────┐  │
+  │  │ 🚨 VN-2026-4821   │ │  │  Resource KPIs                      │  │
+  │  │ Chest Pain · 22F  │ │  │  👨‍⚕️ Available Doctors: 3            │  │
+  │  │ ETA: 6 min        │ │  │  🛏️ Available Beds: 4               │  │
+  │  │ 🚑 Ambulance note │ │  │  📋 Recent Assignments: 7            │  │
+  │  │ 👨‍⚕️ Dr note (log) │ │  │  📊 System Load: 62%               │  │
+  │  └───────────────────┘ │  └─────────────────────────────────────┘  │
   └────────────────────────┴────────────────────────────────────────────┘
 ```
 
@@ -145,7 +146,7 @@ After AI triage, a physician polling card appears on the patient's screen. ER do
 ## 🏗️ Architecture
 
 <div align="center">
-<img src="docs/images/architecture.png" alt="CodeZero System Architecture" width="85%"/>
+<img src="docs/images/architecture.png" alt="VitalNav.Ai System Architecture" width="85%"/>
 </div>
 
 <br/>
@@ -177,7 +178,7 @@ After AI triage, a physician polling card appears on the patient's screen. ER do
 │   SQLite Patient Queue  ←──  hospital_queue.py (GDPR-compliant)          │
 │   Health Records DB     ←──  health_db.py (30 demo patients)            │
 │                                    │                                     │
-│   ui/hospital_dashboard_v9.html  ◀─┘  ER Staff Command Center           │
+│   ui/hospital_dashboard_v10.html ◀─┘  ER Staff Command Center           │
 │   (standalone HTML — Leaflet map, sort, filter, live GPS, physician UI) │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -186,7 +187,7 @@ After AI triage, a physician polling card appears on the patient's screen. ER do
 
 ## ☁️ Azure Services
 
-| Service | Role in CodeZero | AI-102 Domain | Fallback |
+| Service | Role in VitalNav.Ai | AI-102 Domain | Fallback |
 |:---|:---|:---:|:---|
 | **Azure OpenAI** (GPT-4/5) | Condition-specific question generation, triage assessment, clinical report | Generative AI | Rule-based engine + 15 clinical mock sets |
 | **Azure AI Search** | Medical knowledge base — semantic RAG retrieval | Knowledge Mining | Local file keyword matching |
@@ -202,7 +203,7 @@ After AI triage, a physician polling card appears on the patient's screen. ER do
 
 ## 🧬 AI Clinical Question Engine
 
-The heart of CodeZero is its **condition-specific question generation** — a significant improvement over generic symptom checklists.
+The heart of VitalNav.Ai is its **condition-specific question generation** — a significant improvement over generic symptom checklists.
 
 ### How questions are generated
 
@@ -323,7 +324,7 @@ The ER Leaflet map refreshes pin positions every 5 seconds — giving staff a li
 
 <br/>
 
-## 🏥 ER Command Center — Dashboard Features
+## 🏥 ER Command Center — Dashboard Features (v10)
 
 ### Screenshots
 
@@ -355,11 +356,24 @@ The ER Leaflet map refreshes pin positions every 5 seconds — giving staff a li
 ### Sorting & Filtering
 | Control | Behaviour |
 |:---|:---|
-| **By Triage** | IMMEDIATE → EMERGENCY → URGENT → STANDARD → NON_URGENT |
+| **By Risk Score** | Descending AI risk score (0–10) — highest priority patients first |
 | **By ETA** | Ascending arrival time — soonest first |
-| **By Risk** | Descending risk score (AI-assessed 0–10) |
-| **Newest** | Most recently registered patient first |
-| KPI Filters | Click any KPI card to filter by level, status, or all |
+| **By Time** | Most recently registered patient first |
+| **Triage Chips** | Click any of the 5 triage level chips to filter the patient list instantly |
+| **KPI Cards** | Click Total, En Route, Under Treatment, or Discharged to filter by status |
+
+### KPI & Resource Panels
+| Metric | Description |
+|:---|:---|
+| **Total Patients** | All registered patients in the current session |
+| **En Route** | Patients currently traveling to hospital (status: incoming) |
+| **Under Treatment** | Patients currently in active treatment |
+| **Discharged** | Patients successfully discharged |
+| **Triage Breakdown** | Interactive 5-chip bar: Immediate / Emergency / Urgent / Standard / Non-Urgent |
+| **Available Doctors** | Live count with average response time |
+| **Available Beds** | Total with ICU / ER / General Ward breakdown |
+| **Recent Assignments** | Doctor–patient assignments in last 2 hours |
+| **System Load** | Overall ER capacity utilisation percentage |
 
 ### Emergency Alert System
 When a new EMERGENCY/IMMEDIATE-level patient registers, the dashboard triggers:
@@ -368,16 +382,20 @@ When a new EMERGENCY/IMMEDIATE-level patient registers, the dashboard triggers:
 - Auto-dismisses after 10 seconds or on manual close
 
 ### Additional Panels
-- **Live Map** — Leaflet map with patient pins, colour-coded by triage; dark/light tile switching
-- **Statistics** — Real-time charts: triage breakdown, top conditions, hourly arrivals
-- **Reports** — Printable/PDF-ready patient reports
-- **Dark Mode** — One-click toggle with instant map tile swap
+- **Live Tracking Map** — Leaflet map with patient pins, colour-coded by triage; dark/light tile switching; Active Transports sidebar + detailed Transport Details table
+- **Doctor Panel** — Real-time doctor workload view with per-patient assignments
+- **Bed Management** — Full grid with filter by Department, Type, and Status; Summary KPIs (Total / Available / Occupied / Maintenance)
+- **Reports & Analytics** — Daily, Weekly, Monthly, Yearly tabs with triage breakdown, risk distribution histogram, top conditions, CSV export
+- **Dark / Light Mode** — One-click toggle with instant map tile swap and full theme adaptation (glassmorphism dark ↔ clinical white)
+- **Collapsible Sidebar** — Minimise to icon-only mode for more screen real estate
+- **Modern Clock Widget** — Live time and date display in header
 - **Keyboard Navigation** — Arrow keys, Enter (expand), Escape (collapse) on patient list
 - **Compact Mode** — Toggle between full and condensed card view
+- **Multi-Language UI** — EN / TR / DE switcher in header
 
 <br/>
 
-## 📱 Patient App — VitalNavAI
+## 📱 Patient App — VitalNavAI (v13)
 
 ### Screenshots
 
@@ -403,6 +421,8 @@ When a new EMERGENCY/IMMEDIATE-level patient registers, the dashboard triggers:
 - **Touch-optimised** — all interactive elements ≥ 54 px
 - **Mobile-only layout** — centred 480px card, full-screen on phones
 - **Calm clinical palette** — Medical Teal primary, clear triage level colour coding
+- **Dark / Light mode** — Auto-follows system preference (`prefers-color-scheme`); manual toggle available
+- **Premium Logo Hero** — Animated SVG heart-pulse logo with AI node overlay on the welcome screen
 
 ### Multi-Language Support
 | Language | Code | Direction |
@@ -628,7 +648,7 @@ python hospital_server_v1.py
 
 ## 🧪 Demo Mode
 
-CodeZero runs completely without Azure credentials — ideal for evaluation and development:
+VitalNav.Ai runs completely without Azure credentials — ideal for evaluation and development:
 
 | Feature | ☁️ With Azure | 🖥️ Demo Mode |
 |:---|:---|:---|
@@ -699,7 +719,7 @@ CodeZero runs completely without Azure credentials — ideal for evaluation and 
 ## 📁 Project Structure
 
 ```
-CodeZero/
+VitalNav.Ai/  (local: CodeZero/)
 ├── 📄 hospital_server_v1.py          # FastAPI REST server — 16 endpoints
 ├── 📄 requirements.txt
 │
@@ -718,8 +738,11 @@ CodeZero/
 ├── 📂 ui/
 │   ├── patient_app_v13.html          # 📱 VitalNavAI — standalone patient triage app
 │   │                                 #    (MTS 5-level, ambulance tracker, physician polling,
-│   │                                 #     transcript approval, EN/DE/TR full i18n)
-│   └── hospital_dashboard_v9.html    # 📊 ER Command Center — standalone dashboard
+│   │                                 #     transcript approval, EN/DE/TR full i18n,
+│   │                                 #     dark/light mode, animated hero logo)
+│   └── hospital_dashboard_v10.html   # 📊 ER Command Center — standalone dashboard
+│                                     #    (dark/light mode, collapsible sidebar, resource KPIs,
+│                                     #     triage chips, modern clock, doctor/bed/reports panels)
 │
 ├── 📂 data/
 │   └── medical_guidelines/           # 📋 Clinical protocols (chest pain, stroke, DVT, ...)
@@ -777,6 +800,6 @@ CodeZero/
 
 <br/>
 
-[⬆ Back to Top](#-codezero)
+[⬆ Back to Top](#-vitalnav-ai)
 
 </div>
