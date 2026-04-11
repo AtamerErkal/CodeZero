@@ -220,7 +220,7 @@ After AI triage, a physician polling card appears on the patient's screen. ER do
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                 PATIENT  ←──  Mobile / Desktop Browser                   │
 │                                                                          │
-│   ui/patient_app_v13.html  ────────────────────▶  FastAPI Server         │
+│   ui/patient_app.html  ────────────────────▶  FastAPI Server         │
 │   (VitalNavAI — standalone HTML, zero build step)   hospital_server_v1   │
 │                                                      :8001               │
 │                                                           │              │
@@ -243,7 +243,7 @@ After AI triage, a physician polling card appears on the patient's screen. ER do
 │   SQLite Patient Queue  ←──  hospital_queue.py (GDPR-compliant)          │
 │   Health Records DB     ←──  health_db.py (30 demo patients)            │
 │                                    │                                     │
-│   ui/hospital_dashboard_v10.html ◀─┘  ER Staff Command Center           │
+│   ui/hospital_dashboard.html ◀─┘  ER Staff Command Center           │
 │   (standalone HTML — Leaflet map, sort, filter, live GPS, physician UI) │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -801,7 +801,7 @@ VitalNav.Ai/  (local: CodeZero/)
 │   └── safety_filter.py              # 🛡️ Azure Content Safety input filtering
 │
 ├── 📂 ui/
-│   ├── patient_app_v13.html          # 📱 VitalNavAI — standalone patient triage app
+│   ├── patient_app.html          # 📱 VitalNavAI — standalone patient triage app
 │   │                                 #    (MTS 5-level, ambulance tracker, physician polling,
 │   │                                 #     transcript approval, EN/DE/TR full i18n,
 │   │                                 #     dark/light mode, animated hero logo)

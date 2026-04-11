@@ -33,7 +33,7 @@ ILLNESS_PHOTOS_DIR = ROOT / "data" / "illness_photos"
 ILLNESS_PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
 
 from src.hospital_queue import HospitalQueue
-from src.health_db_v1 import (
+from src.health_db import (
     get_patient, get_full_record, get_age, list_demo_health_numbers
 )
 from src.triage_engine import TRIAGE_EMERGENCY, TRIAGE_URGENT, TRIAGE_ROUTINE
@@ -1504,7 +1504,7 @@ def api_seed():
 def debug_health_db():
     """Debug: show health_records.db status. Visit /api/debug/health in browser."""
     try:
-        from src.health_db_v1 import _conn as hdb_conn, DB_PATH as HDB_PATH
+        from src.health_db import _conn as hdb_conn, DB_PATH as HDB_PATH
         import sqlite3
         import os
         with hdb_conn() as con:
@@ -1526,7 +1526,7 @@ def debug_health_db():
 def reset_health_db():
     """Force re-seed vitals/diagnoses/medications if they were empty."""
     try:
-        from src.health_db_v1 import _conn as hdb_conn, _seed as hdb_seed
+        from src.health_db import _conn as hdb_conn, _seed as hdb_seed
         with hdb_conn() as con:
             for tbl in ("vitals","diagnoses","medications","lab_results","allergies","visits"):
                 con.execute(f"DELETE FROM {tbl}")
@@ -1539,7 +1539,7 @@ def reset_health_db():
 
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
-    path = ROOT / "ui" / "hospital_dashboard_v10.html"
+    path = ROOT / "ui" / "hospital_dashboard.html"
     if path.exists():
         return HTMLResponse(path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Dashboard HTML not found</h1>", status_code=404)
@@ -1547,7 +1547,7 @@ def serve_dashboard():
 
 @app.get("/patient", response_class=HTMLResponse)
 def serve_patient_app():
-    path = ROOT / "ui" / "patient_app_v13.html"
+    path = ROOT / "ui" / "patient_app.html"
     if path.exists():
         return HTMLResponse(path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Patient app HTML not found</h1>", status_code=404)
