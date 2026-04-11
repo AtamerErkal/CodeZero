@@ -3707,7 +3707,7 @@
         // ═══════════════════════════════════════════════════════════
         const MTS_META = {
             IMMEDIATE:  { level:1, color:'#FF0000', textColor:'white',   cls:'imm',  badge:'lvl-imm',  emoji:'&#x1F534;', max_wait:0,   label:'Immediate',   subtitle:'Level 1 \u2014 MTS Red' },
-            EMERGENCY:  { level:2, color:'#FF8C00', textColor:'white',   cls:'emg',  badge:'lvl-emg',  emoji:'&#x1F7E0;', max_wait:10,  label:'Very Urgent', subtitle:'Level 2 \u2014 MTS Orange' },
+            EMERGENCY:  { level:2, color:'#FF8C00', textColor:'white',   cls:'emg',  badge:'lvl-emg',  emoji:'&#x1F7E0;', max_wait:10,  label:'Emergency', subtitle:'Level 2 \u2014 MTS Orange' },
             URGENT:     { level:3, color:'#FFD700', textColor:'#1a1a2e', cls:'urg',  badge:'lvl-urg',  emoji:'&#x1F7E1;', max_wait:30,  label:'Urgent',      subtitle:'Level 3 \u2014 MTS Yellow' },
             STANDARD:   { level:4, color:'#28A745', textColor:'white',   cls:'std',  badge:'lvl-std',  emoji:'&#x1F7E2;', max_wait:90,  label:'Standard',    subtitle:'Level 4 \u2014 MTS Green' },
             NON_URGENT: { level:5, color:'#007BFF', textColor:'white',   cls:'nurg', badge:'lvl-nurg', emoji:'&#x1F535;', max_wait:120, label:'Non-urgent',  subtitle:'Level 5 \u2014 MTS Blue' },
@@ -3769,7 +3769,7 @@
         function getDefaultReasoning(lvl) {
             const map = {
                 IMMEDIATE:  'Your symptoms indicate a life-threatening emergency requiring immediate medical intervention. Emergency services have been notified.',
-                EMERGENCY:  'Your symptoms indicate a very urgent condition requiring medical assessment within 10 minutes. Please proceed to care immediately.',
+                EMERGENCY:  'Your symptoms indicate an emergency condition requiring medical assessment within 10 minutes. Please proceed to care immediately.',
                 URGENT:     'Your symptoms indicate an urgent condition. Medical evaluation is recommended within 30 minutes to prevent any worsening.',
                 STANDARD:   'Your symptoms do not currently indicate an emergency, but medical evaluation is recommended within 90 minutes for proper care.',
                 NON_URGENT: 'Your symptoms do not indicate an emergency at this time. A routine medical consultation is recommended if symptoms persist.',
@@ -4081,7 +4081,7 @@
                 te_imm_required: 'Immediate response required',
                 te_imm_notified: 'Emergency services have been notified. Do not delay.',
                 te_continue: 'Continue',
-                lvl_IMMEDIATE: 'Immediate', lvl_EMERGENCY: 'Very Urgent',
+                lvl_IMMEDIATE: 'Immediate', lvl_EMERGENCY: 'Emergency',
                 lvl_URGENT: 'Urgent', lvl_STANDARD: 'Standard', lvl_NON_URGENT: 'Non-urgent',
                 level_word: 'Level',
                 contact_sending: 'Sending…', contact_notified: 'Contact Notified'
@@ -6384,7 +6384,7 @@
             content.innerHTML = `
             <div style="background:#FF8C00;margin:-24px -20px 0;padding:22px 20px 20px;color:white;margin-bottom:0;">
                 <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">&#x1F3E5; ${t('te_result_label')}</div>
-                <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">🟠 Very Urgent</div>
+                <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">🟠 Emergency</div>
                 <div style="font-size:0.85rem;font-weight:600;opacity:0.9;">${t('emg_header_sub')}</div>
             </div>
             <div style="padding:0 0 28px;">

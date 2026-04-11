@@ -84,6 +84,9 @@ if docs_dir.exists():
 ui_dir = ROOT / "ui"
 if ui_dir.exists():
     app.mount("/ui", StaticFiles(directory=str(ui_dir)), name="ui")
+doc_photos_dir = ROOT / "doctor_photos"
+if doc_photos_dir.exists():
+    app.mount("/doctor_photos", StaticFiles(directory=str(doc_photos_dir)), name="doctor_photos")
 
 NAT_FLAG = {"DE": "🇩🇪", "TR": "🇹🇷", "UK": "🇬🇧", "GB": "🇬🇧"}
 
