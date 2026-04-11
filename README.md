@@ -21,31 +21,19 @@
 
 <table>
 <tr>
-<td width="25%" align="center">
+<td width="33%" align="center">
 
 ### 🚨 Problem
 Emergency rooms receive patients **without any prior information**. Triage happens only *after* arrival — wasting the most critical minutes and overloading ER staff with incomplete data.
 
 </td>
-<td width="25%" align="center">
+<td width="34%" align="center">
 
 ### 💡 Solution
 A **two-sided AI platform**: patients describe symptoms via voice before arrival; the ER dashboard receives a complete clinical picture — triage level, risk score, live GPS, and medical history — *before the patient walks in*.
 
 </td>
-<td width="25%" align="center">
-
-### 📈 Impact
-- 🕐 **ER is briefed before you arrive** — before the patient walks in, doctors already have: triage level, risk score, chief complaint, injury photos, voice transcript, medical history, allergies & current medications
-- 🌍 **Patient speaks their language, doctor reads theirs** — a patient describes symptoms in Turkish, the ER receives a full clinical summary in English (or German, or any language)
-- 🗺️ **All incoming patients tracked live on a map** — GPS positions updated every 4 seconds; colour-coded by severity; ER sees the full incoming caseload at a glance
-- 🏥 **Routed to the best available hospital** — not just the nearest, but ranked by real ETA + occupancy; a full ER is deprioritised automatically
-- 🚑 **Ambulance dispatched instantly for critical cases** — IMMEDIATE patients get an in-app ambulance tracker with named hospital and arrival countdown, while the ER receives the dispatch note simultaneously
-- 👨‍⚕️ **Physician can override AI before patient arrives** — upgrade, downgrade, or approve triage level from the dashboard; decision reflected on the patient's screen in real time
-- 📶 **Works with zero infrastructure** — no Azure account needed; full demo mode with offline AI fallback, 440-hospital database, and browser-based voice input
-
-</td>
-<td width="25%" align="center">
+<td width="33%" align="center">
 
 ### 🏗️ Architecture
 ```
@@ -59,12 +47,24 @@ Azure AI  SQLite
 GPT-4/STT  Queue
       │
 ER Dashboard
-(Browser)
+ (Browser)
 ```
 
 </td>
 </tr>
 </table>
+
+### 📈 Impact
+
+| | |
+|:---|:---|
+| 🕐 **ER is briefed before you arrive** | Before the patient walks in, doctors already have: triage level, risk score, chief complaint, injury photos, voice transcript, medical history, allergies & current medications |
+| 🌍 **Patient speaks their language — doctor reads theirs** | Symptoms described in Turkish, clinical summary received in English. Each side communicates in their own language |
+| 🗺️ **All incoming patients tracked live on one map** | GPS positions updated every 4 seconds, colour-coded by triage severity — ER sees the full incoming caseload at a glance |
+| 🏥 **Routed to the best available hospital** | Not just the nearest — ranked by real ETA + occupancy. A full ER is deprioritised automatically |
+| 🚑 **Ambulance dispatched instantly for critical cases** | IMMEDIATE patients get an in-app ambulance tracker; the ER receives the dispatch note simultaneously |
+| 👨‍⚕️ **Physician overrides AI before patient arrives** | Upgrade, downgrade, or approve triage from the dashboard — decision reflected on the patient's screen in real time |
+| 📶 **Works with zero infrastructure** | Full demo mode with offline AI fallback, 440-hospital database, and browser-based voice input — no cloud account needed |
 
 ---
 
