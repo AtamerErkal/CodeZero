@@ -17,6 +17,69 @@
 
 ---
 
+## ⚡ At a Glance
+
+<table>
+<tr>
+<td width="25%" align="center">
+
+### 🚨 Problem
+Emergency rooms receive patients **without any prior information**. Triage happens only *after* arrival — wasting the most critical minutes and overloading ER staff with incomplete data.
+
+</td>
+<td width="25%" align="center">
+
+### 💡 Solution
+A **two-sided AI platform**: patients describe symptoms via voice before arrival; the ER dashboard receives a complete clinical picture — triage level, risk score, live GPS, and medical history — *before the patient walks in*.
+
+</td>
+<td width="25%" align="center">
+
+### 📈 Impact
+- Pre-hospital triage in **< 5 min**
+- **5-level MTS** assessment with AI rationale
+- Live GPS tracking for **IMMEDIATE / EMERGENCY** patients
+- Physician override loop — human always in control
+- Works fully **offline** (zero Azure credentials needed)
+
+</td>
+<td width="25%" align="center">
+
+### 🏗️ Architecture
+```
+Patient (Mobile)
+      │  voice / text
+      ▼
+  FastAPI Server
+      │
+  ┌───┴────┐
+Azure AI  SQLite
+GPT-4/STT  Queue
+      │
+ER Dashboard
+(Browser)
+```
+
+</td>
+</tr>
+</table>
+
+---
+
+### 🛠️ Tech Stack
+
+| Layer | Technology |
+|:---|:---|
+| **Backend** | Python 3.11 · FastAPI · SQLite |
+| **AI / NLP** | Azure OpenAI GPT-4 · Azure Speech STT · Azure Translator · Azure AI Search (RAG) |
+| **Mapping** | Azure Maps · Leaflet.js · Real-time GPS streaming |
+| **Frontend** | Vanilla HTML/CSS/JS · TailwindCSS · ApexCharts · Zero build step |
+| **Infrastructure** | Azure Document Intelligence · Azure Content Safety · 440-hospital offline DB |
+
+> 📖 **For full feature details, architecture diagrams, API reference, and demo scenarios — continue reading below.**
+
+---
+
 > [!CAUTION]  
 > **Medical Disclaimer** — This is an educational and demonstration project.  
 > It is **NOT** a certified medical device and must **NOT** be used for real clinical triage decisions.  
