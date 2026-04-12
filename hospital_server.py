@@ -1264,22 +1264,65 @@ def api_patient_status(patient_id: str):
 
     # Extract the clean text of the latest note entry (strip timestamp/action prefix)
     # Format stored: "[2024-01-15 10:30 UTC] [UPGRADE→IMMEDIATE] Doctor text\n---\nOlder..."
+    _LANG_NAMES = {
+        "tr": "Turkish", "de": "German",  "fr": "French",  "es": "Spanish",
+        "ar": "Arabic",  "nl": "Dutch",   "it": "Italian", "pl": "Polish",
+        "pt": "Portuguese", "ru": "Russian", "zh": "Chinese", "en": "English",
+        "ja": "Japanese", "ko": "Korean",
+    }
     translated_note = None
     if raw_note:
         latest_entry = raw_note.split("\n---\n")[0].strip()
         _m = _re.match(r"^\[.*?\]\s*\[.*?\]\s*([\s\S]+)$", latest_entry)
         clean_note = (_m.group(1).strip() if _m else latest_entry) or None
         if clean_note:
-            patient_lang = match.get("language") or "en-US"
+            patient_lang  = match.get("language") or "en-US"
+            patient_code  = patient_lang.split("-")[0].lower()  # "en-GB" → "en"
+            patient_name  = _LANG_NAMES.get(patient_code, "English")
+
+            # ── 1. Try Azure Translator (auto-detect source → patient language) ──
             try:
                 _, _tr = _get_triage_engine()
-                if _tr:
-                    # Auto-detect doctor's language, translate to patient's language
-                    translated_note = _tr.translate(clean_note, target_language=patient_lang)
+                if _tr and getattr(_tr, "_initialized", False):
+                    _az = _tr.translate(clean_note, target_language=patient_lang)
+                    if _az and _az != clean_note:
+                        translated_note = _az
+                        logger.info("Note translated via Azure (%s→%s)", "auto", patient_code)
             except Exception as _te:
-                logger.warning("Note translation failed: %s", _te)
+                logger.warning("Azure note translation failed: %s", _te)
+
+            # ── 2. Fallback: GPT translation (same pattern used elsewhere in codebase) ──
             if not translated_note:
-                translated_note = clean_note  # fallback: show original
+                _openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
+                if _openai_key:
+                    try:
+                        import openai as _oai
+                        _client = _oai.OpenAI(api_key=_openai_key)
+                        _resp = _client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": (
+                                        f"You are a medical translator. Translate the following "
+                                        f"physician note to {patient_name}. "
+                                        f"Reply with ONLY the translated text, nothing else."
+                                    ),
+                                },
+                                {"role": "user", "content": clean_note},
+                            ],
+                            max_tokens=500,
+                            temperature=0,
+                        )
+                        _gpt = _resp.choices[0].message.content.strip()
+                        if _gpt:
+                            translated_note = _gpt
+                            logger.info("Note translated via GPT → %s", patient_code)
+                    except Exception as _ge:
+                        logger.warning("GPT note translation failed: %s", _ge)
+
+            if not translated_note:
+                translated_note = clean_note  # final fallback: show original
 
     return {
         "patient_id": patient_id,
