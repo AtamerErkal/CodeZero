@@ -4,7 +4,8 @@ Demo Seed — University Clinic Ulm
 Populates the hospital queue with a realistic snapshot for demo/recording purposes.
 
 Scenario:  A busy morning shift at Universitätsklinikum Ulm.
-  • 6  patients en route  (IMMEDIATE × 2, EMERGENCY × 1, URGENT × 2, STANDARD × 1)
+  • 7  patients en route  (IMMEDIATE × 2, EMERGENCY × 1, URGENT × 3, STANDARD × 1)
+       — 5 by ambulance, 2 own transport
   • 7  patients in treatment (mix of triage levels, doctors + beds assigned)
   • 5  patients discharged earlier today
 
@@ -123,6 +124,7 @@ DEMO_PATIENTS = [
         "patient_id": "DEMO-P01-ULM",
         "health_number": "DEMO-DE-001",  # Karl Becker, 68, CAD
         "status": "incoming",
+        "has_ambulance": True,
         "triage_level": "IMMEDIATE",
         "chief_complaint": "Crushing chest pain, radiating to left arm, severe sweating",
         "complaint_text": "Sehr starke Brustschmerzen, die in den linken Arm ausstrahlen, starkes Schwitzen",
@@ -147,6 +149,7 @@ DEMO_PATIENTS = [
         "patient_id": "DEMO-P02-ULM",
         "health_number": "DEMO-DE-007",  # Thomas Becker, 60, T2DM obese
         "status": "incoming",
+        "has_ambulance": True,
         "triage_level": "IMMEDIATE",
         "chief_complaint": "Sudden facial droop, arm weakness, slurred speech — possible stroke",
         "complaint_text": "Plötzliche Gesichtslähmung rechts, Armlähmung, undeutliche Sprache",
@@ -170,6 +173,7 @@ DEMO_PATIENTS = [
         "patient_id": "DEMO-P03-ULM",
         "health_number": "DEMO-UK-002",  # Emily Clarke, 35, asthma
         "status": "incoming",
+        "has_ambulance": True,
         "triage_level": "EMERGENCY",
         "chief_complaint": "Acute severe asthma — unable to complete sentences, SpO2 88%",
         "complaint_text": "Severe asthma attack, can't breathe properly, blue lips",
@@ -193,6 +197,7 @@ DEMO_PATIENTS = [
         "patient_id": "DEMO-P04-ULM",
         "health_number": "DEMO-TR-001",  # Ahmet Yılmaz, 59, T2DM + hypertension
         "status": "incoming",
+        "has_ambulance": True,
         "triage_level": "URGENT",
         "chief_complaint": "Confusion, extreme thirst, rapid breathing — possible hyperglycaemic crisis",
         "complaint_text": "Çok susadım, kafam karışık, nefes almak zor",
@@ -212,10 +217,11 @@ DEMO_PATIENTS = [
         ],
     },
 
-    {   # P05 — Hypertensive emergency
+    {   # P05 — Hypertensive emergency (self-referred from GP, own transport)
         "patient_id": "DEMO-P05-ULM",
         "health_number": "DEMO-DE-010",  # Emma Zimmermann, 49, hypothyroidism
         "status": "incoming",
+        "has_ambulance": False,
         "triage_level": "URGENT",
         "chief_complaint": "Severe headache, BP 218/124, visual disturbance",
         "complaint_text": "Starke Kopfschmerzen, Sehstörungen, mein Blutdruck war 218/124",
@@ -235,10 +241,11 @@ DEMO_PATIENTS = [
         ],
     },
 
-    {   # P06 — Wrist fracture, low acuity
+    {   # P06 — Wrist fracture, low acuity (own transport)
         "patient_id": "DEMO-P06-ULM",
         "health_number": "DEMO-UK-006",  # Olivia Martin, 22, T1DM
         "status": "incoming",
+        "has_ambulance": False,
         "triage_level": "STANDARD",
         "chief_complaint": "Fallen off bicycle, wrist deformity, suspected fracture",
         "complaint_text": "Fell off my bike 30 minutes ago, wrist looks bent, can't move it",
@@ -254,6 +261,30 @@ DEMO_PATIENTS = [
         "qa_transcript": [
             {"question_en": "How did it happen?",           "question": "How did it happen?",           "answer": "Hit a pothole, landed on outstretched hand", "original_answer": "Hit a pothole, landed on outstretched hand"},
             {"question_en": "Any numbness in fingers?",    "question": "Any numbness in fingers?",     "answer": "Slight tingling in thumb",                   "original_answer": "Slight tingling in thumb"},
+        ],
+    },
+
+    {   # P19 — Acute appendicitis, ambulance dispatched
+        "patient_id": "DEMO-P19-ULM",
+        "health_number": "DEMO-DE-011",  # Klaus Müller, 28, no prior history
+        "status": "incoming",
+        "has_ambulance": True,
+        "triage_level": "URGENT",
+        "chief_complaint": "Severe right lower quadrant pain, nausea, fever 38.4°C — suspected appendicitis",
+        "complaint_text": "Starke Schmerzen rechts unten, Übelkeit und Erbrechen, Fieber seit heute Nacht, kann kaum laufen",
+        "assessment": "Suspected acute appendicitis. RLQ tenderness, rebound and Rovsing sign positive. Low-grade fever. WBC likely elevated.",
+        "red_flags": ["abdominal_pain_severe", "rebound_tenderness", "fever", "peritonism_signs"],
+        "suspected_conditions": ["Acute Appendicitis", "Early Peritonitis"],
+        "risk_score": 7,
+        "recommended_action": "Urgent surgical review. CT abdomen/pelvis with contrast. IV antibiotics (co-amoxiclav). NBM. Theatre booking if confirmed.",
+        "time_sensitivity": "Within 30 minutes",
+        "language": "de-DE",
+        "eta_override": 11,
+        "lat": 48.448, "lon": 9.984,
+        "qa_transcript": [
+            {"question_en": "When did the pain start?",         "question": "Wann haben die Schmerzen begonnen?",    "answer": "Last night around midnight",       "original_answer": "Letzte Nacht gegen Mitternacht"},
+            {"question_en": "Has the pain moved?",              "question": "Hat der Schmerz sich verlagert?",        "answer": "Started around navel, now lower right", "original_answer": "Begann am Bauchnabel, jetzt rechts unten"},
+            {"question_en": "Any previous abdominal surgeries?","question": "Frühere Bauchoperationen?",              "answer": "No",                               "original_answer": "Nein"},
         ],
     },
 
@@ -595,10 +626,16 @@ def _build_local_storage(patients: list[dict]) -> dict:
 
         patient_actions[pid] = actions
 
+    amb_pids = [p["patient_id"] for p in patients if p.get("has_ambulance")]
+    amb_speeds = {p["patient_id"]: (88 if p.get("triage_level") in ("IMMEDIATE","EMERGENCY") else 80)
+                  for p in patients if p.get("has_ambulance")}
+
     return {
         "doctorAssignments": json.dumps(doctor_assignments),
         "bedAssignments":    json.dumps(bed_assignments),
         "patientActions":    json.dumps(patient_actions),
+        "ambulancePatients": json.dumps(amb_pids),
+        "ambulanceSpeeds":   json.dumps(amb_speeds),
     }
 
 

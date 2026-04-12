@@ -1006,6 +1006,7 @@
                 <thead class="text-text2 border-b border-slate-700/50">
                   <tr>
                     <th class="text-left py-3 px-2">Patient</th>
+                    <th class="text-left py-3 px-2">Transport</th>
                     <th class="text-left py-3 px-2">Status</th>
                     <th class="text-left py-3 px-2">Distance</th>
                     <th class="text-left py-3 px-2">ETA</th>
@@ -1627,10 +1628,17 @@
     const sparklineCharts = {};
 
     // ── Leaflet Map ─────────────────────────────────────────
-    const HOSPITAL_COORDS = [48.7758, 9.1829]; // Klinikum Stuttgart
+    const HOSPITAL_COORDS = [48.4215, 9.9593]; // Universitätsklinikum Ulm
     let AZURE_KEY = '';
     let mapInstance = null, mapTileLayer = null, staticHospitalsLayer = null;
     let _trackMarkerMap = {};
+
+    // ── Demo live tracking ──
+    let _demoAmbulanceSet  = new Set(JSON.parse(localStorage.getItem('ambulancePatients') || '[]'));
+    let _demoAmbSpeeds     = JSON.parse(localStorage.getItem('ambulanceSpeeds')   || '{}');
+    const _DEMO_CAR_SPEED  = 55; // km/h own transport
+    let _demoTrackState    = {}; // pid → {lat, lon, speed_kmh}
+    let _demoTrackTimer    = null;
 
     async function fetchMapsKey() {
       try {
@@ -1658,7 +1666,7 @@
 
       L.marker(HOSPITAL_COORDS, {
         icon: L.divIcon({
-          html: '<div style="background:#0f172a;color:#22d3ee;padding:5px 11px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.4);border:1.5px solid rgba(34,211,238,.3)">🏥 Klinikum Stuttgart</div>',
+          html: '<div style="background:#0f172a;color:#22d3ee;padding:5px 11px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.4);border:1.5px solid rgba(34,211,238,.3)">🏥 Universitätsklinikum Ulm</div>',
           className: '', iconAnchor: [80, 16],
         })
       }).addTo(mapInstance);
@@ -2096,6 +2104,22 @@
 
     async function loadTracking() {
       state.tracking = await api("/api/tracking");
+
+      // Overlay demo live-tracking positions (client-side simulation)
+      if (Object.keys(_demoTrackState).length > 0) {
+        state.tracking.forEach(p => {
+          const pos = _demoTrackState[p.patient_id];
+          if (!pos) return;
+          p.latitude    = pos.lat;
+          p.longitude   = pos.lon;
+          p.distance_km = Math.max(0, Math.sqrt(
+            ((HOSPITAL_COORDS[0] - pos.lat) * 111) ** 2 +
+            ((HOSPITAL_COORDS[1] - pos.lon) * 72)  ** 2));
+          p.speed_kmh   = pos.speed_kmh;
+          p.eta_minutes = Math.max(1, Math.round(p.distance_km / pos.speed_kmh * 60));
+        });
+      }
+
       const pts = state.tracking;
 
       // Update tracking table
@@ -2110,6 +2134,13 @@
           const speed = p.speed_kmh != null ? `${p.speed_kmh} km/h` : '—';
           const lat = p.latitude ?? p.location?.lat;
           const lon = p.longitude ?? p.location?.lon;
+          const pid2 = p.patient_id || '';
+          const hasAmb2 = isIncoming && _demoAmbulanceSet.has(pid2);
+          const transportBadge = !isIncoming ? '<span class="text-text3 text-xs">—</span>'
+            : hasAmb2
+              ? `<span class="chip text-[11px] font-bold" style="color:#ef4444;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)">🚑 Ambulance</span>`
+              : `<span class="chip text-[11px] font-bold" style="color:#60a5fa;border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.08)">🚗 Own transport</span>`;
+          const speedDisplay = p.speed_kmh != null ? `${p.speed_kmh} km/h` : (hasAmb2 ? '88 km/h' : (isIncoming ? '55 km/h' : '—'));
           return `
           <tr class="border-b border-slate-700/40 hover:bg-surface/30 transition-colors ${triageClass}">
             <td class="py-3 px-2">
@@ -2118,6 +2149,7 @@
                 <span class="font-medium" style="color: inherit;">${h(p.full_name || p.patient_id)}</span>
               </div>
             </td>
+            <td class="py-3 px-2">${transportBadge}</td>
             <td class="py-3 px-2">
               <span class="chip ${isIncoming ? 'text-emer border-emer/30' : 'text-stable border-stable/30'} text-xs">
                 ${h(STATUS_LABEL[p.status || "incoming"] || p.status || "incoming")}
@@ -2125,9 +2157,9 @@
             </td>
             <td class="py-3 px-2 mono" style="color: #64748b;">${distance}</td>
             <td class="py-3 px-2 mono ${p.eta_minutes != null && p.eta_minutes <= 5 ? 'text-emer font-bold' : ''}">${p.eta_minutes != null ? `${p.eta_minutes} min` : "—"}</td>
-            <td class="py-3 px-2 mono" style="color: #64748b;">${speed}</td>
+            <td class="py-3 px-2 mono" style="color: #64748b;">${speedDisplay}</td>
             <td class="py-3 px-2 mono text-xs" style="color: #94a3b8;">${lat != null && lon != null ? `${Number(lat).toFixed(5)}, ${Number(lon).toFixed(5)}` : "No GPS"}</td>
-            <td class="py-3 px-2" style="color: #64748b;">${h(p.destination_hospital || "Pending")}</td>
+            <td class="py-3 px-2" style="color: #64748b;">${h(p.destination_hospital || "Universitätsklinikum Ulm")}</td>
           </tr>
         `}).join("");
       }
@@ -2147,21 +2179,44 @@
           const tc = TRIAGE_CLASS[lvl] || '?';
           const nm = p.full_name || p.patient_id;
           const photo = p.profile_photo_url || `https://i.pravatar.cc/80?u=${encodeURIComponent(pid)}`;
-          // Status ground truth: use p.status, not eta_minutes
           const isArrived = p.status === 'arrived' || p.status === 'in_treatment' || p.status === 'discharged';
+          const hasAmb = !isArrived && _demoAmbulanceSet.has(pid);
           const size = (lvl === 'IMMEDIATE' || lvl === 'EMERGENCY') ? 18 : 13;
           const dur = size === 18 ? '1.2s' : '2.5s';
-          // Arrived patients get a static marker, en-route patients pulse
-          const iconHtml = isArrived
-            ? `<div style="width:${size}px;height:${size}px;background:${col};border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 3px ${col}44,0 2px 6px rgba(0,0,0,.3);opacity:.7;"></div>`
-            : `<div style="width:${size}px;height:${size}px;background:${col};border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 3px ${col}55,0 2px 6px rgba(0,0,0,.3);animation:marker-pulse ${dur} ease-in-out infinite;"></div>`;
-          const icon = L.divIcon({ html: iconHtml, className: '', iconSize: [size, size], iconAnchor: [size/2, size/2] });
+
+          // Ambulance → distinct icon; arrived → dim dot; en-route own → pulsing dot
+          let iconHtml, iconSize, iconAnchor;
+          if (hasAmb) {
+            iconHtml   = `<div style="background:#1a0a0a;color:#fff;border:2px solid ${col};border-radius:8px;padding:3px 8px;font-size:15px;font-weight:800;white-space:nowrap;box-shadow:0 0 10px ${col}88,0 2px 8px rgba(0,0,0,.5);animation:marker-pulse ${dur} ease-in-out infinite;line-height:1.3">🚑</div>`;
+            iconSize   = [38, 26];
+            iconAnchor = [19, 13];
+          } else if (isArrived) {
+            iconHtml   = `<div style="width:${size}px;height:${size}px;background:${col};border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 3px ${col}44,0 2px 6px rgba(0,0,0,.3);opacity:.7;"></div>`;
+            iconSize   = [size, size];
+            iconAnchor = [size/2, size/2];
+          } else {
+            iconHtml   = `<div style="width:${size}px;height:${size}px;background:${col};border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 3px ${col}55,0 2px 6px rgba(0,0,0,.3);animation:marker-pulse ${dur} ease-in-out infinite;"></div>`;
+            iconSize   = [size, size];
+            iconAnchor = [size/2, size/2];
+          }
+          const icon = L.divIcon({ html: iconHtml, className: '', iconSize, iconAnchor });
 
           const etaLabel = isArrived
             ? `<span style="font-size:12px;font-weight:700;color:#10b981">✓ Arrived</span>`
-            : `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ${p.eta_minutes != null ? p.eta_minutes + ' min' : 'En Route'}</span>`;
+            : `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ETA ${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</span>`;
 
-          const popupContent = `<div style="min-width:220px;font-family:Inter,sans-serif">
+          const transportRow = hasAmb
+            ? `<div style="margin-top:8px;padding:8px;border-radius:8px;background:#ef444411;border:1px solid #ef444433;font-size:11px;color:#fca5a5">
+                 <div style="font-weight:700;color:#ef4444;margin-bottom:4px">🚑 Ambulance en route → Universitätsklinikum Ulm</div>
+                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;text-align:center">
+                   <div><div style="font-size:14px;font-weight:700;color:#fff">${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</div><div style="color:#94a3b8">ETA</div></div>
+                   <div><div style="font-size:14px;font-weight:700;color:#fff">${p.distance_km != null ? p.distance_km.toFixed(1) + ' km' : '—'}</div><div style="color:#94a3b8">Distance</div></div>
+                   <div><div style="font-size:14px;font-weight:700;color:#fff">${p.speed_kmh != null ? p.speed_kmh + ' km/h' : '88 km/h'}</div><div style="color:#94a3b8">Speed</div></div>
+                 </div>
+               </div>`
+            : `<div style="display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px solid rgba(148,163,184,.18)">${etaLabel}${p.blood_type ? `<span style="font-size:11px;padding:2px 7px;border-radius:6px;font-weight:700;background:#ef444422;color:#ef4444;border:1px solid #ef444440">🩸 ${h(p.blood_type)}</span>` : ''}</div>`;
+
+          const popupContent = `<div style="min-width:230px;font-family:Inter,sans-serif">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
               <img src="${h(photo)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid ${col};flex-shrink:0" onerror="this.style.display='none'" />
               <div>
@@ -2169,11 +2224,8 @@
                 <span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:${col}22;color:${col};border:1px solid ${col}55">${tc} ${lvl.replace('_',' ')}</span>
               </div>
             </div>
-            ${p.chief_complaint ? `<div style="font-size:12px;color:var(--text2);margin-bottom:10px;padding-left:2px">💬 ${h(p.chief_complaint)}</div>` : ''}
-            <div style="display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px solid rgba(148,163,184,.18)">
-              ${etaLabel}
-              ${p.blood_type ? `<span style="font-size:11px;padding:2px 7px;border-radius:6px;font-weight:700;background:#ef444422;color:#ef4444;border:1px solid #ef444440">🩸 ${h(p.blood_type)}</span>` : ''}
-            </div>
+            ${p.chief_complaint ? `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;padding-left:2px">💬 ${h(p.chief_complaint)}</div>` : ''}
+            ${transportRow}
           </div>`;
 
           if (_trackMarkerMap[pid]) {
@@ -2196,6 +2248,15 @@
           if (!currentPids.has(pid)) {
             mapInstance.removeLayer(_trackMarkerMap[pid]);
             delete _trackMarkerMap[pid];
+          }
+        }
+
+        // Auto-fit map to show all markers + hospital on first load
+        if (currentPids.size > 0 && !mapInstance._fitDone) {
+          mapInstance._fitDone = true;
+          const allLatLngs = [...Object.values(_trackMarkerMap).map(m => m.getLatLng()), L.latLng(HOSPITAL_COORDS)];
+          if (allLatLngs.length > 1) {
+            mapInstance.fitBounds(L.latLngBounds(allLatLngs), { padding: [40, 40], maxZoom: 13 });
           }
         }
       }
@@ -2240,6 +2301,72 @@
             </div>
           `;
         }).join("") || '<div class="text-center py-8 text-text2 text-sm">No active transports</div>';
+      }
+    }
+
+    // ── Demo live tracking simulation ────────────────────────────────────────
+    function initDemoLiveTracking() {
+      if (!localStorage.getItem('demoReportsLoaded')) return;
+      if (_demoTrackTimer) return;
+
+      // Refresh ambulance sets (may have been loaded before localStorage was populated)
+      _demoAmbulanceSet = new Set(JSON.parse(localStorage.getItem('ambulancePatients') || '[]'));
+      _demoAmbSpeeds    = JSON.parse(localStorage.getItem('ambulanceSpeeds') || '{}');
+
+      // Seed positions from current patients
+      state.patients.forEach(p => {
+        if (p.status !== 'incoming' && p.status !== 'en_route') return;
+        const lat = p.latitude ?? p.location?.lat;
+        const lon = p.longitude ?? p.location?.lon;
+        if (!lat || !lon) return;
+        const pid = p.patient_id;
+        const isAmb = _demoAmbulanceSet.has(pid);
+        _demoTrackState[pid] = {
+          lat, lon,
+          speed_kmh: isAmb ? (_demoAmbSpeeds[pid] || 88) : _DEMO_CAR_SPEED,
+        };
+      });
+
+      _demoTrackTimer = setInterval(_demoTrackStep, 4000);
+    }
+
+    function _demoTrackStep() {
+      const [hospLat, hospLon] = HOSPITAL_COORDS;
+      let changed = false;
+      Object.entries(_demoTrackState).forEach(([pid, pos]) => {
+        const dlat = hospLat - pos.lat;
+        const dlon = hospLon - pos.lon;
+        const dist_km = Math.sqrt((dlat * 111.0) ** 2 + (dlon * 72.0) ** 2);
+        if (dist_km < 0.15) return; // virtually arrived
+
+        const step_km   = pos.speed_kmh * (4 / 3600);
+        const fraction  = Math.min(step_km / dist_km, 1);
+        pos.lat += dlat * fraction;
+        pos.lon += dlon * fraction;
+
+        const newDist = Math.max(0, dist_km - step_km);
+        const etaMin  = Math.max(1, Math.round(newDist / pos.speed_kmh * 60));
+
+        const patient = state.patients.find(p => p.patient_id === pid);
+        if (patient) {
+          patient.latitude    = pos.lat;
+          patient.longitude   = pos.lon;
+          patient.distance_km = newDist;
+          patient.eta_minutes = etaMin;
+          patient.speed_kmh   = pos.speed_kmh;
+          changed = true;
+        }
+        // Move map marker directly (no full redraw needed)
+        if (mapInstance && _trackMarkerMap[pid]) {
+          _trackMarkerMap[pid].setLatLng([pos.lat, pos.lon]);
+        }
+      });
+
+      if (!changed) return;
+
+      // Refresh table + sidebar if tracking tab is open
+      if (state.activeTab === 'tracking') {
+        loadTracking();
       }
     }
 
@@ -3620,11 +3747,13 @@
       const bins = new Array(10).fill(0);
       pts.forEach(p => { const r = Math.round(p.risk_score); if (r >= 1 && r <= 10) bins[r - 1]++; });
       const maxB = Math.max(...bins, 1);
+      const H_RISK = 100;
       document.getElementById('rpt-d-risk-dist').innerHTML = bins.map((n, i) => {
         const col = i >= 6 ? '#ef4444' : i >= 3 ? '#f59e0b' : '#10b981';
-        return `<div class="flex-1 flex flex-col items-center gap-1">
+        const h = Math.max(4, Math.round((n / maxB) * H_RISK));
+        return `<div class="flex-1 flex flex-col items-center justify-end gap-1">
           <div class="text-[10px] font-bold text-text3">${n || ''}</div>
-          <div class="w-full rounded-t-md transition-all duration-500" style="background: ${col}; height: ${Math.max(4, (n / maxB) * 100)}%;"></div>
+          <div class="w-full rounded-t-md transition-all duration-500" style="background:${col};height:${h}px;"></div>
         </div>`;
       }).join('');
     }
@@ -3638,9 +3767,10 @@
         if (m) hours[parseInt(m[1])]++;
       });
       const maxH = Math.max(...hours, 1);
+      const H_HOURS = 100;
       document.getElementById('rpt-w-hours').innerHTML = hours.map((n, i) => `
-        <div class="flex-1 flex flex-col items-center">
-          <div class="w-full rounded-t-md transition-all duration-500 ${n > 0 ? 'bg-cyan' : 'bg-slate-700'}" style="height: ${Math.max(4, (n / maxH) * 100)}%;"></div>
+        <div class="flex-1 flex flex-col items-center justify-end">
+          <div class="w-full rounded-t-md transition-all duration-500 ${n > 0 ? 'bg-cyan' : 'bg-slate-700'}" style="height:${Math.max(4, Math.round((n / maxH) * H_HOURS))}px;"></div>
           ${i % 6 === 0 ? `<div class="text-[10px] text-text3 mt-1">${i}h</div>` : ''}
         </div>
       `).join('');
@@ -3763,10 +3893,11 @@
       const vols = [14, 19, 22, 17, 24, 21, 18];
       const maxV = Math.max(...vols);
       const barColors = ['#22d3ee','#22d3ee','#ef4444','#22d3ee','#f59e0b','#22d3ee','#22d3ee'];
+      const H_VOL = 130;
       document.getElementById('rpt-w-daily-bars').innerHTML = vols.map((n,i) => `
-        <div class="flex-1 flex flex-col items-center gap-1">
+        <div class="flex-1 flex flex-col items-center justify-end gap-1">
           <div class="text-[10px] font-bold text-text2">${n}</div>
-          <div class="w-full rounded-t-lg transition-all" style="height:${Math.round((n/maxV)*100)}%;background:${barColors[i]}88;border-top:2px solid ${barColors[i]}"></div>
+          <div class="w-full rounded-t-lg transition-all" style="height:${Math.max(4,Math.round((n/maxV)*H_VOL))}px;background:${barColors[i]}88;border-top:2px solid ${barColors[i]}"></div>
         </div>`).join('');
       document.getElementById('rpt-w-daily-labels').innerHTML = days.map(d =>
         `<span class="flex-1 text-center">${d}</span>`).join('');
@@ -3774,9 +3905,10 @@
       // Hourly distribution (realistic ER pattern — peaks at 10-11h and 14-16h)
       const hourly = [1,1,0,0,1,2,3,5,7,9,11,10,8,7,10,12,11,9,7,5,4,3,2,1];
       const maxH = Math.max(...hourly);
+      const H_HRS = 100;
       document.getElementById('rpt-w-hours').innerHTML = hourly.map((n,i) => `
-        <div class="flex-1 flex flex-col items-center">
-          <div class="w-full rounded-t-md transition-all" style="height:${Math.max(4,(n/maxH)*100)}%;background:${n>=10?'#ef4444':n>=7?'#f59e0b':'#22d3ee'}55;border-top:1px solid ${n>=10?'#ef4444':n>=7?'#f59e0b':'#22d3ee'}"></div>
+        <div class="flex-1 flex flex-col items-center justify-end">
+          <div class="w-full rounded-t-md transition-all" style="height:${Math.max(4,Math.round((n/maxH)*H_HRS))}px;background:${n>=10?'#ef4444':n>=7?'#f59e0b':'#22d3ee'}55;border-top:1px solid ${n>=10?'#ef4444':n>=7?'#f59e0b':'#22d3ee'}"></div>
           ${i%6===0?`<div class="text-[9px] text-text3 mt-1">${i}h</div>`:''}
         </div>`).join('');
 
@@ -3820,10 +3952,11 @@
       const monthly = [287,301,334,298,342,389,356,378,341,312,267,242];
       const maxM = Math.max(...monthly);
       const today = new Date().getMonth(); // highlight current month
+      const H_MON = 100;
       document.getElementById('rpt-y-monthly-bars').innerHTML = monthly.map((n,i) => `
-        <div class="flex-1 flex flex-col items-center gap-0.5">
+        <div class="flex-1 flex flex-col items-center justify-end gap-0.5">
           <div class="text-[8px] text-text3 font-mono">${n>300?n:''}</div>
-          <div class="w-full rounded-t-md transition-all" style="height:${Math.round((n/maxM)*100)}%;background:${i===today?'#22d3ee':'#22d3ee44'};border-top:1px solid ${i===today?'#22d3ee':'#22d3ee66'}"></div>
+          <div class="w-full rounded-t-md transition-all" style="height:${Math.max(4,Math.round((n/maxM)*H_MON))}px;background:${i===today?'#22d3ee':'#22d3ee44'};border-top:1px solid ${i===today?'#22d3ee':'#22d3ee66'}"></div>
         </div>`).join('');
 
       // Language distribution
@@ -4045,7 +4178,7 @@
       document.querySelectorAll('.doctor-sub-btn').forEach(b => b.classList.remove('active-doctor-sub'));
 
       // Load tab-specific data
-      if (tab === 'tracking') { initMap(); loadTracking(); }
+      if (tab === 'tracking') { initMap(); loadTracking(); initDemoLiveTracking(); }
       if (tab === 'reports') loadReports();
       if (tab === 'analytics') loadLiveStats();
       if (tab === 'admin') loadAdminTable();
@@ -5385,7 +5518,7 @@
     }
 
     async function loadDemo() {
-      if (!confirm('This will CLEAR the queue and load the University Clinic Ulm demo scenario (18 patients). Continue?')) return;
+      if (!confirm('This will CLEAR the queue and load the University Clinic Ulm demo scenario (19 patients, 7 en route). Continue?')) return;
       try {
         toast('⏳ Loading demo…', 'ok');
         const r = await api('/api/admin/demo', { method: 'POST' });
@@ -5402,6 +5535,10 @@
 
         // Store demo report data for reports tab
         localStorage.setItem('demoReportsLoaded', '1');
+
+        // Store ambulance tracking data
+        if (ls.ambulancePatients) localStorage.setItem('ambulancePatients', ls.ambulancePatients);
+        if (ls.ambulanceSpeeds)   localStorage.setItem('ambulanceSpeeds',   ls.ambulanceSpeeds);
 
         toast('🏥 Demo loaded — ' + r.seeded + ' patients at ' + r.hospital, 'ok');
 
@@ -5747,6 +5884,7 @@
       loadBedAssignmentsFromStorage();
       loadDoctorAssignmentsFromStorage();
       initDoctorSubmenu();
+      initDemoLiveTracking();
       
       // Apply saved KPI filter after data is loaded
       if (savedKpiFilter && savedKpiFilter !== 'all') {
