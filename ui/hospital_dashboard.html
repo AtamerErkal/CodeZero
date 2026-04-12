@@ -1172,9 +1172,38 @@
 
           <!-- Weekly Reports -->
           <div id="rpt-weekly" class="rpt-pane hidden">
+            <!-- AI Performance metrics row -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div class="glass rounded-2xl p-5 border border-teal/20">
+                <div class="text-xs uppercase tracking-wider text-teal font-bold mb-2">AI Triage Accuracy</div>
+                <div class="text-3xl font-bold text-teal mono" id="rpt-w-ai-accuracy">—</div>
+                <div class="text-xs text-text2 mt-1">Cases matching clinical outcome</div>
+              </div>
+              <div class="glass rounded-2xl p-5 border border-cyan/20">
+                <div class="text-xs uppercase tracking-wider text-cyan font-bold mb-2">Avg AI Response</div>
+                <div class="text-3xl font-bold text-cyan mono" id="rpt-w-ai-time">—</div>
+                <div class="text-xs text-text2 mt-1">From submission to assessment</div>
+              </div>
+              <div class="glass rounded-2xl p-5 border border-urgent/20">
+                <div class="text-xs uppercase tracking-wider text-urgent font-bold mb-2">Doctor Upgrades</div>
+                <div class="text-3xl font-bold text-urgent mono" id="rpt-w-ai-upgrades">—</div>
+                <div class="text-xs text-text2 mt-1">AI triage raised by physician</div>
+              </div>
+              <div class="glass rounded-2xl p-5 border border-stable/20">
+                <div class="text-xs uppercase tracking-wider text-stable font-bold mb-2">Red Flag Detection</div>
+                <div class="text-3xl font-bold text-stable mono" id="rpt-w-ai-redflags">—</div>
+                <div class="text-xs text-text2 mt-1">Critical findings surfaced</div>
+              </div>
+            </div>
+            <!-- Daily volume bars -->
             <div class="glass rounded-2xl p-5">
+              <div class="text-sm font-semibold mb-4">Daily Patient Volume (Last 7 Days)</div>
+              <div class="flex items-end gap-2 h-40" id="rpt-w-daily-bars"></div>
+              <div class="flex justify-between mt-2 text-xs text-text3" id="rpt-w-daily-labels"></div>
+            </div>
+            <div class="glass rounded-2xl p-5 mt-4">
               <div class="text-sm font-semibold mb-4">Arrival Time Distribution (by hour)</div>
-              <div class="flex items-end gap-1 h-40" id="rpt-w-hours"></div>
+              <div class="flex items-end gap-1 h-32" id="rpt-w-hours"></div>
               <div class="flex justify-between mt-2 text-xs text-text3">
                 <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
               </div>
@@ -1224,6 +1253,29 @@
               <div class="text-sm font-semibold mb-4">Top Conditions (Suspected)</div>
               <div id="rpt-m-conds" class="space-y-2"></div>
             </div>
+            <!-- AI Monthly Performance -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+              <div class="glass rounded-2xl p-5 border border-teal/20">
+                <div class="text-xs uppercase tracking-wider text-teal font-bold mb-2">AI Accuracy</div>
+                <div class="text-3xl font-bold text-teal mono" id="rpt-m-ai-accuracy">—</div>
+                <div class="text-xs text-text2 mt-1">Triage correctness rate</div>
+              </div>
+              <div class="glass rounded-2xl p-5 border border-cyan/20">
+                <div class="text-xs uppercase tracking-wider text-cyan font-bold mb-2">Avg AI Time</div>
+                <div class="text-3xl font-bold text-cyan mono" id="rpt-m-ai-time">—</div>
+                <div class="text-xs text-text2 mt-1">Assessment duration</div>
+              </div>
+              <div class="glass rounded-2xl p-5 border border-urgent/20">
+                <div class="text-xs uppercase tracking-wider text-urgent font-bold mb-2">Triage Changes</div>
+                <div class="text-3xl font-bold text-urgent mono" id="rpt-m-ai-changes">—</div>
+                <div class="text-xs text-text2 mt-1">Doctor overrides this month</div>
+              </div>
+              <div class="glass rounded-2xl p-5 border border-violet-400/20">
+                <div class="text-xs uppercase tracking-wider text-violet-400 font-bold mb-2">Multilingual</div>
+                <div class="text-3xl font-bold text-violet-400 mono" id="rpt-m-ai-langs">—</div>
+                <div class="text-xs text-text2 mt-1">Languages processed</div>
+              </div>
+            </div>
           </div>
 
           <!-- Yearly Reports -->
@@ -1250,9 +1302,47 @@
                 <div class="text-xs text-text2 mt-1">Discharged / total</div>
               </div>
             </div>
-            <div class="glass rounded-2xl p-5 mt-4">
-              <div class="text-sm font-semibold mb-4">Language Distribution (All-time)</div>
-              <div id="rpt-y-lang" class="space-y-2"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div class="glass rounded-2xl p-5">
+                <div class="text-sm font-semibold mb-4">Language Distribution (All-time)</div>
+                <div id="rpt-y-lang" class="space-y-2"></div>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <div class="text-sm font-semibold mb-4">Monthly Volume (This Year)</div>
+                <div class="flex items-end gap-1 h-32" id="rpt-y-monthly-bars"></div>
+                <div class="flex justify-between mt-2 text-[10px] text-text3">
+                  <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                  <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+                </div>
+              </div>
+            </div>
+            <!-- AI Yearly Summary -->
+            <div class="glass rounded-2xl p-5 mt-4 border border-teal/15">
+              <div class="text-sm font-semibold mb-4 flex items-center gap-2">
+                🤖 <span>AI System Performance — Annual Summary</span>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center p-4 rounded-xl bg-teal/5 border border-teal/20">
+                  <div class="text-3xl font-bold text-teal mono" id="rpt-y-ai-accuracy">—</div>
+                  <div class="text-[10px] uppercase tracking-wider text-teal font-bold mt-1">Triage Accuracy</div>
+                  <div class="text-[10px] text-text3 mt-0.5">AI vs clinical outcome</div>
+                </div>
+                <div class="text-center p-4 rounded-xl bg-cyan/5 border border-cyan/20">
+                  <div class="text-3xl font-bold text-cyan mono" id="rpt-y-ai-time">—</div>
+                  <div class="text-[10px] uppercase tracking-wider text-cyan font-bold mt-1">Avg Response</div>
+                  <div class="text-[10px] text-text3 mt-0.5">Submission to assessment</div>
+                </div>
+                <div class="text-center p-4 rounded-xl bg-stable/5 border border-stable/20">
+                  <div class="text-3xl font-bold text-stable mono" id="rpt-y-ai-redflags">—</div>
+                  <div class="text-[10px] uppercase tracking-wider text-stable font-bold mt-1">Red Flag Rate</div>
+                  <div class="text-[10px] text-text3 mt-0.5">Critical findings detected</div>
+                </div>
+                <div class="text-center p-4 rounded-xl bg-violet-500/5 border border-violet-500/20">
+                  <div class="text-3xl font-bold text-violet-400 mono" id="rpt-y-ai-langs">—</div>
+                  <div class="text-[10px] uppercase tracking-wider text-violet-400 font-bold mt-1">Languages</div>
+                  <div class="text-[10px] text-text3 mt-0.5">Multilingual assessments</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2508,8 +2598,8 @@
                 <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" style="background:${s.time ? 'rgba(34,211,238,.15)' : 'rgba(51,65,85,.4)'};border:1px solid ${s.time ? 'rgba(34,211,238,.3)' : 'rgba(51,65,85,.5)'}">
                   ${s.icon}
                 </div>
-                <span class="text-[7px] font-bold uppercase text-center leading-tight" style="color:${s.time ? '#22d3ee' : 'var(--text-3)'}">${s.label}</span>
-                <span class="text-[7px] text-text3 mono">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
+                <span class="text-[9px] font-bold uppercase text-center leading-tight" style="color:${s.time ? '#22d3ee' : 'var(--text-3)'}">${s.label}</span>
+                <span class="text-[9px] text-text3 mono">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
               </div>
             `).join('')}
           </div>
@@ -3464,6 +3554,7 @@
         buildWeeklyReport(pts);
         buildMonthlyReport(pts, stats);
         buildYearlyReport(pts, stats);
+        if (localStorage.getItem('demoReportsLoaded') === '1') buildDemoReports();
       } catch (e) { console.error('Reports failed', e); }
     }
 
@@ -3658,6 +3749,94 @@
             <span class="text-xs font-bold w-6 text-right">${n}</span>
           </div>`).join('')
         : '<div class="text-text3 text-sm">No language data yet</div>';
+    }
+
+    function buildDemoReports() {
+      // ── WEEKLY ──
+      document.getElementById('rpt-w-ai-accuracy').textContent = '94.2%';
+      document.getElementById('rpt-w-ai-time').textContent = '2.3 min';
+      document.getElementById('rpt-w-ai-upgrades').textContent = '8.3%';
+      document.getElementById('rpt-w-ai-redflags').textContent = '97.8%';
+
+      // Daily volumes Mon–Sun
+      const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const vols = [14, 19, 22, 17, 24, 21, 18];
+      const maxV = Math.max(...vols);
+      const barColors = ['#22d3ee','#22d3ee','#ef4444','#22d3ee','#f59e0b','#22d3ee','#22d3ee'];
+      document.getElementById('rpt-w-daily-bars').innerHTML = vols.map((n,i) => `
+        <div class="flex-1 flex flex-col items-center gap-1">
+          <div class="text-[10px] font-bold text-text2">${n}</div>
+          <div class="w-full rounded-t-lg transition-all" style="height:${Math.round((n/maxV)*100)}%;background:${barColors[i]}88;border-top:2px solid ${barColors[i]}"></div>
+        </div>`).join('');
+      document.getElementById('rpt-w-daily-labels').innerHTML = days.map(d =>
+        `<span class="flex-1 text-center">${d}</span>`).join('');
+
+      // Hourly distribution (realistic ER pattern — peaks at 10-11h and 14-16h)
+      const hourly = [1,1,0,0,1,2,3,5,7,9,11,10,8,7,10,12,11,9,7,5,4,3,2,1];
+      const maxH = Math.max(...hourly);
+      document.getElementById('rpt-w-hours').innerHTML = hourly.map((n,i) => `
+        <div class="flex-1 flex flex-col items-center">
+          <div class="w-full rounded-t-md transition-all" style="height:${Math.max(4,(n/maxH)*100)}%;background:${n>=10?'#ef4444':n>=7?'#f59e0b':'#22d3ee'}55;border-top:1px solid ${n>=10?'#ef4444':n>=7?'#f59e0b':'#22d3ee'}"></div>
+          ${i%6===0?`<div class="text-[9px] text-text3 mt-1">${i}h</div>`:''}
+        </div>`).join('');
+
+      // ── MONTHLY ──
+      document.getElementById('rpt-m-total').textContent = '312';
+      document.getElementById('rpt-m-discharge').textContent = '87%';
+      document.getElementById('rpt-m-highrisk').textContent = '67';
+      document.getElementById('rpt-m-treat').textContent = '94 min';
+      document.getElementById('rpt-m-risk').textContent = '6.4';
+      document.getElementById('rpt-m-ai-accuracy').textContent = '93.8%';
+      document.getElementById('rpt-m-ai-time').textContent = '2.4 min';
+      document.getElementById('rpt-m-ai-changes').textContent = '26';
+      document.getElementById('rpt-m-ai-langs').textContent = '3';
+
+      const mConds = [
+        ['Myocardial Infarction', 42], ['Acute Stroke', 38],
+        ['COPD Exacerbation', 31], ['Polytrauma / RTA', 28],
+        ['Acute Asthma', 24], ['Hip Fracture', 19], ['Sepsis', 16]
+      ];
+      const maxC = mConds[0][1];
+      document.getElementById('rpt-m-conds').innerHTML = mConds.map(([c,n]) => `
+        <div class="flex items-center gap-3">
+          <span class="w-44 text-xs text-text2 truncate">${c}</span>
+          <div class="flex-1 h-5 bg-surface2/50 rounded-full overflow-hidden">
+            <div class="h-full flex items-center justify-end px-2 text-[10px] font-bold text-white transition-all"
+                 style="width:${Math.max(6,(n/maxC)*100)}%;background:#22d3ee88">${n}</div>
+          </div>
+        </div>`).join('');
+
+      // ── YEARLY ──
+      document.getElementById('rpt-y-total').textContent = '3,847';
+      document.getElementById('rpt-y-emg').textContent = '22%';
+      document.getElementById('rpt-y-risk').textContent = '5.9';
+      document.getElementById('rpt-y-treat').textContent = '91%';
+      document.getElementById('rpt-y-ai-accuracy').textContent = '94.1%';
+      document.getElementById('rpt-y-ai-time').textContent = '2.3 min';
+      document.getElementById('rpt-y-ai-redflags').textContent = '97.5%';
+      document.getElementById('rpt-y-ai-langs').textContent = '3';
+
+      // Monthly volume bars
+      const monthly = [287,301,334,298,342,389,356,378,341,312,267,242];
+      const maxM = Math.max(...monthly);
+      const today = new Date().getMonth(); // highlight current month
+      document.getElementById('rpt-y-monthly-bars').innerHTML = monthly.map((n,i) => `
+        <div class="flex-1 flex flex-col items-center gap-0.5">
+          <div class="text-[8px] text-text3 font-mono">${n>300?n:''}</div>
+          <div class="w-full rounded-t-md transition-all" style="height:${Math.round((n/maxM)*100)}%;background:${i===today?'#22d3ee':'#22d3ee44'};border-top:1px solid ${i===today?'#22d3ee':'#22d3ee66'}"></div>
+        </div>`).join('');
+
+      // Language distribution
+      const langs = [['German','de-DE',48],['English','en-GB',28],['Turkish','tr-TR',18],['Arabic','ar',6]];
+      const maxL = langs[0][2];
+      document.getElementById('rpt-y-lang').innerHTML = langs.map(([name,,pct]) => `
+        <div class="flex items-center gap-3">
+          <span class="w-24 text-xs text-text2">${name}</span>
+          <div class="flex-1 h-5 bg-surface2/50 rounded-full overflow-hidden">
+            <div class="h-full flex items-center justify-end px-2 text-[10px] font-bold text-white transition-all"
+                 style="width:${Math.max(6,(pct/maxL)*100)}%;background:#22d3ee88">${pct}%</div>
+          </div>
+        </div>`).join('');
     }
 
     async function loadLiveStats() {
@@ -4249,15 +4428,15 @@
         ];
         const anySet = steps.some(s => s.time);
         if (!anySet) return '';
-        return `<div class="mt-3 pt-2.5 border-t border-slate-700/20">
-          <div class="grid grid-cols-6 gap-1.5">
+        return `<div class="mt-3 pt-3 border-t border-slate-700/20">
+          <div class="grid grid-cols-6 gap-2">
             ${steps.map(s => `
-              <div class="flex flex-col items-center gap-0.5 ${s.time ? '' : 'opacity-25'}">
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs" style="background:${s.time ? s.color + '20' : 'rgba(51,65,85,.4)'};border:1px solid ${s.time ? s.color + '50' : 'rgba(51,65,85,.5)'}">
+              <div class="flex flex-col items-center gap-1 ${s.time ? '' : 'opacity-30'}">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm" style="background:${s.time ? s.color + '20' : 'rgba(51,65,85,.4)'};border:1px solid ${s.time ? s.color + '50' : 'rgba(51,65,85,.5)'}">
                   ${s.icon}
                 </div>
-                <span class="text-[7.5px] font-bold uppercase tracking-wide text-center leading-tight mt-0.5" style="color:${s.time ? s.color : 'var(--text-3)'}">${s.label}</span>
-                <span class="text-[7.5px] text-text3 mono">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
+                <span class="text-[9px] font-bold uppercase tracking-wide text-center leading-tight" style="color:${s.time ? s.color : 'var(--text-3)'}">${s.label}</span>
+                <span class="text-[9px] text-text2 mono font-medium">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
               </div>
             `).join('')}
           </div>
@@ -5220,6 +5399,9 @@
         if (ls.doctorAssignments) localStorage.setItem('doctorAssignments', ls.doctorAssignments);
         if (ls.bedAssignments)    localStorage.setItem('bedAssignments',    ls.bedAssignments);
         if (ls.patientActions)    localStorage.setItem('patientActions',    ls.patientActions);
+
+        // Store demo report data for reports tab
+        localStorage.setItem('demoReportsLoaded', '1');
 
         toast('🏥 Demo loaded — ' + r.seeded + ' patients at ' + r.hospital, 'ok');
 
