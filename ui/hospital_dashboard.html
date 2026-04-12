@@ -85,6 +85,9 @@
       border: 1px solid rgba(34, 211, 238, 0.35);
       color: #e5e7eb;
     }
+    .doctor-sub-btn { color: var(--text-2); font-size: 0.75rem; transition: all 0.15s; }
+    .doctor-sub-btn:hover { color: var(--text-1); background: rgba(34,211,238,.06); }
+    .doctor-sub-btn.active-doctor-sub { color: #22d3ee; background: rgba(34,211,238,.12); border-radius: 8px; }
     .chip {
       border: 1px solid rgba(148, 163, 184, 0.3);
       background: rgba(15, 23, 42, 0.6);
@@ -679,10 +682,14 @@
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           <span class="sidebar-label">Live Tracking</span>
         </button>
-                <button data-tab="doctor" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
-          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-          <span class="sidebar-label">Doctor Panel</span>
-        </button>
+                <div id="doctor-nav-group">
+          <button onclick="toggleDoctorSubmenu()" id="doctor-parent-btn" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span class="sidebar-label flex-1">Doctor Panel</span>
+            <svg id="doctor-chevron" class="w-3.5 h-3.5 sidebar-label text-text3 transition-transform duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="doctor-submenu" class="hidden mt-1 ml-2 pl-3 border-l border-slate-700/50 space-y-0.5"></div>
+        </div>
         <button data-tab="bed" class="nav-btn w-full rounded-xl px-3 py-2.5 text-left hover:text-text1 flex items-center gap-3">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
           <span class="sidebar-label">Bed Management</span>
@@ -865,6 +872,20 @@
                   </button>
                 </div>
               </article>
+
+              <!-- Needs Assignment Banner -->
+              <div id="unassigned-banner" class="hidden rounded-2xl border border-emer/30 bg-emer/5 p-4">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emer animate-pulse shrink-0"></span>
+                    <div>
+                      <p class="text-sm font-bold text-emer">Patients Awaiting Doctor Assignment</p>
+                      <p class="text-xs text-text3 mt-0.5" id="unassigned-desc">— patients need a doctor assigned</p>
+                    </div>
+                  </div>
+                  <div id="unassigned-list" class="flex flex-wrap gap-1.5"></div>
+                </div>
+              </div>
 
               <article class="glass rounded-2xl p-5">
                 <div class="mb-4 flex items-center justify-between">
@@ -1390,11 +1411,12 @@
 
     function saveDoctorAssignmentsToStorage() {
       try {
-        const assignments = state.patients.filter(p => p.assigned_doctor_id).map(p => ({
+        const assignments = state.patients.filter(p => p.assigned_doctor_id || p.triage_reviewed_at).map(p => ({
           patient_id: p.patient_id,
           assigned_doctor: p.assigned_doctor,
           assigned_doctor_id: p.assigned_doctor_id,
-          doctor_assigned_at: p.doctor_assigned_at
+          doctor_assigned_at: p.doctor_assigned_at,
+          triage_reviewed_at: p.triage_reviewed_at || null
         }));
         localStorage.setItem('doctorAssignments', JSON.stringify(assignments));
         console.log('Doctor assignments saved to storage:', assignments);
@@ -1415,6 +1437,7 @@
               patient.assigned_doctor = assignment.assigned_doctor;
               patient.assigned_doctor_id = assignment.assigned_doctor_id;
               patient.doctor_assigned_at = assignment.doctor_assigned_at;
+              if (assignment.triage_reviewed_at) patient.triage_reviewed_at = assignment.triage_reviewed_at;
             }
           });
           console.log('Doctor assignments applied to patients');
@@ -2167,6 +2190,35 @@
       });
       filtered = sortPatients(filtered);
       renderPatientList(filtered);
+      updateUnassignedBanner();
+    }
+
+    function updateUnassignedBanner() {
+      const banner = document.getElementById('unassigned-banner');
+      if (!banner) return;
+      const unassigned = state.patients.filter(p =>
+        !p.assigned_doctor_id && p.status !== 'discharged'
+      );
+      if (unassigned.length === 0) {
+        banner.classList.add('hidden');
+        return;
+      }
+      banner.classList.remove('hidden');
+      document.getElementById('unassigned-desc').textContent =
+        `${unassigned.length} patient${unassigned.length > 1 ? 's' : ''} need a doctor assigned`;
+      const listEl = document.getElementById('unassigned-list');
+      const col = TRIAGE_COLOR;
+      listEl.innerHTML = unassigned.slice(0, 6).map(p => {
+        const tc = col[normalizeTriage(p.triage_level)] || '#f59e0b';
+        return `<button onclick="alertTeam('${h(p.patient_id)}')" class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all hover:scale-[1.03]" style="background:${tc}15;color:${tc};border:1px solid ${tc}40" title="Assign doctor">
+          <img src="${h(p.profile_photo_url || `https://i.pravatar.cc/30?u=${encodeURIComponent(p.patient_id)}`)}" class="w-5 h-5 rounded-full object-cover" />
+          ${h((p.full_name || p.patient_id).split(' ')[0])}
+          <span style="opacity:.6">→ Assign</span>
+        </button>`;
+      }).join('');
+      if (unassigned.length > 6) {
+        listEl.innerHTML += `<span class="text-[10px] text-text3 self-center">+${unassigned.length - 6} more</span>`;
+      }
     }
 
     // ── HIERARCHICAL FILTER SYSTEM ───────────────────────────────
@@ -2294,137 +2346,182 @@
     }
 
     function renderDoctorPanel() {
-      console.log('renderDoctorPanel called');
       const box = document.getElementById("doctor-panel-list");
-      console.log('doctor-panel-list element:', box);
-      
-      // Get patients assigned to beds and match with doctors
-      const bedAssignments = state.patients.filter(p => p.assigned_bed);
-      console.log('Bed assignments:', bedAssignments.length);
-      
-      // If no bed assignments, use all patients for demo
-      const availablePatients = bedAssignments.length > 0 ? bedAssignments : state.patients;
-      
-      box.innerHTML = doctorsData.map(doctor => {
-        const loadPercentage = (doctor.current_patients / doctor.max_patients) * 100;
-        const loadColor = loadPercentage < 50 ? 'green' : loadPercentage < 80 ? 'amber' : 'red';
-        
-        // Get patients assigned to this doctor (manual assignment only)
-        const assignedPatients = availablePatients.filter(p => {
-          // Show patients that have doctor assignment OR bed assignment matching doctor's department
-          const hasDoctorAssignment = p.assigned_doctor_id === doctor.id;
-          const hasBedAssignment = p.assigned_bed && p.assigned_bed.includes(doctor.department);
-          const result = hasDoctorAssignment || hasBedAssignment;
-          console.log(`Patient ${p.patient_id}: assigned_doctor_id=${p.assigned_doctor_id}, doctor.id=${doctor.id}, hasDoctorAssignment=${hasDoctorAssignment}, hasBedAssignment=${hasBedAssignment}, result=${result}`);
-          return result;
-        });
-        
-        // Update current_patients based on actual assignments
-        doctor.current_patients = assignedPatients.length;
-        
-        return `
-        <div class="glass rounded-xl border border-slate-700/50 p-5 shadow-lg relative overflow-hidden transition-all hover:border-cyan/50">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-cyan/5 rounded-bl-[100px] -z-10"></div>
-          
-          <!-- Doctor Header -->
-          <div class="flex items-start gap-4 mb-4">
-            <div class="relative">
-              <img src="${doctor.photo}" alt="${doctor.name}" class="w-16 h-16 rounded-2xl object-cover border-2 border-slate-600/50 shadow-xl" />
-              ${doctor.availability === 'available' ? '<div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0f172a] shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></div>' : '<div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full border-2 border-[#0f172a]"></div>'}
-            </div>
-            
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="font-bold text-xl text-white truncate">${doctor.name}</h3>
-                  <p class="text-[11px] uppercase tracking-wider font-bold text-cyan mt-0.5">${doctor.specialization}</p>
-                </div>
-                <div class="text-right">
-                  <div class="text-[9px] text-text3 mb-0.5 font-bold uppercase tracking-wider">LOAD</div>
-                  <div class="text-2xl font-black mono text-${loadColor}-400 leading-none">${doctor.current_patients}<span class="text-sm text-text3">/${doctor.max_patients}</span></div>
-                  <div class="w-16 h-1.5 bg-slate-700/50 rounded-full mt-1.5 overflow-hidden ml-auto">
-                    <div class="h-full rounded-full bg-${loadColor}-500 transition-all duration-500 shadow-[0_0_8px_currentColor]" style="width: ${loadPercentage}%"></div>
-                  </div>
+      if (!box) return;
+
+      // Refresh submenu counts
+      initDoctorSubmenu();
+
+      // ── If a specific doctor is selected → full detail view ──
+      if (activeDoctorId) {
+        const doctor = doctorsData.find(d => d.id === activeDoctorId);
+        if (!doctor) return;
+
+        const myPatients = state.patients.filter(p => p.assigned_doctor_id === doctor.id);
+        const active = myPatients.filter(p => p.status !== 'discharged');
+        const discharged = myPatients.filter(p => p.status === 'discharged');
+        const loadPct = Math.round((active.length / doctor.max_patients) * 100);
+        const loadColor = loadPct < 50 ? '#22c55e' : loadPct < 80 ? '#f59e0b' : '#ef4444';
+
+        box.innerHTML = `
+          <!-- Doctor header card -->
+          <div class="glass rounded-2xl p-5 border border-cyan/20 mb-6">
+            <div class="flex items-start gap-4">
+              <div class="relative shrink-0">
+                <img src="${doctor.photo}" class="w-20 h-20 rounded-2xl object-cover border-2 border-slate-600/50 shadow-xl" onerror="this.src='https://i.pravatar.cc/80?u=${doctor.id}'" />
+                <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0f172a] ${doctor.availability === 'available' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}"></div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h2 class="text-xl font-bold text-white">${doctor.name}</h2>
+                <p class="text-xs font-bold text-cyan uppercase tracking-wider mt-0.5">${doctor.specialization} · ${doctor.department}</p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 pt-3 border-t border-slate-700/30 text-xs">
+                  <div><span class="text-text3 block text-[9px] uppercase font-bold tracking-wider">Location</span>📍 ${doctor.location}</div>
+                  <div><span class="text-text3 block text-[9px] uppercase font-bold tracking-wider">Shift</span>⏱ ${doctor.shift}</div>
+                  <div><span class="text-text3 block text-[9px] uppercase font-bold tracking-wider">Experience</span>🎓 ${doctor.experience}</div>
+                  <div><span class="text-text3 block text-[9px] uppercase font-bold tracking-wider">Contact</span><span class="text-cyan">📞 ${doctor.contact}</span></div>
                 </div>
               </div>
-              
-              <!-- Quick Stats row -->
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3 pt-3 border-t border-slate-700/30">
-                <div class="flex flex-col"><span class="text-[9px] text-text3 uppercase font-bold tracking-wider">Location</span><span class="text-xs font-medium text-text1">📍 ${doctor.location}</span></div>
-                <div class="flex flex-col"><span class="text-[9px] text-text3 uppercase font-bold tracking-wider">Shift</span><span class="text-xs font-medium text-text1">⏱ ${doctor.shift || '08:00 - 18:00'}</span></div>
-                <div class="flex flex-col"><span class="text-[9px] text-text3 uppercase font-bold tracking-wider">Experience</span><span class="text-xs font-medium text-text1">🎓 ${doctor.experience || '10+ yrs'}</span></div>
-                <div class="flex flex-col"><span class="text-[9px] text-text3 uppercase font-bold tracking-wider">Contact</span><span class="text-xs font-medium text-text1 text-cyan line-clamp-1" title="${doctor.contact}">📞 ${doctor.contact || 'Ext. 0000'}</span></div>
+              <div class="text-right shrink-0">
+                <div class="text-[9px] text-text3 uppercase font-bold tracking-wider mb-1">Patient Load</div>
+                <div class="text-3xl font-black mono" style="color:${loadColor}">${active.length}<span class="text-sm text-text3">/${doctor.max_patients}</span></div>
+                <div class="w-20 h-1.5 bg-slate-700/50 rounded-full mt-1.5 overflow-hidden ml-auto">
+                  <div class="h-full rounded-full transition-all" style="width:${loadPct}%;background:${loadColor}"></div>
+                </div>
               </div>
             </div>
           </div>
-          
-          <!-- Skills -->
-          <div class="flex gap-1.5 mb-5 flex-wrap px-2 py-1.5 bg-slate-800/20 border border-slate-700/30 rounded-lg items-center">
-            <span class="text-[9px] text-text3 uppercase font-bold tracking-wider mr-1">Skills:</span>
-            ${doctor.skills.map(skill => `<span class="text-[10px] bg-slate-700/50 border border-slate-600/50 px-2 py-0.5 rounded text-text1 font-semibold capitalize">${skill}</span>`).join('')}
+
+          <!-- Active patients -->
+          <div class="mb-2 flex items-center gap-2">
+            <span class="text-sm font-bold text-text1">Active Patients</span>
+            <span class="text-[10px] bg-cyan/15 text-cyan border border-cyan/30 px-2 py-0.5 rounded-full font-bold">${active.length}</span>
           </div>
-          
-          <!-- Assigned Patients -->
-          ${assignedPatients.length > 0 ? `
-          <div class="bg-slate-800/10 rounded-xl max-h-[340px] overflow-y-auto custom-scrollbar border border-slate-700/30">
-            <div class="flex items-center justify-between p-3 border-b border-slate-700/30 bg-slate-800/40 sticky top-0 z-10 backdrop-blur-md">
-              <span class="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                👥 Assigned Patients
-              </span>
-              <span class="text-[10px] bg-cyan/20 border border-cyan/30 text-cyan px-2 py-0.5 rounded-full font-bold">${assignedPatients.length} Active</span>
+          <div class="space-y-3 mb-6">
+            ${active.length === 0 ? `<div class="glass rounded-xl p-8 text-center text-text3 text-sm">No active patients assigned.</div>` :
+              active.map(patient => buildDoctorPatientCard(patient, doctor)).join('')}
+          </div>
+
+          ${discharged.length > 0 ? `
+          <details class="glass rounded-xl overflow-hidden">
+            <summary class="flex items-center gap-2 p-4 cursor-pointer text-sm font-semibold text-text2 hover:text-text1">
+              <span>✅ Discharged (${discharged.length})</span>
+              <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </summary>
+            <div class="p-3 pt-0 space-y-2 border-t border-slate-700/30">
+              ${discharged.map(patient => buildDoctorPatientCard(patient, doctor)).join('')}
             </div>
-            <div class="p-2 space-y-2">
-              ${assignedPatients.map(patient => {
-                const triageColor = TRIAGE_COLOR[normalizeTriage(patient.triage_level)] || '#f59e0b';
-                const triageClass = TRIAGE_CLASS[normalizeTriage(patient.triage_level)] || 'U';
-                const stats = calculatePatientStatistics(patient.patient_id);
-                return `
-                <div class="flex flex-col bg-slate-800/30 rounded-lg p-2.5 border border-slate-700/30 hover:border-cyan/30 hover:bg-slate-800/60 transition-all group">
-                  <div class="flex items-center gap-3">
-                    <img src="${h(patient.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(patient.patient_id)}`)}" class="w-10 h-10 rounded-xl object-cover border border-slate-600/50" onerror="this.src='https://i.pravatar.cc/60?u=${encodeURIComponent(patient.patient_id)}'" />
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                          <p class="text-sm font-bold text-white truncate">${h(patient.full_name || patient.patient_id)}</p>
-                          <span class="text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm" style="color:${triageColor};background:${triageColor}15;border:1px solid ${triageColor}40">${triageClass}</span>
-                        </div>
-                        ${patient.eta_minutes != null ? `<div class="text-sm font-bold mono" style="color:${triageColor}">${patient.eta_minutes}<span class="text-[9px] text-text3 ml-0.5">min</span></div>` : ''}
-                      </div>
-                      <p class="text-[11px] text-text2 truncate mt-0.5">${h(patient.chief_complaint || '—')}</p>
-                      <div class="flex items-center gap-2 mt-1.5 text-[10px] font-medium">
-                        ${patient.assigned_bed ? `<span class="bg-cyan/10 text-cyan px-1.5 py-0.5 rounded border border-cyan/20">🛏️ ${patient.assigned_bed}</span>` : ''}
-                        ${stats?.hospitalStayDuration ? `<span class="text-text3 text-[9px] bg-slate-700/50 px-1.5 py-0.5 rounded">Duration: <span class="text-text1">${stats.hospitalStayDuration.toFixed(0)}m</span></span>` : ''}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- Action Buttons -->
-                  <div class="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-slate-700/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="openMessageModal('${h(patient.patient_id)}')" class="flex-1 flex justify-center items-center gap-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 px-2 py-1.5 text-[10px] font-bold transition-all" title="Message">
-                      💬 Message
-                    </button>
-                    <button onclick="assignBed('${h(patient.patient_id)}')" class="flex-1 flex justify-center items-center gap-1.5 rounded-md bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/20 px-2 py-1.5 text-[10px] font-bold transition-all" title="Assign Bed">
-                      🛏️ Bed Plan
-                    </button>
-                    <button onclick="confirmDischarge('${h(patient.patient_id)}', this)" class="flex-1 flex justify-center items-center gap-1.5 rounded-md bg-stable/10 text-stable hover:bg-stable/20 border border-stable/20 px-2 py-1.5 text-[10px] font-bold transition-all" title="Discharge">
-                      ✓ Discharge
-                    </button>
-                  </div>
-                </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-          ` : `
-          <div class="bg-slate-800/10 rounded-xl border border-slate-700/30 p-8 text-center text-text3 flex flex-col items-center justify-center">
-            <svg class="w-10 h-10 mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" /></svg>
-            <p class="text-sm font-semibold text-text1">No Patients Assigned</p>
-            <p class="text-[10px] mt-1 max-w-[200px]">Doctor is awaiting assignments or currently off-duty.</p>
-          </div>
-          `}
-        </div>
+          </details>` : ''}
         `;
-      }).join('');
+        return;
+      }
+
+      // ── Overview: all doctors directory ──
+      const availablePatients = state.patients;
+
+      box.innerHTML = `
+        <div class="mb-4">
+          <h2 class="text-lg font-bold text-text1">Doctor Overview</h2>
+          <p class="text-xs text-text3 mt-0.5">Click a doctor in the sidebar to open their patient panel.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          ${doctorsData.map(doctor => {
+        const pts = state.patients.filter(p => p.assigned_doctor_id === doctor.id && p.status !== 'discharged');
+        doctor.current_patients = pts.length;
+        const lp = Math.round((pts.length / doctor.max_patients) * 100);
+        const lc = lp < 50 ? '#22c55e' : lp < 80 ? '#f59e0b' : '#ef4444';
+        return `
+          <button onclick="openDoctorView('${doctor.id}')" class="glass rounded-xl p-4 border border-slate-700/50 hover:border-cyan/40 transition-all text-left w-full group">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="relative shrink-0">
+                <img src="${doctor.photo}" class="w-12 h-12 rounded-xl object-cover border border-slate-600/50" onerror="this.src='https://i.pravatar.cc/50?u=${doctor.id}'" />
+                <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0f172a] ${doctor.availability === 'available' ? 'bg-green-500' : 'bg-amber-500'}"></div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-text1 truncate group-hover:text-cyan transition-colors">${doctor.name}</p>
+                <p class="text-[10px] text-cyan font-semibold uppercase tracking-wider">${doctor.specialization}</p>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-xl font-black mono" style="color:${lc}">${pts.length}<span class="text-xs text-text3">/${doctor.max_patients}</span></div>
+                <div class="w-14 h-1 bg-slate-700/50 rounded-full mt-1 overflow-hidden ml-auto">
+                  <div class="h-full rounded-full" style="width:${lp}%;background:${lc}"></div>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-1 flex-wrap">
+              ${doctor.skills.map(s => `<span class="text-[9px] bg-slate-700/50 border border-slate-600/40 px-1.5 py-0.5 rounded text-text2 font-medium capitalize">${s}</span>`).join('')}
+            </div>
+            <div class="mt-2 pt-2 border-t border-slate-700/30 text-[10px] text-text3 flex gap-3">
+              <span>📍 ${doctor.location}</span>
+              <span>⏱ ${doctor.shift}</span>
+              <span class="ml-auto text-cyan font-medium">View Panel →</span>
+            </div>
+          </button>`;
+      }).join('')}
+        </div>
+      `;
+    }
+
+    function buildDoctorPatientCard(patient, doctor) {
+      const pid = patient.patient_id;
+      const tc = TRIAGE_COLOR[normalizeTriage(patient.triage_level)] || '#f59e0b';
+      const tl = TRIAGE_CLASS[normalizeTriage(patient.triage_level)] || 'U';
+      const actions = getPatientActions(pid);
+      const arrivedAct = actions.find(a => a.type === 'patient_arrived');
+      const steps = [
+        { label: 'Submitted',    time: patient.created_at,         icon: '📱' },
+        { label: 'Dr. Assigned', time: patient.doctor_assigned_at, icon: '👨‍⚕️' },
+        { label: 'Reviewed',     time: patient.triage_reviewed_at, icon: '📋' },
+        { label: 'Arrived',      time: arrivedAct?.timestamp || patient.treatment_started_at, icon: '🏥' },
+        { label: 'Bed',          time: patient.bed_assigned_at,    icon: '🛏️' },
+        { label: 'Discharged',   time: patient.discharged_at,      icon: '✅' },
+      ];
+      const statusColor = patient.status === 'discharged' ? '#34d399' : patient.status === 'in_treatment' ? '#c4b5fd' : '#93c5fd';
+
+      return `
+      <div class="glass rounded-xl border border-slate-700/40 overflow-hidden" style="border-left:3px solid ${tc}">
+        <div class="p-4">
+          <div class="flex items-start gap-3">
+            <img src="${h(patient.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(pid)}`)}" class="w-12 h-12 rounded-xl object-cover border border-slate-600/50 shrink-0" onerror="this.src='https://i.pravatar.cc/60?u=${encodeURIComponent(pid)}'" />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <p class="font-bold text-white">${h(patient.full_name || pid)}</p>
+                  <p class="text-xs text-text2 mt-0.5 truncate">${h(patient.chief_complaint || '—')}</p>
+                </div>
+                <div class="flex flex-col items-end gap-1 shrink-0">
+                  <span class="text-[9px] font-bold px-2 py-0.5 rounded-full" style="background:${tc}20;color:${tc};border:1px solid ${tc}40">${tl}</span>
+                  <span class="text-[9px] font-bold px-2 py-0.5 rounded-full" style="background:${statusColor}20;color:${statusColor}">${STATUS_LABEL[patient.status] || patient.status}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-2 text-[10px] text-text3">
+                ${patient.assigned_bed ? `<span class="bg-cyan/10 text-cyan px-1.5 py-0.5 rounded border border-cyan/20">🛏️ ${patient.assigned_bed}</span>` : '<span class="text-text3">No bed assigned</span>'}
+                ${patient.age ? `<span>· ${patient.age}y</span>` : ''}
+                ${patient.blood_type ? `<span class="text-emer">· ${patient.blood_type}</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- 6-step timeline -->
+          <div class="grid grid-cols-6 gap-1 mt-3 pt-3 border-t border-slate-700/20">
+            ${steps.map(s => `
+              <div class="flex flex-col items-center gap-0.5 ${s.time ? '' : 'opacity-25'}">
+                <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" style="background:${s.time ? 'rgba(34,211,238,.15)' : 'rgba(51,65,85,.4)'};border:1px solid ${s.time ? 'rgba(34,211,238,.3)' : 'rgba(51,65,85,.5)'}">
+                  ${s.icon}
+                </div>
+                <span class="text-[7px] font-bold uppercase text-center leading-tight" style="color:${s.time ? '#22d3ee' : 'var(--text-3)'}">${s.label}</span>
+                <span class="text-[7px] text-text3 mono">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-1.5 mt-3 pt-3 border-t border-slate-700/20">
+            <button onclick="openMessageModal('${h(pid)}')" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 px-2 py-2 text-[10px] font-bold transition-all">💬 Message</button>
+            <button onclick="assignBed('${h(pid)}')" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/20 px-2 py-2 text-[10px] font-bold transition-all">🛏️ Bed</button>
+            <button onclick="confirmDischarge('${h(pid)}', this)" class="flex-1 flex justify-center items-center gap-1 rounded-lg bg-stable/10 text-stable hover:bg-stable/20 border border-stable/20 px-2 py-2 text-[10px] font-bold transition-all">✓ Discharge</button>
+          </div>
+        </div>
+      </div>`;
     }
 
     function renderSidebarBedPlanning() {
@@ -3184,6 +3281,12 @@
         return;
       }
 
+      // Track first doctor review timestamp
+      if (!patient.triage_reviewed_at) {
+        patient.triage_reviewed_at = new Date().toISOString();
+        saveDoctorAssignmentsToStorage();
+      }
+
       // Log message action
       if (messageText) {
         logPatientAction(currentMessagePatientId, 'message_sent', {
@@ -3700,19 +3803,75 @@
       }, 100);
     }
 
+    let activeDoctorId = null;
+
+    function toggleDoctorSubmenu() {
+      const submenu = document.getElementById('doctor-submenu');
+      const chevron = document.getElementById('doctor-chevron');
+      const isOpen = !submenu.classList.contains('hidden');
+      submenu.classList.toggle('hidden');
+      chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    }
+
+    function initDoctorSubmenu() {
+      const submenu = document.getElementById('doctor-submenu');
+      if (!submenu) return;
+      submenu.innerHTML = doctorsData.map(d => {
+        const count = state.patients.filter(p => p.assigned_doctor_id === d.id && p.status !== 'discharged').length;
+        const avail = d.availability === 'available';
+        return `<button onclick="openDoctorView('${d.id}')" class="doctor-sub-btn w-full flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left" id="sub-btn-${d.id}">
+          <div class="relative shrink-0">
+            <img src="${d.photo}" class="w-6 h-6 rounded-full object-cover border border-slate-600/50" onerror="this.src='https://i.pravatar.cc/30?u=${d.id}'" />
+            <div class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#0f172a] ${avail ? 'bg-green-500' : 'bg-amber-500'}"></div>
+          </div>
+          <div class="sidebar-label flex-1 min-w-0">
+            <p class="text-xs font-medium truncate">${d.name.replace('Dr. ', '')}</p>
+            <p class="text-[9px] text-text3 truncate">${d.specialization}</p>
+          </div>
+          <span class="sidebar-label text-[10px] font-bold mono ${count > 0 ? 'text-cyan' : 'text-text3'}">${count}</span>
+        </button>`;
+      }).join('');
+    }
+
+    function openDoctorView(doctorId) {
+      activeDoctorId = doctorId;
+      // Show submenu if hidden
+      const submenu = document.getElementById('doctor-submenu');
+      const chevron = document.getElementById('doctor-chevron');
+      if (submenu.classList.contains('hidden')) {
+        submenu.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+      }
+      // Switch pane
+      state.activeTab = 'doctor';
+      document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden-pane'));
+      document.getElementById('pane-doctor')?.classList.remove('hidden-pane');
+      // Mark sidebar active
+      document.querySelectorAll('#side-nav [data-tab]').forEach(b => b.classList.remove('active-nav'));
+      document.getElementById('doctor-parent-btn')?.classList.add('active-nav');
+      // Mark active sub-button
+      document.querySelectorAll('.doctor-sub-btn').forEach(b => b.classList.remove('active-doctor-sub'));
+      document.getElementById(`sub-btn-${doctorId}`)?.classList.add('active-doctor-sub');
+      renderDoctorPanel();
+    }
+
     function switchTab(tab) {
       state.activeTab = tab;
+      if (tab !== 'doctor') activeDoctorId = null;
       document.querySelectorAll(".pane").forEach((p) => p.classList.add("hidden-pane"));
       document.getElementById(`pane-${tab}`)?.classList.remove("hidden-pane");
       document.querySelectorAll("#side-nav [data-tab]").forEach((b) => b.classList.remove("active-nav"));
       document.querySelector(`#side-nav [data-tab="${tab}"]`)?.classList.add("active-nav");
-      
+      document.getElementById('doctor-parent-btn')?.classList.toggle('active-nav', tab === 'doctor');
+      document.querySelectorAll('.doctor-sub-btn').forEach(b => b.classList.remove('active-doctor-sub'));
+
       // Load tab-specific data
       if (tab === 'tracking') { initMap(); loadTracking(); }
       if (tab === 'reports') loadReports();
       if (tab === 'analytics') loadLiveStats();
       if (tab === 'admin') loadAdminTable();
       if (tab === 'bed') renderBedManagementPanel();
+      if (tab === 'doctor') renderDoctorPanel();
     }
 
     // Store local bed assignments to preserve across refreshes
@@ -4076,6 +4235,35 @@
       // Prep checklist
       const prepItems = buildPrep(p);
 
+      // Patient timeline (6 key timestamps)
+      const timelineHTML = (() => {
+        const actions = getPatientActions(pid);
+        const arrivedAct = actions.find(a => a.type === 'patient_arrived');
+        const steps = [
+          { label: 'Submitted',    time: p.created_at,           icon: '📱', color: '#60a5fa' },
+          { label: 'Dr. Assigned', time: p.doctor_assigned_at,   icon: '👨‍⚕️', color: '#22d3ee' },
+          { label: 'Reviewed',     time: p.triage_reviewed_at,   icon: '📋', color: '#f59e0b' },
+          { label: 'Arrived',      time: arrivedAct?.timestamp || p.treatment_started_at, icon: '🏥', color: '#a78bfa' },
+          { label: 'Bed Assigned', time: p.bed_assigned_at,      icon: '🛏️', color: '#34d399' },
+          { label: 'Discharged',   time: p.discharged_at,        icon: '✅', color: '#10b981' },
+        ];
+        const anySet = steps.some(s => s.time);
+        if (!anySet) return '';
+        return `<div class="mt-3 pt-2.5 border-t border-slate-700/20">
+          <div class="grid grid-cols-6 gap-1.5">
+            ${steps.map(s => `
+              <div class="flex flex-col items-center gap-0.5 ${s.time ? '' : 'opacity-25'}">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs" style="background:${s.time ? s.color + '20' : 'rgba(51,65,85,.4)'};border:1px solid ${s.time ? s.color + '50' : 'rgba(51,65,85,.5)'}">
+                  ${s.icon}
+                </div>
+                <span class="text-[7.5px] font-bold uppercase tracking-wide text-center leading-tight mt-0.5" style="color:${s.time ? s.color : 'var(--text-3)'}">${s.label}</span>
+                <span class="text-[7.5px] text-text3 mono">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+      })();
+
       return `
         <div class="rounded-xl border border-slate-700/50 bg-slate-800/40 backdrop-blur-sm overflow-hidden triage-${tc} patient-card-modern" id="card-${pid}" style="border-left: 4px solid ${col}">
           <!-- MODERN HEADER -->
@@ -4143,6 +4331,8 @@
                 </div>
               </div>
             </div>
+
+            ${timelineHTML}
 
             <!-- Collapsible Red Flags -->
             ${flags.length > 0 ? `
@@ -5374,6 +5564,7 @@
       await refreshAll();
       loadBedAssignmentsFromStorage();
       loadDoctorAssignmentsFromStorage();
+      initDoctorSubmenu();
       
       // Apply saved KPI filter after data is loaded
       if (savedKpiFilter && savedKpiFilter !== 'all') {
