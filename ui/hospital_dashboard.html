@@ -4667,25 +4667,27 @@
       }
       try {
         const rec = await api(`/api/health_record/${encodeURIComponent(p.health_number)}`);
-        const bmi = rec.bmi || (rec.weight_kg && rec.height_cm ? (rec.weight_kg / ((rec.height_cm/100) ** 2)).toFixed(1) : '—');
-        
+        const dem = rec.patient || {};
+        const bmi = rec.vitals?.[0]?.bmi || (dem.weight_kg && dem.height_cm ? (dem.weight_kg / ((dem.height_cm/100) ** 2)).toFixed(1) : '—');
+        const sevColor = {high:'text-emer',severe:'text-emer',moderate:'text-urgent',low:'text-stable'};
+
         container.innerHTML = `
           <div class="space-y-4">
             <!-- Vitals Summary -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
                 <div class="flex justify-center mb-2"><svg class="w-6 h-6 text-emer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
-                <div class="text-lg font-bold">${h(rec.blood_type || '—')}</div>
+                <div class="text-lg font-bold">${h(dem.blood_type || '—')}</div>
                 <div class="text-[10px] uppercase tracking-wider text-text3">Blood Type</div>
               </div>
               <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
                 <div class="flex justify-center mb-2"><svg class="w-6 h-6 text-text2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg></div>
-                <div class="text-lg font-bold">${h(rec.weight_kg ? rec.weight_kg + ' <span class="text-xs text-text3">kg</span>' : '—')}</div>
+                <div class="text-lg font-bold">${dem.weight_kg ? dem.weight_kg + ' <span class="text-xs text-text3">kg</span>' : '—'}</div>
                 <div class="text-[10px] uppercase tracking-wider text-text3">Weight</div>
               </div>
               <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
                 <div class="flex justify-center mb-2"><svg class="w-6 h-6 text-text2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg></div>
-                <div class="text-lg font-bold">${h(rec.height_cm ? rec.height_cm + ' <span class="text-xs text-text3">cm</span>' : '—')}</div>
+                <div class="text-lg font-bold">${dem.height_cm ? dem.height_cm + ' <span class="text-xs text-text3">cm</span>' : '—'}</div>
                 <div class="text-[10px] uppercase tracking-wider text-text3">Height</div>
               </div>
               <div class="rounded-xl bg-surface/60 border border-slate-700/50 p-3 text-center">
@@ -4694,48 +4696,179 @@
                 <div class="text-[10px] uppercase tracking-wider text-text3">BMI</div>
               </div>
             </div>
-            
-            ${rec.conditions?.length ? `
+
+            <!-- Demographics / Anamnesis -->
+            ${(dem.smoking_status || dem.alcohol_use || dem.occupation || dem.marital_status) ? `
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">👤</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Social History</span>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                ${dem.occupation    ? `<div class="rounded-lg bg-surface/60 p-2 border border-slate-700/30"><div class="text-text3">Occupation</div><div class="font-medium">${h(dem.occupation)}</div></div>` : ''}
+                ${dem.marital_status? `<div class="rounded-lg bg-surface/60 p-2 border border-slate-700/30"><div class="text-text3">Marital Status</div><div class="font-medium">${h(dem.marital_status)}</div></div>` : ''}
+                ${dem.smoking_status? `<div class="rounded-lg bg-surface/60 p-2 border border-slate-700/30"><div class="text-text3">Smoking</div><div class="font-medium">${h(dem.smoking_status)}</div></div>` : ''}
+                ${dem.alcohol_use   ? `<div class="rounded-lg bg-surface/60 p-2 border border-slate-700/30"><div class="text-text3">Alcohol Use</div><div class="font-medium">${h(dem.alcohol_use)}</div></div>` : ''}
+              </div>
+              ${dem.social_history ? `<div class="mt-2 text-xs text-text2 bg-surface/40 rounded-lg p-2 border border-slate-700/30">${h(dem.social_history)}</div>` : ''}
+              ${dem.family_history ? `<div class="mt-2"><div class="text-[10px] uppercase text-text3 mb-1">Family History</div><div class="text-xs text-text2 bg-surface/40 rounded-lg p-2 border border-slate-700/30">${h(dem.family_history)}</div></div>` : ''}
+              ${dem.mood_assessment ? `<div class="mt-2"><div class="text-[10px] uppercase text-text3 mb-1">Mood Assessment</div><div class="text-xs text-text2 bg-surface/40 rounded-lg p-2 border border-slate-700/30">${h(dem.mood_assessment)}</div></div>` : ''}
+              ${dem.functional_status ? `<div class="mt-2"><div class="text-[10px] uppercase text-text3 mb-1">Functional Status</div><div class="text-xs text-text2 bg-surface/40 rounded-lg p-2 border border-slate-700/30">${h(dem.functional_status)}</div></div>` : ''}
+            </div>` : ''}
+
+            ${rec.diagnoses?.length ? `
             <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
               <div class="flex items-center gap-2 mb-3">
                 <span class="text-lg">🏥</span>
-                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Medical Conditions (${rec.conditions.length})</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Diagnoses (${rec.diagnoses.length})</span>
               </div>
-              <div class="flex flex-wrap gap-2">
-                ${rec.conditions.map(c => `<span class="chip bg-urgent/10 border-urgent/30 text-urgent px-3 py-1.5">${h(c)}</span>`).join('')}
+              <div class="space-y-2">
+                ${rec.diagnoses.map(d => `
+                  <div class="flex items-start gap-3 p-2 rounded-lg bg-surface/60 border border-slate-700/30">
+                    ${d.icd_code ? `<span class="shrink-0 chip bg-urgent/10 border-urgent/30 text-urgent text-[10px] font-mono">${h(d.icd_code)}</span>` : ''}
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium">${h(d.description)}</div>
+                      ${d.status ? `<div class="text-[10px] text-text3">${h(d.status)}${d.diagnosed_date ? ' · ' + h(d.diagnosed_date) : ''}${d.diagnosing_doctor ? ' · Dr. ' + h(d.diagnosing_doctor) : ''}</div>` : ''}
+                      ${d.notes ? `<div class="text-xs text-text2 mt-1 italic">${h(d.notes)}</div>` : ''}
+                    </div>
+                  </div>`).join('')}
               </div>
             </div>` : ''}
-            
+
             ${rec.allergies?.length ? `
             <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
               <div class="flex items-center gap-2 mb-3">
                 <span class="text-lg">⚠️</span>
                 <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Allergies (${rec.allergies.length})</span>
               </div>
-              <div class="flex flex-wrap gap-2">
-                ${rec.allergies.map(a => `<span class="chip bg-emer/10 border-emer/30 text-emer px-3 py-1.5">${h(a)}</span>`).join('')}
+              <div class="space-y-2">
+                ${rec.allergies.map(a => {
+                  const sev = (a.severity || '').toLowerCase();
+                  const col = sevColor[sev] || 'text-urgent';
+                  return `<div class="flex items-start gap-3 p-2 rounded-lg bg-surface/60 border border-slate-700/30">
+                    <span class="shrink-0 chip bg-emer/10 border-emer/30 ${col} text-xs">${h(a.allergen)}</span>
+                    <div class="flex-1 min-w-0 text-xs text-text2">
+                      ${a.reaction ? `<span>${h(a.reaction)}</span>` : ''}
+                      ${a.severity ? `<span class="ml-2 text-text3">[${h(a.severity)}]</span>` : ''}
+                    </div>
+                  </div>`;
+                }).join('')}
               </div>
             </div>` : ''}
-            
+
             ${rec.medications?.length ? `
             <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
               <div class="flex items-center gap-2 mb-3">
                 <span class="text-lg">💊</span>
-                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Current Medications (${rec.medications.length})</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Medications (${rec.medications.length})</span>
               </div>
               <div class="space-y-2">
                 ${rec.medications.map(m => `
-                  <div class="flex items-center gap-3 p-2 rounded-lg bg-surface/60 border border-slate-700/30">
-                    <span class="w-8 h-8 rounded-full bg-cyan/20 flex items-center justify-center text-cyan text-sm">💉</span>
-                    <div class="flex-1">
-                      <div class="text-sm font-medium">${h(m.name || m)}</div>
-                      ${m.dosage ? `<div class="text-xs text-text3">${h(m.dosage)}</div>` : ''}
+                  <div class="flex items-start gap-3 p-2 rounded-lg bg-surface/60 border border-slate-700/30">
+                    <span class="w-8 h-8 rounded-full bg-cyan/20 flex items-center justify-center text-cyan text-sm shrink-0">💉</span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium">${h(m.name)}</div>
+                      <div class="text-xs text-text3">${[m.dosage, m.frequency, m.status].filter(Boolean).map(v=>h(v)).join(' · ')}</div>
+                      ${m.side_effects ? `<div class="text-xs text-text2 mt-1">Side effects: ${h(m.side_effects)}</div>` : ''}
+                      ${m.adherence_notes ? `<div class="text-xs text-text2 italic">${h(m.adherence_notes)}</div>` : ''}
                     </div>
                   </div>
                 `).join('')}
               </div>
             </div>` : ''}
-            
+
+            ${rec.surgeries?.length ? `
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">🔪</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Surgical History (${rec.surgeries.length})</span>
+              </div>
+              <div class="space-y-2">
+                ${rec.surgeries.map(s => `
+                  <div class="p-2 rounded-lg bg-surface/60 border border-slate-700/30 text-xs">
+                    <div class="font-medium text-sm">${h(s.procedure_name)}</div>
+                    <div class="text-text3">${[s.surgery_date, s.hospital, s.surgeon ? 'Dr. '+s.surgeon : ''].filter(Boolean).map(v=>h(v)).join(' · ')}</div>
+                    ${s.indication ? `<div class="text-text2 mt-1">Indication: ${h(s.indication)}</div>` : ''}
+                    ${s.complications ? `<div class="text-urgent mt-1">Complications: ${h(s.complications)}</div>` : ''}
+                    ${s.findings ? `<div class="text-text2 mt-1 italic">${h(s.findings)}</div>` : ''}
+                  </div>`).join('')}
+              </div>
+            </div>` : ''}
+
+            ${rec.imaging?.length ? `
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">🩻</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Imaging (${rec.imaging.length})</span>
+              </div>
+              <div class="space-y-2">
+                ${rec.imaging.map(img => `
+                  <div class="p-2 rounded-lg bg-surface/60 border border-slate-700/30 text-xs">
+                    <div class="flex items-center gap-2"><span class="chip bg-cyan/10 border-cyan/30 text-cyan text-[10px]">${h(img.modality||img.study_type||'IMG')}</span><span class="font-medium">${h(img.description||img.study_type||'')}</span><span class="text-text3 ml-auto">${h(img.study_date||'')}</span></div>
+                    ${img.findings ? `<div class="text-text2 mt-1">${h(img.findings)}</div>` : ''}
+                    ${img.impression ? `<div class="text-cyan mt-1 font-medium">Impression: ${h(img.impression)}</div>` : ''}
+                  </div>`).join('')}
+              </div>
+            </div>` : ''}
+
+            ${rec.doctor_notes?.length ? `
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">📝</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Doctor Notes (${rec.doctor_notes.length})</span>
+              </div>
+              <div class="space-y-2">
+                ${rec.doctor_notes.map(n => `
+                  <div class="p-3 rounded-lg bg-surface/60 border border-slate-700/30 text-xs">
+                    <div class="flex items-center gap-2 mb-1">
+                      ${n.note_type ? `<span class="chip bg-surface2 border-slate-600/50 text-text2 text-[10px]">${h(n.note_type)}</span>` : ''}
+                      <span class="text-text3">${h(n.note_date||'')}${n.doctor_name ? ' · Dr. '+h(n.doctor_name) : ''}</span>
+                    </div>
+                    ${n.subjective ? `<div><span class="text-text3 font-semibold">S:</span> ${h(n.subjective)}</div>` : ''}
+                    ${n.objective  ? `<div><span class="text-text3 font-semibold">O:</span> ${h(n.objective)}</div>` : ''}
+                    ${n.assessment ? `<div><span class="text-text3 font-semibold">A:</span> ${h(n.assessment)}</div>` : ''}
+                    ${n.plan       ? `<div><span class="text-text3 font-semibold">P:</span> ${h(n.plan)}</div>` : ''}
+                    ${n.note_text  ? `<div class="text-text2">${h(n.note_text)}</div>` : ''}
+                  </div>`).join('')}
+              </div>
+            </div>` : ''}
+
+            ${rec.lab_results?.length ? `
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">🧪</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Lab Results (${rec.lab_results.length})</span>
+              </div>
+              <div class="space-y-1">
+                ${rec.lab_results.map(l => {
+                  const abnormal = l.status && l.status !== 'normal';
+                  return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-lg ${abnormal ? 'bg-urgent/5 border border-urgent/20' : 'bg-surface/60 border border-slate-700/30'} text-xs">
+                    <span class="flex-1 font-medium">${h(l.test_name)}</span>
+                    <span class="${abnormal ? 'text-urgent font-semibold' : 'text-text1'}">${h(l.value||'—')} ${h(l.unit||'')}</span>
+                    ${l.reference_range ? `<span class="text-text3 text-[10px]">(${h(l.reference_range)})</span>` : ''}
+                    <span class="text-text3 text-[10px]">${h(l.test_date||'')}</span>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>` : ''}
+
+            ${rec.visits?.length ? `
+            <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-lg">🏨</span>
+                <span class="text-xs uppercase tracking-wider text-text3 font-semibold">Visit History (${rec.visits.length})</span>
+              </div>
+              <div class="space-y-2">
+                ${rec.visits.map(v => `
+                  <div class="p-2 rounded-lg bg-surface/60 border border-slate-700/30 text-xs">
+                    <div class="flex items-center gap-2"><span class="font-medium">${h(v.visit_date||'')}</span><span class="text-text3">${[v.hospital, v.department].filter(Boolean).map(x=>h(x)).join(' · ')}</span></div>
+                    ${v.chief_complaint ? `<div class="text-text2 mt-1">CC: ${h(v.chief_complaint)}</div>` : ''}
+                    ${v.diagnosis ? `<div class="text-text2">Dx: ${h(v.diagnosis)}</div>` : ''}
+                    ${v.treatment ? `<div class="text-text2">Tx: ${h(v.treatment)}</div>` : ''}
+                  </div>`).join('')}
+              </div>
+            </div>` : ''}
+
             <!-- Recent Vitals -->
             <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
               <div class="flex items-center gap-2 mb-3">
@@ -4748,6 +4881,8 @@
                   ${rec.vitals[0].heart_rate ? `<div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Heart Rate</div><div class="text-lg font-semibold">${h(rec.vitals[0].heart_rate)} <span class="text-xs text-text3">bpm</span></div></div>` : ''}
                   ${rec.vitals[0].temperature ? `<div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Temperature</div><div class="text-lg font-semibold">${h(rec.vitals[0].temperature)} <span class="text-xs text-text3">°C</span></div></div>` : ''}
                   ${rec.vitals[0].spo2 ? `<div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">SpO2</div><div class="text-lg font-semibold">${h(rec.vitals[0].spo2)}<span class="text-xs text-text3">%</span></div></div>` : ''}
+                  ${rec.vitals[0].glucose ? `<div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Glucose</div><div class="text-lg font-semibold">${h(rec.vitals[0].glucose)} <span class="text-xs text-text3">mmol/L</span></div></div>` : ''}
+                  ${rec.vitals[0].respiratory_rate ? `<div class="rounded-lg bg-surface/60 p-3 border border-slate-700/30"><div class="text-[10px] uppercase text-text3">Resp. Rate</div><div class="text-lg font-semibold">${h(rec.vitals[0].respiratory_rate)} <span class="text-xs text-text3">/min</span></div></div>` : ''}
                 ` : '<div class="text-sm text-text3 col-span-3">No recent vitals recorded</div>'}
               </div>
             </div>
