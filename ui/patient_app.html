@@ -3699,7 +3699,7 @@
         // Auto-detect API base: same origin when served via hospital_server.py (ngrok or local)
         // Falls back to localhost:8001 when opened as a standalone file
         const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-            ? 'http://localhost:8000'
+            ? 'http://localhost:8001'
             : location.origin;
 
         // ═══════════════════════════════════════════════════════════
