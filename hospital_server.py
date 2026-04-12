@@ -143,12 +143,21 @@ def _move_patients_loop():
                         new_eta = max(0, round(amb_orig - elapsed_min))
                     except Exception:
                         new_eta = max(0, round((row["eta_minutes"] or 0) - TICK / 60.0))
-                    conn.execute(
-                        "UPDATE patient_queue SET eta_minutes=?, updated_at=? WHERE patient_id=?",
-                        (new_eta, now_iso, pid)
-                    )
                     if new_eta == 0:
-                        logger.info("Patient %s ambulance arrived (eta→0).", pid)
+                        # Ambulance has reached patient — transition to "arrived" so
+                        # the dashboard shows the patient at the hospital entrance and
+                        # the movement thread stops processing them.
+                        conn.execute(
+                            "UPDATE patient_queue SET eta_minutes=0, status='arrived', "
+                            "arrival_time=?, updated_at=? WHERE patient_id=?",
+                            (now_iso, now_iso, pid)
+                        )
+                        logger.info("Patient %s ambulance arrived → status='arrived'.", pid)
+                    else:
+                        conn.execute(
+                            "UPDATE patient_queue SET eta_minutes=?, updated_at=? WHERE patient_id=?",
+                            (new_eta, now_iso, pid)
+                        )
                     continue
 
                 # ── Normal patients: GPS-based movement toward hospital ──
@@ -432,19 +441,32 @@ def _enrich_patient(p: dict) -> dict:
         p["visits"]      = []
 
     # ETA
-    eta = p.get("eta_minutes")
+    eta = p.get(“eta_minutes”)
     if eta is not None:
-        p["eta_display"] = f"{eta} min"
-    elif p.get("arrival_time"):
-        p["eta_display"] = "ARRIVED"
+        p[“eta_display”] = f”{eta} min”
+    elif p.get(“arrival_time”):
+        p[“eta_display”] = “ARRIVED”
     else:
-        p["eta_display"] = "â€”"
+        p[“eta_display”] = “—“
 
     # Location
-    p["location"] = {
-        "lat": p.pop("location_lat", None),
-        "lon": p.pop("location_lon", None),
-    }
+    loc_lat = p.pop(“location_lat”, None)
+    loc_lon = p.pop(“location_lon”, None)
+    p[“location”] = {“lat”: loc_lat, “lon”: loc_lon}
+
+    # Distance and speed — computed from current GPS to hospital
+    if loc_lat is not None and loc_lon is not None and p.get(“status”) in (“incoming”, “en_route”):
+        _dlat = HOSPITAL_LAT - loc_lat
+        _dlon = HOSPITAL_LON - loc_lon
+        dist_km = _math.sqrt((_dlat * 111.0) ** 2 + (_dlon * 72.0) ** 2)
+        p[“distance_km”] = round(dist_km, 2)
+        is_ambulance = p.get(“override_action”) == “AMBULANCE”
+        p[“speed_kmh”]   = 88 if is_ambulance else 60
+        p[“transport_type”] = “ambulance” if is_ambulance else “self”
+    else:
+        p[“distance_km”]    = None
+        p[“speed_kmh”]      = None
+        p[“transport_type”] = None
 
     # Illness media URLs â€” let dashboard know which indices exist
     pid = p.get("patient_id", "")

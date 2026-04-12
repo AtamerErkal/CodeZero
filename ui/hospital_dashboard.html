@@ -1633,12 +1633,8 @@
     let mapInstance = null, mapTileLayer = null, staticHospitalsLayer = null;
     let _trackMarkerMap = {};
 
-    // ── Demo live tracking ──
-    let _demoAmbulanceSet  = new Set(JSON.parse(localStorage.getItem('ambulancePatients') || '[]'));
-    let _demoAmbSpeeds     = JSON.parse(localStorage.getItem('ambulanceSpeeds')   || '{}');
-    const _DEMO_CAR_SPEED  = 55; // km/h own transport
-    let _demoTrackState    = {}; // pid → {lat, lon, speed_kmh}
-    let _demoTrackTimer    = null;
+    // ── Demo ambulance set (for icon rendering only — server handles movement) ──
+    let _demoAmbulanceSet = new Set(JSON.parse(localStorage.getItem('ambulancePatients') || '[]'));
 
     async function fetchMapsKey() {
       try {
@@ -2105,21 +2101,6 @@
     async function loadTracking() {
       state.tracking = await api("/api/tracking");
 
-      // Overlay demo live-tracking positions (client-side simulation)
-      if (Object.keys(_demoTrackState).length > 0) {
-        state.tracking.forEach(p => {
-          const pos = _demoTrackState[p.patient_id];
-          if (!pos) return;
-          p.latitude    = pos.lat;
-          p.longitude   = pos.lon;
-          p.distance_km = Math.max(0, Math.sqrt(
-            ((HOSPITAL_COORDS[0] - pos.lat) * 111) ** 2 +
-            ((HOSPITAL_COORDS[1] - pos.lon) * 72)  ** 2));
-          p.speed_kmh   = pos.speed_kmh;
-          p.eta_minutes = Math.max(1, Math.round(p.distance_km / pos.speed_kmh * 60));
-        });
-      }
-
       const pts = state.tracking;
 
       // Update tracking table
@@ -2135,12 +2116,12 @@
           const lat = p.latitude ?? p.location?.lat;
           const lon = p.longitude ?? p.location?.lon;
           const pid2 = p.patient_id || '';
-          const hasAmb2 = isIncoming && _demoAmbulanceSet.has(pid2);
+          const isAmb = p.transport_type === 'ambulance' || _demoAmbulanceSet.has(pid2);
           const transportBadge = !isIncoming ? '<span class="text-text3 text-xs">—</span>'
-            : hasAmb2
+            : isAmb
               ? `<span class="chip text-[11px] font-bold" style="color:#ef4444;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)">🚑 Ambulance</span>`
               : `<span class="chip text-[11px] font-bold" style="color:#60a5fa;border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.08)">🚗 Own transport</span>`;
-          const speedDisplay = p.speed_kmh != null ? `${p.speed_kmh} km/h` : (hasAmb2 ? '88 km/h' : (isIncoming ? '55 km/h' : '—'));
+          const speedDisplay = p.speed_kmh != null ? `${p.speed_kmh} km/h` : (isAmb ? '88 km/h' : (isIncoming ? '60 km/h' : '—'));
           return `
           <tr class="border-b border-slate-700/40 hover:bg-surface/30 transition-colors ${triageClass}">
             <td class="py-3 px-2">
@@ -2180,7 +2161,7 @@
           const nm = p.full_name || p.patient_id;
           const photo = p.profile_photo_url || `https://i.pravatar.cc/80?u=${encodeURIComponent(pid)}`;
           const isArrived = p.status === 'arrived' || p.status === 'in_treatment' || p.status === 'discharged';
-          const hasAmb = !isArrived && _demoAmbulanceSet.has(pid);
+          const hasAmb = !isArrived && (p.transport_type === 'ambulance' || _demoAmbulanceSet.has(pid));
           const size = (lvl === 'IMMEDIATE' || lvl === 'EMERGENCY') ? 18 : 13;
           const dur = size === 18 ? '1.2s' : '2.5s';
 
@@ -2301,72 +2282,6 @@
             </div>
           `;
         }).join("") || '<div class="text-center py-8 text-text2 text-sm">No active transports</div>';
-      }
-    }
-
-    // ── Demo live tracking simulation ────────────────────────────────────────
-    function initDemoLiveTracking() {
-      if (!localStorage.getItem('demoReportsLoaded')) return;
-      if (_demoTrackTimer) return;
-
-      // Refresh ambulance sets (may have been loaded before localStorage was populated)
-      _demoAmbulanceSet = new Set(JSON.parse(localStorage.getItem('ambulancePatients') || '[]'));
-      _demoAmbSpeeds    = JSON.parse(localStorage.getItem('ambulanceSpeeds') || '{}');
-
-      // Seed positions from current patients
-      state.patients.forEach(p => {
-        if (p.status !== 'incoming' && p.status !== 'en_route') return;
-        const lat = p.latitude ?? p.location?.lat;
-        const lon = p.longitude ?? p.location?.lon;
-        if (!lat || !lon) return;
-        const pid = p.patient_id;
-        const isAmb = _demoAmbulanceSet.has(pid);
-        _demoTrackState[pid] = {
-          lat, lon,
-          speed_kmh: isAmb ? (_demoAmbSpeeds[pid] || 88) : _DEMO_CAR_SPEED,
-        };
-      });
-
-      _demoTrackTimer = setInterval(_demoTrackStep, 4000);
-    }
-
-    function _demoTrackStep() {
-      const [hospLat, hospLon] = HOSPITAL_COORDS;
-      let changed = false;
-      Object.entries(_demoTrackState).forEach(([pid, pos]) => {
-        const dlat = hospLat - pos.lat;
-        const dlon = hospLon - pos.lon;
-        const dist_km = Math.sqrt((dlat * 111.0) ** 2 + (dlon * 72.0) ** 2);
-        if (dist_km < 0.15) return; // virtually arrived
-
-        const step_km   = pos.speed_kmh * (4 / 3600);
-        const fraction  = Math.min(step_km / dist_km, 1);
-        pos.lat += dlat * fraction;
-        pos.lon += dlon * fraction;
-
-        const newDist = Math.max(0, dist_km - step_km);
-        const etaMin  = Math.max(1, Math.round(newDist / pos.speed_kmh * 60));
-
-        const patient = state.patients.find(p => p.patient_id === pid);
-        if (patient) {
-          patient.latitude    = pos.lat;
-          patient.longitude   = pos.lon;
-          patient.distance_km = newDist;
-          patient.eta_minutes = etaMin;
-          patient.speed_kmh   = pos.speed_kmh;
-          changed = true;
-        }
-        // Move map marker directly (no full redraw needed)
-        if (mapInstance && _trackMarkerMap[pid]) {
-          _trackMarkerMap[pid].setLatLng([pos.lat, pos.lon]);
-        }
-      });
-
-      if (!changed) return;
-
-      // Refresh table + sidebar if tracking tab is open
-      if (state.activeTab === 'tracking') {
-        loadTracking();
       }
     }
 
@@ -3478,7 +3393,7 @@
       currentMessagePatientId = null;
     }
 
-    function sendMessage() {
+    async function sendMessage() {
       if (!currentMessagePatientId) {
         toast('No patient selected', 'err');
         return;
@@ -3486,7 +3401,7 @@
 
       const messageText = document.getElementById('newMessageText').value.trim();
       const newTriageLevel = document.getElementById('messageTriageLevel').value;
-      
+
       if (!messageText && !newTriageLevel) {
         toast('Please enter a message or select a triage level', 'warn');
         return;
@@ -3504,45 +3419,68 @@
         saveDoctorAssignmentsToStorage();
       }
 
-      // Log message action
-      if (messageText) {
-        logPatientAction(currentMessagePatientId, 'message_sent', {
-          message: messageText,
-          sender: 'Doctor'
+      const pid = currentMessagePatientId;
+
+      // ── Persist to server so patient app polling picks it up ──
+      // Always call PATCH /triage so override_note gets written to DB.
+      // If no triage change requested, use APPROVE (keeps current level).
+      const targetLevel = newTriageLevel || patient.triage_level || 'URGENT';
+      const action = newTriageLevel ? 'MESSAGE_TRIAGE' : 'MESSAGE';
+      const doctorName = patient.assigned_doctor || 'Doctor';
+      const noteText = messageText
+        ? (newTriageLevel
+            ? `[${doctorName}] ${messageText} (Triage changed to ${newTriageLevel})`
+            : `[${doctorName}] ${messageText}`)
+        : `[${doctorName}] Triage updated to ${newTriageLevel}`;
+
+      try {
+        await fetch(`/api/patient/${encodeURIComponent(pid)}/triage`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: newTriageLevel ? 'MESSAGE_TRIAGE' : 'APPROVE',
+            new_level: targetLevel,
+            note: noteText
+          })
         });
+      } catch(e) {
+        console.warn('sendMessage server write failed:', e);
+      }
+
+      // Log message action locally
+      if (messageText) {
+        logPatientAction(pid, 'message_sent', { message: messageText, sender: doctorName });
       }
 
       // Update triage level if changed
       if (newTriageLevel) {
         const oldTriageLevel = patient.triage_level;
         patient.triage_level = newTriageLevel;
-        
-        logPatientAction(currentMessagePatientId, 'triage_changed', {
-          from: oldTriageLevel,
-          to: newTriageLevel,
+        patient.override_action = 'MESSAGE_TRIAGE';
+        patient.override_note = noteText;
+        logPatientAction(pid, 'triage_changed', {
+          from: oldTriageLevel, to: newTriageLevel,
           message: `Triage level changed from ${oldTriageLevel} to ${newTriageLevel}`
         });
-        
-        toast(`Triage level updated to ${newTriageLevel}`, 'ok');
-      }
-
-      if (messageText) {
-        toast('Message sent successfully', 'ok');
+        toast(`Triage updated to ${newTriageLevel} — patient notified`, 'ok');
+      } else {
+        patient.override_action = patient.override_action || 'MESSAGE';
+        patient.override_note = noteText;
+        toast('Message sent — patient will be notified', 'ok');
       }
 
       // Refresh message history
-      const actions = getPatientActions(currentMessagePatientId);
+      const actions = getPatientActions(pid);
       const messageActions = actions.filter(a => a.type === 'message_sent');
       const messageHistoryEl = document.getElementById('messageHistory');
-      
-      if (messageActions.length > 0) {
+      if (messageHistoryEl && messageActions.length > 0) {
         messageHistoryEl.innerHTML = messageActions.map(action => `
           <div class="bg-slate-700/50 rounded-lg p-2 text-xs">
             <div class="flex justify-between mb-1">
               <span class="text-cyan font-medium">${action.sender || 'Doctor'}</span>
               <span class="text-text3">${new Date(action.timestamp).toLocaleTimeString()}</span>
             </div>
-            <p class="text-text2">${action.message}</p>
+            <p class="text-text2">${h(action.message)}</p>
           </div>
         `).join('');
       }
@@ -3550,11 +3488,8 @@
       document.getElementById('newMessageText').value = '';
       document.getElementById('messageTriageLevel').value = '';
 
-      // Refresh views
       renderIncomingLists();
-      if (state.activeTab === 'doctor') {
-        renderDoctorPanel();
-      }
+      if (state.activeTab === 'doctor') renderDoctorPanel();
     }
 
     function dischargePatient(bedId, patientId) {
@@ -4178,7 +4113,7 @@
       document.querySelectorAll('.doctor-sub-btn').forEach(b => b.classList.remove('active-doctor-sub'));
 
       // Load tab-specific data
-      if (tab === 'tracking') { initMap(); loadTracking(); initDemoLiveTracking(); }
+      if (tab === 'tracking') { initMap(); loadTracking(); }
       if (tab === 'reports') loadReports();
       if (tab === 'analytics') loadLiveStats();
       if (tab === 'admin') loadAdminTable();
@@ -5884,7 +5819,6 @@
       loadBedAssignmentsFromStorage();
       loadDoctorAssignmentsFromStorage();
       initDoctorSubmenu();
-      initDemoLiveTracking();
       
       // Apply saved KPI filter after data is loaded
       if (savedKpiFilter && savedKpiFilter !== 'all') {
