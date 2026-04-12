@@ -21,7 +21,7 @@ from pathlib import Path
 
 # ── paths ──────────────────────────────────────────────────────────────────
 ROOT     = Path(__file__).parent
-DB_PATH  = ROOT / "data" / "hospital_queue.db"
+DB_PATH  = ROOT / "patient_queue.db"   # matches src/hospital_queue.py → parent.parent / "patient_queue.db"
 
 # ── University Clinic Ulm ──────────────────────────────────────────────────
 HOSPITAL        = "Universitätsklinikum Ulm"
