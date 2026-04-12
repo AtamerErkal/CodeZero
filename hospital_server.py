@@ -1253,12 +1253,77 @@ def api_patient_detail(patient_id: str):
 @app.get("/api/patient/{patient_id}/status")
 def api_patient_status(patient_id: str):
     """Return concise patient status and physician override info."""
+    import re as _re
     all_p = hq.get_all_patients(limit=200)
     match = next((p for p in all_p if p["patient_id"] == patient_id), None)
     if not match:
         raise HTTPException(404, "Patient not found")
-    
+
     has_override = bool(match.get("override_action"))
+    raw_note = match.get("override_note") or None
+
+    # Extract the clean text of the latest note entry (strip timestamp/action prefix)
+    # Format stored: "[2024-01-15 10:30 UTC] [UPGRADE→IMMEDIATE] Doctor text\n---\nOlder..."
+    _LANG_NAMES = {
+        "tr": "Turkish", "de": "German",  "fr": "French",  "es": "Spanish",
+        "ar": "Arabic",  "nl": "Dutch",   "it": "Italian", "pl": "Polish",
+        "pt": "Portuguese", "ru": "Russian", "zh": "Chinese", "en": "English",
+        "ja": "Japanese", "ko": "Korean",
+    }
+    translated_note = None
+    if raw_note:
+        latest_entry = raw_note.split("\n---\n")[0].strip()
+        _m = _re.match(r"^\[.*?\]\s*\[.*?\]\s*([\s\S]+)$", latest_entry)
+        clean_note = (_m.group(1).strip() if _m else latest_entry) or None
+        if clean_note:
+            patient_lang  = match.get("language") or "en-US"
+            patient_code  = patient_lang.split("-")[0].lower()  # "en-GB" → "en"
+            patient_name  = _LANG_NAMES.get(patient_code, "English")
+
+            # ── 1. Try Azure Translator (auto-detect source → patient language) ──
+            try:
+                _, _tr = _get_triage_engine()
+                if _tr and getattr(_tr, "_initialized", False):
+                    _az = _tr.translate(clean_note, target_language=patient_lang)
+                    if _az and _az != clean_note:
+                        translated_note = _az
+                        logger.info("Note translated via Azure (%s→%s)", "auto", patient_code)
+            except Exception as _te:
+                logger.warning("Azure note translation failed: %s", _te)
+
+            # ── 2. Fallback: GPT translation (same pattern used elsewhere in codebase) ──
+            if not translated_note:
+                _openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
+                if _openai_key:
+                    try:
+                        import openai as _oai
+                        _client = _oai.OpenAI(api_key=_openai_key)
+                        _resp = _client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": (
+                                        f"You are a medical translator. Translate the following "
+                                        f"physician note to {patient_name}. "
+                                        f"Reply with ONLY the translated text, nothing else."
+                                    ),
+                                },
+                                {"role": "user", "content": clean_note},
+                            ],
+                            max_tokens=500,
+                            temperature=0,
+                        )
+                        _gpt = _resp.choices[0].message.content.strip()
+                        if _gpt:
+                            translated_note = _gpt
+                            logger.info("Note translated via GPT → %s", patient_code)
+                    except Exception as _ge:
+                        logger.warning("GPT note translation failed: %s", _ge)
+
+            if not translated_note:
+                translated_note = clean_note  # final fallback: show original
+
     return {
         "patient_id": patient_id,
         "status": match.get("status"),
@@ -1266,7 +1331,8 @@ def api_patient_status(patient_id: str):
         "triage_level": match.get("triage_level"),
         "physician_decision": match.get("override_action") or None,
         "new_triage_level": match.get("triage_level") if has_override else None,
-        "physician_note": match.get("override_note") or None,
+        "physician_note": raw_note,
+        "physician_note_translated": translated_note,
         "override_timestamp": match.get("updated_at") if has_override else None,
     }
 
@@ -1439,6 +1505,17 @@ def api_clear():
     """Clear all patients (testing only)."""
     hq.clear_queue()
     return {"ok": True}
+
+
+@app.post("/api/admin/demo")
+def api_demo_seed():
+    """Load the full University Clinic Ulm demo scenario (clears queue first).
+    Returns seeded patient count + localStorage state for doctor/bed/action injection."""
+    try:
+        from demo_seed import run_demo_seed
+        return run_demo_seed()
+    except Exception as e:
+        raise HTTPException(500, f"Demo seed failed: {e}")
 
 
 @app.post("/api/admin/seed")
