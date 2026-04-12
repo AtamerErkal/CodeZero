@@ -5460,6 +5460,8 @@
                     original_answer: a.original_answer || a.originalAnswer || a.answer || ''
                 })).filter(a => a.question && a.answer);
 
+                const _cLvl = normalizeTriage((S.assessment || {}).triage_level);
+                const _cSelfNav = (_cLvl === 'STANDARD' || _cLvl === 'NON_URGENT');
                 const response = await fetch(API + '/api/patient/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -5469,8 +5471,8 @@
                         detected_language: S.selectedLang || S.detectedLang,
                         assessment: S.assessment,
                         hospital: S.selectedHospital,
-                        lat: S.lat,
-                        lon: S.lon,
+                        lat: _cSelfNav ? null : S.lat,
+                        lon: _cSelfNav ? null : S.lon,
                         answers: qaList,
                         has_photo: S.photos.length > 0,
                         photo_count: S.photos.length,
@@ -6362,6 +6364,7 @@
         async function showImmediateAlert() {
             await _ensureHospitalsLoaded();
             const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
+            S.selectedHospital = hosp; // needed so startLiveTracking() demo simulator can find the destination
             S.ambEtaMinutes = hosp ? Math.max(3, hosp.eta_minutes || 10) : 10; // ambulance → patient
             S.ambHospName = hosp ? hosp.name : 'Nearest Emergency Department';
             S.ambHospAddr = hosp ? hosp.address : '';
