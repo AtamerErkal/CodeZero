@@ -1253,12 +1253,34 @@ def api_patient_detail(patient_id: str):
 @app.get("/api/patient/{patient_id}/status")
 def api_patient_status(patient_id: str):
     """Return concise patient status and physician override info."""
+    import re as _re
     all_p = hq.get_all_patients(limit=200)
     match = next((p for p in all_p if p["patient_id"] == patient_id), None)
     if not match:
         raise HTTPException(404, "Patient not found")
-    
+
     has_override = bool(match.get("override_action"))
+    raw_note = match.get("override_note") or None
+
+    # Extract the clean text of the latest note entry (strip timestamp/action prefix)
+    # Format stored: "[2024-01-15 10:30 UTC] [UPGRADE→IMMEDIATE] Doctor text\n---\nOlder..."
+    translated_note = None
+    if raw_note:
+        latest_entry = raw_note.split("\n---\n")[0].strip()
+        _m = _re.match(r"^\[.*?\]\s*\[.*?\]\s*([\s\S]+)$", latest_entry)
+        clean_note = (_m.group(1).strip() if _m else latest_entry) or None
+        if clean_note:
+            patient_lang = match.get("language") or "en-US"
+            try:
+                _, _tr = _get_triage_engine()
+                if _tr:
+                    # Auto-detect doctor's language, translate to patient's language
+                    translated_note = _tr.translate(clean_note, target_language=patient_lang)
+            except Exception as _te:
+                logger.warning("Note translation failed: %s", _te)
+            if not translated_note:
+                translated_note = clean_note  # fallback: show original
+
     return {
         "patient_id": patient_id,
         "status": match.get("status"),
@@ -1266,7 +1288,8 @@ def api_patient_status(patient_id: str):
         "triage_level": match.get("triage_level"),
         "physician_decision": match.get("override_action") or None,
         "new_triage_level": match.get("triage_level") if has_override else None,
-        "physician_note": match.get("override_note") or None,
+        "physician_note": raw_note,
+        "physician_note_translated": translated_note,
         "override_timestamp": match.get("updated_at") if has_override else None,
     }
 

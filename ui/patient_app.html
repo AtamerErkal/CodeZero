@@ -6766,13 +6766,15 @@
         function showPhysicianDecisionCard(data, containerId) {
             const decision = (data.physician_decision || '').toUpperCase();
             const newLvl = data.new_triage_level ? normalizeTriage(data.new_triage_level) : normalizeTriage(data.ai_triage_level);
-            // Extract only the latest entry from the cumulative note log.
-            // The full log is for the dashboard; patients only need to see the latest message.
-            const _rawNote = data.physician_note || '';
-            const _latestEntry = _rawNote.split('\n---\n')[0].trim();
-            // Strip the [timestamp] [ACTION→LEVEL] prefix to get the doctor's actual message
-            const _noteMatch = _latestEntry.match(/^\[.*?\]\s*\[.*?\]\s*([\s\S]+)$/);
-            const note = (_noteMatch ? _noteMatch[1].trim() : _latestEntry) || null;
+            // Use server-translated note if available (translated to patient's language).
+            // Fall back to parsing the raw note (strips timestamp/action prefix).
+            let note = data.physician_note_translated || null;
+            if (!note) {
+                const _rawNote = data.physician_note || '';
+                const _latestEntry = _rawNote.split('\n---\n')[0].trim();
+                const _noteMatch = _latestEntry.match(/^\[.*?\]\s*\[.*?\]\s*([\s\S]+)$/);
+                note = (_noteMatch ? _noteMatch[1].trim() : _latestEntry) || null;
+            }
             const meta = MTS_META[newLvl] || MTS_META.URGENT;
 
             // Always update S so any subsequent navigation shows the physician-confirmed level
