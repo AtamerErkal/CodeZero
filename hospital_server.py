@@ -1507,6 +1507,17 @@ def api_clear():
     return {"ok": True}
 
 
+@app.post("/api/admin/demo")
+def api_demo_seed():
+    """Load the full University Clinic Ulm demo scenario (clears queue first).
+    Returns seeded patient count + localStorage state for doctor/bed/action injection."""
+    try:
+        from demo_seed import run_demo_seed
+        return run_demo_seed()
+    except Exception as e:
+        raise HTTPException(500, f"Demo seed failed: {e}")
+
+
 @app.post("/api/admin/seed")
 def api_seed():
     """Seed realistic test patients dynamically."""

@@ -1048,6 +1048,8 @@
                     <option value="">All</option>
                     <option value="ICU">ICU</option>
                     <option value="ER">ER</option>
+                    <option value="Cardiology">Cardiology</option>
+                    <option value="Neurology">Neurology</option>
                     <option value="General">General</option>
                   </select>
                 </div>
@@ -1057,6 +1059,8 @@
                     <option value="">All</option>
                     <option value="ICU">ICU</option>
                     <option value="ER">ER</option>
+                    <option value="Cardiology">Cardiology</option>
+                    <option value="Neurology">Neurology</option>
                     <option value="General">General</option>
                   </select>
                 </div>
@@ -1280,6 +1284,7 @@
               <p class="text-sm text-text2 mt-1">Manage patient queue, seed demo data, view all records</p>
             </div>
             <div class="flex gap-2">
+              <button onclick="loadDemo()" class="flex items-center gap-2 rounded-xl bg-violet-500/15 border border-violet-500/40 px-4 py-2 text-sm font-medium text-violet-300 hover:bg-violet-500/25 transition-all">🏥 Load Demo</button>
               <button onclick="seedPatients()" class="flex items-center gap-2 rounded-xl bg-teal/15 border border-teal/40 px-4 py-2 text-sm font-medium text-teal hover:bg-teal/25 transition-all">🌱 Seed Demo</button>
               <button onclick="clearQueue()" class="flex items-center gap-2 rounded-xl bg-emer/15 border border-emer/40 px-4 py-2 text-sm font-medium text-emer hover:bg-emer/25 transition-all">🗑 Clear Queue</button>
             </div>
@@ -2970,14 +2975,38 @@
         renderDoctorPanel();
       }
     }
-    // Sample data for beds
-    const bedsData = [
-      { id: "ICU-101", type: "ICU", department: "ICU", status: "available", patient_id: null, equipment: ["ventilator", "monitor", "oxygen"], priority_level: 1, location: "ICU Wing A" },
-      { id: "ICU-102", type: "ICU", department: "ICU", status: "occupied", patient_id: "PAT-045", equipment: ["ventilator", "monitor", "oxygen"], priority_level: 1, location: "ICU Wing A" },
-      { id: "ICU-103", type: "ICU", department: "ICU", status: "maintenance", patient_id: null, equipment: ["ventilator", "monitor", "oxygen"], priority_level: 1, location: "ICU Wing A", maintenance_until: "14:00" },
-      { id: "ER-205", type: "ER", department: "ER", status: "available", patient_id: null, equipment: ["monitor", "oxygen"], priority_level: 2, location: "ER Wing B" },
-      { id: "ER-206", type: "ER", department: "ER", status: "available", patient_id: null, equipment: ["monitor"], priority_level: 2, location: "ER Wing B" },
-      { id: "GW-311", type: "General", department: "General", status: "available", patient_id: null, equipment: ["oxygen"], priority_level: 3, location: "General Ward C" }
+    // Bed inventory — updated dynamically by loadDemo()
+    let bedsData = [
+      // ICU
+      { id: "ICU-101", type: "ICU", department: "ICU", status: "available",    patient_id: null, equipment: ["ventilator","monitor","oxygen"],           priority_level: 1, location: "ICU Wing A" },
+      { id: "ICU-102", type: "ICU", department: "ICU", status: "available",    patient_id: null, equipment: ["ventilator","monitor","oxygen"],           priority_level: 1, location: "ICU Wing A" },
+      { id: "ICU-103", type: "ICU", department: "ICU", status: "available",    patient_id: null, equipment: ["ventilator","monitor","oxygen"],           priority_level: 1, location: "ICU Wing A" },
+      { id: "ICU-104", type: "ICU", department: "ICU", status: "available",    patient_id: null, equipment: ["ventilator","monitor","oxygen"],           priority_level: 1, location: "ICU Wing A" },
+      { id: "ICU-105", type: "ICU", department: "ICU", status: "maintenance",  patient_id: null, equipment: ["ventilator","monitor"],                   priority_level: 1, location: "ICU Wing A", maintenance_until: "14:00" },
+      { id: "ICU-106", type: "ICU", department: "ICU", status: "available",    patient_id: null, equipment: ["ventilator","monitor","oxygen"],           priority_level: 1, location: "ICU Wing B" },
+      // ER
+      { id: "ER-201", type: "ER", department: "ER", status: "available",  patient_id: null, equipment: ["monitor","oxygen","crash-cart"], priority_level: 2, location: "ER Wing B" },
+      { id: "ER-202", type: "ER", department: "ER", status: "available",  patient_id: null, equipment: ["monitor","oxygen"],             priority_level: 2, location: "ER Wing B" },
+      { id: "ER-203", type: "ER", department: "ER", status: "available",  patient_id: null, equipment: ["monitor","oxygen"],             priority_level: 2, location: "ER Wing B" },
+      { id: "ER-204", type: "ER", department: "ER", status: "available",  patient_id: null, equipment: ["monitor"],                     priority_level: 2, location: "ER Wing B" },
+      { id: "ER-205", type: "ER", department: "ER", status: "available",  patient_id: null, equipment: ["monitor","oxygen"],             priority_level: 2, location: "ER Wing C" },
+      { id: "ER-206", type: "ER", department: "ER", status: "available",  patient_id: null, equipment: ["monitor"],                     priority_level: 2, location: "ER Wing C" },
+      // Cardiology
+      { id: "CARD-201", type: "Cardiology", department: "Cardiology", status: "available",  patient_id: null, equipment: ["ECG","monitor","oxygen","defib"], priority_level: 2, location: "Cardiology C-2" },
+      { id: "CARD-202", type: "Cardiology", department: "Cardiology", status: "available",  patient_id: null, equipment: ["ECG","monitor","oxygen"],         priority_level: 2, location: "Cardiology C-2" },
+      { id: "CARD-203", type: "Cardiology", department: "Cardiology", status: "available",  patient_id: null, equipment: ["ECG","monitor"],                  priority_level: 2, location: "Cardiology C-2" },
+      { id: "CARD-204", type: "Cardiology", department: "Cardiology", status: "maintenance",patient_id: null, equipment: ["ECG","monitor"],                  priority_level: 2, location: "Cardiology C-2", maintenance_until: "12:30" },
+      // Neurology
+      { id: "NEURO-301", type: "Neurology", department: "Neurology", status: "available", patient_id: null, equipment: ["EEG","monitor","oxygen"], priority_level: 2, location: "Neurology N-3" },
+      { id: "NEURO-302", type: "Neurology", department: "Neurology", status: "available", patient_id: null, equipment: ["monitor","oxygen"],       priority_level: 2, location: "Neurology N-3" },
+      { id: "NEURO-303", type: "Neurology", department: "Neurology", status: "available", patient_id: null, equipment: ["monitor"],               priority_level: 2, location: "Neurology N-3" },
+      // General Ward
+      { id: "GW-301", type: "General", department: "General", status: "available", patient_id: null, equipment: ["oxygen","call-button"], priority_level: 3, location: "General Ward D" },
+      { id: "GW-302", type: "General", department: "General", status: "available", patient_id: null, equipment: ["oxygen","call-button"], priority_level: 3, location: "General Ward D" },
+      { id: "GW-303", type: "General", department: "General", status: "available", patient_id: null, equipment: ["call-button"],          priority_level: 3, location: "General Ward D" },
+      { id: "GW-304", type: "General", department: "General", status: "available", patient_id: null, equipment: ["call-button"],          priority_level: 3, location: "General Ward E" },
+      { id: "GW-305", type: "General", department: "General", status: "available", patient_id: null, equipment: ["call-button"],          priority_level: 3, location: "General Ward E" },
+      { id: "GW-306", type: "General", department: "General", status: "available", patient_id: null, equipment: ["call-button"],          priority_level: 3, location: "General Ward E" },
     ];
 
     async function assignBed(pid) {
@@ -4984,6 +5013,29 @@
           body.dataset.loaded = '1';
         } catch (e) { body.innerHTML = '<div class="text-text3">Failed to load health record</div>'; }
       }
+    }
+
+    async function loadDemo() {
+      if (!confirm('This will CLEAR the queue and load the University Clinic Ulm demo scenario (18 patients). Continue?')) return;
+      try {
+        toast('⏳ Loading demo…', 'ok');
+        const r = await api('/api/admin/demo', { method: 'POST' });
+        if (!r.ok) { toast('Demo failed: ' + (r.error || 'unknown'), 'err'); return; }
+
+        // Inject beds from server
+        if (r.beds && r.beds.length) bedsData = r.beds;
+
+        // Inject localStorage state (doctor assignments, bed assignments, patient actions)
+        const ls = r.localStorage || {};
+        if (ls.doctorAssignments) localStorage.setItem('doctorAssignments', ls.doctorAssignments);
+        if (ls.bedAssignments)    localStorage.setItem('bedAssignments',    ls.bedAssignments);
+        if (ls.patientActions)    localStorage.setItem('patientActions',    ls.patientActions);
+
+        toast('🏥 Demo loaded — ' + r.seeded + ' patients at ' + r.hospital, 'ok');
+
+        // Full reload so all panels pick up fresh state
+        setTimeout(() => location.reload(), 800);
+      } catch (e) { toast('Demo failed: ' + e.message, 'err'); }
     }
 
     async function seedPatients() {
