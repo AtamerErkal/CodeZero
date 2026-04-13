@@ -1,5 +1,5 @@
 """
-VitalNavAI â€” Hospital ER Command Center Server
+VitalNavAI - Hospital ER Command Center Server
 ============================================
 FastAPI backend serving a real-time ER dashboard.
 
@@ -24,7 +24,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# â”€â”€ path setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- path setup ----------------------------------------------------------------
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT))
 
@@ -41,11 +41,11 @@ from src.triage_engine import TRIAGE_EMERGENCY, TRIAGE_URGENT, TRIAGE_ROUTINE
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# â”€â”€ init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- init ----------------------------------------------------------------------
 # init_db() # Removed as per new health_db_v1 import
 hq = HospitalQueue()
 
-# â”€â”€ Migrate existing DB: add missing columns if not present â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Migrate existing DB: add missing columns if not present ------------------
 def _migrate_queue_db():
     """Add columns introduced after initial schema without breaking existing data."""
     import sqlite3 as _sq
@@ -199,7 +199,7 @@ def _move_patients_loop():
 logger.info("Patient movement background thread started.")
 
 
-# â”€â”€ schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- schemas -------------------------------------------------------------------
 from pydantic import BaseModel as _BM
 from typing import Optional as _Opt, List as _List, Union as _Union
 
@@ -271,7 +271,7 @@ class SubmitRequest(_BM):
     ambulance_total_eta:     _Opt[int] = None  # total round-trip ETA (ambulance→patient→hospital)
     ambulance_to_patient_eta: _Opt[int] = None  # ambulance→patient leg only
 
-# â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- helpers -------------------------------------------------------------------
 
 def _enrich_patient(p: dict) -> dict:
     """Merge queue record with health-DB demographics and medical records."""
@@ -283,7 +283,7 @@ def _enrich_patient(p: dict) -> dict:
     if db:
         p["first_name"]  = db.get("first_name", "")
         p["last_name"]   = db.get("last_name", "")
-        p["sex"]         = db.get("sex", p.get("sex", "â€”"))
+        p["sex"]         = db.get("sex", p.get("sex", "-"))
         p["blood_type"]  = db.get("blood_type", "?")
         p["nationality"] = db.get("nationality", "")
         p["flag"]        = NAT_FLAG.get(db.get("nationality", ""), "ðŸŒ")
@@ -303,7 +303,7 @@ def _enrich_patient(p: dict) -> dict:
         try:
             full_record = get_full_record(hn)
             if full_record:
-                # â”€â”€ Server-side dedup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                # -- Server-side dedup --------------------------------------------
                 # health_db may have duplicate rows if seed ran more than once
                 # (diagnoses table has no UNIQUE constraint on health_number+icd_code)
                 def _dedup(lst, key_fn):
@@ -315,14 +315,14 @@ def _enrich_patient(p: dict) -> dict:
                             out.append(item)
                     return out
 
-                # Diagnoses (medical history) â€” deduplicated by icd_code+description
+                # Diagnoses (medical history) - deduplicated by icd_code+description
                 raw_diags = full_record.get("diagnoses", [])
                 p["diagnoses"] = _dedup(
                     raw_diags,
                     lambda d: (d.get("icd_code") or "") + "|" + (d.get("description") or "")
                 )
 
-                # Active medications only â€” deduplicated by name+dosage
+                # Active medications only - deduplicated by name+dosage
                 all_meds = full_record.get("medications", [])
                 active_meds = [m for m in all_meds if m.get("status") == "active"]
                 p["medications"] = _dedup(
@@ -426,12 +426,12 @@ def _enrich_patient(p: dict) -> dict:
             p["consultations"]  = []
             p["appointments"]   = []
     else:
-        # No health_number â€” use patient_id but keep visit-specific data from DB
+        # No health_number - use patient_id but keep visit-specific data from DB
         p["full_name"]   = p.get("patient_id", "Unknown Patient")
         p["flag"]        = "ðŸŒ"
         p["nationality"] = ""
-        p["age"]         = p.get("age_range", "â€”")
-        p["sex"]         = p.get("sex", "â€”")
+        p["age"]         = p.get("age_range", "-")
+        p["sex"]         = p.get("sex", "-")
         p["blood_type"]  = "?"
         p["diagnoses"]   = []
         p["medications"] = []
@@ -441,34 +441,34 @@ def _enrich_patient(p: dict) -> dict:
         p["visits"]      = []
 
     # ETA
-    eta = p.get(“eta_minutes”)
+    eta = p.get("eta_minutes")
     if eta is not None:
-        p[“eta_display”] = f”{eta} min”
-    elif p.get(“arrival_time”):
-        p[“eta_display”] = “ARRIVED”
+        p["eta_display"] = f"{eta} min"
+    elif p.get("arrival_time"):
+        p["eta_display"] = "ARRIVED"
     else:
-        p[“eta_display”] = “—“
+        p["eta_display"] = "—"
 
     # Location
-    loc_lat = p.pop(“location_lat”, None)
-    loc_lon = p.pop(“location_lon”, None)
-    p[“location”] = {“lat”: loc_lat, “lon”: loc_lon}
+    loc_lat = p.pop("location_lat", None)
+    loc_lon = p.pop("location_lon", None)
+    p["location"] = {"lat": loc_lat, "lon": loc_lon}
 
     # Distance and speed — computed from current GPS to hospital
-    if loc_lat is not None and loc_lon is not None and p.get(“status”) in (“incoming”, “en_route”):
+    if loc_lat is not None and loc_lon is not None and p.get("status") in ("incoming", "en_route"):
         _dlat = HOSPITAL_LAT - loc_lat
         _dlon = HOSPITAL_LON - loc_lon
         dist_km = _math.sqrt((_dlat * 111.0) ** 2 + (_dlon * 72.0) ** 2)
-        p[“distance_km”] = round(dist_km, 2)
-        is_ambulance = p.get(“override_action”) == “AMBULANCE”
-        p[“speed_kmh”]   = 88 if is_ambulance else 60
-        p[“transport_type”] = “ambulance” if is_ambulance else “self”
+        p["distance_km"] = round(dist_km, 2)
+        is_ambulance = p.get("override_action") == "AMBULANCE"
+        p["speed_kmh"]   = 88 if is_ambulance else 60
+        p["transport_type"] = "ambulance" if is_ambulance else "self"
     else:
-        p[“distance_km”]    = None
-        p[“speed_kmh”]      = None
-        p[“transport_type”] = None
+        p["distance_km"]    = None
+        p["speed_kmh"]      = None
+        p["transport_type"] = None
 
-    # Illness media URLs â€” let dashboard know which indices exist
+    # Illness media URLs - let dashboard know which indices exist
     pid = p.get("patient_id", "")
     photo_count = int(p.get("photo_count") or 0)
     if photo_count > 0 and pid:
@@ -500,7 +500,7 @@ def _enrich_patient(p: dict) -> dict:
     return p
 
 
-# â”€â”€ API endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- API endpoints -------------------------------------------------------------
 
 @app.get("/api/stats")
 def api_stats():
@@ -650,7 +650,7 @@ def patient_submit(body: SubmitRequest):
     if body.reg_number:
         record["patient_id"] = body.reg_number
 
-    # Enrich â€” mirrors Streamlit _do_notify() record enrichment
+    # Enrich - mirrors Streamlit _do_notify() record enrichment
     # Prefer server-translated `_qa_pairs` (English) if present in the assessment dict,
     # otherwise fallback to `body.answers`. This bypasses browser JS caching.
     raw_answers = body.assessment.get("_qa_pairs", body.answers or [])
@@ -774,7 +774,7 @@ def patient_submit(body: SubmitRequest):
             ext = MIME_TO_EXT.get(mime, ".jpg" if kind == "photo" else ".webm")
             out_path = ILLNESS_PHOTOS_DIR / f"{pid}_{idx_m}{ext}"
             out_path.write_bytes(_b64.b64decode(raw_b64))
-            logger.info("Saved media %d (%s) â†’ %s", idx_m, kind, pid)
+            logger.info("Saved media %d (%s) -> %s", idx_m, kind, pid)
         except Exception as exc:
             logger.warning("Media %d save failed for %s: %s", idx_m, pid, exc)
 
@@ -797,7 +797,7 @@ def patient_submit(body: SubmitRequest):
                 hq.update_eta(record["patient_id"], int(body.ambulance_total_eta))
 
     logger.info(
-        "Patient submitted: %s â†’ %s (lang=%s consent=%s ambulance=%s)",
+        "Patient submitted: %s -> %s (lang=%s consent=%s ambulance=%s)",
         record["patient_id"], hospital.get("name", ""),
         body.detected_language, body.data_consent,
         bool(body.ambulance_note),
@@ -808,13 +808,13 @@ def patient_submit(body: SubmitRequest):
 
 @app.post("/api/patient/transcribe")
 async def patient_transcribe(audio: UploadFile = File(...), lang: str = Form(default="")):
-    """Transcribe patient audio (WebM/Opus from browser) â†’ text.
+    """Transcribe patient audio (WebM/Opus from browser) -> text.
 
     Pipeline:
       1. Azure Speech SDK  (via src.speech_handler if available)
          - Uses ``lang`` directly when provided (skips auto-detection → more accurate)
       2. OpenAI Whisper API (if OPENAI_API_KEY is set)
-      3. Return empty â†’ frontend falls back to Web Speech / manual typing
+      3. Return empty -> frontend falls back to Web Speech / manual typing
     """
     import os as _os, tempfile as _tmp
 
@@ -826,7 +826,7 @@ async def patient_transcribe(audio: UploadFile = File(...), lang: str = Form(def
         if ext in (".webm", ".ogg", ".mp4", ".wav", ".m4a"):
             suffix = ext
 
-    # â”€â”€ 1. Try Azure Speech SDK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # -- 1. Try Azure Speech SDK -------------------------------------------
     # Requires: SPEECH_KEY + SPEECH_REGION in .env, ffmpeg installed,
     #           azure-cognitiveservices-speech pip package
     speech_key = _os.getenv("SPEECH_KEY", "")
@@ -871,22 +871,22 @@ async def patient_transcribe(audio: UploadFile = File(...), lang: str = Form(def
                     except Exception:
                         pass
                     if result and result.get("text", "").strip():
-                        logger.info("Transcribed via Azure Speech (lang=%s): %sâ€¦", lang or "auto", result["text"][:60])
+                        logger.info("Transcribed via Azure Speech (lang=%s): %s...", lang or "auto", result["text"][:60])
                         return {"text": result["text"], "language": result.get("language", lang or "en-US")}
                     else:
                         logger.warning("Azure Speech returned no text â€ falling back to Whisper")
                 else:
-                    logger.warning("Audio conversion failed (ffmpeg/pydub missing?) â€” falling back to Whisper")
+                    logger.warning("Audio conversion failed (ffmpeg/pydub missing?) - falling back to Whisper")
             else:
-                logger.warning("Azure Speech not initialized (check SPEECH_KEY/SPEECH_REGION) â€” falling back to Whisper")
+                logger.warning("Azure Speech not initialized (check SPEECH_KEY/SPEECH_REGION) - falling back to Whisper")
         except ImportError:
-            logger.warning("src.speech_handler not found â€” falling back to Whisper")
+            logger.warning("src.speech_handler not found - falling back to Whisper")
         except Exception as e:
-            logger.warning("Azure Speech failed: %s â€” falling back to Whisper", e)
+            logger.warning("Azure Speech failed: %s - falling back to Whisper", e)
     else:
-        logger.info("SPEECH_KEY not set â€” skipping Azure Speech, trying Whisper")
+        logger.info("SPEECH_KEY not set - skipping Azure Speech, trying Whisper")
 
-    # â”€â”€ 2. OpenAI Whisper API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # -- 2. OpenAI Whisper API ---------------------------------------------
     openai_key = _os.getenv("OPENAI_API_KEY", "")
     if openai_key:
         try:
@@ -920,17 +920,17 @@ async def patient_transcribe(audio: UploadFile = File(...), lang: str = Form(def
             lang_bcp47 = LANG_MAP.get(lang, f"{lang}-{lang.upper()}")
 
             if text.strip():
-                logger.info("Transcribed via Whisper: %sâ€¦ (lang=%s)", text[:60], lang)
+                logger.info("Transcribed via Whisper: %s... (lang=%s)", text[:60], lang)
                 return {"text": text.strip(), "language": lang_bcp47}
             else:
                 logger.warning("Whisper returned empty text")
         except Exception as e:
             logger.warning("Whisper transcription failed: %s", e)
     else:
-        logger.warning("OPENAI_API_KEY not set â€” Whisper unavailable")
+        logger.warning("OPENAI_API_KEY not set - Whisper unavailable")
 
-    # â”€â”€ 3. Nothing worked â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    logger.info("All server transcription methods failed â€” frontend will use Web Speech")
+    # -- 3. Nothing worked -------------------------------------------------
+    logger.info("All server transcription methods failed - frontend will use Web Speech")
     return {"text": "", "language": "en-US"}
 
 
@@ -941,11 +941,11 @@ def patient_questions(body: QuestionsRequest):
 
     This mirrors the Streamlit flow:
       _do_process(): Azure Translator.translate_to_english()
-      page_photos â†’ _go_to_questions(): TriageEngine.generate_questions()
+      page_photos -> _go_to_questions(): TriageEngine.generate_questions()
     """
     triage, translator = _get_triage_engine()
 
-    # â”€â”€ Step 1: Translate complaint to English (Azure Translator / GPT fallback) â”€â”€â”€â”€â”€
+    # -- Step 1: Translate complaint to English (Azure Translator / GPT fallback) -----
     complaint_en = body.complaint_en or body.complaint
     lang_hint = body.detected_language or "en-US"
 
@@ -959,9 +959,9 @@ def patient_questions(body: QuestionsRequest):
                 )
                 if result:
                     complaint_en = result
-                    logger.info("Complaint translated from %s to EN: '%sâ€¦'", body.detected_language or "auto", complaint_en[:60])
+                    logger.info("Complaint translated from %s to EN: '%s...'", body.detected_language or "auto", complaint_en[:60])
             except Exception as exc:
-                logger.warning("Translation failed (%s) â€” using original text.", exc)
+                logger.warning("Translation failed (%s) - using original text.", exc)
         else:
             # Fallback: use GPT to translate the complaint to English
             openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
@@ -984,13 +984,13 @@ def patient_questions(body: QuestionsRequest):
                     _translated = _resp.choices[0].message.content.strip()
                     if _translated:
                         complaint_en = _translated
-                        logger.info("Complaint (GPT-translated) from auto to EN: '%sâ€¦'", complaint_en[:60])
+                        logger.info("Complaint (GPT-translated) from auto to EN: '%s...'", complaint_en[:60])
                 except Exception as exc:
-                    logger.warning("GPT complaint translation failed (%s) â€” using original.", exc)
+                    logger.warning("GPT complaint translation failed (%s) - using original.", exc)
 
-    # â”€â”€ Step 2: Generate GPT-4 clinical questions â€” ALWAYS in English first â”€â”€
+    # -- Step 2: Generate GPT-4 clinical questions - ALWAYS in English first --
     # English questions are the ground truth (question_en), then translated for the patient.
-    # Do NOT inject language into GPT prompt â€” generate clean English questions,
+    # Do NOT inject language into GPT prompt - generate clean English questions,
     # then translate them in Step 3 so the dashboard always has question_en available.
     lang_hint  = body.detected_language or "en-US"
     _lang_map  = {
@@ -1002,13 +1002,13 @@ def patient_questions(body: QuestionsRequest):
     lang_name = next((v for k, v in _lang_map.items() if lang_hint.lower().startswith(k)), None)
 
     questions = triage.generate_questions(chief_complaint=complaint_en)
-    logger.info("Generated %d questions (lang=%s): '%sâ€¦'", len(questions), lang_hint, complaint_en[:50])
+    logger.info("Generated %d questions (lang=%s): '%s...'", len(questions), lang_hint, complaint_en[:50])
 
     # Step 2b: Tag each question with its English original before any translation
     for q in questions:
         q["question_en"] = q.get("question", "")   # Always preserve English version
 
-    # â”€â”€ Step 3: Translate questions/options into patient's language â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # -- Step 3: Translate questions/options into patient's language ------------
     if lang_name and not lang_hint.lower().startswith("en"):
         # Try Azure Translator first, fall back to GPT inject on individual questions
         if translator:
@@ -1149,7 +1149,7 @@ def patient_assess(body: AssessRequest):
 
     complaint_en = body.complaint_en or body.complaint
 
-    # â”€â”€ Step 1: Translate answers to English â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # -- Step 1: Translate answers to English ---------------------------
     qa_pairs = []
 
     # Build a question_en lookup from body.questions list (may contain dicts with question_en)
@@ -1212,7 +1212,7 @@ def patient_assess(body: AssessRequest):
                         if _translated:
                             ans_en = _translated
                     except Exception as exc:
-                        logger.warning("GPT answer translation failed (%s) â€” using original.", exc)
+                        logger.warning("GPT answer translation failed (%s) - using original.", exc)
 
         qa_pairs.append({
             "question":        q_en,           # English question for GPT + dashboard
@@ -1222,11 +1222,11 @@ def patient_assess(body: AssessRequest):
         })
 
     logger.info(
-        "Assessing triage: complaint='%sâ€¦', %d Q&A pairs, lang=%s",
+        "Assessing triage: complaint='%s...', %d Q&A pairs, lang=%s",
         complaint_en[:50], len(qa_pairs), body.detected_language or "en",
     )
 
-    # â”€â”€ Step 2: GPT-4 triage assessment (TriageEngine) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # -- Step 2: GPT-4 triage assessment (TriageEngine) -----------------
     medical_history = None
     if getattr(body, "health_number", None):
         medical_history = get_full_record(body.health_number)
@@ -1238,7 +1238,7 @@ def patient_assess(body: AssessRequest):
         language=body.detected_language or "en-US",
     )
 
-    # â”€â”€ Step 3: Generate pre-arrival DO/DON'T advice (GPT-4 + RAG) â”€â”€â”€â”€
+    # -- Step 3: Generate pre-arrival DO/DON'T advice (GPT-4 + RAG) ----
     advice = triage.generate_pre_arrival_advice(
         chief_complaint=complaint_en,
         assessment=assessment,
@@ -1370,7 +1370,7 @@ def api_health_record(health_number: str):
 
 @app.patch("/api/patient/{patient_id}/status")
 def api_update_status(patient_id: str, body: dict):
-    """Update patient status (incoming â†’ arrived â†’ in_treatment â†’ discharged)."""
+    """Update patient status (incoming -> arrived -> in_treatment -> discharged)."""
     status = body.get("status")
     valid  = {"incoming", "arrived", "in_treatment", "discharged"}
     if status not in valid:
@@ -1478,7 +1478,7 @@ def serve_patient_photo(health_number: str):
 
 @app.get("/api/illness_photo/{patient_id}/{index}")
 def serve_illness_photo(patient_id: str, index: int = 0):
-    """Serve illness media â€” images and videos."""
+    """Serve illness media - images and videos."""
     MEDIA_EXTS = {
         ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
         ".png": "image/png",  ".webp": "image/webp",
@@ -1619,7 +1619,7 @@ def debug_health_db():
             "db_exists": Path(str(HDB_PATH)).exists(),
             "patients": patients, "vitals": vitals,
             "diagnoses": diags, "medications": meds,
-            "status": "OK" if vitals > 0 and diags > 0 else "NEEDS_RESEED â€” call POST /api/admin/reseed_health",
+            "status": "OK" if vitals > 0 and diags > 0 else "NEEDS_RESEED - call POST /api/admin/reseed_health",
         }
     except Exception as e:
         return {"error": str(e), "status": "ERROR"}
@@ -1637,7 +1637,7 @@ def reset_health_db():
     except Exception as e:
         raise HTTPException(500, f"Re-seed failed: {e}")
 
-# â”€â”€ Serve the dashboard HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Serve the dashboard HTML --------------------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
@@ -1763,13 +1763,13 @@ def _get_maps():
     return _patient_services["maps"]
 
 
-# â”€â”€ Entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# -- Entry point ---------------------------------------------------------------
 if __name__ == "__main__":
     import os as _os_check, shutil
 
     speech_key  = _os_check.getenv("SPEECH_KEY", "")
     openai_key  = _os_check.getenv("OPENAI_API_KEY", "")
-    # shutil.which can miss ffmpeg on Windows venvs â€” verify with subprocess
+    # shutil.which can miss ffmpeg on Windows venvs - verify with subprocess
     try:
         import subprocess as _sp
         _sp.run(["ffmpeg", "-version"], capture_output=True, timeout=5, check=True)
