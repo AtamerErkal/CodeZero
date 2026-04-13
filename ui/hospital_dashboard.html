@@ -4270,16 +4270,13 @@
 
     async function refreshAll() {
       try {
-        // Check if any bed assignments exist
-        const hasBedAssignments = state.patients.some(p => p.assigned_bed);
-        
-        if (hasBedAssignments) {
-          // Skip patient refresh to preserve local assignments
-          await Promise.all([loadStats(), loadTracking()]);
-        } else {
-          await Promise.all([loadStats(), loadPatients(), loadTracking()]);
-        }
-        
+        // Always fetch all three data sources so new patients appear immediately.
+        // Re-apply localStorage assignments after loadPatients() to preserve
+        // bed/doctor assignments that aren't stored server-side.
+        await Promise.all([loadStats(), loadPatients(), loadTracking()]);
+        loadDoctorAssignmentsFromStorage();
+        loadBedAssignmentsFromStorage();
+
         const syncEl = document.getElementById("sync-text");
         if (syncEl) syncEl.textContent = `Synced ${new Date().toLocaleTimeString()}`;
         
