@@ -2533,6 +2533,16 @@
               active.map(patient => buildDoctorPatientCard(patient, doctor)).join('')}
           </div>
 
+          <!-- Unassigned patients — visible to all doctors so they can claim/review -->
+          ${(() => { const unassigned = state.patients.filter(p => !p.assigned_doctor_id && p.status !== 'discharged'); return unassigned.length === 0 ? '' : `
+          <div class="mb-2 flex items-center gap-2 mt-4">
+            <span class="text-sm font-bold text-amber-400">⚠ Unassigned Patients</span>
+            <span class="text-[10px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">${unassigned.length}</span>
+          </div>
+          <div class="space-y-3 mb-6">
+            ${unassigned.map(patient => buildDoctorPatientCard(patient, doctor)).join('')}
+          </div>`; })()}
+
           ${discharged.length > 0 ? `
           <details class="glass rounded-xl overflow-hidden">
             <summary class="flex items-center gap-2 p-4 cursor-pointer text-sm font-semibold text-text2 hover:text-text1">
@@ -2637,11 +2647,11 @@
           <div class="grid grid-cols-6 gap-1 mt-3 pt-3 border-t border-slate-700/20">
             ${steps.map(s => `
               <div class="flex flex-col items-center gap-0.5 ${s.time ? '' : 'opacity-25'}">
-                <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" style="background:${s.time ? 'rgba(34,211,238,.15)' : 'rgba(51,65,85,.4)'};border:1px solid ${s.time ? 'rgba(34,211,238,.3)' : 'rgba(51,65,85,.5)'}">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs" style="background:${s.time ? 'rgba(34,211,238,.15)' : 'rgba(51,65,85,.4)'};border:1px solid ${s.time ? 'rgba(34,211,238,.3)' : 'rgba(51,65,85,.5)'}">
                   ${s.icon}
                 </div>
-                <span class="text-[9px] font-bold uppercase text-center leading-tight" style="color:${s.time ? '#22d3ee' : 'var(--text-3)'}">${s.label}</span>
-                <span class="text-[9px] text-text3 mono">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
+                <span class="text-[10px] font-bold uppercase text-center leading-tight" style="color:${s.time ? '#22d3ee' : 'var(--text-3)'}">${s.label}</span>
+                <span class="text-[11px] text-text3 mono">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false}) : '—'}</span>
               </div>
             `).join('')}
           </div>
@@ -2739,7 +2749,7 @@
             const days = Math.floor(hours / 24);
             duration = `${days}d`;
           }
-          assignmentTime = assignedTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          assignmentTime = assignedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         }
         
         return `
@@ -4503,8 +4513,8 @@
                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm" style="background:${s.time ? s.color + '20' : 'rgba(51,65,85,.4)'};border:1px solid ${s.time ? s.color + '50' : 'rgba(51,65,85,.5)'}">
                   ${s.icon}
                 </div>
-                <span class="text-[9px] font-bold uppercase tracking-wide text-center leading-tight" style="color:${s.time ? s.color : 'var(--text-3)'}">${s.label}</span>
-                <span class="text-[9px] text-text2 mono font-medium">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
+                <span class="text-[10px] font-bold uppercase tracking-wide text-center leading-tight" style="color:${s.time ? s.color : 'var(--text-3)'}">${s.label}</span>
+                <span class="text-[11px] text-text2 mono font-medium">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false}) : '—'}</span>
               </div>
             `).join('')}
           </div>
