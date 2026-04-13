@@ -1431,6 +1431,18 @@
     const TRIAGE_COLOR = { IMMEDIATE: "#ef4444", EMERGENCY: "#f59e0b", URGENT: "#facc15", STANDARD: "#10b981", NON_URGENT: "#60a5fa", ROUTINE: "#10b981" };
     const STATUS_LABEL = { incoming: "Incoming", en_route: "En Route", arrived: "Arrived", in_treatment: "In Treatment", discharged: "Discharged" };
 
+    // fmt24 — parse any ISO/SQLite timestamp as UTC and display as local 24-hour time.
+    // SQLite CURRENT_TIMESTAMP stores "YYYY-MM-DD HH:MM:SS" (UTC, no tz marker).
+    // Without this fix browsers interpret that as LOCAL time → 2 h behind in UTC+2.
+    function fmt24(iso) {
+      if (!iso) return '—';
+      try {
+        let s = iso.trim().replace(' ', 'T');          // "YYYY-MM-DD …" → ISO
+        if (!/Z$|[+-]\d{2}:?\d{2}$/.test(s)) s += 'Z'; // no tz marker → assume UTC
+        return new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      } catch { return '—'; }
+    }
+
     const state = {
       activeTab: "dashboard",
       patients: [],
@@ -2184,9 +2196,7 @@
 
           const etaLabel = isArrived
             ? `<span style="font-size:12px;font-weight:700;color:#10b981">✓ Arrived</span>`
-            : hasAmb
-              ? `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : '#f97316'}">🚑 ETA to Patient: ${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</span>`
-              : `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ETA ${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</span>`;
+            : `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ETA ${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</span>`;
 
           // For ambulance patients: compute ambulance position between hospital and patient
           const ambEtaOrig = p.amb_eta_patient;
@@ -2198,9 +2208,9 @@
 
           const transportRow = hasAmb
             ? `<div style="margin-top:8px;padding:8px;border-radius:8px;background:#ef444411;border:1px solid #ef444433;font-size:11px;color:#fca5a5">
-                 <div style="font-weight:700;color:#ef4444;margin-bottom:4px">🚑 Ambulance dispatched → Patient location</div>
+                 <div style="font-weight:700;color:#ef4444;margin-bottom:4px">🚑 Ambulance en route → Universitätsklinikum Ulm</div>
                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;text-align:center">
-                   <div><div style="font-size:14px;font-weight:700;color:#fff">${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</div><div style="color:#94a3b8">ETA to Patient</div></div>
+                   <div><div style="font-size:14px;font-weight:700;color:#fff">${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</div><div style="color:#94a3b8">ETA</div></div>
                    <div><div style="font-size:14px;font-weight:700;color:#fff">${p.distance_km != null ? p.distance_km.toFixed(1) + ' km' : '—'}</div><div style="color:#94a3b8">Distance</div></div>
                    <div><div style="font-size:14px;font-weight:700;color:#fff">${p.speed_kmh != null ? p.speed_kmh + ' km/h' : '88 km/h'}</div><div style="color:#94a3b8">Speed</div></div>
                  </div>
@@ -2562,16 +2572,6 @@
               active.map(patient => buildDoctorPatientCard(patient, doctor)).join('')}
           </div>
 
-          <!-- Unassigned patients — visible to all doctors so they can claim/review -->
-          ${(() => { const unassigned = state.patients.filter(p => !p.assigned_doctor_id && p.status !== 'discharged'); return unassigned.length === 0 ? '' : `
-          <div class="mb-2 flex items-center gap-2 mt-4">
-            <span class="text-sm font-bold text-amber-400">⚠ Unassigned Patients</span>
-            <span class="text-[10px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">${unassigned.length}</span>
-          </div>
-          <div class="space-y-3 mb-6">
-            ${unassigned.map(patient => buildDoctorPatientCard(patient, doctor)).join('')}
-          </div>`; })()}
-
           ${discharged.length > 0 ? `
           <details class="glass rounded-xl overflow-hidden">
             <summary class="flex items-center gap-2 p-4 cursor-pointer text-sm font-semibold text-text2 hover:text-text1">
@@ -2680,7 +2680,7 @@
                   ${s.icon}
                 </div>
                 <span class="text-[10px] font-bold uppercase text-center leading-tight" style="color:${s.time ? '#22d3ee' : 'var(--text-3)'}">${s.label}</span>
-                <span class="text-[11px] text-text3 mono">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false}) : '—'}</span>
+                <span class="text-[11px] text-text3 mono">${fmt24(s.time)}</span>
               </div>
             `).join('')}
           </div>
@@ -2778,7 +2778,7 @@
             const days = Math.floor(hours / 24);
             duration = `${days}d`;
           }
-          assignmentTime = assignedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+          assignmentTime = fmt24(patient.doctor_assigned_at || '');
         }
         
         return `
@@ -4543,7 +4543,7 @@
                   ${s.icon}
                 </div>
                 <span class="text-[10px] font-bold uppercase tracking-wide text-center leading-tight" style="color:${s.time ? s.color : 'var(--text-3)'}">${s.label}</span>
-                <span class="text-[11px] text-text2 mono font-medium">${s.time ? new Date(s.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false}) : '—'}</span>
+                <span class="text-[11px] text-text2 mono font-medium">${fmt24(s.time)}</span>
               </div>
             `).join('')}
           </div>
