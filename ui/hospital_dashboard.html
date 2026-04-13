@@ -122,6 +122,16 @@
     @keyframes emgFlash { 0% { opacity: .7; } 100% { opacity: 0; } }
     @keyframes edgeGlow { 0%,100% { box-shadow: inset 0 0 40px rgba(220,38,38,.15); } 50% { box-shadow: inset 0 0 80px rgba(220,38,38,.35); } }
     body.emg-alert { animation: edgeGlow 1s ease-in-out 6 alternate; }
+    @keyframes notifIn { from { transform: translateX(110%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+    @keyframes notifOut { from { transform: translateX(0); opacity:1; max-height:120px; } to { transform: translateX(110%); opacity:0; max-height:0; } }
+    #notif-stack { position:fixed; top:16px; right:16px; z-index:9997; display:flex; flex-direction:column; gap:8px; width:340px; pointer-events:none; }
+    .notif-card { pointer-events:all; border-radius:12px; padding:12px 14px; display:flex; gap:10px; align-items:flex-start; box-shadow:0 8px 32px rgba(0,0,0,.55); animation:notifIn .28s cubic-bezier(.22,1,.36,1); border-left:4px solid; }
+    .notif-card.dismissing { animation:notifOut .35s ease forwards; }
+    .notif-card .notif-badge { font-size:18px; font-weight:900; width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .notif-card .notif-body { flex:1; min-width:0; }
+    .notif-card .notif-title { font-size:13px; font-weight:800; line-height:1.2; }
+    .notif-card .notif-sub { font-size:11px; opacity:.78; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .notif-card .notif-close { background:rgba(255,255,255,.12); border:none; border-radius:6px; color:inherit; cursor:pointer; font-size:11px; font-weight:700; padding:3px 7px; flex-shrink:0; }
     /* KPI active highlight */
     .kpi-active { outline: 2px solid rgba(34,211,238,.6) !important; box-shadow: 0 0 20px rgba(34,211,238,.2) !important; }
     .theme-toggle-btn {
@@ -1416,6 +1426,8 @@
   </div>
 
   <div id="toast" class="fixed bottom-6 right-6 hidden rounded-xl border border-slate-600 bg-surface2/95 px-4 py-3 text-sm shadow-xl"></div>
+  <!-- Patient arrival notification stack (all triage levels, coloured) -->
+  <div id="notif-stack"></div>
 
   <!-- Media Lightbox -->
   <div id="mediaLightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;gap:12px;" onclick="if(event.target===this)closeMediaLightbox()">
@@ -2061,15 +2073,10 @@
       state.patients.forEach(p => enforceTriageFloor(p));
       console.log('Triage floor enforced');
 
-      // Emergency alert check
-      console.log('Checking emergency alerts');
+      // New-patient alert check — fires for every triage level, coloured accordingly
       state.patients.forEach(p => {
-        const lvl = normalizeTriage(p.triage_level);
-        if ((lvl === 'IMMEDIATE' || lvl === 'EMERGENCY') && !seenEmergencyIds.has(p.patient_id)) {
-          triggerEmergencyAlert(p);
-        }
+        if (!seenPatientIds.has(p.patient_id)) triggerPatientAlert(p);
       });
-      console.log('Emergency alerts checked');
 
       // Update nav badge with emergency count
       console.log('Updating nav badge');
@@ -2889,52 +2896,97 @@
     }
 
     // ── EMERGENCY ALERT SYSTEM ──────────────────────────────────
-    const seenEmergencyIds = new Set();
-    function triggerEmergencyAlert(p) {
-      seenEmergencyIds.add(p.patient_id);
-      document.body.classList.add('emg-alert');
-      setTimeout(() => document.body.classList.remove('emg-alert'), 7000);
-      // Banner
-      const old = document.getElementById('emg-alert-banner');
-      if (old) old.remove();
-      const banner = document.createElement('div');
-      banner.id = 'emg-alert-banner';
-      banner.className = 'fixed top-0 left-0 right-0 z-[9999] text-white text-center py-4 px-5 font-black text-lg flex items-center justify-center gap-3.5 shadow-2xl border-b-2 border-red-300';
-      banner.style.cssText = 'background:linear-gradient(135deg,#7F1D1D,#B91C1C);animation:emgBannerIn 0.25s ease,emgPulse 0.8s ease-in-out 0.3s 6 alternate;';
-      banner.innerHTML = `<span class="text-2xl" style="animation:emgPulse 0.5s ease-in-out infinite alternate">🚨</span> <span>NEW EMERGENCY — <strong>${h(p.full_name || p.patient_id || 'Unknown')}</strong> · ETA <strong>${p.eta_minutes ?? '?'} min</strong> · <span class="uppercase tracking-wider text-red-300">${h(p.chief_complaint || '')}</span></span><button onclick="this.parentElement.remove()" class="ml-5 bg-white/15 border border-white/30 text-white px-3.5 py-1.5 rounded-lg cursor-pointer font-bold text-sm shrink-0 hover:bg-white/25 transition-all">✕ Dismiss</button>`;
-      document.body.appendChild(banner);
-      // Screen flash overlay
-      const flash = document.createElement('div');
-      flash.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(220,38,38,0.18);pointer-events:none;animation:emgFlash 0.4s ease-out forwards;';
-      document.body.appendChild(flash);
-      setTimeout(() => { if (flash.parentElement) flash.remove(); }, 800);
-      setTimeout(() => { if (banner.parentElement) banner.remove(); }, 12000);
-      // Title flash
-      const origTitle = document.title;
-      let fc = 0;
-      const fi = setInterval(() => {
-        document.title = fc++ % 2 === 0 ? '🚨 EMERGENCY!' : 'ER Dashboard';
-        if (fc >= 20) { clearInterval(fi); document.title = origTitle; }
-      }, 400);
-      // Alarm — 3 loud bursts of double-beep
+    const seenPatientIds = new Set();
+
+    // ── Per-triage notification config ─────────────────────────────────────
+    const NOTIF_CFG = {
+      IMMEDIATE:  { bg: 'rgba(30,5,5,.97)',   border: '#ef4444', label: '🔴 IMMEDIATE', ttl: 0,     sound: 'alarm',  flash: true  },
+      EMERGENCY:  { bg: 'rgba(28,12,0,.97)',   border: '#f97316', label: '🟠 EMERGENCY', ttl: 15000, sound: 'alert',  flash: true  },
+      URGENT:     { bg: 'rgba(28,26,0,.97)',   border: '#facc15', label: '🟡 URGENT',    ttl: 12000, sound: 'soft',   flash: false },
+      STANDARD:   { bg: 'rgba(0,22,14,.97)',   border: '#10b981', label: '🟢 STANDARD',  ttl: 10000, sound: null,     flash: false },
+      NON_URGENT: { bg: 'rgba(5,15,30,.97)',   border: '#60a5fa', label: '🔵 NON-URGENT',ttl: 8000,  sound: null,     flash: false },
+    };
+
+    function _playSound(type) {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const sequences = [
-          [1100, 0.00], [880, 0.14], [1100, 0.32], [880, 0.46],
-          [1100, 0.68], [880, 0.82], [1200, 1.05], [900, 1.20],
-        ];
-        sequences.forEach(([freq, delay]) => {
+        const seqs = type === 'alarm'
+          ? [[1100,0.00],[880,0.14],[1100,0.32],[880,0.46],[1100,0.68],[880,0.82],[1200,1.05],[900,1.20]]
+          : type === 'alert'
+          ? [[880,0.00],[660,0.12],[880,0.28],[660,0.40]]
+          : [[660,0.00],[550,0.10]];
+        const vol = type === 'alarm' ? 0.55 : type === 'alert' ? 0.38 : 0.22;
+        seqs.forEach(([freq, delay]) => {
           const osc = ctx.createOscillator(), g = ctx.createGain();
           osc.connect(g); g.connect(ctx.destination);
-          osc.frequency.value = freq; osc.type = 'square';
+          osc.frequency.value = freq; osc.type = type === 'alarm' ? 'square' : 'sine';
           const t = ctx.currentTime + delay;
           g.gain.setValueAtTime(0, t);
-          g.gain.linearRampToValueAtTime(0.55, t + 0.02);
+          g.gain.linearRampToValueAtTime(vol, t + 0.02);
           g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
           osc.start(t); osc.stop(t + 0.13);
         });
       } catch(e) {}
     }
+
+    function triggerPatientAlert(p) {
+      seenPatientIds.add(p.patient_id);
+      const lvl = normalizeTriage(p.triage_level);
+      const cfg = NOTIF_CFG[lvl] || NOTIF_CFG.STANDARD;
+      const col = TRIAGE_COLOR[lvl] || cfg.border;
+
+      // ── Screen flash + edge glow for IMMEDIATE / EMERGENCY ──
+      if (cfg.flash) {
+        document.body.classList.add('emg-alert');
+        setTimeout(() => document.body.classList.remove('emg-alert'), 7000);
+        const flash = document.createElement('div');
+        flash.style.cssText = `position:fixed;inset:0;z-index:9996;background:${col}2e;pointer-events:none;animation:emgFlash 0.5s ease-out forwards;`;
+        document.body.appendChild(flash);
+        setTimeout(() => flash.parentElement && flash.remove(), 900);
+      }
+
+      // ── Sound ──
+      if (cfg.sound) _playSound(cfg.sound);
+
+      // ── Title flash for IMMEDIATE ──
+      if (lvl === 'IMMEDIATE') {
+        const origTitle = document.title;
+        let fc = 0;
+        const fi = setInterval(() => {
+          document.title = fc++ % 2 === 0 ? '🚨 IMMEDIATE!' : 'ER Dashboard';
+          if (fc >= 20) { clearInterval(fi); document.title = origTitle; }
+        }, 400);
+      }
+
+      // ── Notification card ──
+      const stack = document.getElementById('notif-stack');
+      if (!stack) return;
+      const card = document.createElement('div');
+      card.className = 'notif-card';
+      card.style.cssText = `background:${cfg.bg};border-left-color:${col};color:#f8fafc;`;
+      const eta = p.eta_minutes != null ? `${p.eta_minutes} min` : 'Arrived';
+      const complaint = h(p.chief_complaint || '').slice(0, 55);
+      card.innerHTML = `
+        <div class="notif-badge" style="background:${col}22;color:${col}">${TRIAGE_CLASS[lvl] || '?'}</div>
+        <div class="notif-body">
+          <div class="notif-title" style="color:${col}">${cfg.label} — ${h(p.full_name || p.patient_id || 'Unknown')}</div>
+          <div class="notif-sub">⏱ ETA ${eta} &nbsp;·&nbsp; ${complaint}</div>
+        </div>
+        <button class="notif-close" onclick="dismissNotif(this.closest('.notif-card'))">✕</button>`;
+      stack.appendChild(card);
+
+      // Auto-dismiss (IMMEDIATE stays until manually closed)
+      if (cfg.ttl > 0) setTimeout(() => dismissNotif(card), cfg.ttl);
+    }
+
+    function dismissNotif(card) {
+      if (!card || !card.parentElement) return;
+      card.classList.add('dismissing');
+      setTimeout(() => card.parentElement && card.remove(), 380);
+    }
+
+    // Keep old name as alias so any remaining callers still work
+    function triggerEmergencyAlert(p) { triggerPatientAlert(p); }
 
     function confirmDischarge(pid, btn) {
       const bar = btn.closest('div');
