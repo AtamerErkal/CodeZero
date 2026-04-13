@@ -4,8 +4,8 @@ Demo Seed — University Clinic Ulm
 Populates the hospital queue with a realistic snapshot for demo/recording purposes.
 
 Scenario:  A busy morning shift at Universitätsklinikum Ulm.
-  • 7  patients en route  (IMMEDIATE × 2, EMERGENCY × 1, URGENT × 3, STANDARD × 1)
-       — 5 by ambulance, 2 own transport
+  • 6  patients en route  (IMMEDIATE × 2, EMERGENCY × 1, URGENT × 2, STANDARD × 1)
+       — 4 by ambulance, 2 own transport
   • 7  patients in treatment (mix of triage levels, doctors + beds assigned)
   • 5  patients discharged earlier today
 
@@ -261,30 +261,6 @@ DEMO_PATIENTS = [
         "qa_transcript": [
             {"question_en": "How did it happen?",           "question": "How did it happen?",           "answer": "Hit a pothole, landed on outstretched hand", "original_answer": "Hit a pothole, landed on outstretched hand"},
             {"question_en": "Any numbness in fingers?",    "question": "Any numbness in fingers?",     "answer": "Slight tingling in thumb",                   "original_answer": "Slight tingling in thumb"},
-        ],
-    },
-
-    {   # P19 — Acute appendicitis, ambulance dispatched
-        "patient_id": "DEMO-P19-ULM",
-        "health_number": "DEMO-DE-011",  # Klaus Müller, 28, no prior history
-        "status": "incoming",
-        "has_ambulance": True,
-        "triage_level": "URGENT",
-        "chief_complaint": "Severe right lower quadrant pain, nausea, fever 38.4°C — suspected appendicitis",
-        "complaint_text": "Starke Schmerzen rechts unten, Übelkeit und Erbrechen, Fieber seit heute Nacht, kann kaum laufen",
-        "assessment": "Suspected acute appendicitis. RLQ tenderness, rebound and Rovsing sign positive. Low-grade fever. WBC likely elevated.",
-        "red_flags": ["abdominal_pain_severe", "rebound_tenderness", "fever", "peritonism_signs"],
-        "suspected_conditions": ["Acute Appendicitis", "Early Peritonitis"],
-        "risk_score": 7,
-        "recommended_action": "Urgent surgical review. CT abdomen/pelvis with contrast. IV antibiotics (co-amoxiclav). NBM. Theatre booking if confirmed.",
-        "time_sensitivity": "Within 30 minutes",
-        "language": "de-DE",
-        "eta_override": 11,
-        "lat": 48.448, "lon": 9.984,
-        "qa_transcript": [
-            {"question_en": "When did the pain start?",         "question": "Wann haben die Schmerzen begonnen?",    "answer": "Last night around midnight",       "original_answer": "Letzte Nacht gegen Mitternacht"},
-            {"question_en": "Has the pain moved?",              "question": "Hat der Schmerz sich verlagert?",        "answer": "Started around navel, now lower right", "original_answer": "Begann am Bauchnabel, jetzt rechts unten"},
-            {"question_en": "Any previous abdominal surgeries?","question": "Frühere Bauchoperationen?",              "answer": "No",                               "original_answer": "Nein"},
         ],
     },
 
@@ -681,7 +657,7 @@ def run_demo_seed() -> dict:
 
         conn.execute("""
             INSERT OR REPLACE INTO patient_queue
-            (patient_id, timestamp, triage_level, chief_complaint,
+            (patient_id, timestamp, created_at, triage_level, chief_complaint,
              red_flags, assessment, suspected_conditions, risk_score,
              recommended_action, time_sensitivity, source_guidelines,
              eta_minutes, arrival_time, location_lat, location_lon,
@@ -689,10 +665,11 @@ def run_demo_seed() -> dict:
              qa_transcript, health_number, has_photo, photo_count, complaint_text,
              ai_triage_level, treatment_started_at, discharged_at,
              override_action, override_note)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (
             p["patient_id"],
             timestamp,
+            timestamp,   # created_at = same as timestamp (submission time, not seed time)
             p["triage_level"],
             p["chief_complaint"],
             json.dumps(p.get("red_flags", [])),

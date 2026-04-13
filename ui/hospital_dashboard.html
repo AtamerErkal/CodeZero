@@ -2184,13 +2184,23 @@
 
           const etaLabel = isArrived
             ? `<span style="font-size:12px;font-weight:700;color:#10b981">✓ Arrived</span>`
-            : `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ETA ${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</span>`;
+            : hasAmb
+              ? `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : '#f97316'}">🚑 ETA to Patient: ${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</span>`
+              : `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ETA ${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</span>`;
+
+          // For ambulance patients: compute ambulance position between hospital and patient
+          const ambEtaOrig = p.amb_eta_patient;
+          const ambProgress = (hasAmb && ambEtaOrig && p.eta_minutes != null)
+            ? Math.max(0, Math.min(0.95, 1 - p.eta_minutes / ambEtaOrig))
+            : null;
+          const ambLat = ambProgress != null ? HOSPITAL_COORDS[0] + (lat - HOSPITAL_COORDS[0]) * ambProgress : null;
+          const ambLon = ambProgress != null ? HOSPITAL_COORDS[1] + (lon - HOSPITAL_COORDS[1]) * ambProgress : null;
 
           const transportRow = hasAmb
             ? `<div style="margin-top:8px;padding:8px;border-radius:8px;background:#ef444411;border:1px solid #ef444433;font-size:11px;color:#fca5a5">
-                 <div style="font-weight:700;color:#ef4444;margin-bottom:4px">🚑 Ambulance en route → Universitätsklinikum Ulm</div>
+                 <div style="font-weight:700;color:#ef4444;margin-bottom:4px">🚑 Ambulance dispatched → Patient location</div>
                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;text-align:center">
-                   <div><div style="font-size:14px;font-weight:700;color:#fff">${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</div><div style="color:#94a3b8">ETA</div></div>
+                   <div><div style="font-size:14px;font-weight:700;color:#fff">${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</div><div style="color:#94a3b8">ETA to Patient</div></div>
                    <div><div style="font-size:14px;font-weight:700;color:#fff">${p.distance_km != null ? p.distance_km.toFixed(1) + ' km' : '—'}</div><div style="color:#94a3b8">Distance</div></div>
                    <div><div style="font-size:14px;font-weight:700;color:#fff">${p.speed_kmh != null ? p.speed_kmh + ' km/h' : '88 km/h'}</div><div style="color:#94a3b8">Speed</div></div>
                  </div>
@@ -2221,6 +2231,25 @@
             const marker = L.marker([lat, lon], { icon }).addTo(mapInstance);
             marker.bindPopup(popupContent, { maxWidth: 300 });
             _trackMarkerMap[pid] = marker;
+          }
+
+          // For real ambulance patients (amb_eta_patient set), show a moving 🚑 icon
+          // travelling from hospital toward the patient based on ETA progress.
+          const ambMarkerKey = pid + '__amb';
+          if (hasAmb && ambLat != null) {
+            const ambIcon2 = L.divIcon({
+              html: `<div style="font-size:18px;filter:drop-shadow(0 1px 4px #ef444488);animation:marker-pulse 1.2s ease-in-out infinite">🚑</div>`,
+              className: '', iconSize: [22, 22], iconAnchor: [11, 11]
+            });
+            if (_trackMarkerMap[ambMarkerKey]) {
+              _trackMarkerMap[ambMarkerKey].setLatLng([ambLat, ambLon]);
+            } else {
+              _trackMarkerMap[ambMarkerKey] = L.marker([ambLat, ambLon], { icon: ambIcon2 }).addTo(mapInstance)
+                .bindTooltip('🚑 Ambulance en route', { permanent: false, direction: 'top' });
+            }
+          } else if (_trackMarkerMap[ambMarkerKey]) {
+            mapInstance.removeLayer(_trackMarkerMap[ambMarkerKey]);
+            delete _trackMarkerMap[ambMarkerKey];
           }
         });
 
@@ -2261,7 +2290,7 @@
           const statusLabel = isArrived ? 'Arrived' : 'En Route';
           const etaText = isArrived ? '—' : (p.eta_minutes != null ? p.eta_minutes + ' min' : '? min');
           return `
-            <div class="flex items-center gap-3 p-3 rounded-xl bg-surface/50 border border-slate-700/30 hover:border-cyan/30 transition-colors cursor-pointer" onclick="focusPatientOnMap('${h(pid)}')">
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-600/50 hover:border-cyan/40 transition-colors cursor-pointer" style="background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)" onclick="focusPatientOnMap('${h(pid)}')">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                    style="background:${col}20;color:${col};border:2px solid ${col}66">
                 ${TRIAGE_CLASS[lvl] || '?'}
@@ -5463,7 +5492,7 @@
     }
 
     async function loadDemo() {
-      if (!confirm('This will CLEAR the queue and load the University Clinic Ulm demo scenario (19 patients, 7 en route). Continue?')) return;
+      if (!confirm('This will CLEAR the queue and load the University Clinic Ulm demo scenario (18 patients, 6 en route). Continue?')) return;
       try {
         toast('⏳ Loading demo…', 'ok');
         const r = await api('/api/admin/demo', { method: 'POST' });

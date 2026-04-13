@@ -6525,6 +6525,9 @@
                 <p style="font-size:0.9rem;color:var(--text);font-weight:500;line-height:1.55;font-style:italic;margin:0;">"${escHtml(condSummary)}"</p>
             </div>` : ''}
 
+            <!-- Expert-in-the-Loop review panel — right below "What we found" -->
+            <div id="expertLoopAmb"></div>
+
             <div style="background:var(--card);border:1.5px solid ${headerColor}40;border-radius:var(--r-lg);padding:20px;margin-top:${condSummary ? '0' : '16px'};margin-bottom:14px;">
                 <div style="font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-3);margin-bottom:6px;">&#x1F691; ${t('amb_en_route')}</div>
                 <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:2px;">${hospName}</div>
@@ -6564,7 +6567,6 @@
                 </div>
             </div>
 
-            <div id="expertLoopAmb"></div>
             </div>`;
 
             goToPage('ambulance');
