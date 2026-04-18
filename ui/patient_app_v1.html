@@ -946,6 +946,17 @@
             animation: pulseMic 1.5s ease-in-out infinite;
         }
 
+        @keyframes pulseMic {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(34, 211, 238, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
         .mic-btn.recording::after {
             border-color: rgba(220, 38, 38, .2);
             animation: ringPulse 1.5s ease-in-out infinite
@@ -2959,77 +2970,367 @@
         :root {
             --mts-imm: #FF0000;
             --mts-imm-bg: #FFF0F0;
-            --mts-imm-border: rgba(255,0,0,0.3);
+            --mts-imm-border: rgba(255, 0, 0, 0.3);
             --mts-emg: #FF8C00;
             --mts-emg-bg: #FFF4E6;
-            --mts-emg-border: rgba(255,140,0,0.3);
+            --mts-emg-border: rgba(255, 140, 0, 0.3);
             --mts-urg: #D4A000;
             --mts-urg-bg: #FFFBEB;
-            --mts-urg-border: rgba(212,160,0,0.4);
+            --mts-urg-border: rgba(212, 160, 0, 0.4);
             --mts-std: #28A745;
             --mts-std-bg: #F0FFF4;
-            --mts-std-border: rgba(40,167,69,0.3);
+            --mts-std-border: rgba(40, 167, 69, 0.3);
             --mts-nurg: #007BFF;
             --mts-nurg-bg: #EFF6FF;
-            --mts-nurg-border: rgba(0,123,255,0.3);
+            --mts-nurg-border: rgba(0, 123, 255, 0.3);
         }
+
         [data-theme="dark"] {
-            --mts-imm-bg: rgba(255,0,0,0.12);
-            --mts-emg-bg: rgba(255,140,0,0.12);
-            --mts-urg-bg: rgba(212,160,0,0.1);
-            --mts-std-bg: rgba(40,167,69,0.12);
-            --mts-nurg-bg: rgba(0,123,255,0.12);
+            --mts-imm-bg: rgba(255, 0, 0, 0.12);
+            --mts-emg-bg: rgba(255, 140, 0, 0.12);
+            --mts-urg-bg: rgba(212, 160, 0, 0.1);
+            --mts-std-bg: rgba(40, 167, 69, 0.12);
+            --mts-nurg-bg: rgba(0, 123, 255, 0.12);
         }
+
         /* Triage banners — all 5 MTS levels */
-        .triage-banner.imm  { background: var(--mts-imm-bg)  !important; border: 2px solid var(--mts-imm-border)  !important; }
-        .triage-banner.std  { background: var(--mts-std-bg)  !important; border: 2px solid var(--mts-std-border)  !important; }
-        .triage-banner.nurg { background: var(--mts-nurg-bg) !important; border: 2px solid var(--mts-nurg-border) !important; }
-        .triage-banner.imm  .triage-title { color: var(--mts-imm);  }
-        .triage-banner.std  .triage-title { color: var(--mts-std);  }
-        .triage-banner.nurg .triage-title { color: var(--mts-nurg); }
+        .triage-banner.imm {
+            background: var(--mts-imm-bg) !important;
+            border: 2px solid var(--mts-imm-border) !important;
+        }
+
+        .triage-banner.std {
+            background: var(--mts-std-bg) !important;
+            border: 2px solid var(--mts-std-border) !important;
+        }
+
+        .triage-banner.nurg {
+            background: var(--mts-nurg-bg) !important;
+            border: 2px solid var(--mts-nurg-border) !important;
+        }
+
+        .triage-banner.imm .triage-title {
+            color: var(--mts-imm);
+        }
+
+        .triage-banner.std .triage-title {
+            color: var(--mts-std);
+        }
+
+        .triage-banner.nurg .triage-title {
+            color: var(--mts-nurg);
+        }
 
         /* MTS level badge pill */
         .mts-badge {
-            display: inline-flex; align-items: center; gap: 7px;
-            padding: 7px 18px; border-radius: 99px;
-            font-size: 0.95rem; font-weight: 900; letter-spacing: 0.04em;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 18px;
+            border-radius: 99px;
+            font-size: 0.95rem;
+            font-weight: 900;
+            letter-spacing: 0.04em;
         }
-        .mts-badge.lvl-imm  { background: #FF0000; color: #fff; }
-        .mts-badge.lvl-emg  { background: #FF8C00; color: #fff; }
-        .mts-badge.lvl-urg  { background: #FFD700; color: #1a1a2e; }
-        .mts-badge.lvl-std  { background: #28A745; color: #fff; }
-        .mts-badge.lvl-nurg { background: #007BFF; color: #fff; }
+
+        .mts-badge.lvl-imm {
+            background: #FF0000;
+            color: #fff;
+        }
+
+        .mts-badge.lvl-emg {
+            background: #FF8C00;
+            color: #fff;
+        }
+
+        .mts-badge.lvl-urg {
+            background: #FFD700;
+            color: #1a1a2e;
+        }
+
+        .mts-badge.lvl-std {
+            background: #28A745;
+            color: #fff;
+        }
+
+        .mts-badge.lvl-nurg {
+            background: #007BFF;
+            color: #fff;
+        }
 
         /* Ambulance progress bar */
         .amb-progress-track {
-            height: 12px; background: var(--border);
-            border-radius: 99px; overflow: hidden; margin: 10px 0;
+            height: 12px;
+            background: var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+            margin: 10px 0;
         }
+
         .amb-progress-fill {
-            height: 100%; border-radius: 99px; transition: width 1s linear;
+            height: 100%;
+            border-radius: 99px;
+            transition: width 1s linear;
         }
 
         /* Physician decision fade-in */
         @keyframes physicianFadeIn {
-            from { opacity: 0; transform: translateY(-12px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .physician-card-anim { animation: physicianFadeIn 0.5s ease forwards; }
+
+        .physician-card-anim {
+            animation: physicianFadeIn 0.5s ease forwards;
+        }
 
         /* Upgrade pulse border */
         @keyframes upgradePulse {
-            0%,100% { box-shadow: 0 0 0 0 rgba(255,0,0,0.35); }
-            50%      { box-shadow: 0 0 0 12px rgba(255,0,0,0); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.35);
+            }
+
+            50% {
+                box-shadow: 0 0 0 12px rgba(255, 0, 0, 0);
+            }
         }
-        .upgrade-pulse { animation: upgradePulse 1.4s ease-in-out infinite; }
+
+        .upgrade-pulse {
+            animation: upgradePulse 1.4s ease-in-out infinite;
+        }
 
         /* Override notification slide-in */
         @keyframes overrideSlideIn {
-            from { opacity: 0; transform: translateY(-16px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .override-notification { animation: overrideSlideIn 0.45s cubic-bezier(.4,0,.2,1) forwards; }
+
+        .override-notification {
+            animation: overrideSlideIn 0.45s cubic-bezier(.4, 0, .2, 1) forwards;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           ACİL DURUM KONTROL PANELI (SMART DASHBOARD) — v14
+        ══════════════════════════════════════════════════════ */
+        .ass-header {
+            position: sticky;
+            top: 72px; /* right below topbar */
+            z-index: 900;
+            background: var(--ios-bg);
+            padding: 12px 20px 8px;
+            margin: 0 -20px 20px;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .ass-header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .ass-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .ass-tile {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: var(--sh-sm);
+            position: relative;
+            overflow: hidden;
+            text-align: left;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .ass-tile:active {
+            transform: scale(0.96);
+        }
+
+        .ass-tile-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            color: var(--medical-primary);
+        }
+
+        .ass-tile-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1.2;
+        }
+
+        .ass-tile-sub {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Tile variants */
+        .ass-tile.dos { border-bottom: 4px solid var(--success); }
+        .ass-tile.contact { border-bottom: 4px solid var(--primary); }
+        .ass-tile.qr { border-bottom: 4px solid #8B5CF6; }
+        .ass-tile.report { border-bottom: 4px solid #F59E0B; }
+
+        .ass-action-card {
+            background: var(--card);
+            border: 2px solid var(--medical-primary);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--sh-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ass-action-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .ass-action-tag {
+            background: var(--medical-primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        /* Modal / Expanded Tile Overlay */
+        .ass-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .ass-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .ass-sheet {
+            width: 100%;
+            max-width: 480px;
+            background: var(--ios-bg);
+            border-radius: 32px 32px 0 0;
+            padding: 30px 24px;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .ass-overlay.active .ass-sheet {
+            transform: translateY(0);
+        }
+
+        .ass-sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: var(--border-h);
+            border-radius: 2px;
+            margin: -15px auto 20px;
+        }
+
+        .ass-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Specific Content Styles */
+        .dos-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .dos-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: var(--card);
+            padding: 16px;
+            border-radius: 16px;
+        }
+        .dos-item.do { border-left: 4px solid var(--success); }
+        .dos-item.dont { border-left: 4px solid var(--danger); }
+
+        .qr-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+        .qr-code-placeholder {
+            width: 200px;
+            height: 200px;
+            background: white;
+            border: 1px solid var(--border);
+            padding: 10px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
+
 
 
 <body>
@@ -3187,12 +3488,16 @@
                 <div id="voiceUI" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
                     <button id="micBtn" class="mic-btn" onclick="toggleRecording()"
                         style="width:120px;height:120px;border-radius:50%;background:none!important;border:none;display:flex;align-items:center;justify-content:center;box-shadow:none!important;cursor:pointer;transition:transform 0.2s;padding:0;">
-                        <svg viewBox="0 0 112 112" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:112px;height:112px;display:block;">
-                            <circle cx="56" cy="56" r="56" fill="#E6FAF8"/>
-                            <rect x="42" y="18" width="28" height="48" rx="14" fill="#0D9488"/>
-                            <path d="M30 58c0 14.36 11.64 26 26 26s26-11.64 26-26" stroke="#0D9488" stroke-width="4.5" stroke-linecap="round" fill="none"/>
-                            <line x1="56" y1="84" x2="56" y2="96" stroke="#0D9488" stroke-width="4.5" stroke-linecap="round"/>
-                            <line x1="43" y1="96" x2="69" y2="96" stroke="#0D9488" stroke-width="4.5" stroke-linecap="round"/>
+                        <svg viewBox="0 0 112 112" fill="none" xmlns="http://www.w3.org/2000/svg"
+                            style="width:112px;height:112px;display:block;">
+                            <circle cx="56" cy="56" r="56" fill="#E6FAF8" />
+                            <rect x="42" y="18" width="28" height="48" rx="14" fill="#0D9488" />
+                            <path d="M30 58c0 14.36 11.64 26 26 26s26-11.64 26-26" stroke="#0D9488" stroke-width="4.5"
+                                stroke-linecap="round" fill="none" />
+                            <line x1="56" y1="84" x2="56" y2="96" stroke="#0D9488" stroke-width="4.5"
+                                stroke-linecap="round" />
+                            <line x1="43" y1="96" x2="69" y2="96" stroke="#0D9488" stroke-width="4.5"
+                                stroke-linecap="round" />
                         </svg>
                     </button>
                     <div style="text-align: center;">
@@ -3216,10 +3521,15 @@
                         style="font-size: 0.875rem; font-weight:800; color:var(--success); text-transform:uppercase; margin-bottom:5px;">
                     </div>
                     <div id="transcriptText"
-                        style="font-size:0.95rem; font-weight:600; font-style: italic; color:var(--text); margin-bottom:10px;"></div>
+                        style="font-size:0.95rem; font-weight:600; font-style: italic; color:var(--text); margin-bottom:10px;">
+                    </div>
                     <div id="transcriptApproveRow" style="display:none; gap:8px; margin-top:8px;">
-                        <button onclick="approveTranscript()" id="btnApproveTranscript" style="flex:1; padding:10px 14px; background:var(--success); color:white; border:none; border-radius:10px; font-family:var(--font); font-size:0.85rem; font-weight:700; cursor:pointer;">&#x2705; <span id="lblApproveTranscript">Use this</span></button>
-                        <button onclick="reRecordTranscript()" id="btnReRecordTranscript" style="flex:1; padding:10px 14px; background:var(--card-alt); color:var(--text); border:1px solid var(--border); border-radius:10px; font-family:var(--font); font-size:0.85rem; font-weight:700; cursor:pointer;">&#x1F504; <span id="lblReRecordTranscript">Re-record</span></button>
+                        <button onclick="approveTranscript()" id="btnApproveTranscript"
+                            style="flex:1; padding:10px 14px; background:var(--success); color:white; border:none; border-radius:10px; font-family:var(--font); font-size:0.85rem; font-weight:700; cursor:pointer;">&#x2705;
+                            <span id="lblApproveTranscript">Use this</span></button>
+                        <button onclick="reRecordTranscript()" id="btnReRecordTranscript"
+                            style="flex:1; padding:10px 14px; background:var(--card-alt); color:var(--text); border:1px solid var(--border); border-radius:10px; font-family:var(--font); font-size:0.85rem; font-weight:700; cursor:pointer;">&#x1F504;
+                            <span id="lblReRecordTranscript">Re-record</span></button>
                     </div>
                 </div>
             </div>
@@ -3406,10 +3716,13 @@
         <div class="page" id="page-consent">
             <div style="text-align:center;padding:8px 0 18px">
                 <div style="margin:0 auto 12px;width:64px;height:64px;">
-                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;display:block;">
-                        <rect width="64" height="64" rx="16" fill="#E6FAF8"/>
-                        <path d="M32 10L14 18v14c0 10.5 7.7 20.3 18 22.7C43.3 52.3 51 42.5 51 32V18L32 10z" fill="#0D9488" opacity="0.15" stroke="#0D9488" stroke-width="2.5"/>
-                        <path d="M22 32l7 7 13-14" stroke="#0D9488" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"
+                        style="width:64px;height:64px;display:block;">
+                        <rect width="64" height="64" rx="16" fill="#E6FAF8" />
+                        <path d="M32 10L14 18v14c0 10.5 7.7 20.3 18 22.7C43.3 52.3 51 42.5 51 32V18L32 10z"
+                            fill="#0D9488" opacity="0.15" stroke="#0D9488" stroke-width="2.5" />
+                        <path d="M22 32l7 7 13-14" stroke="#0D9488" stroke-width="3.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
                     </svg>
                 </div>
                 <h2 id="cs_title"></h2>
@@ -3695,25 +4008,39 @@
             <div id="outcomeNurgContent"></div>
         </div>
 
+        <!-- PAGE: UNIFIED ASSESSMENT RESULT (v1 redesign) -->
+        <div class="page" id="page-assessment">
+            <div id="assessmentContent"></div>
+        </div>
+        
+        <!-- Global Smart Dashboard Overlay -->
+        <div id="assOverlay" class="ass-overlay" onclick="if(event.target===this)closeAssOverlay()">
+            <div class="ass-sheet">
+                <div class="ass-close-btn" onclick="closeAssOverlay()">
+                    <i data-lucide="x" style="width:20px; height:20px; color:var(--text-3);"></i>
+                </div>
+                <div id="assSheetContent"></div>
+            </div>
+        </div>
     </div>
 
     <script>
         // Auto-detect API base: same origin when served via hospital_server.py (ngrok or local)
         // Falls back to localhost:8001 when opened as a standalone file
-        const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-            ? 'http://localhost:8001'
+        const API = location.protocol === 'file:'
+            ? 'http://localhost:8002'
             : location.origin;
 
         // ═══════════════════════════════════════════════════════════
         // MTS 5-LEVEL CONSTANTS (v13)
         // ═══════════════════════════════════════════════════════════
         const MTS_META = {
-            IMMEDIATE:  { level:1, color:'#FF0000', textColor:'white',   cls:'imm',  badge:'lvl-imm',  emoji:'&#x1F534;', max_wait:0,   label:'Immediate',   subtitle:'Level 1 \u2014 MTS Red' },
-            EMERGENCY:  { level:2, color:'#FF8C00', textColor:'white',   cls:'emg',  badge:'lvl-emg',  emoji:'&#x1F7E0;', max_wait:10,  label:'Emergency', subtitle:'Level 2 \u2014 MTS Orange' },
-            URGENT:     { level:3, color:'#FFD700', textColor:'#1a1a2e', cls:'urg',  badge:'lvl-urg',  emoji:'&#x1F7E1;', max_wait:30,  label:'Urgent',      subtitle:'Level 3 \u2014 MTS Yellow' },
-            STANDARD:   { level:4, color:'#28A745', textColor:'white',   cls:'std',  badge:'lvl-std',  emoji:'&#x1F7E2;', max_wait:90,  label:'Standard',    subtitle:'Level 4 \u2014 MTS Green' },
-            NON_URGENT: { level:5, color:'#007BFF', textColor:'white',   cls:'nurg', badge:'lvl-nurg', emoji:'&#x1F535;', max_wait:120, label:'Non-urgent',  subtitle:'Level 5 \u2014 MTS Blue' },
-            ROUTINE:    { level:4, color:'#28A745', textColor:'white',   cls:'std',  badge:'lvl-std',  emoji:'&#x1F7E2;', max_wait:90,  label:'Standard',    subtitle:'Level 4 \u2014 MTS Green' },
+            IMMEDIATE: { level: 1, color: '#FF0000', textColor: 'white', cls: 'imm', badge: 'lvl-imm', emoji: '&#x1F534;', max_wait: 0, label: 'Immediate', subtitle: 'Level 1 \u2014 MTS Red' },
+            EMERGENCY: { level: 2, color: '#FF8C00', textColor: 'white', cls: 'emg', badge: 'lvl-emg', emoji: '&#x1F7E0;', max_wait: 10, label: 'Emergency', subtitle: 'Level 2 \u2014 MTS Orange' },
+            URGENT: { level: 3, color: '#FFD700', textColor: '#1a1a2e', cls: 'urg', badge: 'lvl-urg', emoji: '&#x1F7E1;', max_wait: 30, label: 'Urgent', subtitle: 'Level 3 \u2014 MTS Yellow' },
+            STANDARD: { level: 4, color: '#28A745', textColor: 'white', cls: 'std', badge: 'lvl-std', emoji: '&#x1F7E2;', max_wait: 90, label: 'Standard', subtitle: 'Level 4 \u2014 MTS Green' },
+            NON_URGENT: { level: 5, color: '#007BFF', textColor: 'white', cls: 'nurg', badge: 'lvl-nurg', emoji: '&#x1F535;', max_wait: 120, label: 'Non-urgent', subtitle: 'Level 5 \u2014 MTS Blue' },
+            ROUTINE: { level: 4, color: '#28A745', textColor: 'white', cls: 'std', badge: 'lvl-std', emoji: '&#x1F7E2;', max_wait: 90, label: 'Standard', subtitle: 'Level 4 \u2014 MTS Green' },
         };
 
         function normalizeTriage(lvl) {
@@ -3735,18 +4062,18 @@
             if (!assessment) return assessment;
             const score = parseFloat(assessment.risk_score) || 0;
             if (score <= 0) return assessment; // no score — don't override
-            const ORDER  = ['IMMEDIATE','EMERGENCY','URGENT','STANDARD','NON_URGENT'];
+            const ORDER = ['IMMEDIATE', 'EMERGENCY', 'URGENT', 'STANDARD', 'NON_URGENT'];
             let floor;
-            if      (score >= 9) floor = 'IMMEDIATE';
+            if (score >= 9) floor = 'IMMEDIATE';
             else if (score >= 7) floor = 'EMERGENCY';
             else if (score >= 5) floor = 'URGENT';
             else if (score >= 3) floor = 'STANDARD';
-            else                 floor = 'NON_URGENT';
+            else floor = 'NON_URGENT';
             const current = normalizeTriage(assessment.triage_level);
             // Only upgrade (never downgrade) — higher ORDER index = lower severity
             if (ORDER.indexOf(current) > ORDER.indexOf(floor)) {
                 console.warn(`[enforceTriageFloor] Upgrading triage ${current} → ${floor} (risk_score=${score})`);
-                assessment.triage_level       = floor;
+                assessment.triage_level = floor;
                 assessment._triage_upgraded_by_score = true;
                 assessment._triage_prev_level = current;
             }
@@ -3754,26 +4081,26 @@
         }
 
         const MTS_DEFAULT_DO = {
-            IMMEDIATE:  ['Stay still and keep your airway clear','Stay on the phone with emergency services','Follow all instructions from the dispatcher'],
-            EMERGENCY:  ['Stay calm and sit or lie down comfortably','Keep your phone nearby and charged','Unlock or open the door if possible'],
-            URGENT:     ['Proceed to the hospital promptly','Bring your ID and insurance card','Bring your current medications'],
-            STANDARD:   ['Schedule an appointment with your family physician as soon as possible','Stay hydrated and rest','Monitor your symptoms closely'],
-            NON_URGENT: ['Rest and stay hydrated','Monitor your symptoms over the next 24 hours','Use VitalNav.ai again if symptoms worsen'],
+            IMMEDIATE: ['Stay still and keep your airway clear', 'Stay on the phone with emergency services', 'Follow all instructions from the dispatcher'],
+            EMERGENCY: ['Stay calm and sit or lie down comfortably', 'Keep your phone nearby and charged', 'Unlock or open the door if possible'],
+            URGENT: ['Proceed to the hospital promptly', 'Bring your ID and insurance card', 'Bring your current medications'],
+            STANDARD: ['Schedule an appointment with your family physician as soon as possible', 'Stay hydrated and rest', 'Monitor your symptoms closely'],
+            NON_URGENT: ['Rest and stay hydrated', 'Monitor your symptoms over the next 24 hours', 'Use VitalNav.ai again if symptoms worsen'],
         };
         const MTS_DEFAULT_DONT = {
-            IMMEDIATE:  ['Do not move unless in immediate danger','Do not eat or drink anything','Do not panic - help is on the way'],
-            EMERGENCY:  ['Do not eat or drink anything','Do not drive yourself to the hospital','Do not ignore any worsening symptoms'],
-            URGENT:     ['Do not delay seeking care','Do not take new medications without medical advice','Do not ignore new or worsening symptoms'],
-            STANDARD:   ['Do not ignore worsening symptoms','Do not self-medicate without professional advice','Do not hesitate to call 112/911 if symptoms worsen suddenly'],
-            NON_URGENT: ['Do not ignore symptoms if they worsen','Do not skip follow-up if recommended','Do not hesitate to use VitalNav.ai again if needed'],
+            IMMEDIATE: ['Do not move unless in immediate danger', 'Do not eat or drink anything', 'Do not panic - help is on the way'],
+            EMERGENCY: ['Do not eat or drink anything', 'Do not drive yourself to the hospital', 'Do not ignore any worsening symptoms'],
+            URGENT: ['Do not delay seeking care', 'Do not take new medications without medical advice', 'Do not ignore new or worsening symptoms'],
+            STANDARD: ['Do not ignore worsening symptoms', 'Do not self-medicate without professional advice', 'Do not hesitate to call 112/911 if symptoms worsen suddenly'],
+            NON_URGENT: ['Do not ignore symptoms if they worsen', 'Do not skip follow-up if recommended', 'Do not hesitate to use VitalNav.ai again if needed'],
         };
 
         function getDefaultReasoning(lvl) {
             const map = {
-                IMMEDIATE:  'Your symptoms indicate a life-threatening emergency requiring immediate medical intervention. Emergency services have been notified.',
-                EMERGENCY:  'Your symptoms indicate an emergency condition requiring medical assessment within 10 minutes. Please proceed to care immediately.',
-                URGENT:     'Your symptoms indicate an urgent condition. Medical evaluation is recommended within 30 minutes to prevent any worsening.',
-                STANDARD:   'Your symptoms do not currently indicate an emergency, but medical evaluation is recommended within 90 minutes for proper care.',
+                IMMEDIATE: 'Your symptoms indicate a life-threatening emergency requiring immediate medical intervention. Emergency services have been notified.',
+                EMERGENCY: 'Your symptoms indicate an emergency condition requiring medical assessment within 10 minutes. Please proceed to care immediately.',
+                URGENT: 'Your symptoms indicate an urgent condition. Medical evaluation is recommended within 30 minutes to prevent any worsening.',
+                STANDARD: 'Your symptoms do not currently indicate an emergency, but medical evaluation is recommended within 90 minutes for proper care.',
                 NON_URGENT: 'Your symptoms do not indicate an emergency at this time. A routine medical consultation is recommended if symptoms persist.',
             };
             return map[lvl] || map.URGENT;
@@ -4012,7 +4339,8 @@
                 transcript_approve_hint: 'Is this what you said?',
                 transcript_approve: 'Use this',
                 transcript_rerecord: 'Re-record',
-                amb_header_imm: '🚨 CRITICAL EMERGENCY — Help is on the way',
+                amb_header_imm: '🚨 CRITICAL EMERGENCY — Ambulance Requested',
+                amb_nearest_er: 'Nearest Emergency Department',
                 amb_header_emg: '⚠️ EMERGENCY — Ambulance dispatched',
                 amb_do_not_move: 'Do NOT move unless you are in immediate danger.',
                 amb_en_route: 'Ambulance En Route',
@@ -4078,9 +4406,9 @@
                 amb_dispatched_note: 'Ambulance dispatched →',
                 amb_est_arrival: 'est. hospital arrival',
                 amb_status_pending: 'Request Status',
-                amb_waiting_approval: 'Awaiting Dispatch Approval',
-                amb_waiting_desc: 'Your ambulance request has been received. Hospital dispatch staff is reviewing and will send an ambulance shortly.',
-                amb_waiting_eta_hint: 'Estimated arrival will be shown once dispatched',
+                amb_waiting_approval: 'Awaiting Ambulance Approval',
+                amb_waiting_desc: 'Your ambulance request has been received. Hospital staff is reviewing and will send an ambulance shortly.',
+                amb_waiting_eta_hint: 'Estimated arrival will be shown once approved',
                 te_result_label: 'Assessment Result',
                 te_auto_advance: 'Auto-advancing in',
                 te_auto_advance_s: 's…',
@@ -4095,7 +4423,69 @@
                 lvl_IMMEDIATE: 'Immediate', lvl_EMERGENCY: 'Emergency',
                 lvl_URGENT: 'Urgent', lvl_STANDARD: 'Standard', lvl_NON_URGENT: 'Non-urgent',
                 level_word: 'Level',
-                contact_sending: 'Sending…', contact_notified: 'Contact Notified'
+                contact_sending: 'Sending…', contact_notified: 'Contact Notified',
+                // ── Assessment result page (v1) ──
+                ass_rec_title: "AiVoN's Recommendation",
+                ass_gp_title: 'Consult Your GP (Family Doctor)',
+                ass_gp_desc: 'Based on your assessment, this condition is not an emergency. Please schedule an appointment with your family doctor.',
+                ass_gp_share_q: 'Would you still like your information shared with the hospital?',
+                ass_gp_share_btn: 'Share with Universitätsklinikum Ulm',
+                ass_gp_shared: '✅ Hospital informed at',
+                ass_worsens_warning: 'If your symptoms worsen or you feel significantly worse, please return immediately or call 112.',
+                ass_urg_title: "Go to Hospital — Please Don't Delay",
+                ass_urg_desc: 'Your condition requires hospital care. Please head to the emergency department as soon as possible.',
+                ass_share_q: 'Should we notify the hospital so the team can prepare for your arrival?',
+                ass_share_btn: 'Yes — Notify Hospital & Get Directions',
+                ass_shared_msg: '🏥 Hospital notified at',
+                ass_shared_go: 'Please head to the hospital now.',
+                ass_nav_btn: 'Open Navigation →',
+                ass_gps_title: 'Enable Live Tracking',
+                ass_gps_desc: 'Allow location access so the hospital can monitor your arrival in real time.',
+                ass_gps_btn: 'Enable Location',
+                ass_emg_transport_title: 'How will you get to the hospital?',
+                ass_emg_self_title: "I'll get there on my own",
+                ass_emg_self_sub: 'By car, taxi, or someone driving me',
+                ass_emg_amb_title: 'I need an ambulance',
+                ass_emg_amb_sub: 'Send help to my current location',
+                ass_share_er_label: 'Share Info with Emergency Dept',
+                ass_share_er_expand: 'The following will be shared with the hospital emergency team:',
+                ass_dos_label: 'Recommendations for You',
+                ass_entry_label: 'Hospital Entry Authorization',
+                ass_entry_sub: 'Show this QR code to the triage nurse on arrival.',
+                ass_doctor_chat_btn: '💬 Open Chat',
+                ass_doctor_chat_close: 'Close Chat',
+                ass_doctor_msg_placeholder: 'Type your message to the doctor…',
+                ass_doctor_send_btn: 'Send',
+                ass_doctor_chat_sent: '✅ Sent',
+                ass_ec_btn: '📞 Notify Emergency Contact',
+                ass_ec_sending: 'Notifying…',
+                ass_ec_sent: '✅ Emergency Contact Notified',
+                you: 'You',
+                // Dashboard
+                rs_dash_emergency_panel: 'Emergency Control Panel',
+                rs_dash_dos: 'Do / Do Not',
+                rs_dash_dos_sub: 'Safety & First Aid',
+                rs_dash_contact: 'Emergency Contact',
+                rs_dash_contact_sub: 'Notify Loved Ones',
+                rs_dash_qr: 'Check-in Pass',
+                rs_dash_qr_sub: 'Fast Hospital Entry',
+                rs_dash_report: 'Medical Brief',
+                rs_dash_report_sub: 'Summary for Doctors',
+                rs_dash_chat: 'Physician Chat',
+                rs_dash_chat_sub: 'Start conversation',
+                rs_dash_close: 'Close',
+                rs_dash_directive_waiting: 'Awaiting Physician Approval...',
+                rs_dash_directive_navigate: 'Navigate to Hospital',
+                rs_dash_directive_ambulance: 'Ambulance En Route',
+                rs_dash_contact_notified: 'Contact Person Notified',
+                ass_insight_title: 'AiVoN Clinical Insight',
+                rs_timeline_title: 'Live Timeline',
+                rs_timeline_sent: 'Assessment sent to hospital',
+                rs_timeline_assigned: 'Doctor assigned',
+                rs_timeline_action: 'Physician action',
+                rs_timeline_triaged: 'Doctor triage assessment',
+                rs_timeline_confirmed: 'Assessment confirmed',
+                rs_timeline_upgraded: 'Priority upgraded',
             },
             de: {
                 topbarLang: 'DE',
@@ -4220,7 +4610,8 @@
                 transcript_approve_hint: 'Ist das das, was Sie gesagt haben?',
                 transcript_approve: 'Verwenden',
                 transcript_rerecord: 'Erneut aufnehmen',
-                amb_header_imm: '🚨 KRITISCHER NOTFALL — Hilfe ist unterwegs',
+                amb_header_imm: '🚨 KRITISCHER NOTFALL — Krankenwagen angefordert',
+                amb_nearest_er: 'Nächste Notaufnahme',
                 amb_header_emg: '⚠️ NOTFALL — Krankenwagen alarmiert',
                 amb_do_not_move: 'Bewegen Sie sich NICHT, es sei denn, Sie sind in unmittelbarer Gefahr.',
                 amb_en_route: 'Krankenwagen unterwegs',
@@ -4286,9 +4677,9 @@
                 amb_dispatched_note: 'Krankenwagen entsendet →',
                 amb_est_arrival: 'voraussichtl. Ankunft Klinik',
                 amb_status_pending: 'Anfragestatus',
-                amb_waiting_approval: 'Wartet auf Dispatch-Genehmigung',
-                amb_waiting_desc: 'Ihre Krankenwagenanforderung ist eingegangen. Das Dispatch-Team prüft sie und sendet umgehend einen Krankenwagen.',
-                amb_waiting_eta_hint: 'Geschätzte Ankunftszeit wird nach dem Dispatch angezeigt',
+                amb_waiting_approval: 'Wartet auf Krankenwagen-Freigabe',
+                amb_waiting_desc: 'Ihre Krankenwagenanforderung ist eingegangen. Das Krankenhauspersonal prüft sie und sendet umgehend einen Krankenwagen.',
+                amb_waiting_eta_hint: 'Geschätzte Ankunftszeit wird nach der Genehmigung angezeigt',
                 te_result_label: 'Bewertungsergebnis',
                 te_auto_advance: 'Automatisch weiter in',
                 te_auto_advance_s: 'Sek…',
@@ -4303,7 +4694,88 @@
                 lvl_IMMEDIATE: 'Sofortige Hilfe (Lebensgefahr)', lvl_EMERGENCY: 'Sehr dringend',
                 lvl_URGENT: 'Dringend', lvl_STANDARD: 'Normal', lvl_NON_URGENT: 'Nicht dringend',
                 level_word: 'Stufe',
-                contact_sending: 'Wird gesendet…', contact_notified: 'Kontakt benachrichtigt'
+                contact_sending: 'Wird gesendet…', contact_notified: 'Kontakt benachrichtigt',
+                // ── Assessment result page (v1) ──
+                ass_rec_title: 'AiVoN-Empfehlung',
+                ass_gp_title: 'Hausarztbesuch empfohlen',
+                ass_gp_desc: 'Laut Ihrer Einschätzung liegt kein Notfall vor. Bitte vereinbaren Sie einen Termin bei Ihrem Hausarzt.',
+                ass_gp_share_q: 'Möchten Sie Ihre Daten dennoch mit dem Krankenhaus teilen?',
+                ass_gp_share_btn: 'Mit Universitätsklinikum Ulm teilen',
+                ass_gp_shared: '✅ Krankenhaus informiert um',
+                ass_worsens_warning: 'Falls sich Ihre Symptome verschlimmern oder Sie sich deutlich schlechter fühlen, kommen Sie sofort zurück oder rufen Sie 112 an.',
+                ass_urg_title: 'Bitte bald ins Krankenhaus',
+                ass_urg_desc: 'Ihr Zustand erfordert Krankenhausversorgung. Bitte begeben Sie sich so schnell wie möglich in die Notaufnahme.',
+                ass_share_q: 'Soll das Krankenhaus benachrichtigt werden, damit das Team sich vorbereiten kann?',
+                ass_share_btn: 'Ja — Krankenhaus informieren & Route öffnen',
+                ass_shared_msg: '🏥 Krankenhaus informiert um',
+                ass_shared_go: 'Bitte begeben Sie sich jetzt ins Krankenhaus.',
+                ass_nav_btn: 'Navigation öffnen →',
+                ass_gps_title: 'Live-Tracking aktivieren',
+                ass_gps_desc: 'Erlauben Sie den Standortzugriff, damit das Krankenhaus Ihre Ankunft verfolgen kann.',
+                ass_gps_btn: 'Standort aktivieren',
+                ass_emg_transport_title: 'Wie kommen Sie ins Krankenhaus?',
+                ass_emg_self_title: 'Ich komme selbst',
+                ass_emg_self_sub: 'Mit dem Auto, Taxi oder jemand fährt mich',
+                ass_emg_amb_title: 'Ich brauche einen Krankenwagen',
+                ass_emg_amb_sub: 'Hilfe zu meinem Standort schicken',
+                ass_share_er_label: 'Infos mit Notaufnahme teilen',
+                ass_share_er_expand: 'Folgendes wird mit dem Notaufnahmeteam geteilt:',
+                ass_dos_label: 'Empfehlungen für Sie',
+                ass_entry_label: 'Krankenhaus-Eintrittsgenehmigung',
+                ass_entry_sub: 'Zeigen Sie diesen QR-Code der Triage-Schwester vor.',
+                ass_doctor_chat_btn: '💬 Chat öffnen',
+                ass_doctor_chat_close: 'Chat schließen',
+                ass_doctor_msg_placeholder: 'Nachricht an den Arzt schreiben…',
+                ass_doctor_send_btn: 'Senden',
+                ass_doctor_chat_sent: '✅ Gesendet',
+                ass_ec_btn: '📞 Notfallkontakt benachrichtigen',
+                ass_ec_sending: 'Wird gesendet…',
+                ass_ec_sent: '✅ Notfallkontakt benachrichtigt',
+                you: 'Sie',
+                // Dashboard
+                rs_dash_emergency_panel: 'Notfall-Kontrollzentrum',
+                rs_dash_dos: 'Gebote / Verbote',
+                rs_dash_dos_sub: 'Sicherheit & Erste Hilfe',
+                rs_dash_contact: 'Notfallkontakt',
+                rs_dash_contact_sub: 'Angehörige informieren',
+                rs_dash_qr: 'Check-in Pass',
+                rs_dash_qr_sub: 'Schneller KH-Eintritt',
+                rs_dash_report: 'KI-Beurteilungs-Zusammenfassung',
+                rs_dash_report_sub: 'Klinische Information',
+                rs_dash_chat: 'Arztgespräch',
+                rs_dash_chat_sub: 'Chat starten',
+                rs_dash_close: 'Schließen',
+                rs_dash_directive_waiting: 'Warte auf ärztliche Bestätigung...',
+                rs_dash_directive_navigate: 'Navigation öffnen',
+                rs_dash_directive_ambulance: 'Ambulanz unterwegs',
+                rs_dash_contact_notified: 'Kontaktperson benachrichtigt',
+                ass_insight_title: 'AiVoN Klinische Beurteilung',
+                rs_timeline_title: 'Live-Zeitstrahl',
+                rs_timeline_sent: 'Einschätzung an Krankenhaus gesendet',
+                rs_timeline_shared: 'Informationen und Standort geteilt',
+                rs_timeline_amb_req: 'Krankenwagen angefordert',
+                rs_timeline_amb_disp: 'Krankenwagen ist unterwegs',
+                rs_timeline_track_btn: 'Live-Verfolgung',
+                rs_timeline_assigned: 'Arzt zugewiesen',
+                rs_timeline_action: 'Ärztliche Maßnahme',
+                rs_timeline_triaged: 'Ärztliche Triage-Einschätzung',
+                rs_timeline_confirmed: 'Beurteilung bestätigt',
+                rs_timeline_upgraded: 'Triage-Level heraufgestuft',
+                rs_timeline_downgraded: 'Triage-Level herabgestuft',
+                rs_timeline_adjusted: 'Triage-Level angepasst',
+                rec_title: 'Empfehlung von ΛiVoN',
+                rec_l1: 'Ich teile Ihre Informationen mit dem nächsten Krankenhaus und fordere einen Krankenwagen an.',
+                rec_l2: 'Sie müssen dringend ins Krankenhaus. Wie möchten Sie reisen?',
+                rec_l3: 'Sie müssen dringend ins Krankenhaus. Ich teile Ihre Informationen und Ihren Standort zur Verfolgung mit dem nächsten Krankenhaus.',
+                rec_l4: 'Ihr Zustand scheint stabil zu sein, bitte vereinbaren Sie einen Termin bei Ihrem Hausarzt. Möchten Sie dennoch Ihre Informationen zur ärztlichen Überprüfung an das nächste Krankenhaus senden? Falls ein Arzt Ihren Fall als dringlicher einschätzt, werden Sie benachrichtigt.',
+                rec_l5: 'Ihr Zustand scheint stabil zu sein, bitte vereinbaren Sie einen Termin bei Ihrem Hausarzt.',
+                rec_btn_confirm: 'BESTÄTIGEN',
+                rec_btn_ambulance: 'Krankenwagen',
+                rec_btn_self: 'Eigene Anreise',
+                rs_timeline_action: 'Ärztliche Maßnahme',
+                rs_timeline_triaged: 'Ärztliche Triage-Einschätzung',
+                rs_timeline_confirmed: 'Einschätzung bestätigt',
+                rs_timeline_upgraded: 'Priorität erhöht',
             },
             tr: {
                 topbarLang: 'TR',
@@ -4428,7 +4900,8 @@
                 transcript_approve_hint: 'Bunu mu dediniz?',
                 transcript_approve: 'Bunu kullan',
                 transcript_rerecord: 'Yeniden kaydet',
-                amb_header_imm: '🚨 KRİTİK ACİL — Yardım yolda',
+                amb_header_imm: '🚨 KRİTİK ACİL — Ambulans talep edildi',
+                amb_nearest_er: 'En Uygun Acil Servisi',
                 amb_header_emg: '⚠️ ACİL — Ambulans yollandı',
                 amb_do_not_move: 'Anlık tehlikede değilseniz HAREKET ETMEYİN.',
                 amb_en_route: 'Ambulans Yolda',
@@ -4494,9 +4967,9 @@
                 amb_dispatched_note: 'Ambulans gönderildi →',
                 amb_est_arrival: 'tahmini hastane varışı',
                 amb_status_pending: 'Talep Durumu',
-                amb_waiting_approval: 'Dispatch Onayı Bekleniyor',
-                amb_waiting_desc: 'Ambulans talebiniz alındı. Dispatch personeli inceliyor ve kısa sürede ambulans gönderecek.',
-                amb_waiting_eta_hint: 'Tahmini varış süresi dispatch sonrası gösterilecek',
+                amb_waiting_approval: 'Ambulans Onayı Bekleniyor',
+                amb_waiting_desc: 'Ambulans talebiniz alındı. Hastane personeli inceliyor ve kısa sürede ambulans gönderecek.',
+                amb_waiting_eta_hint: 'Tahmini varış süresi onay sonrası gösterilecek',
                 te_result_label: 'Değerlendirme Sonucu',
                 te_auto_advance: 'Otomatik devam',
                 te_auto_advance_s: 'sn…',
@@ -4508,10 +4981,87 @@
                 te_imm_required: 'Acil müdahale gerekiyor',
                 te_imm_notified: 'Acil servisler haberdar edildi. Gecikmeyiniz.',
                 te_continue: 'Devam',
-                lvl_IMMEDIATE: 'Immediate / Resüsitasyon', lvl_EMERGENCY: 'Çok Acil',
+                lvl_IMMEDIATE: 'Hayati', lvl_EMERGENCY: 'Çok Acil',
                 lvl_URGENT: 'Acil', lvl_STANDARD: 'Standart / Az Acil', lvl_NON_URGENT: 'Acil Olmayan',
                 level_word: 'Düzey',
-                contact_sending: 'Gönderiliyor…', contact_notified: 'Kişi Bilgilendirildi'
+                contact_sending: 'Gönderiliyor…', contact_notified: 'Kişi Bilgilendirildi',
+                // ── Assessment result page (v1) ──
+                ass_rec_title: "AiVoN'un Tavsiyesi",
+                ass_gp_title: 'Aile Hekiminize Başvurun',
+                ass_gp_desc: "Değerlendirmenize göre durumunuz acil değil. Lütfen aile hekiminizden randevu alın.",
+                ass_gp_share_q: 'Bilgilerinizin yine de hastane ile paylaşılmasını ister misiniz?',
+                ass_gp_share_btn: 'Üniversite Hastanesi Ulm ile Paylaş',
+                ass_gp_shared: '✅ Hastane bilgilendirildi:',
+                ass_worsens_warning: "Belirtileriniz kötüleşirse veya kendinizi çok daha kötü hissederseniz lütfen hemen geri dönün ya da 112'yi arayın.",
+                ass_urg_title: 'En Kısa Sürede Hastaneye Gidin',
+                ass_urg_desc: 'Durumunuz hastane bakımı gerektiriyor. Lütfen acil servise en kısa sürede gidin.',
+                ass_share_q: 'Gelisinize hazırlanabilmesi için hastaneyi bilgilendirelim mi?',
+                ass_share_btn: 'Evet — Hastaneyi Bilgilendir ve Yön Al',
+                ass_shared_msg: '🏥 Hastane bilgilendirildi:',
+                ass_shared_go: 'Lütfen şimdi hastaneye gidin.',
+                ass_nav_btn: 'Navigasyonu Aç →',
+                ass_gps_title: 'Canlı Takibi Etkinleştir',
+                ass_gps_desc: 'Hastanenin gelisinizi anlık takip edebilmesi için konum erişimine izin verin.',
+                ass_gps_btn: 'Konumu Etkinleştir',
+                ass_emg_transport_title: 'Hastaneye Nasıl Gideceksiniz?',
+                ass_emg_self_title: 'Kendi imkânlarımla gideceğim',
+                ass_emg_self_sub: 'Arabamla, taksiyle veya biri beni götürecek',
+                ass_emg_amb_title: 'Ambulansa ihtiyacım var',
+                ass_emg_amb_sub: 'Bulunduğum yere yardım gönder',
+                ass_share_er_label: 'Acil Servisle Bilgi Paylaş',
+                ass_share_er_expand: 'Hastanenin acil servis ekibiyle şunlar paylaşılacak:',
+                ass_dos_label: 'Size Özel Tavsiyeler',
+                ass_entry_label: 'Hastane Giriş Yetkilendirmesi',
+                ass_entry_sub: 'Varışta bu QR kodu triaj hemşiresine gösterin.',
+                ass_doctor_chat_btn: '💬 Sohbeti Aç',
+                ass_doctor_chat_close: 'Sohbeti Kapat',
+                ass_doctor_msg_placeholder: 'Doktora mesajınızı yazın…',
+                ass_doctor_send_btn: 'Gönder',
+                ass_doctor_chat_sent: '✅ Gönderildi',
+                ass_ec_btn: '📞 Acil Kişiyi Bilgilendir',
+                ass_ec_sending: 'Gönderiliyor…',
+                ass_ec_sent: '✅ Acil Kişi Bilgilendirildi',
+                you: 'Siz',
+                // Dashboard
+                rs_dash_emergency_panel: 'Acil Durum Kontrol Paneli',
+                rs_dash_dos: 'Yap / Yapmalar',
+                rs_dash_dos_sub: 'İlkyardım ve Güvenlik',
+                rs_dash_contact: 'Acil Durum Kişisi',
+                rs_dash_contact_sub: 'Yakınını Bilgilendir',
+                rs_dash_qr: 'Giriş Kartı',
+                rs_dash_qr_sub: 'QR Kodlu Hızlı Giriş',
+                rs_dash_report: 'AI Değerlendirme Özeti',
+                rs_dash_report_sub: 'Klinik Bilgilendirme',
+                rs_dash_chat: 'Hekim Görüşmesi',
+                rs_dash_chat_sub: 'Sohbet Başlat',
+                rs_dash_close: 'Kapat',
+                rs_dash_directive_waiting: 'Hekim onayı bekleniyor...',
+                rs_dash_directive_navigate: 'Hastaneye yol tarifi al',
+                rs_dash_directive_ambulance: 'Ambulans yolda',
+                rs_dash_contact_notified: 'Acil Durum Kişisi Bilgilendirildi',
+                ass_insight_title: 'AiVoN Klinik Değerlendirmesi',
+                rs_timeline_title: 'Canlı İşlem Akışı',
+                rs_timeline_sent: 'Değerlendirme hastaneye iletildi',
+                rs_timeline_shared: 'Bilgileriniz ve konumunuz paylaşıldı',
+                rs_timeline_amb_req: 'Ambulans talebi yapıldı',
+                rs_timeline_amb_disp: 'Ambulans yola çıktı',
+                rs_timeline_track_btn: 'Canlı Takip',
+                rs_timeline_assigned: 'Doktor atandı',
+                rs_timeline_action: 'Hekim işlemi',
+                rs_timeline_triaged: 'Doktor triaj değerlendirmesi',
+                rs_timeline_confirmed: 'Değerlendirme onaylandı',
+                rs_timeline_upgraded: 'Triaj seviyesi yükseltildi',
+                rs_timeline_downgraded: 'Triaj seviyesi düşürüldü',
+                rs_timeline_adjusted: 'Triaj seviyesi güncellendi',
+                rec_title: 'AiVoN\'un Tavsiyesi',
+                rec_l1: 'Bilgilerinizi en yakın hastane ile paylaşıyorum ve ambulans talep ediyorum.',
+                rec_l2: 'Acilen hastaneye gitmeniz gerekiyor. Nasıl ulaşım sağlayacaksınız?',
+                rec_l3: 'Acilen hastaneye gitmeniz gerekiyor. Bilgilerinizi ve sizi takip etmeleri için konumunuzu en yakın hastane ile paylaşıyorum.',
+                rec_l4: 'Şu anki durumunuz stabil gözüküyor, aile hekiminizden randevu alın. Yine de bilgilerinizin bir doktor incelemesi için en yakın hastaneye gönderilmesini ister misiniz? Hekim durumunuzu ciddi görürse size bilgi verilecektir.',
+                rec_l5: 'Şu anki durumunuz stabil gözüküyor, aile hekiminizden randevu alın.',
+                rec_btn_confirm: 'ONAYLA',
+                rec_btn_ambulance: 'Ambulans',
+                rec_btn_self: 'Kendi İmkanlarımla',
             },
         };
 
@@ -4524,6 +5074,8 @@
             aiMode: null, dataConsent: null, assessment: null,
             lat: null, lon: null, country: 'DE', hospitals: [], selectedHospital: null,
             regNumber: null, healthNumber: null,
+            _notifiedContact: false, _submitted: false,
+            _timelineEvents: [],
         };
 
         // ═══════════════════════════════════════════════════════════
@@ -4727,7 +5279,7 @@
             // Stop location simulation
             if (_simInterval) { clearInterval(_simInterval); _simInterval = null; }
             // Stop mic if still recording
-            if (isRecording) { try { stopRecording(); } catch (_) {} }
+            if (isRecording) { try { stopRecording(); } catch (_) { } }
             stopAudioViz();
             // Reset voice/audio state
             webSpeechResult = '';
@@ -4819,7 +5371,7 @@
 
         function stopAudioViz() {
             if (_vizFrame) { cancelAnimationFrame(_vizFrame); _vizFrame = null; }
-            if (_vizCtx) { _vizCtx.close().catch(() => {}); _vizCtx = null; _vizAnalyser = null; }
+            if (_vizCtx) { _vizCtx.close().catch(() => { }); _vizCtx = null; _vizAnalyser = null; }
             // Reset bars
             document.querySelectorAll('#waveformBars .sf-bar').forEach(b => {
                 b.style.cssText = 'background:var(--success)!important;';
@@ -4894,7 +5446,7 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 // Pick a MIME type the browser actually supports so the blob is valid
-                const mime = ['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/webm','audio/mp4']
+                const mime = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm', 'audio/mp4']
                     .find(t => MediaRecorder.isTypeSupported(t)) || '';
                 mediaRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
                 audioChunks = [];
@@ -4908,8 +5460,8 @@
                 if (SR) { isRecording = true; startWebSpeech(S.selectedLang || S.detectedLang || 'tr-TR'); setMicState('recording'); return; }
                 const msgs = {
                     NotAllowedError: { en: 'Microphone access denied.', de: 'Mikrofonzugriff verweigert.', tr: 'Mikrofon erişimi reddedildi.' },
-                    NotFoundError:   { en: 'No microphone found.', de: 'Kein Mikrofon gefunden.', tr: 'Mikrofon bulunamadı.' },
-                    NotReadableError:{ en: 'Microphone is used by another app.', de: 'Mikrofon wird verwendet.', tr: 'Mikrofon başka uygulama tarafından kullanılıyor.' }
+                    NotFoundError: { en: 'No microphone found.', de: 'Kein Mikrofon gefunden.', tr: 'Mikrofon bulunamadı.' },
+                    NotReadableError: { en: 'Microphone is used by another app.', de: 'Mikrofon wird verwendet.', tr: 'Mikrofon başka uygulama tarafından kullanılıyor.' }
                 };
                 const m = msgs[e.name] || { en: 'Microphone unavailable — please type.', de: 'Mikrofon nicht verfügbar.', tr: 'Mikrofon kullanılamıyor — lütfen yazın.' };
                 toast(m[S.lang] || m.en, 'warn');
@@ -5620,7 +6172,7 @@
                         S.country = detectCountryFromCoords ? detectCountryFromCoords(S.lat, S.lon) : 'DE';
                         fetchHospitals();
                     },
-                    () => {},
+                    () => { },
                     { timeout: 8000, enableHighAccuracy: false }
                 );
             }
@@ -5754,7 +6306,7 @@
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ lat, lon })
-                }).catch(() => {});
+                }).catch(() => { });
             } else if (attempt < 5) {
                 setTimeout(() => _patchLocationWithRetry(lat, lon, attempt + 1), 2000);
             }
@@ -6060,12 +6612,12 @@
         function renderAdviceBlock(containerId, doList, dontList, level) {
             const _advLvl = normalizeTriage(level);
             const color = {
-                IMMEDIATE:  '#FF0000',
-                EMERGENCY:  'var(--red)',
-                URGENT:     'var(--orange)',
-                STANDARD:   'var(--green)',
+                IMMEDIATE: '#FF0000',
+                EMERGENCY: 'var(--red)',
+                URGENT: 'var(--orange)',
+                STANDARD: 'var(--green)',
                 NON_URGENT: 'var(--blue)',
-                ROUTINE:    'var(--green)'
+                ROUTINE: 'var(--green)'
             }[_advLvl] || 'var(--blue)';
             let html = `<div style="border:1.5px solid ${color};border-radius:var(--r-lg);padding:16px;margin-bottom:14px">`;
             if (doList.length) {
@@ -6211,7 +6763,7 @@
         function applyTheme(t) { document.documentElement.setAttribute('data-theme', t); const sun = document.getElementById('themeIconSun'); const moon = document.getElementById('themeIconMoon'); if (sun) sun.style.display = t === 'dark' ? 'block' : 'none'; if (moon) moon.style.display = t === 'dark' ? 'none' : 'block'; }
         function toggleTheme() { const cur = document.documentElement.getAttribute('data-theme') || 'light'; const next = cur === 'dark' ? 'light' : 'dark'; localStorage.setItem(_THEME_KEY, next); applyTheme(next); }
         (function initTheme() { const saved = localStorage.getItem(_THEME_KEY); const sys = window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'; applyTheme(saved || sys); })();
-        const PAGE_STEPS = { 'page-lang': 0, 'page-welcome': 1, 'page-input': 2, 'page-photos': 2, 'page-questions': 3, 'page-consent': 4, 'page-triage': 5, 'page-result': 5 };
+        const PAGE_STEPS = { 'page-lang': 0, 'page-welcome': 1, 'page-input': 2, 'page-photos': 2, 'page-questions': 3, 'page-consent': 4, 'page-triage': 5, 'page-result': 5, 'page-assessment': 5, 'page-ambulance': 5, 'page-outcome-emg': 5, 'page-outcome-std': 5, 'page-outcome-nurg': 5 };
         const STEP_LBL = { en: ['', '', 'Step 2 of 5', 'Step 2 of 5', 'Step 3 of 5', 'Step 4 of 5', 'Step 5 of 5', 'Complete'], de: ['', '', 'Schritt 2/5', 'Schritt 2/5', 'Schritt 3/5', 'Schritt 4/5', 'Schritt 5/5', 'Fertig'], tr: ['', '', 'Adim 2/5', 'Adim 2/5', 'Adim 3/5', 'Adim 4/5', 'Adim 5/5', 'Tamam'] };
         // goToPage wrapper — uses IIFE to capture original before override (avoids hoisting conflict)
         window.goToPage = (function () { var _o = goToPage; return function (p) { _o(p); var st = PAGE_STEPS[p] || 0, f = document.getElementById('progressFill'), l = document.getElementById('progressLabel'), w = document.getElementById('progressBarWrap'); if (f) f.style.width = Math.round(st / 5 * 100) + '%'; var lk = (S.selectedLang || 'en').startsWith('tr') ? 'tr' : (S.selectedLang || 'en').startsWith('de') ? 'de' : 'en'; var si = { 'page-lang': 0, 'page-welcome': 1, 'page-input': 2, 'page-photos': 2, 'page-questions': 3, 'page-consent': 4, 'page-triage': 6, 'page-result': 7 }[p] || 0; if (l) l.textContent = (STEP_LBL[lk] || STEP_LBL.en)[si] || ''; if (w) w.style.display = st === 0 ? 'none' : 'block'; }; })();
@@ -6243,11 +6795,11 @@
 
             const _lvlN = normalizeTriage(level);
             let cls = _lvlN === 'IMMEDIATE' ? 'imm'
-                    : _lvlN === 'EMERGENCY' ? 'emg'
-                    : _lvlN === 'URGENT'    ? 'urg'
-                    : _lvlN === 'STANDARD'  ? 'std'
-                    : _lvlN === 'NON_URGENT'? 'nurg'
-                    : 'rtn';
+                : _lvlN === 'EMERGENCY' ? 'emg'
+                    : _lvlN === 'URGENT' ? 'urg'
+                        : _lvlN === 'STANDARD' ? 'std'
+                            : _lvlN === 'NON_URGENT' ? 'nurg'
+                                : 'rtn';
             const _clsForKey = (cls === 'std' || cls === 'nurg') ? 'rtn' : cls; // fallback i18n key for new levels
             let title = (t('rs_notified_' + cls) !== 'rs_notified_' + cls) ? t('rs_notified_' + cls) : t('rs_notified_' + _clsForKey);
 
@@ -6334,7 +6886,7 @@
             </div>
 
             ${isImmediate
-                ? `<div style="background:${meta.color};border-radius:var(--r-lg);padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;color:${headerTextCol};">
+                    ? `<div style="background:${meta.color};border-radius:var(--r-lg);padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;color:${headerTextCol};">
                     <span style="font-size:1.3rem;">&#x26A1;</span>
                     <div><div style="font-weight:800;font-size:0.9rem;">${t('te_imm_required')}</div>
                     <div style="font-size:0.78rem;opacity:0.85;">${t('te_imm_notified')}</div></div>
@@ -6343,11 +6895,11 @@
                     style="background:${meta.color} !important;border-radius:20px;font-size:1rem;font-weight:800;height:64px;box-shadow:0 8px 24px ${meta.color}55;margin-bottom:4px;">
                     ${t('te_continue')} &#x2192;
                   </button>`
-                : `<button class="btn btn-primary" onclick="onTriageExplainContinue()"
+                    : `<button class="btn btn-primary" onclick="onTriageExplainContinue()"
                     style="background:${meta.color} !important;border-radius:20px;font-size:1rem;font-weight:800;height:64px;box-shadow:0 8px 24px ${meta.color}55;">
                     ${t('te_continue')} &#x2192;
                   </button>`
-            }
+                }
 
             </div>`;
 
@@ -6408,12 +6960,9 @@
         }
 
         function onTriageExplainContinue() {
-            const lvl = normalizeTriage((S.assessment || {}).triage_level);
-            if (lvl === 'IMMEDIATE')  { showImmediateAlert(); }
-            else if (lvl === 'EMERGENCY') { showEmergencyTransportQuestion(); }
-            else if (lvl === 'URGENT')    { goToPage('triage'); renderTriageBanner(); requestGPS(); submitToBackend().catch(() => {}); startPhysicianPolling(5, 'expertLoopUrg'); }
-            else if (lvl === 'STANDARD')  { showStandardOutcome(); }
-            else                           { showNonUrgentOutcome(); }
+            // v1: all levels route through the unified assessment result page
+            // (IMMEDIATE still dispatches ambulance immediately inside showAssessmentResult)
+            showAssessmentResult();
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -6435,7 +6984,7 @@
             try {
                 const r = await fetch(`${API}/api/patient/hospitals?lat=${S.lat}&lon=${S.lon}&n=3`);
                 if (r.ok) S.hospitals = await r.json();
-            } catch (_) {}
+            } catch (_) { }
         }
 
         async function showImmediateAlert() {
@@ -6451,12 +7000,12 @@
             S._ambulanceNote = `🚑 ${t('amb_dispatched_note')} ${S.ambHospName} — ${t('amb_est_arrival')} ~${S.ambTotalEta} min`;
             // IMMEDIATE path: not yet submitted → normal submit sends the ambulance note
             if (!S._submitted) {
-                submitToBackend().catch(() => {});
+                submitToBackend().catch(() => { });
             } else {
-                // Already submitted (shouldn't happen for IMMEDIATE, but just in case)
-                _sendAmbulanceRequestToServer().catch(() => {});
+                // Already submitted
+                _sendAmbulanceRequestToServer().catch(() => { });
             }
-            showAmbulanceWaiting(true);  // show waiting page — tracking starts when staff approves
+            // NO LONGER calling showAmbulanceWaiting(true) to keep patient on unified dashboard
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -6498,7 +7047,7 @@
             <div id="expertLoopEmg"></div>
             </div>`;
             goToPage('outcome-emg');
-            submitToBackend().catch(() => {}); // ensure S.regNumber is set before polling
+            submitToBackend().catch(() => { }); // ensure S.regNumber is set before polling
             startPhysicianPolling(5, 'expertLoopEmg');
         }
 
@@ -6516,9 +7065,9 @@
                 // EMERGENCY path: submitToBackend() was already called from showEmergencyTransportQuestion()
                 // S._submitted is true → use dedicated PATCH endpoint to save ambulance request
                 if (S._submitted) {
-                    _sendAmbulanceRequestToServer().catch(() => {});
+                    _sendAmbulanceRequestToServer().catch(() => { });
                 } else {
-                    submitToBackend().catch(() => {});
+                    submitToBackend().catch(() => { });
                 }
                 showAmbulanceWaiting(false);  // show waiting page — tracking starts when staff approves
             } else {
@@ -6540,7 +7089,7 @@
         function _initAmbulanceMap() {
             const el = document.getElementById('ambMapContainer');
             if (!el || typeof L === 'undefined') return;
-            if (_ambMap) { try { _ambMap.remove(); } catch(e){} _ambMap = null; _ambMarker = null; }
+            if (_ambMap) { try { _ambMap.remove(); } catch (e) { } _ambMap = null; _ambMarker = null; }
 
             const patLat = parseFloat(S.lat) || null;
             const patLon = parseFloat(S.lon) || null;
@@ -6589,7 +7138,29 @@
             const a = S.assessment || {};
             const lvl = normalizeTriage(a.triage_level);
             const meta = MTS_META[lvl] || MTS_META.IMMEDIATE;
-            const hospName = escHtml(S.ambHospName || 'Nearest Emergency Department');
+            const hospName = escHtml(S.ambHospName || t('amb_nearest_er'));
+
+            // Build patient greeting
+            const patientName = escHtml(a.full_name || a.patient_name || '');
+            const lang = (S.selectedLang || S.lang || 'en');
+            let greeting = '';
+            if (patientName) {
+                if (lang.startsWith('tr')) greeting = `Sayın ${patientName},`;
+                else if (lang.startsWith('de')) greeting = `Sehr geehrte/r ${patientName},`;
+                else greeting = `Dear ${patientName},`;
+            }
+
+            // Build AiVoN assessment block
+            const condSummary = a.condition_summary || (a.patient_summary ? stripAiCTA(a.patient_summary) : '');
+            const aivonBlock = condSummary ? `
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin:16px 4px 0;text-align:left;">
+                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4CB; ${t('amb_aivon_title')}</div>
+                ${greeting ? `<div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">${greeting}</div>` : ''}
+                <p style="font-size:0.9rem;color:var(--text);font-weight:500;line-height:1.55;font-style:italic;margin:0;">"${condSummary}"</p>
+            </div>` : (greeting ? `
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 20px;margin:16px 4px 0;text-align:left;">
+                <div style="font-size:0.88rem;font-weight:700;color:var(--text);">${greeting}</div>
+            </div>` : '');
 
             const content = document.getElementById('ambulanceContent');
             if (!content) return;
@@ -6597,10 +7168,12 @@
             content.innerHTML = `
             <div style="background:${meta.color};margin:-24px -20px 0;padding:22px 20px 20px;color:${meta.textColor};">
                 <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">&#x1F3E5; ${t('te_result_label')}</div>
-                <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">${meta.emoji} ${meta.label}</div>
+                <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">${meta.emoji} ${tLevel(lvl)}</div>
                 <div style="font-size:0.85rem;font-weight:700;margin-top:4px;">${isImmediate ? t('amb_header_imm') : t('amb_header_emg')}</div>
             </div>
             <div style="padding:16px 0 28px;text-align:center;">
+
+              ${aivonBlock}
 
               <!-- Pulsing ambulance icon -->
               <div style="margin:20px 0 10px;">
@@ -6608,14 +7181,14 @@
               </div>
 
               <div style="background:var(--card);border:1.5px solid ${meta.color}40;border-radius:var(--r-lg);padding:22px 20px;margin:0 4px 16px;text-align:left;">
-                <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-3);margin-bottom:8px;">&#x1F4E1; ${t('amb_status_pending') || 'Request Status'}</div>
-                <div style="font-size:1.15rem;font-weight:900;color:${meta.color};margin-bottom:4px;">${t('amb_waiting_approval') || 'Awaiting Dispatch Approval'}</div>
+                <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-3);margin-bottom:8px;">&#x1F4E1; ${t('amb_status_pending')}</div>
+                <div style="font-size:1.15rem;font-weight:900;color:${meta.color};margin-bottom:4px;">${t('amb_waiting_approval')}</div>
                 <div style="font-size:0.85rem;color:var(--text-2);line-height:1.55;">
-                  ${t('amb_waiting_desc') || 'Your ambulance request has been received. Hospital staff is reviewing and will dispatch an ambulance shortly.'}
+                  ${t('amb_waiting_desc')}
                 </div>
                 <div style="margin-top:14px;background:${meta.color}12;border-radius:8px;padding:12px 14px;">
                   <div style="font-size:0.72rem;font-weight:700;color:var(--text-2);">&#x1F3E5; ${hospName}</div>
-                  <div style="font-size:0.7rem;color:var(--text-3);margin-top:3px;">${t('amb_waiting_eta_hint') || 'Estimated arrival will be shown once dispatched'}</div>
+                  <div style="font-size:0.7rem;color:var(--text-3);margin-top:3px;">${t('amb_waiting_eta_hint')}</div>
                 </div>
               </div>
 
@@ -6655,71 +7228,96 @@
             const gradEnd = isImmediate ? '#FF4500' : '#FFD700';
 
             const condSummary = a.condition_summary || (a.patient_summary ? stripAiCTA(a.patient_summary) : '');
-            const reasoning = a.reasoning || getDefaultReasoning(lvl);
             const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO[isImmediate ? 'IMMEDIATE' : 'EMERGENCY'] || []).slice(0, 4);
             const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT[isImmediate ? 'IMMEDIATE' : 'EMERGENCY'] || []).slice(0, 4);
 
             const content = document.getElementById('ambulanceContent');
             if (!content) return;
 
+            // Common Tile Grid (reusing the same logic visually)
+            const tileGrid = `
+            <div class="ass-grid" style="margin-top:20px;">
+                <div class="ass-tile dos" onclick="toggleAssTile('dos')">
+                    <div class="ass-tile-icon"><i data-lucide="shield-plus"></i></div>
+                    <div style="margin-top:auto;">
+                        <div class="ass-tile-sub">${t('rs_dash_dos_sub')}</div>
+                        <div class="ass-tile-title">${t('rs_dash_dos')}</div>
+                    </div>
+                </div>
+                <div class="ass-tile contact" onclick="toggleAssTile('contact')">
+                    <div class="ass-tile-icon"><i data-lucide="users"></i></div>
+                    <div style="margin-top:auto;">
+                        <div class="ass-tile-sub">${t('rs_dash_contact_sub')}</div>
+                        <div class="ass-tile-title">${t('rs_dash_contact')}</div>
+                    </div>
+                </div>
+                <div class="ass-tile qr" onclick="toggleAssTile('qr')">
+                    <div class="ass-tile-icon"><i data-lucide="qr-code"></i></div>
+                    <div style="margin-top:auto;">
+                        <div class="ass-tile-sub">${t('rs_dash_qr_sub')}</div>
+                        <div class="ass-tile-title">${t('rs_dash_qr')}</div>
+                    </div>
+                </div>
+                <div class="ass-tile report" onclick="toggleAssTile('report')">
+                    <div class="ass-tile-icon"><i data-lucide="file-text"></i></div>
+                    <div style="margin-top:auto;">
+                        <div class="ass-tile-sub">${t('rs_dash_report_sub')}</div>
+                        <div class="ass-tile-title">${t('rs_dash_report')}</div>
+                    </div>
+                </div>
+            </div>`;
+
             content.innerHTML = `
             <div style="background:${headerColor};margin:-24px -20px 0;padding:22px 20px 20px;color:${meta.textColor};">
-                <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">&#x1F3E5; ${t('te_result_label')}</div>
+                <div style="font-size:0.68rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;opacity:0.8;margin-bottom:8px;">&#x1F691; ${t('te_result_label')}</div>
                 <div style="font-size:2.4rem;font-weight:900;letter-spacing:-0.02em;line-height:1;margin-bottom:6px;">${meta.emoji} ${meta.label}</div>
-                <div style="font-size:0.85rem;font-weight:700;margin-top:4px;">${isImmediate ? t('amb_header_imm') : t('amb_header_emg')}</div>
+                <div style="font-size:0.85rem;font-weight:700;margin-top:4px;">${t('rs_dash_directive_ambulance')}</div>
                 ${isImmediate ? `<div style="font-size:0.78rem;font-weight:600;opacity:0.85;margin-top:3px;">${t('amb_do_not_move')}</div>` : ''}
             </div>
+            
             <div style="padding:0 0 28px;">
 
-            ${condSummary ? `
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-top:16px;margin-bottom:10px;">
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4CB; ${t('te_found')}</div>
-                <p style="font-size:0.9rem;color:var(--text);font-weight:500;line-height:1.55;font-style:italic;margin:0;">"${escHtml(condSummary)}"</p>
-            </div>` : ''}
-
-            <!-- Expert-in-the-Loop review panel — right below "What we found" -->
-            <div id="expertLoopAmb"></div>
-
-            <div style="background:var(--card);border:1.5px solid ${headerColor}40;border-radius:var(--r-lg);padding:20px;margin-top:${condSummary ? '0' : '16px'};margin-bottom:14px;">
-                <div style="font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-3);margin-bottom:6px;">&#x1F691; ${t('amb_en_route')}</div>
-                <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:2px;">${hospName}</div>
-                ${hospAddr ? `<div style="font-size:0.8rem;color:var(--text-2);margin-bottom:14px;">&#x1F4CD; ${hospAddr}</div>` : '<div style="margin-bottom:14px;"></div>'}
-                <div style="font-size:0.72rem;font-weight:700;color:var(--text-2);margin-bottom:4px;">&#x1F691; ${t('amb_eta_label')}</div>
-                <div id="ambEtaDisplay" style="font-size:1.5rem;font-weight:900;color:${headerColor};margin-bottom:6px;">~${ambEta} min</div>
-                <div class="amb-progress-track">
-                    <div class="amb-progress-fill" id="ambProgressFill" style="width:4%;background:linear-gradient(90deg,${headerColor},${gradEnd});"></div>
+                <!-- Tracking Card -->
+                <div style="background:var(--card); border:1.5px solid ${headerColor}40; border-radius:var(--r-lg); padding:20px; margin-top:20px; margin-bottom:14px; box-shadow:var(--sh-sm);">
+                    <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-3); margin-bottom:6px;">&#x1F691; ${t('amb_en_route')}</div>
+                    <div style="font-size:1rem; font-weight:800; color:var(--text); margin-bottom:2px;">${hospName}</div>
+                    ${hospAddr ? `<div style="font-size:0.8rem; color:var(--text-2); margin-bottom:14px;">&#x1F4CD; ${hospAddr}</div>` : '<div style="margin-bottom:14px;"></div>'}
+                    
+                    <div style="font-size:0.72rem; font-weight:700; color:var(--text-2); margin-bottom:4px;">&#x1F691; ${t('amb_eta_label')}</div>
+                    <div id="ambEtaDisplay" style="font-size:1.8rem; font-weight:900; color:${headerColor}; margin-bottom:10px;">~${ambEta} min</div>
+                    
+                    <div class="amb-progress-track" style="height:10px; background:rgba(0,0,0,0.05); border-radius:5px; overflow:hidden;">
+                        <div class="amb-progress-fill" id="ambProgressFill" style="height:100%; width:4%; background:linear-gradient(90deg,${headerColor},${gradEnd}); transition:width 1s ease-in-out;"></div>
+                    </div>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-3);margin-top:3px;">
-                    <span>${t('amb_dispatched')}</span><span>${t('amb_arriving')}</span>
+
+                <!-- Live ambulance map -->
+                <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; margin-bottom:14px; box-shadow:var(--sh-sm);">
+                    <div style="font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-3); padding:12px 16px 0;">&#x1F5FA;&#xFE0F; ${t('rs_liveTrackingTitle')}</div>
+                    <div id="ambMapContainer" style="height:180px; width:100%;"></div>
                 </div>
-            </div>
 
-            <!-- Live ambulance map: hospital → patient -->
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:14px;">
-                <div style="font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-3);padding:12px 16px 0;">&#x1F5FA;&#xFE0F; Live Route — Ambulance to You</div>
-                <div id="ambMapContainer" style="height:200px;width:100%;"></div>
-            </div>
+                <!-- Expert-in-the-Loop review panel -->
+                <div id="expertLoopAmb"></div>
 
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;">
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">&#x1F4CC; ${t('te_do')}</div>
-                ${doList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x2705;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
-                ${dontList.length ? `
-                <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--danger-text);margin-top:14px;margin-bottom:12px;">&#x26D4; ${t('te_avoid')}</div>
-                ${dontList.map(item => `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:0.88rem;color:var(--text);">&#x274C;<span style="margin-left:2px;">${escHtml(item)}</span></div>`).join('')}
-                ` : ''}
-            </div>
+                <div class="ass-action-card" style="margin-bottom:16px;">
+                    <div class="ass-action-header"><div class="ass-action-tag">${t('rs_dash_emergency_panel')}</div></div>
+                    <div style="font-size:1.1rem; font-weight:900; color:var(--text); line-height:1.4;">
+                        ${t('amb_header_emg')}
+                    </div>
+                </div>
+
+                ${tileGrid}
 
             </div>`;
 
             goToPage('ambulance');
-            // Init map after DOM is painted so Leaflet gets correct container size
-            setTimeout(_initAmbulanceMap, 120);
+            setTimeout(_initAmbulanceMap, 200);
             startAmbulanceCountdown(ambEta, headerColor, gradEnd);
             startPhysicianPolling(5, 'expertLoopAmb');
-            // Do NOT call startLiveTracking() for ambulance patients — the patient is
-            // stationary, waiting for the ambulance. GPS simulation of patient→hospital
-            // movement would overwrite eta_minutes with GPS distance on the server.
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+
 
         function startAmbulanceCountdown(etaMinutes, fillColor, fillColorEnd) {
             if (_ambCountdownInterval) clearInterval(_ambCountdownInterval);
@@ -6774,6 +7372,555 @@
         }
 
         // ═══════════════════════════════════════════════════════════
+        // PART 2F: UNIFIED ASSESSMENT RESULT PAGE (v1)
+        // ═══════════════════════════════════════════════════════════
+
+        /** Main entry — called for all triage levels.
+         *  IMMEDIATE routes to showImmediateAlert() directly.
+         *  All others render the unified assessment + recommendation page.
+         */
+        async function showAssessmentResult() {
+            const a = S.assessment || {};
+            const lvl = normalizeTriage(a.triage_level);
+            const meta = MTS_META[lvl] || MTS_META.URGENT;
+
+            // Pre-load hospitals for navigation tiles
+            _ensureHospitalsLoaded().catch(() => {});
+
+            // IMMEDIATE: handle setup but don't redirect to a different page logic here
+            // (ambulance dispatching logic moved inside showAssessmentResult below)
+
+            const condSummary = a.condition_summary || (a.patient_summary ? stripAiCTA(a.patient_summary) : '');
+            const doList  = (a.do_instructions   || a.do_list   || MTS_DEFAULT_DO[lvl]   || []).slice(0, 4);
+            const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT[lvl] || []).slice(0, 3);
+            const isHospGoer = (lvl === 'URGENT' || lvl === 'EMERGENCY');
+            const isGPLevel  = (lvl === 'STANDARD' || lvl === 'NON_URGENT');
+
+            const content = document.getElementById('assessmentContent');
+            if (!content) return;
+
+            content.innerHTML = `
+            ${_assHeader(lvl, meta, a)}
+            <div style="padding:0 0 32px;">
+
+            ${_assMockWarning(a)}
+            ${_assAiVoNBlock(condSummary)}
+            
+            <!-- AiVoN's Specific Recommendation Block -->
+            ${_assRecommendationBlock(lvl, meta, a)}
+
+            <!-- Doctor / Expert-in-the-Loop area: Live Timeline -->
+            <div id="ass_expertLoop"></div>
+
+            <!-- Doctor messaging panel (shown when doctor is assigned) -->
+            <div id="ass_doctorPanel" style="display:none;"></div>
+
+            ${_assCommonElements(lvl, doList, dontList, isHospGoer)}
+            </div>`;
+
+            goToPage('assessment');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // NO automatic submission or polling here. We wait for user "ONAYLA" click.
+        }
+
+        function _pushTimelineEvent(type, title, sub = '', status = 'completed', meta = null) {
+            if (!S._timelineEvents) S._timelineEvents = [];
+            const time = new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'});
+            S._timelineEvents.push({ type, title, sub, time, status, meta });
+            _renderAssTimeline('ass_expertLoop');
+        }
+
+        function _hideRecommendationBlock() {
+            const block = document.getElementById('ass_rec_section');
+            if (block) {
+                block.style.opacity = '0';
+                block.style.transform = 'translateY(-10px)';
+                block.style.transition = 'all 0.4s ease';
+                setTimeout(() => {
+                    block.remove();
+                }, 400);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // SMART DASHBOARD UI HELPERS (v14)
+        // ═══════════════════════════════════════════════════════════
+
+        function toggleAssTile(id) {
+            const overlay = document.getElementById('assOverlay');
+            const sheet = document.getElementById('assSheetContent');
+            const a = S.assessment || {};
+            const lvl = normalizeTriage(a.triage_level);
+
+            overlay.classList.add('active');
+            
+            let html = '';
+            if (id === 'dos') {
+                const doList  = (a.do_instructions || a.do_list || MTS_DEFAULT_DO[lvl] || []).slice(0, 4);
+                const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT[lvl] || []).slice(0, 3);
+                html = `
+                    <h3 style="margin-bottom:20px; font-weight:900;">${t('rs_dash_dos')}</h3>
+                    <div class="dos-list">
+                        ${doList.map(item => `
+                            <div class="dos-item do">
+                                <div style="color:var(--success); font-weight:800; font-size:1.2rem;">✓</div>
+                                <div style="font-size:0.95rem; font-weight:600; line-height:1.4;">${escHtml(item)}</div>
+                            </div>
+                        `).join('')}
+                        ${dontList.map(item => `
+                            <div class="dos-item dont">
+                                <div style="color:var(--danger); font-weight:800; font-size:1.2rem;">✕</div>
+                                <div style="font-size:0.95rem; font-weight:600; line-height:1.4;">${escHtml(item)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (id === 'contact') {
+                html = `
+                    <div style="text-align:center;">
+                        <div style="width:64px; height:64px; background:rgba(0,122,255,0.1); color:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+                            <i data-lucide="phone" style="width:28px; height:28px;"></i>
+                        </div>
+                        <h3 style="margin-bottom:8px; font-weight:900;">${t('rs_dash_contact')}</h3>
+                        <p style="color:var(--text-2); font-size:0.9rem; line-height:1.5; margin-bottom:24px;">${t('rs_contactTitle')}</p>
+                        
+                        <div id="ass_contact_status" style="display:${S._notifiedContact ? 'block' : 'none'}; background:var(--success-l); color:var(--success-text); padding:12px; border-radius:12px; font-weight:700; margin-bottom:20px;">
+                            ${t('rs_dash_contact_notified')}
+                        </div>
+
+                        <button onclick="notifyAssContact()" id="ass_contact_btn" style="width:100%; height:56px; background:var(--primary); color:white; border:none; border-radius:16px; font-weight:800; font-size:1rem; display:${S._notifiedContact ? 'none' : 'flex'}; align-items:center; justify-content:center; gap:10px;">
+                            <i data-lucide="send" style="width:18px; height:18px;"></i>
+                            ${t('rs_contactSendBtn')}
+                        </button>
+                    </div>
+                `;
+            } else if (id === 'qr') {
+                html = `
+                    <div class="qr-area">
+                        <h3 style="margin-bottom:8px; font-weight:900;">${t('rs_dash_qr')}</h3>
+                        <p style="color:var(--text-2); font-size:0.9rem; margin-bottom:24px;">${t('ass_entry_sub')}</p>
+                        <div class="qr-code-placeholder">
+                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=PAT-${S.regNumber || 'DEMO'}" style="width:180px; height:180px;" alt="QR Code">
+                        </div>
+                        <div style="background:var(--bg); padding:10px 20px; border-radius:12px; font-family:monospace; font-weight:800; color:var(--text-3);">
+                            ID: ${S.regNumber || 'Awaiting ID...'}
+                        </div>
+                    </div>
+                `;
+            } else if (id === 'report') {
+                const reportText = a.patient_summary || a.condition_summary || '';
+                const cleanReport = stripAiCTA(reportText);
+                html = `
+                     <h3 style="margin-bottom:16px; font-weight:900;">${t('rs_dash_report')}</h3>
+                     <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; font-size:0.88rem; color:var(--text); line-height:1.6; max-height:300px; overflow-y:auto; white-space:pre-wrap;">
+                        ${escHtml(cleanReport) || 'Processing dynamic medical brief...'}
+                     </div>
+                     <div style="margin-top:16px; padding:12px; background:rgba(0,0,0,0.03); border-radius:12px; font-size:0.75rem; color:var(--text-3);">
+                         Hekim Notu: Bu bilgiler yapay zeka tarafından triaj amaçlı analiz edilmiştir.
+                     </div>
+                `;
+            }
+
+            sheet.innerHTML = `
+                <div class="ass-sheet-handle"></div>
+                ${html}
+                <div style="height:40px;"></div>
+            `;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function closeAssOverlay() {
+            document.getElementById('assOverlay').classList.remove('active');
+        }
+
+        function notifyAssContact() {
+            const btn = document.getElementById('ass_contact_btn');
+            const status = document.getElementById('ass_contact_status');
+            if (btn) {
+                btn.innerHTML = `<span class="spinner" style="width:18px; height:18px; border-width:2px; border-top-color:#fff;"></span> ` + t('ass_ec_sending');
+                btn.disabled = true;
+            }
+            
+            setTimeout(() => {
+                S._notifiedContact = true;
+                if (btn) btn.style.display = 'none';
+                if (status) status.style.display = 'block';
+                toast(t('ass_ec_sent'), 'success');
+            }, 1200);
+        }
+
+        function _assHeader(lvl, meta, a) {
+            return `
+            <div class="ass-header">
+                <div class="ass-header-content">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:${meta.color}; color:${meta.textColor}; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                            ${meta.emoji}
+                        </div>
+                        <div>
+                            <div style="font-size:1rem; font-weight:800; color:var(--text);">${tLevel(lvl)}</div>
+                            <div style="font-size:0.7rem; font-weight:600; color:var(--text-3); text-transform:uppercase;">VitalNav Smart Triage</div>
+                        </div>
+                    </div>
+                    <div id="ass_status_pill" style="background:var(--success-l); color:var(--success); padding:4px 10px; border-radius:99px; font-size:0.7rem; font-weight:800; border:1px solid var(--success-h);">
+                        LIVE
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function _assMockWarning(a) {
+            if (!a || !a.is_mock) return '';
+            return `
+            <div style="background:rgba(255,153,0,0.1); border:1px solid rgba(255,153,0,0.3); border-radius:12px; padding:12px 16px; margin:16px 4px 10px; display:flex; gap:12px; align-items:center;">
+                <div style="font-size:1.2rem;">⚠️</div>
+                <div style="font-size:0.8rem; font-weight:700; color:#E67E22; line-height:1.4;">
+                    DEMO SIMULATION: This is a generated test result for demonstration purposes only.
+                </div>
+            </div>`;
+        }
+
+        function toggleAiVoNBlock() {
+            const sum = document.getElementById('aivon_summary');
+            const chev = document.getElementById('aivon_chevron');
+            if (!sum || !chev) return;
+            const isClosed = sum.style.maxHeight === '0px';
+            if (isClosed) {
+                sum.style.maxHeight = '500px';
+                sum.style.opacity = '1';
+                sum.style.marginTop = '10px';
+                chev.style.transform = 'rotate(0deg)';
+            } else {
+                sum.style.maxHeight = '0px';
+                sum.style.opacity = '0';
+                sum.style.marginTop = '0px';
+                chev.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        function _assAiVoNBlock(summary) {
+            if (!summary) return '';
+            return `
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 20px; margin:10px 4px 16px; box-shadow:var(--sh-sm);">
+                <div style="font-size:0.75rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-3); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="toggleAiVoNBlock()">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="sparkles" style="width:14px; height:14px; color:var(--primary);"></i> ${t('ass_insight_title')}
+                    </div>
+                    <i data-lucide="chevron-up" id="aivon_chevron" style="width:16px; height:16px; transition:transform 0.3s ease;"></i>
+                </div>
+                <div id="aivon_summary" style="font-size:0.95rem; font-weight:600; color:var(--text); line-height:1.6; font-style:italic; transition:max-height 0.3s ease, opacity 0.3s ease; max-height:500px; opacity:1; overflow:hidden;">
+                    "${escHtml(summary)}"
+                </div>
+            </div>`;
+        }
+
+        function _assRecommendationBlock(lvl, meta, a) {
+            let recType = 'l5';
+            if (lvl === 'IMMEDIATE') recType = 'l1';
+            else if (lvl === 'EMERGENCY') recType = 'l2';
+            else if (lvl === 'URGENT') recType = 'l3';
+            else if (lvl === 'STANDARD') recType = 'l4';
+            
+            let btnHtml = '';
+            if (recType === 'l1') {
+                btnHtml = `<button id="ass_l1_btn" onclick="ass_emgChoice('ambulance')" class="btn btn-primary" style="margin-top:14px; height:54px; font-weight:900;">${t('rec_btn_confirm')}</button>`;
+            } else if (recType === 'l2') {
+                btnHtml = `
+                <div id="ass_l2_choice" style="display:flex; gap:10px; margin-top:14px;">
+                    <button id="ass_l2_amb_btn" onclick="ass_emgChoice('ambulance')" class="btn btn-primary" style="flex:1; height:54px; font-weight:900;">🚑 ${t('rec_btn_ambulance')}</button>
+                    <button id="ass_l2_self_btn" onclick="ass_emgChoice('self')" class="btn btn-secondary" style="flex:1; height:54px; font-weight:900;">🚗 ${t('rec_btn_self')}</button>
+                </div>`;
+            } else if (recType === 'l3') {
+                btnHtml = `<button id="ass_urgShareBtn" onclick="ass_urgShare()" class="btn btn-primary" style="margin-top:14px; height:54px; font-weight:900;">${t('rec_btn_confirm')}</button>`;
+            } else if (recType === 'l4') {
+                btnHtml = `<button id="ass_stdShareBtn" onclick="ass_stdShare()" class="btn btn-primary" style="margin-top:14px; height:54px; font-weight:900;">${t('rec_btn_confirm')}</button>`;
+            }
+
+            return `
+            <div id="ass_rec_section" style="background:var(--card); border:2px solid var(--primary-l); border-radius:20px; padding:20px; margin:16px 4px; box-shadow:var(--sh-md); position:relative; overflow:hidden;">
+                <div style="position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg, var(--primary), var(--secondary));"></div>
+                <div style="font-size:0.85rem; font-weight:900; color:var(--primary); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="info" style="width:18px; height:18px;"></i> ${t('rec_title')}
+                </div>
+                <div id="ass_rec_text" style="font-size:1.05rem; font-weight:700; color:var(--text); line-height:1.5;">
+                    ${t('rec_' + recType)}
+                </div>
+                ${btnHtml}
+                <div id="ass_rec_feedback" style="display:none; margin-top:12px; font-size:0.9rem; font-weight:800; color:var(--success);"></div>
+            </div>`;
+        }
+
+        function _assCommonElements(lvl, doList, dontList, isHospGoer) {
+            return `
+            <div class="ass-grid" style="margin-top:24px;">
+                <!-- Tile 1: DO/DONT -->
+                <div class="ass-tile dos" onclick="toggleAssTile('dos')">
+                    <div class="ass-tile-icon"><i data-lucide="shield-plus"></i></div>
+                    <div style="margin-top:auto;">
+                        <div class="ass-tile-sub">${t('rs_dash_dos_sub')}</div>
+                        <div class="ass-tile-title">${t('rs_dash_dos')}</div>
+                    </div>
+                </div>
+                <!-- Tile 2: CONTACT -->
+                <div class="ass-tile contact" onclick="toggleAssTile('contact')">
+                    <div class="ass-tile-icon"><i data-lucide="users"></i></div>
+                    <div style="margin-top:auto;">
+                        <div class="ass-tile-sub">${t('rs_dash_contact_sub')}</div>
+                        <div class="ass-tile-title">${t('rs_dash_contact')}</div>
+                    </div>
+                </div>
+                <!-- Tile 3: QR ENTRY -->
+                <div class="ass-tile qr" onclick="toggleAssTile('qr')">
+                    <div class="ass-tile-icon"><i data-lucide="qr-code"></i></div>
+                    <div style="margin-top:auto;">
+                        <div class="ass-tile-sub">${t('rs_dash_qr_sub')}</div>
+                        <div class="ass-tile-title">${t('rs_dash_qr')}</div>
+                    </div>
+                </div>
+                <!-- Tile 4: CHAT -->
+                <div class="ass-tile report" onclick="toggleDoctorChatPanel()" style="border-color:rgba(34,211,238,0.3); background:rgba(34,211,238,0.03);">
+                    <div class="ass-tile-icon" style="color:#22d3ee;"><i data-lucide="message-square"></i></div>
+                    <div style="margin-top:auto;">
+                        <div class="ass-tile-sub" style="color:#22d3ee;">${t('rs_dash_chat_sub')}</div>
+                        <div class="ass-tile-title" style="color:var(--text);">${t('rs_dash_chat')}</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="location.reload()" style="height:54px; font-size:0.9rem; opacity:0.6; margin-top:10px; border-radius:16px;">
+                ${t('std_new_assessment')}
+            </button>
+            `;
+        }
+
+
+        // ── Action: Emergency Contact Notification ──────────────────────────
+        function assNotifyEmergencyContact() {
+            const btn = document.getElementById('ass_ecBtn');
+            if (btn) { btn.disabled = true; btn.textContent = t('ass_ec_sending'); }
+            const a = S.assessment || {};
+            const pid = S.patientId || a.patient_id || '';
+            if (pid) {
+                fetch(`${API}/api/patient/${encodeURIComponent(pid)}/notify-contact`, { method: 'POST' })
+                    .catch(() => {});
+            }
+            // Also trigger local sendEmergencyContact if available
+            if (typeof sendEmergencyContact === 'function') {
+                try { sendEmergencyContact(); } catch (_) {}
+            }
+            setTimeout(() => {
+                if (btn) { btn.textContent = t('ass_ec_sent'); btn.style.background = '#E8F5E9'; btn.style.color = '#2E7D32'; }
+            }, 800);
+        }
+
+        // ── Action: STANDARD "Share with hospital" ───────────────────────────
+        function ass_stdShare() {
+            const btn = document.getElementById('ass_stdShareBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+            submitToBackend().then(() => {
+                startPhysicianPolling(15, 'ass_expertLoop');
+                _pushTimelineEvent('shared', t('rs_timeline_shared'));
+                _hideRecommendationBlock();
+                _ass_showBarcodeWhenReady();
+            }).catch(() => { if(btn){btn.disabled=false; btn.textContent=t('rec_btn_confirm');} });
+        }
+
+        // ── Action: URGENT "Share & Notify" ─────────────────────────────────
+        function ass_urgShare() {
+            const btn = document.getElementById('ass_urgShareBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+            submitToBackend().then(() => {
+                startPhysicianPolling(5, 'ass_expertLoop');
+                _requestGPSSilent(() => { startLiveTracking(); _patchLocationWithRetry(S.lat, S.lon, 0); });
+                _pushTimelineEvent('shared', t('rs_timeline_shared'));
+                _hideRecommendationBlock();
+                _ass_showBarcodeWhenReady();
+            }).catch(() => { if(btn){btn.disabled=false; btn.textContent=t('rec_btn_confirm');} });
+        }
+
+        // ── Action: EMERGENCY transport choice ───────────────────────────────
+        async function ass_emgChoice(choice) {
+            const lvl = normalizeTriage((S.assessment || {}).triage_level);
+            if (choice === 'ambulance') {
+                await _ensureHospitalsLoaded();
+                const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
+                S.ambEtaMinutes = hosp ? Math.max(3, hosp.eta_minutes || 12) : 12;
+                S.ambHospName   = hosp ? hosp.name    : 'Universitätsklinikum Ulm';
+                S.ambHospAddr   = hosp ? hosp.address : '';
+                S.ambIsImmediate = (lvl === 'IMMEDIATE');
+                const hospEta   = hosp ? (hosp.eta_minutes || S.ambEtaMinutes) : S.ambEtaMinutes;
+                S.ambTotalEta   = S.ambEtaMinutes + 5 + hospEta;
+                S._ambulanceNote = `🚑 ${t('amb_dispatched_note')} ${S.ambHospName} — ${t('amb_est_arrival')} ~${S.ambTotalEta} min`;
+                
+                const sendReq = () => {
+                   if (S._submitted) { return _sendAmbulanceRequestToServer(); }
+                   else              { return submitToBackend(); }
+                };
+
+                sendReq().then(() => {
+                    startPhysicianPolling(5, 'ass_expertLoop');
+                    _pushTimelineEvent('shared', t('rs_timeline_shared'));
+                    _pushTimelineEvent('amb_req', t('rs_timeline_amb_req'));
+                    _hideRecommendationBlock();
+                    // NO redirect — stay on dashboard
+                }).catch(() => {});
+            } else {
+                // New logic: If called from Level 2 "Self" choice as requested
+                const recText = document.getElementById('ass_rec_text');
+                const choiceDiv = document.getElementById('ass_l2_choice');
+                if (recText && choiceDiv) {
+                    recText.innerHTML = t('rec_l3');
+                    choiceDiv.innerHTML = `<button onclick="ass_urgShare()" class="btn btn-primary" style="width:100%; height:54px; font-weight:900;">${t('rec_btn_confirm')}</button>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                // Legacy fallback: expand hospital info on this page
+                const postDiv = document.getElementById('ass_emgPostChoice');
+                if (postDiv) {
+                    postDiv.style.display = 'block';
+                    const a = S.assessment || {};
+                    const lvl = normalizeTriage(a.triage_level);
+                    const meta = MTS_META[lvl] || MTS_META.EMERGENCY;
+                    const hc = meta.color, bc = meta.color + '44', tc = meta.textColor;
+                    postDiv.innerHTML = `
+                    <div style="background:var(--card);border:1.5px solid ${bc};border-radius:var(--r-lg);padding:20px;margin-bottom:14px;">
+                        <div style="font-size:0.7rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;">📋 ${t('ass_rec_title')}</div>
+                        <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:8px;">🏥 ${t('ass_urg_title')}</div>
+                        <p style="font-size:0.88rem;color:var(--text-2);line-height:1.6;margin-bottom:16px;">${t('ass_urg_desc')}</p>
+                        <div id="ass_emgSelfShareSection">
+                            <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:10px;">${t('ass_share_q')}</div>
+                            <button id="ass_emgSelfShareBtn" onclick="ass_emgSelfShare()" style="width:100%;height:52px;background:${hc};color:${tc};border:none;border-radius:12px;font-size:0.9rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--font);">
+                                ✅ ${t('ass_share_btn')}
+                            </button>
+                        </div>
+                        <div id="ass_emgSelfHospBlock" style="display:none;margin-top:14px;"></div>
+                    </div>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+                _requestGPSSilent(() => _patchLocationWithRetry(S.lat, S.lon, 0));
+            }
+        }
+
+        // ── Action: EMERGENCY self-transport "Share" ─────────────────────────
+        function ass_emgSelfShare() {
+            const btn = document.getElementById('ass_emgSelfShareBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+            const section = document.getElementById('ass_emgSelfShareSection');
+            if (section) section.style.display = 'none';
+            const hospBlock = document.getElementById('ass_emgSelfHospBlock');
+            if (hospBlock) {
+                hospBlock.style.display = 'block';
+                const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                hospBlock.innerHTML = `
+                <div style="background:rgba(40,167,69,0.1);border:1px solid rgba(40,167,69,0.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+                    <div style="font-size:0.88rem;font-weight:800;color:#28A745;">${t('ass_shared_msg')} ${now}</div>
+                    <div style="font-size:0.82rem;color:var(--text-2);margin-top:3px;">📢 ${t('ass_shared_go')}</div>
+                </div>
+                <div id="ass_emgSelfHospInfo" style="color:var(--text-3);font-size:0.85rem;text-align:center;padding:10px;">Loading…</div>`;
+            }
+            startLiveTracking();
+            _requestGPSSilent(() => { startLiveTracking(); _patchLocationWithRetry(S.lat, S.lon, 0); });
+            _ass_fetchAndShowHospital('ass_emgSelfHospBlock');
+            _ass_showBarcodeWhenReady();
+        }
+
+        // ── Fetch hospital info and render inline ────────────────────────────
+        async function _ass_fetchAndShowHospital(containerId) {
+            const ULM = { name: 'Universitätsklinikum Ulm', address: 'Albert-Einstein-Allee 23, 89081 Ulm', lat: 48.4215, lon: 9.9593 };
+            let hosp = { ...ULM };
+            try {
+                if (!S.lat || !S.lon) await new Promise(r => setTimeout(r, 3000)); // brief wait for GPS
+                if (S.lat && S.lon) {
+                    const r = await fetch(`${API}/api/patient/hospitals?lat=${S.lat}&lon=${S.lon}&n=1`);
+                    if (r.ok) { const arr = await r.json(); if (arr && arr[0]) hosp = arr[0]; }
+                }
+            } catch (_) {}
+            S.selectedHospital = hosp;
+            if (!S.hospitals || !S.hospitals.length) S.hospitals = [hosp];
+
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // Remove any loading placeholder
+            const loader = container.querySelector('[id$="HospInfo"]');
+            const distTxt  = hosp.distance_km  ? `${parseFloat(hosp.distance_km).toFixed(1)} km` : '—';
+            const etaTxt   = hosp.eta_minutes   ? `~${hosp.eta_minutes} min` : '—';
+            const occTxt   = hosp.occupancy_label || '';
+
+            const html = `
+            <div style="background:var(--card-alt,rgba(241,245,249,1));border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);margin-bottom:4px;">🏥 ${escHtml(hosp.name)}</div>
+                <div style="font-size:0.82rem;color:var(--text-2);margin-bottom:12px;">📍 ${escHtml(hosp.address || '')}</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+                    <span style="padding:4px 10px;border-radius:99px;background:var(--card);border:1px solid var(--border);font-size:0.75rem;font-weight:700;color:var(--text);">📏 ${distTxt}</span>
+                    <span style="padding:4px 10px;border-radius:99px;background:var(--card);border:1px solid rgba(0,122,255,0.3);font-size:0.75rem;font-weight:700;color:#007AFF;">⏱ ${etaTxt}</span>
+                    ${occTxt ? `<span style="padding:4px 10px;border-radius:99px;background:var(--card);border:1px solid var(--border);font-size:0.75rem;font-weight:700;color:var(--text);">🏥 ${escHtml(occTxt)}</span>` : ''}
+                </div>
+                <button onclick="openNavigationToHospital()" style="width:100%;height:50px;background:linear-gradient(135deg,#0D9488,#0F766E);color:white;border:none;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(13,148,136,0.3);font-family:var(--font);">
+                    🧭 ${t('ass_nav_btn')}
+                </button>
+            </div>
+            <div style="background:rgba(13,148,136,0.07);border:1px solid rgba(13,148,136,0.25);border-radius:12px;padding:14px 16px;margin-bottom:12px;">
+                <div style="font-size:0.88rem;font-weight:800;color:var(--text);margin-bottom:4px;">📡 ${t('ass_gps_title')}</div>
+                <div style="font-size:0.82rem;color:var(--text-2);line-height:1.5;margin-bottom:10px;">${t('ass_gps_desc')}</div>
+                <button id="ass_gpsBtn_${containerId}" onclick="ass_enableGPS('${containerId}')" style="height:42px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:0.85rem;font-weight:700;cursor:pointer;padding:0 18px;font-family:var(--font);">
+                    📍 ${t('ass_gps_btn')}
+                </button>
+            </div>`;
+
+            if (loader) { loader.outerHTML = html; }
+            else { const d = document.createElement('div'); d.innerHTML = html; container.appendChild(d); }
+        }
+
+        function ass_enableGPS(containerId) {
+            const btn = document.getElementById(`ass_gpsBtn_${containerId}`);
+            if (btn) { btn.disabled = true; btn.textContent = '📡 Locating…'; }
+            _requestGPSSilent(() => {
+                startLiveTracking();
+                _patchLocationWithRetry(S.lat, S.lon, 0);
+                const gpsDiv = btn ? btn.closest('[style*="border-radius:12px"]') : null;
+                if (gpsDiv) gpsDiv.innerHTML = `<div style="color:#28A745;font-size:0.88rem;font-weight:700;padding:4px 0;">✅ ${t('rs_liveTrackingTitle')} — ${t('rs_liveTrackingSub')}</div>`;
+            });
+        }
+
+        // ── Show QR barcode once regNumber is ready ──────────────────────────
+        function _ass_showBarcodeWhenReady() {
+            const show = () => {
+                if (!S.regNumber) { setTimeout(show, 800); return; }
+                const block = document.getElementById('ass_barcodeBlock');
+                if (!block) return;
+                block.style.display = 'block';
+                const qrEl = document.getElementById('ass_barcodeQR');
+                const idEl = document.getElementById('ass_barcodeId');
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(S.regNumber)}`;
+                if (qrEl) qrEl.innerHTML = `<img src="${qrUrl}" style="width:130px;height:130px;border-radius:8px;display:block;" alt="QR">`;
+                if (idEl) idEl.textContent = S.regNumber;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            };
+            show();
+        }
+
+        // ── Collapsible toggles ───────────────────────────────────────────────
+        function toggleAssShareER() {
+            const c = document.getElementById('ass_shareERContent');
+            const ch = document.getElementById('ass_shareERChevron');
+            if (!c) return;
+            const open = c.style.display !== 'none';
+            c.style.display = open ? 'none' : 'block';
+            if (ch) ch.style.transform = open ? '' : 'rotate(180deg)';
+        }
+        function toggleAssDosDonts() {
+            const c = document.getElementById('ass_dosDontsContent');
+            const ch = document.getElementById('ass_dosDontsChevron');
+            if (!c) return;
+            const open = c.style.display !== 'none';
+            c.style.display = open ? 'none' : 'block';
+            if (ch) ch.style.transform = open ? '' : 'rotate(180deg)';
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // PART 2D: STANDARD OUTCOME
         // ═══════════════════════════════════════════════════════════
         function showStandardOutcome() {
@@ -6804,7 +7951,7 @@
             <button class="btn btn-secondary" onclick="location.reload()" style="margin-top:16px;height:48px;font-size:0.875rem;opacity:0.7;">${t('std_new_assessment')}</button>
             </div>`;
             goToPage('outcome-std');
-            submitToBackend().catch(() => {});
+            submitToBackend().catch(() => { });
             startPhysicianPolling(5, 'expertLoopStd');
             // Request GPS silently, then start live tracking so STANDARD patients appear on map
             _requestGPSSilent(() => startLiveTracking());
@@ -6845,7 +7992,7 @@
             <button class="btn btn-secondary" onclick="location.reload()" style="margin-top:16px;height:48px;font-size:0.875rem;opacity:0.7;">${t('nurg_new_assessment')}</button>
             </div>`;
             goToPage('outcome-nurg');
-            submitToBackend().catch(() => {});
+            submitToBackend().catch(() => { });
             startPhysicianPolling(15, 'expertLoopNurg');
             // Request GPS silently, then start live tracking so NON_URGENT patients appear on map
             _requestGPSSilent(() => startLiveTracking());
@@ -6876,7 +8023,7 @@
                         ambulance_to_patient_eta: S.ambEtaMinutes || 10
                     })
                 });
-            } catch(e) { console.warn('Ambulance request PATCH failed:', e); }
+            } catch (e) { console.warn('Ambulance request PATCH failed:', e); }
         }
 
         async function submitToBackend() {
@@ -6910,7 +8057,7 @@
                         ambulance_to_patient_eta: S.ambEtaMinutes || null
                     })
                 });
-            } catch(e) { console.warn('Backend submit failed (non-critical):', e); S._submitted = false; }
+            } catch (e) { console.warn('Backend submit failed (non-critical):', e); S._submitted = false; }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -6922,38 +8069,33 @@
         let _pollSessionRegNumber = null;
 
         function startPhysicianPolling(intervalSec, containerId) {
-            // Clear any previous poll (previous patient / previous flow)
             if (_physicianPollInterval) clearInterval(_physicianPollInterval);
             _physicianPollInterval = null;
-            // Always reset session token so polling uses the current S.regNumber,
-            // not one from a previous flow (e.g. URGENT triage page → result page).
             _pollSessionRegNumber = null;
 
             const container = document.getElementById(containerId);
             if (!container) return;
-            const lvl = normalizeTriage((S.assessment || {}).triage_level);
-            const meta = MTS_META[lvl] || MTS_META.URGENT;
-            container.innerHTML = `
-            <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:16px;" id="physicianReviewCard_${containerId}">
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                    <div style="width:10px;height:10px;border-radius:50%;background:#30D158;box-shadow:0 0 8px #30D158;animation:elegant-pulse 2s infinite ease-in-out;flex-shrink:0;"></div>
-                    <div style="font-size:0.88rem;font-weight:800;color:var(--text);">${t('phys_review_active')}</div>
-                </div>
-                <div style="font-size:0.82rem;color:var(--text-2);line-height:1.5;">&#x23F3; ${t('phys_review_sub')}</div>
-                <div id="physicianDecisionArea_${containerId}"></div>
-            </div>`;
+            
+            // Initial Timeline State
+            if (!S._timelineEvents || S._timelineEvents.length === 0) {
+                S._timelineEvents = [{
+                    type: 'sent',
+                    title: t('rs_timeline_sent'),
+                    time: new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'}),
+                    status: 'completed'
+                }];
+            }
+            
+            _renderAssTimeline(containerId);
 
             let polls = 0;
-            // Track the timestamp of the last shown physician decision to avoid
-            // showing the same update twice (de-duplication across poll ticks).
             let _lastShownTs = null;
-            let _lastDoctorAssigned = null; // for doctor assignment notification
+            let _lastDoctorAssigned = null;
 
             function _doPoll() {
                 polls++;
-                // Poll for up to ~60 min (720 × 5s ticks or 240 × 15s ticks after first decision)
                 if (polls > 720) { clearInterval(_physicianPollInterval); return; }
-                if (!S.regNumber) return; // submitToBackend still in flight
+                if (!S.regNumber) return;
                 if (!_pollSessionRegNumber) _pollSessionRegNumber = S.regNumber;
                 if (_pollSessionRegNumber !== S.regNumber) {
                     clearInterval(_physicianPollInterval); return;
@@ -6964,154 +8106,531 @@
                         if (!data) return;
                         if (_pollSessionRegNumber !== S.regNumber) return;
 
-                        // ── Doctor assignment notification ───────────────────
+                        // ── Doctor assignment ───────────────────
                         const docName = (data.assigned_doctor || '').split('||')[0].trim();
-                        const docAt = data.doctor_assigned_at || null;
                         if (docName && docName !== _lastDoctorAssigned) {
                             _lastDoctorAssigned = docName;
-                            _showDoctorAssignedBanner(docName, docAt, containerId);
+                            const assignedAt = data.doctor_assigned_at || new Date().toISOString();
+                            const timeStr = (() => { try { let s = String(assignedAt).replace(' ', 'T'); if (!/Z$/.test(s)) s+='Z'; return new Date(s).toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'}); } catch { return ''; } })();
+                            
+                            const safeName = docName.startsWith('Dr.') ? docName : 'Dr. ' + docName;
+                            const photoFilename = safeName.replace(/Dr\.\s*/i, 'Dr.').replace(/\s+/g, '_') + '.png';
+                            const photoUrl = `/doctor_photos/${photoFilename}`;
+                            
+                            // Add to timeline
+                            S._timelineEvents.push({
+                                type: 'assigned',
+                                title: t('rs_timeline_assigned'),
+                                sub: safeName,
+                                time: timeStr,
+                                status: 'completed',
+                                photo: data.doctor_photo || photoUrl
+                            });
+                            _renderAssTimeline(containerId);
+                            _ensureDocChatPanel();
+                            const nameEl = document.getElementById('docChatDocName');
+                            if (nameEl) nameEl.textContent = safeName;
+                            const photoEl = document.getElementById('docChatDocPhoto');
+                            if (photoEl) {
+                                photoEl.innerHTML = `<img src="${data.doctor_photo || photoUrl}" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(docName)}&backgroundColor=b6e3f4';" style="width:100%; height:100%; object-fit:cover;">`;
+                            }
                         }
 
                         const action = (data.physician_decision || '').toUpperCase();
                         const ambStatus = data.ambulance_status || null;
 
-                        // ── Ambulance dispatch approval ────────────────────
-                        if ((ambStatus === 'AMBULANCE' || action === 'AMBULANCE') && !S._ambDispatched) {
-                            S._ambDispatched = true;
-                            if (S._waitingForAmbulance) {
-                                // Staff approved → stop waiting, show tracking
-                                if (data.amb_eta_patient) S.ambEtaMinutes = data.amb_eta_patient;
-                                showAmbulanceTracking(S.ambIsImmediate || false);
-                            }
+                        if ((ambStatus === 'AMBULANCE' || action === 'AMBULANCE') && !S._ambTimelineTriggered) {
+                            S._ambTimelineTriggered = true;
+                            _pushTimelineEvent('ambulance_dispatched', t('rs_timeline_amb_disp'));
+                        }
+
+                        if (!action) return;
+
+                        if (action === 'MESSAGE') {
+                            const msgNote = data.physician_note_translated || data.physician_note || '';
+                            const noteKey = msgNote + (data.override_timestamp || '');
+                            if (noteKey === _lastShownTs) return;
+                            _lastShownTs = noteKey;
+                            _injectDoctorMsgInChat(containerId, msgNote, data.override_timestamp || data.updated_at);
                             return;
                         }
 
-                        // 'AMBULANCE_REQUEST' is pending — skip for physician decision display
-                        if (!action || action === 'AMBULANCE' || action === 'AMBULANCE_REQUEST') return;
-
-                        // De-duplicate on note CONTENT, not timestamp.
-                        // updated_at changes every time the movement thread repositions the
-                        // patient — making timestamp-based de-dup fire on every movement tick.
                         const latestEntry = (data.physician_note || '').split('\n---\n')[0].trim();
                         const noteKey = latestEntry || action;
                         if (noteKey === _lastShownTs) return;
                         _lastShownTs = noteKey;
 
-                        // Slow down polling to 15 s after the first real decision
-                        // (doctor may still make further changes)
                         clearInterval(_physicianPollInterval);
                         _physicianPollInterval = setInterval(_doPoll, 15000);
-                        polls = 0; // reset counter so we keep polling for 60 more min
+                        polls = 0;
 
                         handlePhysicianDecision(data, containerId);
                     })
-                    .catch(() => { /* silent */ });
+                    .catch(() => { });
             }
-
             _physicianPollInterval = setInterval(_doPoll, intervalSec * 1000);
         }
 
         function handlePhysicianDecision(data, containerId) {
-            const card = document.getElementById(`physicianReviewCard_${containerId}`);
-            if (card) {
-                card.style.transition = 'opacity 0.5s';
-                card.style.opacity = '0';
-                setTimeout(() => { card.style.display = 'none'; showPhysicianDecisionCard(data, containerId); }, 500);
-            } else {
-                showPhysicianDecisionCard(data, containerId);
-            }
+            showPhysicianDecisionCard(data, containerId);
         }
 
-        function showPhysicianDecisionCard(data, containerId) {
+                function showPhysicianDecisionCard(data, containerId) {
             const decision = (data.physician_decision || '').toUpperCase();
             const newLvl = data.new_triage_level ? normalizeTriage(data.new_triage_level) : normalizeTriage(data.ai_triage_level);
-            // Use server-translated note if available (translated to patient's language).
-            // Fall back to parsing the raw note (strips timestamp/action prefix).
             let note = data.physician_note_translated || null;
             if (!note) {
                 const _rawNote = data.physician_note || '';
                 const _latestEntry = _rawNote.split('\n---\n')[0].trim();
-                const _noteMatch = _latestEntry.match(/^\[.*?\]\s*\[.*?\]\s*([\s\S]+)$/);
+                const _noteMatch = _latestEntry.match(/^\\[.*?\\]\s*\\[.*?\\]\s*([\s\S]+)$/);
                 note = (_noteMatch ? _noteMatch[1].trim() : _latestEntry) || null;
             }
             const meta = MTS_META[newLvl] || MTS_META.URGENT;
+            const timeStr = new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'});
 
-            // Always update S so any subsequent navigation shows the physician-confirmed level
             if (newLvl) {
                 S.assessment = S.assessment || {};
                 S.assessment.triage_level = newLvl;
             }
+
+            // Push to Timeline
+            let iconText = "👨‍⚕️ Doktor Kararı";
+            let subText = "Doktor tarafından bilgileriniz incelendi ve aciliyet seviyeniz onaylandı";
+            if (decision === 'UPGRADE') subText = "Doktor tarafından bilgileriniz incelendi ve aciliyet seviyeniz yükseltildi";
+            if (decision === 'DOWNGRADE') subText = "Doktor tarafından bilgileriniz incelendi ve aciliyet seviyeniz düşürüldü";
+            if (decision === 'ADJUST') subText = "Doktor tarafından bilgileriniz incelendi ve aciliyet seviyeniz güncellendi";
+            const dupe = (S._timelineEvents || []).find(e => e.type === 'decision' && e.sub === subText);
+            if (!dupe) {
+                S._timelineEvents.push({
+                    type: 'decision', title: iconText, sub: subText, time: timeStr, status: 'completed', meta: meta, isUpgrade: decision === 'UPGRADE'
+                });
+            }
+            _renderAssTimeline(containerId);
+
+            _syncDashboardWithDecision(data, newLvl);
+        }
+
+        function _renderAssTimeline(containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
-
-            let icon, msgText;
-            if (decision === 'APPROVE')    { icon = '&#x2705;'; msgText = `${t('phys_approved_msg')} <strong>${tLevel(newLvl)}</strong>.`; }
-            else if (decision === 'UPGRADE')   { icon = '&#x26A0;&#xFE0F;'; msgText = `<strong>${t('phys_upgraded_msg')}</strong> <strong>${tLevel(newLvl)}</strong>.`; }
-            else                            { icon = '&#x2139;&#xFE0F;'; msgText = `${t('phys_adjusted_msg')} <strong>${tLevel(newLvl)}</strong>.`; }
-
-            const decDiv = document.createElement('div');
-            decDiv.className = 'override-notification';
-            const replyDivId = `patReply_${containerId}`;
-            decDiv.innerHTML = `
-            <div style="background:${meta.color};border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px;color:${meta.textColor};" ${decision === 'UPGRADE' ? 'class="upgrade-pulse"' : ''}>
-                <div style="font-size:1rem;font-weight:800;margin-bottom:8px;">${icon} ${msgText}</div>
-                <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.2);border-radius:99px;padding:4px 13px;font-size:0.78rem;font-weight:800;">${meta.emoji} ${tLevel(newLvl)}</div>
-                ${note ? `<div style="margin-top:12px;background:rgba(255,255,255,0.15);border-radius:10px;padding:12px;font-size:0.85rem;line-height:1.5;"><strong>&#x1F4CB; ${t('phys_note_label')}:</strong> ${escHtml(note)}</div>` : ''}
-            </div>
-            <!-- Patient reply box -->
-            <div id="${replyDivId}" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:14px;">
-                <div style="font-size:0.72rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">&#x1F4AC; ${t('reply_to_doctor') || 'Reply to Doctor'}</div>
-                <textarea id="patReplyText_${containerId}" placeholder="${t('reply_placeholder') || 'Type your message…'}" style="width:100%;min-height:70px;resize:vertical;background:var(--input-bg,rgba(255,255,255,0.05));border:1px solid var(--border);border-radius:10px;padding:10px;font-size:0.85rem;color:var(--text);font-family:var(--font);line-height:1.5;box-sizing:border-box;"></textarea>
-                <button onclick="_sendPatientReply('${containerId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:44px;margin-top:8px;background:var(--primary);color:white;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font);font-size:0.85rem;font-weight:700;">&#x2709;&#xFE0F; ${t('reply_send') || 'Send Reply'}</button>
-                <div id="patReplySent_${containerId}" style="display:none;color:#30D158;font-size:0.8rem;text-align:center;margin-top:6px;">&#x2705; ${t('reply_sent') || 'Message sent to doctor'}</div>
+            let html = `
+            <div style="background:var(--card); border:1.5px solid var(--border); border-radius:var(--r-lg); padding:20px; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+                    <div style="width:10px; height:10px; border-radius:50%; background:#30D158; box-shadow:0 0 8px #30D158; animation:elegant-pulse 2s infinite ease-in-out;"></div>
+                    <div style="font-size:1.05rem; font-weight:800; color:var(--text);">${t('rs_timeline_title')}</div>
+                </div>
+                <div class="stepper-wrap" style="position:relative; padding-left:26px;">
+                    <div style="position:absolute; left:5px; top:5px; bottom:5px; width:2px; background:var(--border);"></div>
+                    ${(S._timelineEvents || []).map((ev, idx) => {
+                        const isLast = idx === S._timelineEvents.length - 1;
+                        let dotColor = 'var(--primary)';
+                        let bg = 'var(--card-alt)';
+                        if (ev.type === 'decision') {
+                            dotColor = ev.meta ? ev.meta.color : 'var(--success)';
+                            bg = ev.isUpgrade ? `${dotColor}25` : 'var(--card-alt)';
+                        }
+                        return `
+                        <div class="step-item ${isLast ? 'active' : ''}" style="position:relative; margin-bottom:22px;">
+                            <div style="position:absolute; left:-26px; top:4px; width:12px; height:12px; border-radius:50%; background:${dotColor}; border:3px solid var(--card); z-index:2; ${isLast ? 'box-shadow:0 0 8px ' + dotColor : ''}"></div>
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+                                <div style="font-size:0.88rem; font-weight:800; color:var(--text);">${ev.title}</div>
+                                <div style="font-size:0.7rem; font-weight:600; color:var(--text-3); opacity:0.7;">${ev.time}</div>
+                            </div>
+                            ${ev.type === 'assigned' ? `
+                            <div style="display:flex; align-items:center; gap:10px; margin-top:10px; padding:10px; background:rgba(34,211,238,0.08); border:1px solid rgba(34,211,238,0.2); border-radius:14px;">
+                                <div style="width:34px; height:34px; border-radius:8px; background:rgba(34,211,238,0.15); border:1px solid rgba(34,211,238,0.3); overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                                    ${ev.photo ? `<img src="${ev.photo}" style="width:100%; height:100%; object-fit:cover;">` : '🧑‍⚕️'}
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="font-size:0.85rem; font-weight:700; color:#22d3ee;">${ev.sub}</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${ev.type === 'decision' ? `
+                            <div style="margin-top:8px; padding:10px 14px; background:${bg}; border-radius:12px; border:1px solid ${dotColor}30;">
+                                <div style="font-size:0.85rem; font-weight:700; color:${ev.isUpgrade ? ev.meta.color : 'var(--text)'};">${ev.sub}</div>
+                            </div>
+                            ` : ''}
+                            ${ev.type === 'ambulance_dispatched' ? `
+                            <div style="margin-top:10px; padding:12px 14px; background:rgba(48,209,88,0.1); border:1px solid rgba(48,209,88,0.25); border-radius:14px;">
+                                <div style="font-size:0.85rem; font-weight:800; color:#30D158; margin-bottom:10px;">🚑 ${ev.title}</div>
+                                <button onclick="toggleAmbulanceLiveModal()" class="btn btn-primary" style="height:38px; font-size:0.75rem; font-weight:900; background:#30D158; border:none; box-shadow:0 4px 12px rgba(48,209,88,0.3); display:flex; align-items:center; gap:8px;">
+                                    <i data-lucide="map-pin" style="width:16px; height:16px;"></i> ${t('rs_timeline_track_btn')}
+                                </button>
+                            </div>
+                            ` : ''}
+                            ${(ev.type === 'shared' || ev.type === 'amb_req') ? `
+                            <div style="margin-top:4px; font-size:0.8rem; color:var(--text-2); line-height:1.4;">
+                                ${ev.sub || ''}
+                            </div>
+                            ` : ''}
+                            ${ev.type === 'sent' && !isLast ? '' : ev.type === 'sent' ? `
+                            <div style="font-size:0.82rem; color:var(--text-2); line-height:1.4; margin-top:4px;">&#x23F3; ${t('phys_review_sub')}</div>
+                            ` : ''}
+                        </div>`;
+                    }).join('')}
+                </div>
             </div>`;
-            container.appendChild(decDiv);
+            container.innerHTML = html;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
 
-            if (decision === 'UPGRADE' && newLvl) {
-                setTimeout(() => {
-                    const actionDiv = document.createElement('div');
-                    actionDiv.className = 'override-notification physician-card-anim';
-                    let actionBtn = '';
-                    if (newLvl === 'IMMEDIATE') actionBtn = `<button onclick="showImmediateAlert()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;background:${meta.color};color:${meta.textColor};border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font);font-size:0.9rem;font-weight:800;">${t('phys_btn_immediate')}</button>`;
-                    else if (newLvl === 'EMERGENCY') actionBtn = `<button onclick="showEmergencyTransportQuestion()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;background:${meta.color};color:${meta.textColor};border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font);font-size:0.9rem;font-weight:800;">${t('phys_btn_emergency')}</button>`;
-                    else if (newLvl === 'URGENT') actionBtn = `<button onclick="goToPage('triage');renderTriageBanner();requestGPS();" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;background:${meta.color};color:${meta.textColor};border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font);font-size:0.9rem;font-weight:800;">${t('phys_btn_urgent')}</button>`;
-                    if (actionBtn) {
-                        actionDiv.innerHTML = `<div style="background:var(--card);border:2px solid ${meta.color};border-radius:var(--r-lg);padding:16px 20px;margin-bottom:14px;"><div style="font-size:0.88rem;font-weight:800;color:${meta.color};margin-bottom:8px;">${t('phys_action_required')}</div><div style="font-size:0.85rem;color:var(--text-2);line-height:1.5;margin-bottom:12px;">${escHtml(getDefaultReasoning(newLvl))}</div>${actionBtn}</div>`;
-                        container.appendChild(actionDiv);
-                    }
-                }, 600);
+        function _syncDashboardWithDecision(data, lvl) {
+            const txtEl = document.getElementById('ass_directive_text');
+            const statusEl = document.getElementById('ass_status_directive');
+            if (!txtEl || !statusEl) return;
+
+            const decision = (data.physician_decision || '').toUpperCase();
+            const meta = MTS_META[lvl] || MTS_META.URGENT;
+
+            if (decision === 'UPGRADE') {
+                txtEl.innerHTML = `👨‍⚕️ ${tLevel(lvl)} — ${t('phys_upgraded_msg').split(' ')[0]}`;
+            } else if (decision === 'DOWNGRADE') {
+                txtEl.innerHTML = `👨‍⚕️ ${tLevel(lvl)} — ${t('phys_adjusted_msg').split(' ')[0]}`;
+            } else if (decision === 'APPROVE') {
+                txtEl.innerHTML = `👨‍⚕️ ${tLevel(lvl)} — ${t('phys_approved_msg').split(' ')[0]}`;
+            } else if (decision === 'AMBULANCE') {
+                txtEl.innerHTML = `🚑 ${t('rs_dash_directive_ambulance')}`;
+                txtEl.style.color = '#30D158';
+            } else if (decision === 'AMBULANCE_REQUEST') {
+                txtEl.innerHTML = `🚑 ${t('amb_waiting_approval')}`;
+                txtEl.style.color = '#FF8C00';
+            } else {
+                txtEl.innerHTML = `👨‍⚕️ ${tLevel(lvl)} — ${t('phys_adjusted_msg').split(' ')[0]}`;
             }
+            txtEl.style.color = meta.color;
+
+            if (lvl === 'URGENT' || lvl === 'EMERGENCY' || lvl === 'IMMEDIATE') {
+                statusEl.innerHTML = `<button onclick="openNavigationToHospital()" style="width:100%; background:none; border:none; color:inherit; font-weight:800; font-family:inherit; cursor:pointer; text-align:left; display:flex; align-items:center; gap:8px;">
+                                        <i data-lucide="navigation" style="width:20px;height:20px;"></i> ${t('rs_dash_directive_navigate')}
+                                     </button>`;
+            } else {
+                statusEl.textContent = t('ass_gp_title');
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         // ── Doctor assignment notification banner ───────────────────────────
+        // ── Global doctor chat panel (single floating instance) ──────────────
+        let _docChatOpen = false;
+        let _chatMediaRec = null, _chatAudioChunks = [], _chatIsRecording = false;
+
+        function _ensureDocChatPanel() {
+            if (document.getElementById('docChatPanel')) return;
+            const panel = document.createElement('div');
+            panel.id = 'docChatPanel';
+            panel.style.cssText = `
+                position:absolute;bottom:0;left:0;right:0;z-index:9999;
+                display:none;flex-direction:column;
+                background:var(--surface,#0f172a);
+                border-top:2px solid rgba(34,211,238,0.4);
+                border-radius:20px 20px 0 0;
+                max-height:75vh;min-height:320px;
+                transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
+                box-shadow:0 -8px 40px rgba(0,0,0,0.5);
+                font-family:var(--font,Inter,sans-serif);
+            `;
+            panel.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid rgba(148,163,184,0.15);flex-shrink:0;">
+                    <div id="docChatDocPhoto" style="width:38px;height:38px;border-radius:10px;overflow:hidden;background:rgba(148,163,184,0.2);display:flex;align-items:center;justify-content:center;border:1px solid rgba(34,211,238,0.3);">🧑‍⚕️</div>
+                    <div style="flex:1;">
+                        <div id="docChatDocName" style="font-size:0.9rem;font-weight:800;color:#22d3ee;">Doctor</div>
+                        <div id="docChatDocTime" style="font-size:0.72rem;color:var(--text-3,#64748b);margin-top:1px;"></div>
+                    </div>
+                    <button onclick="toggleDoctorChatPanel()" style="width:32px;height:32px;border-radius:50%;background:rgba(148,163,184,0.15);border:none;color:var(--text-2,#94a3b8);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">✕</button>
+                </div>
+                <div id="docChatMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;"></div>
+                <div style="padding:12px 14px;border-top:1px solid rgba(148,163,184,0.12);flex-shrink:0;display:flex;gap:10px;align-items:flex-end;">
+                    <textarea id="docChatInput" rows="2" placeholder="${t('ass_doctor_msg_placeholder')}"
+                        style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(148,163,184,0.25);border-radius:14px;padding:10px 14px;font-size:0.88rem;color:var(--text,#e2e8f0);resize:none;font-family:var(--font);line-height:1.4;max-height:90px;"
+                        onfocus="this.style.borderColor='rgba(34,211,238,0.5)'" onblur="this.style.borderColor='rgba(148,163,184,0.25)'"
+                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDoctorChatMsg()}"></textarea>
+                    
+                    <!-- Voice Input Button -->
+                    <button id="docChatMicBtn" onclick="_toggleChatMic()" style="width:44px;height:44px;border-radius:50%;background:rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.2);color:#22d3ee;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;transition:all 0.2s;">🎤</button>
+                    
+                    <button id="docChatSendBtn" onclick="sendDoctorChatMsg()" style="width:44px;height:44px;border-radius:50%;background:#22d3ee;border:none;color:#0f172a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">➤</button>
+                </div>
+            `;
+            // Anchor to the app wrapper, not raw body, so it stays inside the app
+            const appRoot = document.querySelector('.app') || document.getElementById('app') || document.body;
+            appRoot.appendChild(panel);
+        }
+
+        let _ambModalOpen = false;
+        function toggleAmbulanceLiveModal() {
+            if (!document.getElementById('ambLiveModal')) {
+                const modal = document.createElement('div');
+                modal.id = 'ambLiveModal';
+                modal.style.cssText = `
+                    position:fixed; top:0; left:0; right:0; bottom:0; z-index:10000;
+                    background:rgba(0,0,0,0.85); backdrop-filter:blur(10px);
+                    display:flex; flex-direction:column; align-items:center; justify-content:center;
+                    opacity:0; transition:opacity 0.3s ease; pointer-events:none;
+                `;
+                modal.innerHTML = `
+                    <div style="width:90%; max-width:400px; background:var(--card); border:1px solid rgba(48,209,88,0.3); border-radius:32px; padding:32px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.5); position:relative;">
+                        <button onclick="toggleAmbulanceLiveModal()" style="position:absolute; top:20px; right:20px; width:36px; height:36px; border-radius:50%; background:rgba(148,163,184,0.1); border:none; color:var(--text-2); cursor:pointer; font-size:1.2rem;">✕</button>
+                        <div style="width:64px; height:64px; border-radius:20px; background:rgba(48,209,88,0.1); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; color:#30D158;">
+                            <i data-lucide="ambulance" style="width:32px; height:32px;"></i>
+                        </div>
+                        <div style="font-size:1.4rem; font-weight:900; color:var(--text); margin-bottom:8px;">${t('rs_timeline_amb_disp')}</div>
+                        <div style="font-size:0.95rem; color:var(--text-3); line-height:1.5; margin-bottom:24px;">Ambulans ekibi yola çıktı ve size doğru geliyor.</div>
+                        
+                        <div style="background:var(--card-alt); border-radius:20px; padding:20px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
+                            <div style="text-align:left;">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--text-3); text-transform:uppercase;">Tahmini Varış</div>
+                                <div style="font-size:1.5rem; font-weight:900; color:#30D158;">~${S.ambEtaMinutes || 8} dk</div>
+                            </div>
+                            <div style="width:48px; height:48px; border-radius:12px; background:rgba(48,209,88,0.1); display:flex; align-items:center; justify-content:center;">
+                                <i data-lucide="timer" style="width:24px; height:24px; color:#30D158;"></i>
+                            </div>
+                        </div>
+
+                        <div style="height:120px; background:rgba(148,163,184,0.1); border-radius:16px; margin-bottom:24px; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;">
+                            <div style="position:absolute; top:20px; left:20px; width:12px; height:12px; background:#ef4444; border-radius:50%; box-shadow:0 0 8px #ef4444;"></div>
+                            <div style="width:100%; height:2px; background:rgba(148,163,184,0.2);"></div>
+                            <i data-lucide="ambulance" style="width:24px; height:24px; color:#30D158; position:absolute; right:40px; top:50%; transform:translateY(-50%);"></i>
+                            <div style="position:absolute; bottom:12px; font-size:0.7rem; font-weight:800; color:var(--text-3); text-transform:uppercase; letter-spacing:0.05em;">CANLI KONUM TAKİBİ AKTİF</div>
+                        </div>
+
+                        <button onclick="toggleAmbulanceLiveModal()" class="btn btn-primary" style="width:100%; height:54px; font-weight:900; background:#30D158; border:none;">PENCEREYİ KAPAT</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            const modal = document.getElementById('ambLiveModal');
+            _ambModalOpen = !_ambModalOpen;
+            modal.style.opacity = _ambModalOpen ? '1' : '0';
+            modal.style.pointerEvents = _ambModalOpen ? 'auto' : 'none';
+        }
+
         function _showDoctorAssignedBanner(docName, assignedAt, containerId) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            const timeStr = assignedAt ? (() => {
+            // Function no longer needed as updates are handled via Live Timeline
+            // but kept as an empty stub to prevent legacy reference errors if any.
+        }
+
+        function toggleDoctorChatPanel() {
+            _ensureDocChatPanel();
+            const panel = document.getElementById('docChatPanel');
+            if (!panel) return;
+            _docChatOpen = !_docChatOpen;
+            
+            if (_docChatOpen) {
+                panel.style.display = 'flex';
+                // Force reflow
+                void panel.offsetWidth;
+                panel.style.transform = 'translateY(0)';
+                
+                const badge = document.querySelector('.chat-badge');
+                if (badge) badge.remove();
+
+                setTimeout(() => {
+                    const inp = document.getElementById('docChatInput');
+                    if (inp) inp.focus();
+                    const msgs = document.getElementById('docChatMessages');
+                    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+                }, 350);
+            } else {
+                panel.style.transform = 'translateY(100%)';
+                setTimeout(() => {
+                    if (!_docChatOpen) panel.style.display = 'none';
+                }, 320);
+            }
+        }
+
+        // Legacy alias
+        function toggleDoctorChat(chatId) { toggleDoctorChatPanel(); }
+
+        // ── Chat voice-to-text implementation ───────────────────────────────
+        async function _toggleChatMic() {
+            const btn = document.getElementById('docChatMicBtn');
+            const input = document.getElementById('docChatInput');
+            if (!btn || !input) return;
+
+            if (_chatIsRecording) {
+                // Stop recording
+                if (_chatMediaRec && _chatMediaRec.state !== 'inactive') {
+                    _chatMediaRec.stop();
+                }
+                _chatIsRecording = false;
+                btn.textContent = '🎤';
+                btn.style.background = 'rgba(148,163,184,0.15)';
+                btn.style.color = '#22d3ee';
+                btn.style.animation = '';
+                return;
+            }
+
+            // Start recording
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mime = ['audio/webm','audio/ogg','audio/mp4'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+                _chatMediaRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+                _chatAudioChunks = [];
+                _chatIsRecording = true;
+
+                _chatMediaRec.ondataavailable = e => { if (e.data.size > 0) _chatAudioChunks.push(e.data); };
+                _chatMediaRec.onstop = async () => {
+                    // Small delay to ensure last chunks are in list
+                    await new Promise(r => setTimeout(r, 100));
+                    const blob = new Blob(_chatAudioChunks, { type: 'audio/webm;codecs=opus' });
+                    // Visual feedback during processing
+                    btn.textContent = '⌛';
+                    
+                    try {
+                        const form = new FormData();
+                        form.append('audio', blob, 'chat_reply.webm');
+                        if (S.selectedLang || S.detectedLang) {
+                            form.append('lang', S.selectedLang || S.detectedLang);
+                        }
+                        const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
+                        const d = await r.json();
+                        if (d.text && d.text.trim()) {
+                            // Clear or append text? User said "transkript edilecek ve normal mesaja donusturulecek"
+                            // If they already have some text, we append.
+                            const old = input.value.trim();
+                            input.value = (old ? old + ' ' : '') + d.text.trim();
+                            input.focus();
+                        } else {
+                            toast(t('chat_mic_not_understood') || 'Could not understand audio', 'warn');
+                        }
+                    } catch (err) {
+                        console.error('Chat transcription error:', err);
+                        toast('Transcription failed', 'warn');
+                    } finally {
+                        btn.textContent = '🎤';
+                        stream.getTracks().forEach(t => t.stop());
+                    }
+                };
+
+                // Added small timeslice to get chunks more frequently
+                _chatMediaRec.start(200); 
+                btn.textContent = '🛑';
+                btn.style.background = '#ef4444';
+                btn.style.color = 'white';
+                // Inline pulse animation
+                btn.style.animation = 'pulse 1.5s infinite';
+            } catch (err) {
+                console.error('Chat mic access error:', err);
+                toast('Microphone access denied', 'warn');
+            }
+        }
+
+        async function sendDoctorChatMsg() {
+            const input = document.getElementById('docChatInput');
+            const text = (input ? input.value : '').trim();
+            if (!text) return;
+            if (input) { input.value = ''; input.disabled = true; }
+
+            // Wait for regNumber if still in-flight
+            if (!S.regNumber) {
+                await new Promise(resolve => {
+                    const iv = setInterval(() => { if (S.regNumber) { clearInterval(iv); resolve(); } }, 300);
+                    setTimeout(() => { clearInterval(iv); resolve(); }, 8000);
+                });
+            }
+            if (!S.regNumber) { if (input) input.disabled = false; return; }
+
+            try {
+                const r = await fetch(`${API}/api/patient/${encodeURIComponent(S.regNumber)}/reply`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                if (r.ok) {
+                    _addDocChatMsg('patient', text, new Date().toISOString());
+                }
+            } catch (_) {}
+            if (input) input.disabled = false;
+        }
+
+        function _addDocChatMsg(side, text, ts) {
+            _ensureDocChatPanel();
+            const msgArea = document.getElementById('docChatMessages');
+            if (!msgArea) return;
+            const timeStr = ts ? (() => {
                 try {
-                    let s = String(assignedAt).trim().replace(' ', 'T');
+                    let s = String(ts).trim().replace(' ', 'T');
                     if (!/Z$|[+-]\d{2}:?\d{2}$/.test(s)) s += 'Z';
-                    return new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    return new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 } catch { return ''; }
             })() : '';
-            const banner = document.createElement('div');
-            banner.className = 'physician-card-anim';
-            banner.innerHTML = `
-            <div style="background:rgba(34,211,238,0.08);border:1.5px solid rgba(34,211,238,0.35);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
-                <div style="font-size:1.4rem;flex-shrink:0;">&#x1F9D1;&#x200D;&#x2695;&#xFE0F;</div>
-                <div>
-                    <div style="font-size:0.88rem;font-weight:800;color:#22d3ee;">Dr. ${escHtml(docName)} ${t('doc_assigned_notif') || 'has been assigned to you'}</div>
-                    ${timeStr ? `<div style="font-size:0.78rem;color:var(--text-3);margin-top:2px;">&#x1F554; ${timeStr}</div>` : ''}
-                </div>
-            </div>`;
-            // Insert at top of container (before existing children)
-            container.insertBefore(banner, container.firstChild);
+            const isPatient = side === 'patient';
+            const div = document.createElement('div');
+            div.style.cssText = `display:flex;justify-content:${isPatient ? 'flex-end' : 'flex-start'};`;
+            div.innerHTML = `
+                <div style="max-width:82%;background:${isPatient ? 'rgba(34,211,238,0.15)' : 'rgba(255,255,255,0.07)'};border:1px solid ${isPatient ? 'rgba(34,211,238,0.3)' : 'rgba(148,163,184,0.2)'};border-radius:${isPatient ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};padding:10px 14px;font-size:0.85rem;">
+                    <div style="font-size:0.68rem;font-weight:700;color:${isPatient ? '#22d3ee' : 'rgba(148,163,184,0.8)'};margin-bottom:4px;">${isPatient ? '🙋 ' + t('you') || 'You' : '👨‍⚕️ Doctor'}${timeStr ? ' · ' + timeStr : ''}</div>
+                    <div style="color:var(--text,#e2e8f0);line-height:1.5;">${escHtml(text)}</div>
+                </div>`;
+            msgArea.appendChild(div);
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }
+
+        /** Inject doctor's note into the unified chat panel */
+        function _injectDoctorMsgInChat(containerId, noteText, noteTime) {
+            _ensureDocChatPanel();
+            const msgArea = document.getElementById('docChatMessages');
+            if (!msgArea) return;
+            // Avoid duplicates
+            if ([...msgArea.querySelectorAll('[data-doc-note]')].some(n => n.dataset.docNote === noteText)) return;
+            const timeStr = noteTime ? (() => {
+                try {
+                    let s = String(noteTime).trim().replace(' ', 'T');
+                    if (!/Z$|[+-]\d{2}:?\d{2}$/.test(s)) s += 'Z';
+                    return new Date(s).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
+                } catch { return ''; }
+            })() : '';
+            const wrap = document.createElement('div');
+            wrap.dataset.docNote = noteText;
+            wrap.style.cssText = 'display:flex;justify-content:flex-start;';
+            wrap.innerHTML = `
+                <div style="max-width:82%;background:rgba(255,255,255,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:0.85rem;">
+                    <div style="font-size:0.68rem;font-weight:700;color:#22d3ee;margin-bottom:4px;">👨‍⚕️ Doctor${timeStr ? ' · ' + timeStr : ''}</div>
+                    <div style="color:var(--text,#e2e8f0);line-height:1.5;">${escHtml(noteText)}</div>
+                </div>`;
+            msgArea.appendChild(wrap);
+            msgArea.scrollTop = msgArea.scrollHeight;
+
+            if (!_docChatOpen) {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.15);
+                } catch(e) {}
+                
+                const tile = document.querySelector('.ass-tile.report');
+                if (tile) {
+                    let badge = tile.querySelector('.chat-badge');
+                    if (!badge) {
+                        badge = document.createElement('div');
+                        badge.className = 'chat-badge';
+                        badge.style.cssText = 'position:absolute; top:-6px; right:-6px; background:#ef4444; color:white; font-size:12px; font-weight:900; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; box-shadow:0 0 10px rgba(239,68,68,0.5); z-index:10; animation:elegant-pulse 1s infinite;';
+                        badge.textContent = '1';
+                        if (getComputedStyle(tile).position === 'static') tile.style.position = 'relative';
+                        tile.appendChild(badge);
+                    } else {
+                        badge.textContent = parseInt(badge.textContent||'1') + 1;
+                    }
+                }
+            }
         }
 
         // ── Patient reply sender ────────────────────────────────────────────
         async function _sendPatientReply(containerId) {
             const textarea = document.getElementById(`patReplyText_${containerId}`);
-            const sentEl   = document.getElementById(`patReplySent_${containerId}`);
+            const sentEl = document.getElementById(`patReplySent_${containerId}`);
             if (!textarea) return;
 
             const text = (textarea.value || '').trim();
@@ -7185,5 +8704,3 @@
 </body>
 
 </html>
-
-

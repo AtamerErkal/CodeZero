@@ -883,6 +883,19 @@
                 </div>
               </article>
 
+              <!-- 🚑 Ambulance Requests Panel -->
+              <div id="amb-requests-panel" class="hidden rounded-2xl border border-amber-500/40 bg-amber-500/5 overflow-hidden">
+                <div class="flex items-center gap-3 px-4 py-3 border-b border-amber-500/20 bg-amber-500/8">
+                  <span class="text-lg">🚑</span>
+                  <div class="flex-1">
+                    <p class="text-sm font-bold text-amber-400">Ambulance Dispatch Requests</p>
+                    <p class="text-xs text-text3 mt-0.5" id="amb-req-desc">Patients awaiting dispatch approval</p>
+                  </div>
+                  <span id="amb-req-count" class="text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full px-2.5 py-0.5 animate-pulse">0</span>
+                </div>
+                <div id="amb-req-list" class="divide-y divide-amber-500/10"></div>
+              </div>
+
               <!-- Needs Assignment Banner -->
               <div id="unassigned-banner" class="hidden rounded-2xl border border-emer/30 bg-emer/5 p-4">
                 <div class="flex items-center justify-between gap-3">
@@ -1577,6 +1590,61 @@
       return state.patientActions[patientId] || [];
     }
 
+    // ── Patient-reply message history ────────────────────────────────────────
+    // patientReplies[patientId] = [{text_de, ts}, ...]
+    const patientReplies = {};
+
+    async function fetchPatientReplies(patientId) {
+      try {
+        const res = await fetch(`/api/patient/${encodeURIComponent(patientId)}/status`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const msgs = data.patient_messages || [];
+        if (msgs.length) patientReplies[patientId] = msgs;
+      } catch (e) { /* silent */ }
+    }
+
+    function refreshMessageHistory(patientId) {
+      const actions = getPatientActions(patientId);
+      const doctorMessages = actions.filter(a => a.type === 'message_sent');
+      const replies = patientReplies[patientId] || [];
+      const messageHistoryEl = document.getElementById('messageHistory');
+      if (!messageHistoryEl) return;
+      if (!doctorMessages.length && !replies.length) return;
+
+      // Merge and sort by timestamp
+      const allItems = [
+        ...doctorMessages.map(a => ({ side: 'doctor', text: a.message, sender: a.sender || 'Doctor', ts: a.timestamp })),
+        ...replies.map(r => ({ side: 'patient', text: r.text_de, sender: '🙋 Patient', ts: r.ts })),
+      ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
+
+      messageHistoryEl.innerHTML = allItems.map(item => `
+        <div style="display:flex;flex-direction:column;align-items:${item.side === 'patient' ? 'flex-end' : 'flex-start'};margin-bottom:6px;">
+          <div style="max-width:85%;background:${item.side === 'patient' ? 'rgba(34,211,238,0.12)' : 'rgba(100,116,139,0.3)'};border:1px solid ${item.side === 'patient' ? 'rgba(34,211,238,0.3)' : 'rgba(100,116,139,0.4)'};border-radius:10px;padding:7px 10px;font-size:0.78rem;">
+            <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:3px;">
+              <span style="font-weight:700;color:${item.side === 'patient' ? '#22d3ee' : '#94a3b8'};">${h(item.sender)}</span>
+              <span style="color:#64748b;font-size:0.7rem;">${item.ts ? new Date(item.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</span>
+            </div>
+            <p style="margin:0;color:#cbd5e1;">${h(item.text)}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Poll for new patient replies while message modal is open
+    let _replyPollInterval = null;
+    function startReplyPolling(patientId) {
+      stopReplyPolling();
+      fetchPatientReplies(patientId).then(() => refreshMessageHistory(patientId));
+      _replyPollInterval = setInterval(() => {
+        fetchPatientReplies(patientId).then(() => refreshMessageHistory(patientId));
+      }, 8000);
+    }
+    function stopReplyPolling() {
+      if (_replyPollInterval) { clearInterval(_replyPollInterval); _replyPollInterval = null; }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     function calculatePatientStatistics(patientId) {
       const actions = getPatientActions(patientId);
       if (actions.length === 0) return null;
@@ -2135,7 +2203,8 @@
           const lat = p.latitude ?? p.location?.lat;
           const lon = p.longitude ?? p.location?.lon;
           const pid2 = p.patient_id || '';
-          const isAmb = p.transport_type === 'ambulance' || _demoAmbulanceSet.has(pid2);
+          const isAmb = p.transport_type === 'ambulance' || _demoAmbulanceSet.has(pid2)
+            || p.override_action === 'AMBULANCE' || p.override_action === 'AMBULANCE_REQUEST';
           const transportBadge = !isIncoming ? '<span class="text-text3 text-xs">—</span>'
             : isAmb
               ? `<span class="chip text-[11px] font-bold" style="color:#ef4444;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)">🚑 Ambulance</span>`
@@ -2180,7 +2249,8 @@
           const nm = p.full_name || p.patient_id;
           const photo = p.profile_photo_url || `https://i.pravatar.cc/80?u=${encodeURIComponent(pid)}`;
           const isArrived = p.status === 'arrived' || p.status === 'in_treatment' || p.status === 'discharged';
-          const hasAmb = !isArrived && (p.transport_type === 'ambulance' || _demoAmbulanceSet.has(pid));
+          const hasAmb = !isArrived && (p.transport_type === 'ambulance' || _demoAmbulanceSet.has(pid)
+            || p.override_action === 'AMBULANCE' || p.override_action === 'AMBULANCE_REQUEST');
           const size = (lvl === 'IMMEDIATE' || lvl === 'EMERGENCY') ? 18 : 13;
           const dur = size === 18 ? '1.2s' : '2.5s';
 
@@ -2205,11 +2275,31 @@
             ? `<span style="font-size:12px;font-weight:700;color:#10b981">✓ Arrived</span>`
             : `<span style="font-size:12px;font-weight:700;color:${p.eta_minutes != null && p.eta_minutes <= 5 ? '#ef4444' : col}">⏱ ETA ${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</span>`;
 
-          // For ambulance patients: compute ambulance position between hospital and patient
-          const ambEtaOrig = p.amb_eta_patient;
-          const ambProgress = (hasAmb && ambEtaOrig && p.eta_minutes != null)
-            ? Math.max(0, Math.min(0.95, 1 - p.eta_minutes / ambEtaOrig))
-            : null;
+          // For ambulance patients: compute bidirectional ambulance position
+          // Phase 1 (0→amb_eta_patient elapsed): hospital → patient (progress 0→1)
+          // Phase 2 (pickup, +5 min): stationary at patient (progress stays 1)
+          // Phase 3 (amb_eta_patient+5 → total elapsed): patient → hospital (progress 1→0)
+          const ambEtaOrig = p.amb_eta_patient; // one-way ETA
+          let ambProgress = null;
+          if (hasAmb && ambEtaOrig && p.amb_dispatch_at) {
+            try {
+              const dispatchMs = new Date(p.amb_dispatch_at).getTime();
+              const elapsedMin = (Date.now() - dispatchMs) / 60000;
+              const totalEta = 2 * ambEtaOrig + 5;
+              if (elapsedMin <= ambEtaOrig) {
+                ambProgress = Math.min(1, elapsedMin / ambEtaOrig);          // going TO patient
+              } else if (elapsedMin <= ambEtaOrig + 5) {
+                ambProgress = 1;                                               // at patient (loading)
+              } else {
+                const returnElapsed = elapsedMin - ambEtaOrig - 5;
+                ambProgress = Math.max(0, 1 - returnElapsed / ambEtaOrig);   // returning to hospital
+              }
+            } catch (_) {
+              ambProgress = hasAmb && ambEtaOrig && p.eta_minutes != null
+                ? Math.max(0, Math.min(0.95, 1 - p.eta_minutes / (2 * ambEtaOrig + 5)))
+                : null;
+            }
+          }
           const ambLat = ambProgress != null ? HOSPITAL_COORDS[0] + (lat - HOSPITAL_COORDS[0]) * ambProgress : null;
           const ambLon = ambProgress != null ? HOSPITAL_COORDS[1] + (lon - HOSPITAL_COORDS[1]) * ambProgress : null;
 
@@ -2369,6 +2459,7 @@
       filtered = sortPatients(filtered);
       renderPatientList(filtered);
       updateUnassignedBanner();
+      renderAmbulanceRequestsPanel();
     }
 
     function updateUnassignedBanner() {
@@ -2397,6 +2488,116 @@
       if (unassigned.length > 6) {
         listEl.innerHTML += `<span class="text-[10px] text-text3 self-center">+${unassigned.length - 6} more</span>`;
       }
+    }
+
+    // ── AMBULANCE DISPATCH PANEL ──────────────────────────────────
+    function renderAmbulanceRequestsPanel() {
+      const panel = document.getElementById('amb-requests-panel');
+      const listEl = document.getElementById('amb-req-list');
+      const countEl = document.getElementById('amb-req-count');
+      const descEl  = document.getElementById('amb-req-desc');
+      if (!panel || !listEl) return;
+
+      // Find patients with pending ambulance request
+      const pending = state.patients.filter(p => p.override_action === 'AMBULANCE_REQUEST');
+      // Also show recently dispatched ambulances (AMBULANCE) for monitoring
+      const dispatched = state.patients.filter(p => p.override_action === 'AMBULANCE' && p.status === 'incoming');
+
+      if (pending.length === 0 && dispatched.length === 0) {
+        panel.classList.add('hidden');
+        return;
+      }
+      panel.classList.remove('hidden');
+      if (countEl) countEl.textContent = pending.length;
+      if (descEl) descEl.textContent = pending.length > 0
+        ? `${pending.length} patient${pending.length > 1 ? 's' : ''} awaiting dispatch approval`
+        : 'All requests dispatched';
+
+      listEl.innerHTML = [
+        ...pending.map(p => _buildAmbReqRow(p, false)),
+        ...dispatched.map(p => _buildAmbReqRow(p, true)),
+      ].join('');
+    }
+
+    function _buildAmbReqRow(p, dispatched) {
+      const pid = p.patient_id;
+      const name = h(p.full_name || pid);
+      const lvl = normalizeTriage(p.triage_level);
+      const tc = TRIAGE_COLOR[lvl] || '#f59e0b';
+      const photo = p.profile_photo_url || `https://i.pravatar.cc/40?u=${encodeURIComponent(pid)}`;
+      const eta = p.amb_eta_patient || p.eta_minutes || '?';
+      const complaint = h((p.chief_complaint || '').substring(0, 50));
+      const loc = (p.location_lat && p.location_lon)
+        ? `${Number(p.location_lat).toFixed(4)}, ${Number(p.location_lon).toFixed(4)}`
+        : 'No GPS';
+
+      if (dispatched) {
+        const dispAt = p.amb_dispatch_at ? fmt24(p.amb_dispatch_at) : '—';
+        return `
+        <div class="flex items-center gap-3 px-4 py-3 bg-green-500/5">
+          <img src="${photo}" class="w-9 h-9 rounded-full object-cover border-2 border-green-500/50 shrink-0" onerror="this.src='https://i.pravatar.cc/40?u=${encodeURIComponent(pid)}'"/>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-text1">${name}</p>
+            <p class="text-xs text-text3 truncate">${complaint}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-[10px] text-green-400 font-bold">✅ Dispatched ${dispAt}</p>
+            <p class="text-[10px] text-text3">ETA ${eta} min • ${loc}</p>
+          </div>
+        </div>`;
+      }
+
+      return `
+        <div class="flex items-center gap-3 px-4 py-3 hover:bg-amber-500/5 transition-colors" id="amb-row-${h(pid)}">
+          <img src="${photo}" class="w-9 h-9 rounded-full object-cover border-2 shrink-0" style="border-color:${tc}80" onerror="this.src='https://i.pravatar.cc/40?u=${encodeURIComponent(pid)}'"/>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <p class="text-sm font-bold text-text1">${name}</p>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="color:${tc};background:${tc}20;border:1px solid ${tc}40">${lvl}</span>
+            </div>
+            <p class="text-xs text-text3 truncate">${complaint}</p>
+            <p class="text-[10px] text-text3 mt-0.5">📍 ${loc} • Requested ETA: ~${eta} min</p>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <button onclick="approveAmbulance('${h(pid)}')"
+              class="flex items-center gap-1.5 rounded-lg bg-amber-500/20 border border-amber-500/50 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/35 hover:scale-105 transition-all active:scale-95">
+              🚑 Dispatch
+            </button>
+            <button onclick="toggleDet('${h(pid)}')"
+              class="text-[10px] text-text3 hover:text-cyan transition-colors underline">
+              Patient Details
+            </button>
+          </div>
+        </div>`;
+    }
+
+    async function approveAmbulance(pid) {
+      const btn = document.querySelector(`#amb-row-${CSS.escape(pid)} button`);
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Dispatching…'; }
+      try {
+        const res = await fetch(`/api/patient/${encodeURIComponent(pid)}/ambulance/dispatch`, { method: 'POST' });
+        if (!res.ok) throw new Error(await res.text());
+        // Optimistically update state
+        const p = state.patients.find(x => x.patient_id === pid);
+        if (p) p.override_action = 'AMBULANCE';
+        renderAmbulanceRequestsPanel();
+        // Show a brief confirmation toast
+        _showToast(`🚑 Ambulance dispatched for ${(p && p.full_name) || pid}`, 'success');
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = '🚑 Dispatch'; }
+        _showToast('Dispatch failed: ' + e.message, 'error');
+      }
+    }
+
+    function _showToast(msg, type) {
+      const el = document.createElement('div');
+      el.className = `fixed bottom-6 right-6 z-[9999] rounded-xl px-4 py-3 text-sm font-semibold shadow-2xl transition-all ${
+        type === 'success' ? 'bg-green-500/90 text-white border border-green-400/50' : 'bg-emer/90 text-white border border-red-400/50'
+      }`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(10px)'; }, 2500);
+      setTimeout(() => el.remove(), 3000);
     }
 
     // ── HIERARCHICAL FILTER SYSTEM ───────────────────────────────
@@ -2433,6 +2634,8 @@
       updateListTitle(top || 'all', triage);
 
       renderPatientList(sortPatients(filtered));
+      updateUnassignedBanner();
+      renderAmbulanceRequestsPanel();
     }
 
     // Updates the patient list heading — shows "En Route — Immediate" style hierarchy
@@ -2546,8 +2749,8 @@
           <div class="glass rounded-2xl p-5 border border-cyan/20 mb-6">
             <div class="flex items-start gap-4">
               <div class="relative shrink-0">
-                <img src="${doctor.photo}" class="w-20 h-20 rounded-2xl object-cover border-2 border-slate-600/50 shadow-xl" onerror="this.src='https://i.pravatar.cc/80?u=${doctor.id}'" />
-                <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0f172a] ${doctor.availability === 'available' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}"></div>
+                <img src="${doctor.photo}" class="w-32 h-32 rounded-2xl object-cover border-2 border-slate-600/50 shadow-xl" onerror="this.src='https://i.pravatar.cc/128?u=${doctor.id}'" />
+                <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0f172a] ${doctor.availability === 'available' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}"></div>
               </div>
               <div class="flex-1 min-w-0">
                 <h2 class="text-xl font-bold text-white">${doctor.name}</h2>
@@ -2574,9 +2777,9 @@
             <span class="text-sm font-bold text-text1">Active Patients</span>
             <span class="text-[10px] bg-cyan/15 text-cyan border border-cyan/30 px-2 py-0.5 rounded-full font-bold">${active.length}</span>
           </div>
-          <div class="space-y-3 mb-6">
+          <div class="space-y-4 mb-6" id="docPanelActive_${doctor.id}">
             ${active.length === 0 ? `<div class="glass rounded-xl p-8 text-center text-text3 text-sm">No active patients assigned.</div>` :
-              active.map(patient => buildDoctorPatientCard(patient, doctor)).join('')}
+              active.map(patient => buildCard(patient)).join('')}
           </div>
 
           ${discharged.length > 0 ? `
@@ -2585,11 +2788,25 @@
               <span>✅ Discharged (${discharged.length})</span>
               <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </summary>
-            <div class="p-3 pt-0 space-y-2 border-t border-slate-700/30">
-              ${discharged.map(patient => buildDoctorPatientCard(patient, doctor)).join('')}
+            <div class="p-3 pt-0 space-y-3 border-t border-slate-700/30" id="docPanelDischarged_${doctor.id}">
+              ${discharged.map(patient => buildCard(patient)).join('')}
             </div>
           </details>` : ''}
         `;
+        // Attach Details-toggle and tab event listeners for all cards in doctor panel
+        // Pass the card element as scopeEl to avoid duplicate-ID collision with dashboard cards
+        box.querySelectorAll('[data-toggle]').forEach(t => {
+          t.addEventListener('click', () => {
+            const card = t.closest('[id^="card-"]');
+            toggleDet(t.dataset.toggle, card);
+          });
+        });
+        box.querySelectorAll('[data-tab]').forEach(btn => {
+          if (btn.dataset.pid)
+            btn.addEventListener('click', () => switchDtab(btn.dataset.pid, btn.dataset.tab, btn));
+        });
+        // Restore open detail panels after DOM rebuild
+        _restoreDetailStates();
         return;
       }
 
@@ -2649,7 +2866,7 @@
         { label: 'Submitted',    time: patient.created_at,         icon: '📱' },
         { label: 'Dr. Assigned', time: patient.doctor_assigned_at, icon: '👨‍⚕️' },
         { label: 'Reviewed',     time: patient.triage_reviewed_at, icon: '📋' },
-        { label: 'Arrived',      time: arrivedAct?.timestamp || patient.treatment_started_at, icon: '🏥' },
+        { label: 'Arrived',      time: arrivedAct?.timestamp || patient.arrival_time || patient.treatment_started_at, icon: '🏥' },
         { label: 'Bed',          time: patient.bed_assigned_at,    icon: '🛏️' },
         { label: 'Discharged',   time: patient.discharged_at,      icon: '✅' },
       ];
@@ -3051,7 +3268,7 @@
           const newCard = wrap.firstElementChild;
           cardEl.replaceWith(newCard);
           newCard.querySelectorAll('[data-toggle]').forEach(t =>
-            t.addEventListener('click', () => toggleDet(t.dataset.toggle)));
+            t.addEventListener('click', () => toggleDet(t.dataset.toggle, newCard)));
           newCard.querySelectorAll('[data-tab]').forEach(b =>
             b.addEventListener('click', () => switchDtab(b.dataset.pid, b.dataset.tab, b)));
           // Auto-open triage tab so doctor sees the result
@@ -3270,10 +3487,17 @@
       patient.assigned_doctor_id = doctor.id;
       patient.doctor_assigned_at = new Date().toISOString();
       console.log('Patient data updated:', patient);
-      
+
       // Save doctor assignments to localStorage
       saveDoctorAssignmentsToStorage();
-      
+
+      // Persist to server so patient app polling is notified
+      fetch(`/api/patient/${encodeURIComponent(patientId)}/doctor`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doctor_name: doctor.name, doctor_id: doctor.id, assigned_at: patient.doctor_assigned_at })
+      }).catch(e => console.warn('Doctor assign server sync failed:', e));
+
       // Log doctor assignment action
       logPatientAction(patientId, 'doctor_assigned', {
         doctorId: doctor.id,
@@ -3448,40 +3672,24 @@
       }
 
       currentMessagePatientId = patientId;
-      
+
       document.getElementById('messagePatientId').textContent = patientId.slice(0, 8);
       document.getElementById('messagePatientName').textContent = patient.full_name || patientId;
       document.getElementById('messagePatientComplaint').textContent = patient.chief_complaint || '—';
       document.getElementById('messagePatientPhoto').src = patient.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(patientId)}`;
-      
-      // Load message history
-      const actions = getPatientActions(patientId);
-      const messageActions = actions.filter(a => a.type === 'message_sent');
-      const messageHistoryEl = document.getElementById('messageHistory');
-      
-      if (messageActions.length > 0) {
-        messageHistoryEl.innerHTML = messageActions.map(action => `
-          <div class="bg-slate-700/50 rounded-lg p-2 text-xs">
-            <div class="flex justify-between mb-1">
-              <span class="text-cyan font-medium">${action.sender || 'Doctor'}</span>
-              <span class="text-text3">${new Date(action.timestamp).toLocaleTimeString()}</span>
-            </div>
-            <p class="text-text2">${action.message}</p>
-          </div>
-        `).join('');
-      } else {
-        messageHistoryEl.innerHTML = '<p class="text-xs text-text3 italic">No messages yet</p>';
-      }
-      
+
       document.getElementById('newMessageText').value = '';
       document.getElementById('messageTriageLevel').value = '';
-      
       document.getElementById('messageModal').classList.remove('hidden');
+
+      // Load history (doctor messages + patient replies) with live polling
+      startReplyPolling(patientId);
     }
 
     function closeMessageModal() {
       document.getElementById('messageModal').classList.add('hidden');
       currentMessagePatientId = null;
+      stopReplyPolling();
     }
 
     async function sendMessage() {
@@ -3560,21 +3768,8 @@
         toast('Message sent — patient will be notified', 'ok');
       }
 
-      // Refresh message history
-      const actions = getPatientActions(pid);
-      const messageActions = actions.filter(a => a.type === 'message_sent');
-      const messageHistoryEl = document.getElementById('messageHistory');
-      if (messageHistoryEl && messageActions.length > 0) {
-        messageHistoryEl.innerHTML = messageActions.map(action => `
-          <div class="bg-slate-700/50 rounded-lg p-2 text-xs">
-            <div class="flex justify-between mb-1">
-              <span class="text-cyan font-medium">${action.sender || 'Doctor'}</span>
-              <span class="text-text3">${new Date(action.timestamp).toLocaleTimeString()}</span>
-            </div>
-            <p class="text-text2">${h(action.message)}</p>
-          </div>
-        `).join('');
-      }
+      // Refresh message history (doctor messages + patient replies)
+      refreshMessageHistory(pid);
 
       document.getElementById('newMessageText').value = '';
       document.getElementById('messageTriageLevel').value = '';
@@ -4293,6 +4488,10 @@
     const _patientCache = {};
     let compactMode = false;
     let _privacyOn = false;
+
+    // ── Detail-panel open-state persistence (survives DOM rebuilds) ──
+    const _openDetails = new Set();   // set of patient_ids whose detail panel is open
+    const _openDtabs   = {};          // {patient_id: activeTabName}
     let activeTopFilter = null;    // 'all' | 'en_route' | 'in_treatment' | 'discharged'
     let activeTriageFilter = null; // 'immediate' | 'emergency' | 'urgent' | 'standard' | 'non_urgent'
     let sortMode = 'risk';
@@ -4334,7 +4533,7 @@
         if (card) {
           el.appendChild(card);
           card.querySelectorAll('[data-toggle]').forEach(t =>
-            t.addEventListener('click', () => toggleDet(t.dataset.toggle)));
+            t.addEventListener('click', () => toggleDet(t.dataset.toggle, card)));
           card.querySelectorAll('[data-tab]').forEach(btn =>
             btn.addEventListener('click', () => switchDtab(btn.dataset.pid, btn.dataset.tab, btn)));
         }
@@ -4399,7 +4598,10 @@
           if (qaWrap) {
             const s = status.toLowerCase();
             let newQa = '';
-            if (s === 'incoming' || s === 'arrived') {
+            if (p.override_action === 'AMBULANCE_REQUEST') {
+              const etaMin = p.amb_eta_patient || '?';
+              newQa = `<div class="flex items-center gap-2 px-4 py-3 border-t border-amber-500/30 bg-amber-500/8"><span class="flex items-center gap-1.5 text-xs font-bold text-amber-400 animate-pulse">🚑 Ambulance Requested</span><span class="text-[10px] text-text3 ml-1">ETA ~${etaMin} min</span><button onclick="event.stopPropagation();approveAmbulance('${pid}')" class="ml-auto rounded-lg bg-amber-500/25 border border-amber-500/60 px-4 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/40 hover:scale-105 transition-all">🚑 Dispatch Now</button></div>`;
+            } else if (s === 'incoming' || s === 'arrived') {
               newQa = `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-slate-800/20"><span class="text-[10px] font-bold uppercase tracking-wider text-text3">Quick:</span><button onclick="setStatus('${pid}','in_treatment')" class="rounded-lg bg-violet-500/15 border border-violet-400/40 px-3 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition-all">💊 In Treatment</button><button onclick="setStatus('${pid}','discharged')" class="rounded-lg bg-stable/15 border border-stable/40 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✓ Discharge</button></div>`;
             } else if (s === 'in_treatment') {
               const ts = p.treatment_started_at ? ' · since ' + fmtTime(p.treatment_started_at) : '';
@@ -4418,7 +4620,7 @@
           const card = wrap.firstElementChild;
           el.appendChild(card);
           card.querySelectorAll('[data-toggle]').forEach(t =>
-            t.addEventListener('click', () => toggleDet(t.dataset.toggle)));
+            t.addEventListener('click', () => toggleDet(t.dataset.toggle, card)));
           card.querySelectorAll('[data-tab]').forEach(btn =>
             btn.addEventListener('click', () => switchDtab(btn.dataset.pid, btn.dataset.tab, btn)));
         }
@@ -4546,6 +4748,17 @@
       // Quick status actions (V9 parity)
       const qaBarHTML = (() => {
         const s = status.toLowerCase();
+        // Ambulance request pending approval — show dispatch button prominently
+        if (p.override_action === 'AMBULANCE_REQUEST') {
+          const etaMin = p.amb_eta_patient || '?';
+          return `<div class="flex items-center gap-2 px-4 py-3 border-t border-amber-500/30 bg-amber-500/8">
+            <span class="flex items-center gap-1.5 text-xs font-bold text-amber-400 animate-pulse">🚑 Ambulance Requested</span>
+            <span class="text-[10px] text-text3 ml-1">ETA ~${etaMin} min</span>
+            <button onclick="event.stopPropagation();approveAmbulance('${h(pid)}')" class="ml-auto rounded-lg bg-amber-500/25 border border-amber-500/60 px-4 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/40 hover:scale-105 transition-all active:scale-95">
+              🚑 Dispatch Now
+            </button>
+          </div>`;
+        }
         if (s === 'incoming' || s === 'arrived') {
           return `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-slate-800/20">
             <span class="text-[10px] font-bold uppercase tracking-wider text-text3">Quick:</span>
@@ -4578,7 +4791,7 @@
           { label: 'Submitted',    time: p.created_at,           icon: '📱', color: '#60a5fa' },
           { label: 'Dr. Assigned', time: p.doctor_assigned_at,   icon: '👨‍⚕️', color: '#22d3ee' },
           { label: 'Reviewed',     time: p.triage_reviewed_at,   icon: '📋', color: '#f59e0b' },
-          { label: 'Arrived',      time: arrivedAct?.timestamp || p.treatment_started_at, icon: '🏥', color: '#a78bfa' },
+          { label: 'Arrived',      time: arrivedAct?.timestamp || p.arrival_time || p.treatment_started_at, icon: '🏥', color: '#a78bfa' },
           { label: 'Bed Assigned', time: p.bed_assigned_at,      icon: '🛏️', color: '#34d399' },
           { label: 'Discharged',   time: p.discharged_at,        icon: '✅', color: '#10b981' },
         ];
@@ -5028,9 +5241,64 @@
       `;
     }
 
-    function toggleDet(pid) {
-      const det = document.getElementById('det-' + pid);
-      if (det) det.classList.toggle('hidden');
+    function toggleDet(pid, scopeEl) {
+      // scopeEl: optional card/container to scope the lookup to (avoids duplicate-ID collision
+      // when the same patient card is rendered in both dashboard and doctor panel simultaneously).
+      const root = scopeEl || document.getElementById('card-' + pid);
+      const det = root ? (root.querySelector('[id="det-' + pid + '"]') || root.querySelector('#det-' + CSS.escape(pid)))
+                       : document.getElementById('det-' + pid);
+      if (!det) return;
+      const wasHidden = det.classList.contains('hidden');
+      det.classList.toggle('hidden');
+      if (wasHidden) {
+        // Opening: track in set and restore/apply active tab
+        _openDetails.add(pid);
+        const tab = _openDtabs[pid] || 'visit';
+        // Scope tab-button lookup to the same root to avoid cross-panel collision
+        const tabContainer = root || document;
+        const tabBtn = tabContainer.querySelector(`[data-pid="${CSS.escape(pid)}"][data-tab="${tab}"]`);
+        if (tabBtn) switchDtab(pid, tab, tabBtn);
+      } else {
+        // Closing: remove from set
+        _openDetails.delete(pid);
+      }
+    }
+
+    // Restore open detail panels and active tabs after a DOM rebuild (e.g. renderDoctorPanel)
+    function _restoreDetailStates() {
+      _openDetails.forEach(pid => {
+        // Restore ALL instances of this patient's card (dashboard + doctor panel)
+        // by searching via attribute selector (not getElementById which returns first match only)
+        document.querySelectorAll(`[id="det-${pid}"]`).forEach(det => {
+          det.classList.remove('hidden');
+          const card = det.closest('[id^="card-"]') || det.parentElement;
+          const tab = _openDtabs[pid] || 'visit';
+          // Show correct tab pane within this card's scope
+          if (card) {
+            card.querySelectorAll(`[id^="dtab-${pid}-"]`).forEach(el => el.classList.add('hidden'));
+            const sel = card.querySelector(`[id="dtab-${pid}-${tab}"]`);
+            if (sel) {
+              sel.classList.remove('hidden');
+              if (tab === 'history' && !sel.dataset.loaded) loadHealthRecord(pid, sel);
+              if (tab === 'actions' && !sel.dataset.loaded) loadActionHistory(pid, sel);
+              sel.dataset.loaded = '1';
+            }
+            // Restore tab button active state
+            const tabBtn = card.querySelector(`[data-pid="${CSS.escape(pid)}"][data-tab="${tab}"]`);
+            if (tabBtn) {
+              const container = tabBtn.closest('div');
+              if (container) {
+                container.querySelectorAll('.dtab-btn').forEach(b => {
+                  b.classList.remove('active', 'bg-cyan/20', 'text-cyan', 'border-cyan/30');
+                  b.classList.add('text-text2');
+                });
+                tabBtn.classList.add('active', 'bg-cyan/20', 'text-cyan', 'border-cyan/30');
+                tabBtn.classList.remove('text-text2');
+              }
+            }
+          }
+        });
+      });
     }
 
     function toggleCompactDetail(pid) {
@@ -5109,10 +5377,14 @@
     }
 
     function switchDtab(pid, tab, btn) {
-      // Hide all tabs for this patient
-      document.querySelectorAll(`[id^="dtab-${pid}-"]`).forEach(el => el.classList.add('hidden'));
+      // Track active tab for state restoration
+      _openDtabs[pid] = tab;
+      // Scope to the card element to avoid duplicate-ID collision (same patient in dashboard + doctor panel)
+      const card = btn ? (btn.closest('[id^="card-"]') || btn.closest('.glass') || document) : document;
+      // Hide all tabs for this patient within this card
+      card.querySelectorAll(`[id^="dtab-${pid}-"]`).forEach(el => el.classList.add('hidden'));
       // Show selected tab
-      const selected = document.getElementById(`dtab-${pid}-${tab}`);
+      const selected = card.querySelector ? card.querySelector(`[id="dtab-${pid}-${tab}"]`) : document.getElementById(`dtab-${pid}-${tab}`);
       if (selected) {
         selected.classList.remove('hidden');
         // Load health record if needed (history tab)
@@ -5129,14 +5401,18 @@
         }
         selected.dataset.loaded = '1';
       }
-      // Update button styles
-      const container = btn.closest('div');
-      container.querySelectorAll('.dtab-btn').forEach(b => {
-        b.classList.remove('active', 'bg-cyan/20', 'text-cyan', 'border-cyan/30');
-        b.classList.add('text-text2');
-      });
-      btn.classList.add('active', 'bg-cyan/20', 'text-cyan', 'border-cyan/30');
-      btn.classList.remove('text-text2');
+      // Update button styles — scope to the btn's immediate tab-bar container
+      if (btn) {
+        const container = btn.closest('div');
+        if (container) {
+          container.querySelectorAll('.dtab-btn').forEach(b => {
+            b.classList.remove('active', 'bg-cyan/20', 'text-cyan', 'border-cyan/30');
+            b.classList.add('text-text2');
+          });
+          btn.classList.add('active', 'bg-cyan/20', 'text-cyan', 'border-cyan/30');
+          btn.classList.remove('text-text2');
+        }
+      }
     }
 
     function loadActionHistory(pid, container) {
@@ -5856,6 +6132,7 @@
     document.getElementById("search-input").addEventListener("input", renderIncomingLists);
 
     window.alertTeam = alertTeam;
+    window.approveAmbulance = approveAmbulance;
     window.assignBed = assignBed;
     window.viewRoute = viewRoute;
     window.selectDoctor = selectDoctor;

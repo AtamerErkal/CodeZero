@@ -139,6 +139,9 @@ class HospitalQueue:
                 ("ai_triage_level", "TEXT"),
                 ("amb_eta_patient", "INTEGER"),
                 ("amb_dispatch_at", "TEXT"),
+                ("assigned_doctor", "TEXT"),
+                ("doctor_assigned_at", "TEXT"),
+                ("patient_messages", "TEXT DEFAULT '[]'"),
             ]:
                 try:
                     conn.execute(f"ALTER TABLE patient_queue ADD COLUMN {col_def[0]} {col_def[1]}")
@@ -453,6 +456,61 @@ class HospitalQueue:
 
         except Exception as exc:
             logger.error("Failed to override patient triage: %s", exc)
+            return False
+
+    def setup_ambulance_request(self, patient_id: str, note: str, eta_to_patient: int) -> bool:
+        """Store ambulance request as PENDING — awaiting staff approval.
+
+        Sets override_action='AMBULANCE_REQUEST' and stores the requested ETA.
+        Movement thread ignores AMBULANCE_REQUEST; only 'AMBULANCE' triggers dispatch.
+        """
+        try:
+            conn = self._get_connection()
+            now = datetime.now(timezone.utc).isoformat()
+            conn.execute(
+                "UPDATE patient_queue SET "
+                "override_action='AMBULANCE_REQUEST', override_note=?, "
+                "amb_eta_patient=?, updated_at=? "
+                "WHERE patient_id=?",
+                (note, eta_to_patient, now, patient_id),
+            )
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as exc:
+            logger.error("setup_ambulance_request failed: %s", exc)
+            return False
+
+    def approve_ambulance_dispatch(self, patient_id: str) -> bool:
+        """Staff approval: transition AMBULANCE_REQUEST → AMBULANCE and start countdown."""
+        try:
+            conn = self._get_connection()
+            row = conn.execute(
+                "SELECT amb_eta_patient, override_note FROM patient_queue WHERE patient_id=?",
+                (patient_id,)
+            ).fetchone()
+            if not row:
+                conn.close()
+                return False
+            one_way_eta = row["amb_eta_patient"] or 10
+            # Total patient arrival ETA = ambulance TO patient + 5 min pickup + return trip
+            total_eta = 2 * one_way_eta + 5
+            now = datetime.now(timezone.utc).isoformat()
+            conn.execute(
+                "UPDATE patient_queue SET "
+                "override_action='AMBULANCE', amb_dispatch_at=?, eta_minutes=?, updated_at=? "
+                "WHERE patient_id=?",
+                (now, total_eta, now, patient_id),
+            )
+            conn.commit()
+            conn.close()
+            logger.info(
+                "Ambulance approved for patient %s (one-way ETA %s min → total %s min)",
+                patient_id, one_way_eta, total_eta,
+            )
+            return True
+        except Exception as exc:
+            logger.error("approve_ambulance_dispatch failed: %s", exc)
             return False
 
     def setup_ambulance_dispatch(self, patient_id: str, note: str, eta_to_patient: int) -> bool:

@@ -47,7 +47,7 @@ DOCTORS = [
         "id": "DR001", "name": "Dr. Bernd Hoffman",
         "photo": "/doctor_photos/Dr.Bernd_Hoffman.png",
         "specialization": "Emergency Medicine", "department": "ER",
-        "current_patients": 3, "max_patients": 8, "availability": "available",
+        "current_patients": 2, "max_patients": 8, "availability": "available",
         "skills": ["trauma", "cardiac", "pediatric"], "location": "ER Room 3",
         "response_time": 5, "shift": "08:00 - 18:00", "contact": "Ext. 4401", "experience": "12 yrs"
     },
@@ -63,7 +63,7 @@ DOCTORS = [
         "id": "DR003", "name": "Dr. Britta Weidermann",
         "photo": "/doctor_photos/Dr.Britta_Weidermann.png",
         "specialization": "Emergency Medicine", "department": "ER",
-        "current_patients": 2, "max_patients": 8, "availability": "available",
+        "current_patients": 0, "max_patients": 8, "availability": "available",
         "skills": ["general", "trauma", "respiratory"], "location": "ER Room 1",
         "response_time": 3, "shift": "06:00 - 16:00", "contact": "Ext. 4405", "experience": "8 yrs"
     },
@@ -379,7 +379,6 @@ DEMO_PATIENTS = [
         "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
         "arrival_h": 2.0,
         "treatment_h": 1.8,
-        "assigned_doctor_id": "DR003",
         "bed_id": "ER-201",
         "override_action": "APPROVE",
         "override_note": "CT-PA booked. Heparin infusion commenced.",
@@ -427,7 +426,6 @@ DEMO_PATIENTS = [
         "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
         "arrival_h": 2.2,
         "treatment_h": 2.0,
-        "assigned_doctor_id": "DR003",
         "bed_id": "ER-202",
         "override_action": "APPROVE",
         "override_note": "Migraine confirmed, treatment effective. Plan discharge in 2h if pain controlled.",
@@ -655,6 +653,18 @@ def run_demo_seed() -> dict:
             ts_str  = (datetime.now(timezone.utc) - timedelta(hours=treat_h)).strftime("%Y-%m-%d %H:%M UTC")
             override_note = f"[{ts_str}] [{p['override_action']}→{p['triage_level']}] {p['override_note']}"
 
+        # Ambulance dispatch data for ambulance demo patients
+        db_override_action = p.get("override_action")
+        amb_dispatch_at = None
+        amb_eta_patient = None
+        if p.get("has_ambulance") and status == "incoming":
+            # Demo ambulances are already dispatched; set dispatch time ~eta minutes ago
+            amb_eta_patient = eta or 10
+            # Dispatch timestamp: half the ETA in the past (ambulance midway)
+            dispatch_minutes_ago = max(1, int(amb_eta_patient * 0.5))
+            amb_dispatch_at = (datetime.now(timezone.utc) - timedelta(minutes=dispatch_minutes_ago)).isoformat()
+            db_override_action = "AMBULANCE"  # already dispatched in demo
+
         conn.execute("""
             INSERT OR REPLACE INTO patient_queue
             (patient_id, timestamp, created_at, triage_level, chief_complaint,
@@ -664,8 +674,8 @@ def run_demo_seed() -> dict:
              language, destination_hospital, status, updated_at,
              qa_transcript, health_number, has_photo, photo_count, complaint_text,
              ai_triage_level, treatment_started_at, discharged_at,
-             override_action, override_note)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+             override_action, override_note, amb_dispatch_at, amb_eta_patient)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (
             p["patient_id"],
             timestamp,
@@ -695,8 +705,10 @@ def run_demo_seed() -> dict:
             p["triage_level"],
             treatment_started_at,
             discharged_at,
-            p.get("override_action"),
+            db_override_action,
             override_note,
+            amb_dispatch_at,
+            amb_eta_patient,
         ))
         seeded += 1
 

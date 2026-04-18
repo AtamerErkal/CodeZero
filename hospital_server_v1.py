@@ -7,7 +7,7 @@ Run:
     pip install fastapi uvicorn
     python hospital_server.py
 
-Then open: http://localhost:8001
+Then open: http://localhost:8002
 """
 from __future__ import annotations
 
@@ -1337,11 +1337,8 @@ def api_patient_status(patient_id: str):
                         if _gpt:
                             translated_note = _gpt
                             logger.info("Note translated via GPT → %s", patient_code)
-                    except Exception as _ge:
-                        logger.warning("GPT note translation failed: %s", _ge)
-
-            if not translated_note:
-                translated_note = clean_note  # final fallback: show original
+                    except Exception as exc:
+                        logger.warning("GPT note translation failed: %s", exc)
 
     # ── Patient messages (replies to doctor) ────────────────────────────────
     import json as _json
@@ -1350,6 +1347,35 @@ def api_patient_status(patient_id: str):
         patient_messages = _json.loads(raw_msgs)
     except Exception:
         patient_messages = []
+
+    # ── Doctor Metadata (Photo mapping) ──────────────────────────────────
+    # Keys support both with and without "Dr." prefix for maximum resilience
+    DOCTOR_META = {
+        "Dr. Bernd Hoffman": "/doctor_photos/Dr.Bernd_Hoffman.png",
+        "Bernd Hoffman": "/doctor_photos/Dr.Bernd_Hoffman.png",
+        "Dr. Birgit Schmidt": "/doctor_photos/Dr.Birgit_Schmidt.png",
+        "Birgit Schmidt": "/doctor_photos/Dr.Birgit_Schmidt.png",
+        "Dr. Britta Weidermann": "/doctor_photos/Dr.Britta_Weidermann.png",
+        "Britta Weidermann": "/doctor_photos/Dr.Britta_Weidermann.png",
+        "Dr. Hasan Karatay": "/doctor_photos/Dr.Hasan_Karatay.png",
+        "Hasan Karatay": "/doctor_photos/Dr.Hasan_Karatay.png"
+    }
+    assigned_doc = match.get("assigned_doctor") or None
+    
+    # Try direct match first, then try stripping "Dr. " to match
+    doc_photo = DOCTOR_META.get(assigned_doc)
+    if not doc_photo and assigned_doc and assigned_doc.lower().startswith("dr. "):
+        doc_photo = DOCTOR_META.get(assigned_doc[4:])
+    if not doc_photo and assigned_doc:
+        # Final fallback: try adding "Dr. " if not there
+        doc_photo = DOCTOR_META.get(f"Dr. {assigned_doc}")
+
+    # Normalization: ensure only one "Dr." prefix
+    if assigned_doc:
+        while assigned_doc.lower().startswith("dr. dr."):
+            assigned_doc = assigned_doc[4:]
+        if not assigned_doc.lower().startswith("dr."):
+            assigned_doc = f"Dr. {assigned_doc}"
 
     return {
         "patient_id": patient_id,
@@ -1361,7 +1387,8 @@ def api_patient_status(patient_id: str):
         "physician_note": raw_note,
         "physician_note_translated": translated_note,
         "override_timestamp": match.get("updated_at") if has_override else None,
-        "assigned_doctor": match.get("assigned_doctor") or None,
+        "assigned_doctor": assigned_doc,
+        "doctor_photo": doc_photo,
         "doctor_assigned_at": match.get("doctor_assigned_at") or None,
         "patient_messages": patient_messages,
         "ambulance_status": match.get("override_action") if match.get("override_action") in ("AMBULANCE_REQUEST", "AMBULANCE") else None,
@@ -1458,18 +1485,18 @@ def api_patient_reply(patient_id: str, body: dict):
     patient_lang = match2.get("language") or "en-US"
     patient_code = patient_lang.split("-")[0].lower()
 
-    # Translate patient message → German for doctor
-    translated_de = None
+    # Translate patient message → English for doctor
+    translated_en = None
     try:
         _, _tr2 = _get_triage_engine()
         if _tr2 and getattr(_tr2, "_initialized", False):
-            _az2 = _tr2.translate(text, target_language="de")
+            _az2 = _tr2.translate(text, target_language="en")
             if _az2 and _az2 != text:
-                translated_de = _az2
+                translated_en = _az2
     except Exception:
         pass
 
-    if not translated_de:
+    if not translated_en:
         _openai_key2 = __import__("os").getenv("OPENAI_API_KEY", "")
         if _openai_key2:
             try:
@@ -1478,19 +1505,19 @@ def api_patient_reply(patient_id: str, body: dict):
                 _r2 = _c2.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
-                        {"role": "system", "content": "You are a medical translator. Translate the following patient message to German. Reply with ONLY the translated text."},
+                        {"role": "system", "content": "You are a medical translator. Translate the following patient message to English. Reply with ONLY the translated text."},
                         {"role": "user", "content": text},
                     ],
                     max_tokens=300, temperature=0,
                 )
-                translated_de = _r2.choices[0].message.content.strip()
+                translated_en = _r2.choices[0].message.content.strip()
             except Exception:
                 pass
 
     import datetime as _dt
     entry = {
         "text": text,
-        "text_de": translated_de or text,
+        "text_en": translated_en or text,
         "lang": patient_code,
         "ts": _dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
     }
@@ -1800,7 +1827,10 @@ def reset_health_db():
 
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
-    path = ROOT / "ui" / "hospital_dashboard.html"
+    # v1: serves hospital_dahboard_v1.html (new redesign)
+    path = ROOT / "ui" / "hospital_dahboard_v1.html"
+    if not path.exists():
+        path = ROOT / "ui" / "hospital_dashboard.html"  # fallback
     if path.exists():
         return HTMLResponse(path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Dashboard HTML not found</h1>", status_code=404)
@@ -1808,21 +1838,18 @@ def serve_dashboard():
 
 @app.get("/patient", response_class=HTMLResponse)
 def serve_patient_app():
-    path = ROOT / "ui" / "patient_app.html"
+    # v1: serves patient_app_v1.html (new redesign)
+    path = ROOT / "ui" / "patient_app_v1.html"
+    if not path.exists():
+        path = ROOT / "ui" / "patient_app.html"  # fallback
     if path.exists():
         return HTMLResponse(path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Patient app HTML not found</h1>", status_code=404)
 
 
-@app.get("/patient_app_13.html", response_class=HTMLResponse)
-def serve_patient_app_plain():
-    """Direct filename access — convenience alias."""
-    return serve_patient_app()
-
-
-@app.get("/patient_app_v13.html", response_class=HTMLResponse)
-def serve_patient_app_v14():
-    """Direct filename access — convenience alias."""
+@app.get("/patient_app_v1.html", response_class=HTMLResponse)
+def serve_patient_app_v1_direct():
+    """Direct filename access."""
     return serve_patient_app()
 
 
@@ -1941,6 +1968,6 @@ if __name__ == "__main__":
     _move_thread.start()
     logger.info("Patient movement background thread started.")
     
-    print("VitalNavAI ER Command Center running on http://localhost:8001")
+    print("VitalNavAI ER Command Center running on http://localhost:8002")
 
-    uvicorn.run(app, host="0.0.0.0", port=8001, reload=False, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8002, reload=False, log_level="info")
