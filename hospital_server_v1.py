@@ -1107,23 +1107,61 @@ def patient_questions_next(body: NextQuestionRequest):
 
     if q:
         q["question_en"] = q.get("question", "")
-        if lang_name and not lang_hint.lower().startswith("en") and translator:
-            try:
-                translated_q = translator.translate_from_english(q["question"], lang_hint)
-                if translated_q:
-                    q["question"] = translated_q
-            except Exception as e:
-                logger.warning("Next question translation failed: %s", e)
+        if lang_name and not lang_hint.lower().startswith("en"):
+            if translator:
+                try:
+                    translated_q = translator.translate_from_english(q["question"], lang_hint)
+                    if translated_q:
+                        q["question"] = translated_q
+                except Exception as e:
+                    logger.warning("Next question translation failed: %s", e)
 
-            if "options" in q and q["options"]:
-                translated_opts = []
-                for opt in q["options"]:
+                if "options" in q and q["options"]:
+                    translated_opts = []
+                    for opt in q["options"]:
+                        try:
+                            translated_opt = translator.translate_from_english(opt, lang_hint)
+                            translated_opts.append(translated_opt if translated_opt else opt)
+                        except:
+                            translated_opts.append(opt)
+                    q["options"] = translated_opts
+            else:
+                # No Azure Translator: use GPT to translate question + options
+                _openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
+                if _openai_key:
                     try:
-                        translated_opt = translator.translate_from_english(opt, lang_hint)
-                        translated_opts.append(translated_opt if translated_opt else opt)
-                    except:
-                        translated_opts.append(opt)
-                q["options"] = translated_opts
+                        import openai as _oai
+                        _client = _oai.OpenAI(api_key=_openai_key)
+
+                        # Translate question text
+                        _r = _client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[
+                                {"role": "system", "content": f"You are a medical translator. Translate the following clinical question to {lang_name}. Reply with ONLY the translated question, nothing else."},
+                                {"role": "user", "content": q["question"]}
+                            ],
+                            max_tokens=200, temperature=0,
+                        )
+                        _tq = _r.choices[0].message.content.strip()
+                        if _tq:
+                            q["question"] = _tq
+
+                        # Translate answer options if present
+                        if "options" in q and q["options"]:
+                            opts_joined = "\n".join(q["options"])
+                            _ro = _client.chat.completions.create(
+                                model="gpt-4o-mini",
+                                messages=[
+                                    {"role": "system", "content": f"You are a medical translator. Translate the following answer options to {lang_name}. Each option is on a separate line. Reply with ONLY the translated options, one per line, in the same order."},
+                                    {"role": "user", "content": opts_joined}
+                                ],
+                                max_tokens=300, temperature=0,
+                            )
+                            _to = _ro.choices[0].message.content.strip().splitlines()
+                            if len(_to) == len(q["options"]):
+                                q["options"] = [o.strip() for o in _to]
+                    except Exception as e:
+                        logger.warning("GPT next-question translation failed: %s", e)
 
     return NextQuestionResponse(
         done=is_done,
