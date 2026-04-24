@@ -1005,38 +1005,98 @@ def patient_questions(body: QuestionsRequest):
     for q in questions:
         q["question_en"] = q.get("question", "")   # Always preserve English version
 
-    # -- Step 3: Translate questions/options into patient's language ------------
+    # -- Step 3: Translate questions/options using GPT for natural medical language --
+    # GPT produces far better medical translations than Azure Translator's machine output.
+    # We build one batched GPT call for all questions + options to minimize latency.
     if lang_name and not lang_hint.lower().startswith("en"):
-        # Try Azure Translator first, fall back to GPT inject on individual questions
-        if translator:
+        gpt_client = getattr(triage, "openai_client", None)
+        gpt_model  = getattr(triage, "deployment", "gpt-5.4-mini")
+
+        if gpt_client:
+            try:
+                # Build a compact JSON payload so GPT translates everything in one call
+                import json as _json
+                payload = [
+                    {"q": q.get("question", ""), "opts": q.get("options", [])}
+                    for q in questions
+                ]
+                _r = gpt_client.chat.completions.create(
+                    model=gpt_model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": (
+                                f"You are a professional medical translator specialising in emergency medicine. "
+                                f"Translate the clinical questions and answer options below to {lang_name}. "
+                                f"Use natural, clear {lang_name} appropriate for a patient in an emergency situation. "
+                                f"Return ONLY a JSON array with the same structure as the input — "
+                                f'each element must have "q" (translated question string) and "opts" (translated options array). '
+                                f"Preserve the exact number and order of items. No extra text."
+                            ),
+                        },
+                        {"role": "user", "content": _json.dumps(payload, ensure_ascii=False)},
+                    ],
+                    max_tokens=1200,
+                    temperature=0,
+                )
+                raw = _r.choices[0].message.content.strip()
+                # Strip markdown code fences if present
+                if raw.startswith("```"):
+                    raw = raw.split("```")[1]
+                    if raw.startswith("json"):
+                        raw = raw[4:]
+                translated_payload = _json.loads(raw)
+                for i, q in enumerate(questions):
+                    if i < len(translated_payload):
+                        tq = translated_payload[i].get("q", "")
+                        if tq:
+                            q["question"] = tq
+                        if "opts" in translated_payload[i] and translated_payload[i]["opts"]:
+                            q["options"] = translated_payload[i]["opts"]
+                logger.info("Questions translated to %s via GPT (%s)", lang_name, gpt_model)
+            except Exception as exc:
+                logger.warning("GPT batch question translation failed (%s) — falling back to Azure Translator", exc)
+                # Fallback: Azure Translator per-question
+                if translator:
+                    for q in questions:
+                        try:
+                            tq = translator.translate_from_english(q.get("question", ""), body.detected_language)
+                            if tq:
+                                q["question"] = tq
+                        except Exception:
+                            pass
+                        if "options" in q and q["options"]:
+                            q["options"] = [
+                                (translator.translate_from_english(o, body.detected_language) or o)
+                                for o in q["options"]
+                            ]
+        elif translator:
+            # No GPT client: use Azure Translator
             for q in questions:
                 q_text = q.get("question", "")
                 try:
-                    translated_q = translator.translate_from_english(q_text, body.detected_language)
-                    if translated_q:
-                        q["question"] = translated_q
+                    tq = translator.translate_from_english(q_text, body.detected_language)
+                    if tq:
+                        q["question"] = tq
                 except Exception as exc:
                     logger.warning("Question translation failed (%s)", exc)
-
                 if "options" in q and q["options"]:
                     translated_opts = []
                     for opt in q["options"]:
                         try:
-                            translated_opt = translator.translate_from_english(opt, body.detected_language)
-                            translated_opts.append(translated_opt if translated_opt else opt)
+                            to = translator.translate_from_english(opt, body.detected_language)
+                            translated_opts.append(to if to else opt)
                         except Exception:
                             translated_opts.append(opt)
                     q["options"] = translated_opts
         else:
-            # No Azure Translator: re-generate questions with language injection
-            # but keep question_en already set above
+            # No GPT client, no Azure Translator: re-generate with language injection
             gpt_complaint_lang = (
                 f"[IMPORTANT: Generate ALL questions and ALL answer options ENTIRELY in {lang_name}. "
                 f"Do not use English. Patient language: {lang_name}.] "
                 f"{complaint_en}"
             )
             translated_questions = triage.generate_questions(chief_complaint=gpt_complaint_lang)
-            # Merge: keep question_en from English run, take question/options from translated run
             for i, q in enumerate(questions):
                 if i < len(translated_questions):
                     q["question"] = translated_questions[i].get("question", q["question"])
