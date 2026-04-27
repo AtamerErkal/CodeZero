@@ -498,11 +498,17 @@ class TriageEngine:
         if allergies:
             parts.append("Allergies: " + ", ".join([f"{a.get('allergen')} ({a.get('reaction')})" for a in allergies]))
 
-        # Recent Vitals
+        # Historical baseline vitals — clearly labelled as past values
         vitals = medical_history.get("vitals", [])
         if vitals:
-            v = vitals[0] # Latest vitals
-            v_str = f"Latest Vitals ({v.get('recorded_at','')}): BP {v.get('bp_systolic','?')}/{v.get('bp_diastolic','?')}, HR {v.get('heart_rate','?')}, SpO2 {v.get('spo2','?')}%, Temp {v.get('temperature','?')}°C"
+            v = vitals[0]
+            recorded = v.get("recorded_at", "date unknown")
+            v_str = (
+                f"HISTORICAL BASELINE VITALS (recorded {recorded} — NOT the patient's current vitals): "
+                f"BP {v.get('bp_systolic','?')}/{v.get('bp_diastolic','?')}, "
+                f"HR {v.get('heart_rate','?')}, SpO2 {v.get('spo2','?')}%, Temp {v.get('temperature','?')}°C. "
+                f"Use these only as a baseline reference — do NOT assume they reflect the patient's condition today."
+            )
             parts.append(v_str)
 
         # Doctor Notes (Last 2)
@@ -513,6 +519,203 @@ class TriageEngine:
                 parts.append(f"- {n.get('note_date')}: {n.get('assessment')} (Plan: {n.get('plan')})")
         
         return "\n".join(parts)
+
+    def _clinical_lens(self, chief_complaint: str, demographics: Optional[dict]) -> str:
+        """Return protocol-level questioning strategy for this complaint + demographic combo.
+
+        Injected into the system prompt so GPT prioritises the right clinical pathway
+        rather than relying on generic emergency medicine reasoning.
+        """
+        c = chief_complaint.lower()
+        age: Optional[int] = None
+        sex = ""
+        if demographics:
+            raw_age = demographics.get("age") or demographics.get("age_range", "")
+            try:
+                age = int(str(raw_age).split("-")[0])
+            except Exception:
+                pass
+            sex = str(demographics.get("sex", "")).lower()
+
+        is_male   = "male" in sex or sex == "m"
+        is_female = "female" in sex or sex in ("f", "w")
+
+        lenses: list[str] = []
+
+        # ── CHEST PAIN ────────────────────────────────────────────────
+        if any(w in c for w in ["chest", "göğüs", "brust", "thorax", "sternum", "cardiac"]):
+            if age and age >= 45 and is_male:
+                lenses.append(
+                    "CARDIAC PROTOCOL (Male ≥45): ACS probability is HIGH.\n"
+                    "Q1 MUST test diaphoresis (cold sweats) — strongest independent MI predictor.\n"
+                    "Q2: Radiation to arm / jaw / back (STEMI pattern).\n"
+                    "Q3: Exertional onset vs at rest (unstable angina vs stable).\n"
+                    "Q4: Prior cardiac history — previous MI, stent, PCI.\n"
+                    "Q5: Onset character — crushing/pressure (ACS) vs tearing (dissection) vs pleuritic (PE/pleuritis).\n"
+                    "Deprioritise MSK/GERD unless ACS is convincingly excluded."
+                )
+            elif is_female and age and age >= 35:
+                lenses.append(
+                    "FEMALE CHEST PAIN PROTOCOL: Women present atypically — do NOT anchor on 'classic crush'.\n"
+                    "Q1: PE risk — recent immobility, surgery, OCP, pregnancy/postpartum.\n"
+                    "Q2: Exertional or positional component (pleuritis, pericarditis).\n"
+                    "Q3: Aortic dissection screen — worst-ever, tearing quality, hypertension history.\n"
+                    "Q4: Associated dyspnoea, palpitations (cardiac, PE).\n"
+                    "Q5: Diaphoresis or nausea (atypical ACS presentation in women)."
+                )
+            else:
+                lenses.append(
+                    "CHEST PAIN PROTOCOL: Rule out life-threats first.\n"
+                    "Q1: Radiation — arm/jaw (ACS), back/tearing (dissection), pleuritic/positional (PE/pleuritis).\n"
+                    "Q2: Onset — sudden at maximum (dissection/SAH) vs gradual crescendo (ACS/GERD).\n"
+                    "Q3: Positional — worse lying flat (pericarditis) vs worse breathing (PE/pleuritis).\n"
+                    "Q4: Diaphoresis or pre-syncope (high-risk features regardless of age).\n"
+                    "Q5: Cardiac / coagulation / bleeding history."
+                )
+
+        # ── HEADACHE ─────────────────────────────────────────────────
+        if any(w in c for w in ["headache", "head pain", "baş ağr", "kopfschmerz", "migraine", "migräne"]):
+            if age and age >= 50:
+                lenses.append(
+                    "HEADACHE PROTOCOL (≥50): Giant cell arteritis AND SAH are must-rule-outs.\n"
+                    "Q1: Thunderclap / 'worst headache of life' — SAH until proven otherwise.\n"
+                    "Q2: Scalp tenderness or jaw claudication (giant cell arteritis — leads to blindness).\n"
+                    "Q3: Focal neurological deficit — vision, speech, limb (stroke, space-occupying lesion).\n"
+                    "Q4: Fever + neck stiffness (meningitis — Kernig/Brudzinski signs at risk).\n"
+                    "Q5: Gradual progressive worsening over weeks (raised ICP, malignancy)."
+                )
+            else:
+                lenses.append(
+                    "HEADACHE PROTOCOL — SNOOP criteria:\n"
+                    "Q1: Sudden onset / thunderclap — 'worst headache of life' (SAH until excluded).\n"
+                    "Q2: Neurological symptoms — vision change, speech, limb weakness (stroke/SOL).\n"
+                    "Q3: Systemic signs — fever + neck stiffness (meningitis/encephalitis).\n"
+                    "Q4: Trigger — exertion (SAH/exercise headache), Valsalva, position (Chiari/ICP).\n"
+                    "Q5: Pattern change — new type, progressively worsening, or waking from sleep."
+                )
+
+        # ── ABDOMINAL PAIN ────────────────────────────────────────────
+        if any(w in c for w in ["abdom", "belly", "stomach", "karın", "bauch", "nausea", "vomit", "epigast", "pelvic"]):
+            if is_female and age and 15 <= age <= 50:
+                lenses.append(
+                    "ABDOMINAL PAIN PROTOCOL (Female 15–50): ECTOPIC PREGNANCY is life-threatening priority.\n"
+                    "Q1: Last menstrual period — is pregnancy possible? If delayed → IMMEDIATE risk.\n"
+                    "Q2: Vaginal bleeding or unusual discharge (ectopic, PID, miscarriage).\n"
+                    "Q3: Pain location — right iliac fossa (appendicitis), left (ovarian torsion), diffuse (peritonism).\n"
+                    "Q4: Rigidity / guarding / rebound tenderness on movement (peritonitis = surgical).\n"
+                    "Q5: Fever + discharge (PID, tubo-ovarian abscess)."
+                )
+            elif age and age >= 60:
+                lenses.append(
+                    "ABDOMINAL PAIN PROTOCOL (≥60): Mesenteric ischaemia and AAA are highest-priority.\n"
+                    "Q1: Pain out of proportion to examination — patient writhing, diaphoretic (mesenteric ischaemia → IMMEDIATE).\n"
+                    "Q2: Pulsatile abdominal sensation or known AAA (rupture).\n"
+                    "Q3: Bloody or dark stool (ischaemia, volvulus, lower GI bleed).\n"
+                    "Q4: Epigastric radiation to back (pancreatitis, AAA, posterior ulcer).\n"
+                    "Q5: AF / PVD / cardiac history (embolic mesenteric ischaemia, AAA risk)."
+                )
+            else:
+                lenses.append(
+                    "ABDOMINAL PAIN PROTOCOL:\n"
+                    "Q1: Location + migration — periumbilical → right iliac fossa (appendicitis classic).\n"
+                    "Q2: Character — constant/severe (surgical/inflammatory) vs crampy (obstruction, IBS).\n"
+                    "Q3: Movement worsens pain (peritoneal signs = surgical emergency).\n"
+                    "Q4: Nausea/vomiting timing relative to pain onset (surgical vs medical).\n"
+                    "Q5: Urinary symptoms / flank pain (renal colic mimicking abdomen)."
+                )
+
+        # ── SHORTNESS OF BREATH ───────────────────────────────────────
+        if any(w in c for w in ["breath", "dyspnoea", "dyspnea", "nefes", "atemnot", "luftnot", "respiratory"]):
+            lenses.append(
+                "DYSPNOEA PROTOCOL:\n"
+                "Q1: PE risk — Wells: recent surgery/immobility ≥3 days, DVT history, haemoptysis, HR>100.\n"
+                "Q2: Onset — sudden (PE, pneumothorax) vs over hours/days (CHF, pneumonia, COPD exacerbation).\n"
+                "Q3: Orthopnoea — worse lying flat / woken at night (CHF, bilateral pleural effusion).\n"
+                "Q4: Wheeze vs stridor vs clear (bronchospasm / upper airway obstruction / parenchymal).\n"
+                "Q5: Fever + productive cough (pneumonia) vs dry cough + leg swelling (CHF/PE)."
+            )
+
+        # ── LEG PAIN / SWELLING ───────────────────────────────────────
+        if any(w in c for w in ["leg", "calf", "swelling", "dvt", "bacak", "bein", "waden", "thrombos"]):
+            lenses.append(
+                "LOWER LIMB PROTOCOL:\n"
+                "Q1: Unilateral calf swelling + tenderness + no other explanation (DVT — Wells ≥2 = high risk).\n"
+                "Q2: Associated dyspnoea or chest pain (DVT + dyspnoea = PE until excluded → IMMEDIATE).\n"
+                "Q3: Risk factors — immobility >3 days, recent surgery/flight, OCP/HRT, malignancy.\n"
+                "Q4: Skin — erythema + warmth (DVT/cellulitis) vs pallor + pulselessness + cold (acute arterial).\n"
+                "Q5: Claudication on walking relieved by rest (PAD, especially ≥60)."
+            )
+
+        # ── DIZZINESS / SYNCOPE ───────────────────────────────────────
+        if any(w in c for w in ["dizz", "vertigo", "faint", "syncop", "baş dön", "schwindel", "ohnmacht", "lightheaded"]):
+            if age and age >= 55:
+                lenses.append(
+                    "DIZZINESS PROTOCOL (≥55): POSTERIOR STROKE is must-rule-out — HINTS criteria apply.\n"
+                    "Q1: Sudden onset with NO positional trigger — central/vascular until excluded.\n"
+                    "Q2: Diplopia, facial numbness, dysarthria, dysphagia, limb ataxia (posterior fossa).\n"
+                    "Q3: Horizontal nystagmus that DOES NOT suppress with fixation (central sign).\n"
+                    "Q4: New-onset severe headache with the dizziness (vertebrobasilar dissection/SAH).\n"
+                    "Q5: Palpitations or pre-syncope (cardiac arrhythmia — Holter indication)."
+                )
+            else:
+                lenses.append(
+                    "DIZZINESS PROTOCOL:\n"
+                    "Q1: True vertigo (room spins) vs pre-syncope (almost fainted) vs imbalance — different paths.\n"
+                    "Q2: Positional trigger — specific head movement (BPPV Dix-Hallpike) vs constant (neuritis/central).\n"
+                    "Q3: Hearing loss or tinnitus (Ménière's, labyrinthitis, acoustic neuroma).\n"
+                    "Q4: Neurological symptoms — diplopia, dysphagia, ataxia (posterior stroke, cerebellar).\n"
+                    "Q5: Cardiac history + palpitations (arrhythmia syncope mimicking vertigo)."
+                )
+
+        # ── BACK PAIN ─────────────────────────────────────────────────
+        if any(w in c for w in ["back pain", "backache", "sırt", "rückenschmerz", "lumbar", "spine", "low back"]):
+            if age and age >= 55 and is_male:
+                lenses.append(
+                    "BACK PAIN PROTOCOL (Male ≥55): AAA rupture is life-threatening priority.\n"
+                    "Q1: Pulsatile/tearing quality + diaphoresis + hypotension feeling (AAA rupture → IMMEDIATE).\n"
+                    "Q2: Cauda equina screen — bladder/bowel incontinence or retention, saddle anaesthesia (SURGICAL EMERGENCY).\n"
+                    "Q3: Radiation to groin (renal colic, AAA) vs to leg below knee (disc/nerve root).\n"
+                    "Q4: Fever + night sweats + immunosuppression (epidural abscess, vertebral osteomyelitis).\n"
+                    "Q5: Known AAA, hypertension, smoking, connective tissue disorder history."
+                )
+            else:
+                lenses.append(
+                    "BACK PAIN PROTOCOL:\n"
+                    "Q1: Cauda equina screen — bladder/bowel dysfunction, saddle anaesthesia (SURGICAL EMERGENCY).\n"
+                    "Q2: Radiation below knee — dermatomal pattern (L4/L5/S1 disc herniation).\n"
+                    "Q3: Fever + night sweats + point tenderness (infection, malignancy — red flags).\n"
+                    "Q4: Onset — trauma, sudden (fracture) vs insidious progressive (malignancy, infection).\n"
+                    "Q5: Progressive bilateral leg weakness or numbness (cord compression — do not miss)."
+                )
+
+        # ── STROKE / FOCAL NEUROLOGY ──────────────────────────────────
+        if any(w in c for w in ["weakness", "numbness", "speech", "facial drop", "stroke", "felç", "schlaganfall", "lähmung", "paralys"]):
+            lenses.append(
+                "STROKE PROTOCOL — TIME IS BRAIN:\n"
+                "Q1: EXACT last-known-well time — tPA window is 4.5 hours (thrombectomy up to 24 h in selected).\n"
+                "Q2: FAST positive — facial droop, arm drift, speech abnormality (if yes → IMMEDIATE now).\n"
+                "Q3: Posterior symptoms — double vision, vertigo, dysphagia, ataxia (basilar artery).\n"
+                "Q4: Haemorrhagic features — severe headache, vomiting, very high BP history (ICH vs ischaemic).\n"
+                "Q5: Contraindications to thrombolysis — anticoagulants (warfarin/DOAC), recent surgery, active bleeding."
+            )
+
+        # ── TRAUMA ────────────────────────────────────────────────────
+        if any(w in c for w in ["trauma", "injury", "fall", "wound", "cut", "fracture", "düşme", "kaza", "verletz", "hit", "accident"]):
+            lenses.append(
+                "TRAUMA PROTOCOL:\n"
+                "Q1: Mechanism — height of fall, vehicle speed, direction of impact (energy = severity).\n"
+                "Q2: Loss of consciousness or amnesia around event (TBI regardless of GCS appearance).\n"
+                "Q3: Neck or back pain with mechanism (c-spine precautions until cleared).\n"
+                "Q4: Hidden injuries — abdominal tenderness, visible haematuria (solid organ / bladder).\n"
+                "Q5: Anticoagulants (warfarin, DOAC, aspirin) — minor trauma + anticoagulant = major bleeding risk."
+            )
+
+        if not lenses:
+            return ""
+        return (
+            "CLINICAL PROTOCOL FOR THIS PRESENTATION:\n"
+            + "\n\n".join(lenses)
+        )
 
     # ------------------------------------------------------------------
     # Dynamic question generation (Agentic AI)
@@ -644,26 +847,25 @@ Respond ONLY with a JSON object:
                 },
             }
 
-        # ── Step 0: Enrich demographics from medical_history if not supplied ──
-        # health_number lookup already gives us sex, DOB, diagnoses etc. via
-        # medical_history["patient"]. Extract and merge so GPT has full context.
-        if not demographics and medical_history:
+        # ── Step 0: Enrich demographics ──────────────────────────────────────
+        # Always prefer exact age from medical history DOB over the frontend's age_range string.
+        # Also backfill sex/blood_type/nationality from medical history when missing from demographics.
+        if medical_history:
             pat = medical_history.get("patient") or medical_history.get("demographics") or {}
-            enriched: dict = {}
-            if pat.get("sex"):
-                enriched["sex"] = pat["sex"]
+            demographics = dict(demographics or {})
+            if pat.get("sex") and not demographics.get("sex"):
+                demographics["sex"] = pat["sex"]
             if pat.get("date_of_birth"):
                 from datetime import datetime as _dt
                 try:
-                    enriched["age"] = _dt.now().year - int(str(pat["date_of_birth"])[:4])
+                    exact_age = _dt.now().year - int(str(pat["date_of_birth"])[:4])
+                    demographics["age"] = exact_age   # exact age always overrides age_range
                 except Exception:
                     pass
-            if pat.get("blood_type"):
-                enriched["blood_type"] = pat["blood_type"]
-            if pat.get("nationality"):
-                enriched["nationality"] = pat["nationality"]
-            if enriched:
-                demographics = enriched
+            if pat.get("blood_type") and not demographics.get("blood_type"):
+                demographics["blood_type"] = pat["blood_type"]
+            if pat.get("nationality") and not demographics.get("nationality"):
+                demographics["nationality"] = pat["nationality"]
 
         # ── Step 1: Build or reuse clinical pre-assessment hypothesis ────────
         # On the first question (empty transcript) we run the full hypothesis LLM call.
@@ -687,8 +889,9 @@ hypothesis — start from the most dangerous differential and work down.
 {self._format_medical_history(medical_history)}
 """
 
-        # ── Step 2: RAG context ──────────────────────────────────────────────
+        # ── Step 2: RAG context + clinical lens ─────────────────────────────
         guidelines, _, _rag_sources = self._retrieve_context(chief_complaint)
+        clinical_lens = self._clinical_lens(chief_complaint, demographics)
 
         # ── Step 3: Build system prompt ──────────────────────────────────────
         system_prompt = f"""You are AIVoN, a clinical triage assistant supporting ER nurses.
@@ -699,6 +902,7 @@ Clinical guidelines:
 
 {hypothesis_section}
 
+{f"[CLINICAL PROTOCOL — follow this question sequence for this specific presentation]{chr(10)}{clinical_lens}{chr(10)}" if clinical_lens else ""}
 Patient demographics:
 {json.dumps(demographics or {})}
 
@@ -709,8 +913,9 @@ Questions already asked (do not repeat any of these):
 {json.dumps(previous_answers, indent=2)}
 
 Decision rules:
-- Choose a question that has not been asked yet and was not covered in the chief complaint.
-- Prioritise questions that target the most dangerous differential diagnoses first.
+- Follow the CLINICAL PROTOCOL above — it defines the optimal question sequence for this exact complaint and demographic.
+- If the clinical protocol specifies Q1/Q2/Q3 order, respect it — these are ordered by diagnostic priority.
+- Choose the next unasked question from the protocol that has not already been covered by a previous answer.
 - If a known chronic condition exists, ask about acute complications relevant to the complaint.
 - Prefer questions whose answer could change the triage classification.
 - For visible injuries (cut, burn, rash, bleeding) with no photo in the transcript, set type to "photo_request".
