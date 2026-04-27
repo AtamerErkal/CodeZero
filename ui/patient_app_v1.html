@@ -2240,15 +2240,21 @@
             }
         }
 
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
         .symptom-card {
-            background: rgba(26, 32, 44, 0.6); /* Dark semi-transparent */
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--success-l);
+            border: 2px solid var(--success);
             border-radius: 16px;
             padding: 16px 8px;
             text-align: center;
             font-size: 0.85rem;
-            font-weight: 500;
-            color: #E2E8F0; /* Light gray text */
+            font-weight: 600;
+            color: var(--text);
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
@@ -2256,9 +2262,7 @@
             align-items: center;
             justify-content: center;
             min-height: 100px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             
             word-wrap: break-word;
             word-break: break-word;
@@ -2270,32 +2274,32 @@
             width: 32px;
             height: 32px;
             margin-bottom: 10px;
-            color: #94A3B8; /* Muted icon color */
+            color: var(--success); /* Muted icon color */
             transition: all 0.25s ease;
             stroke-width: 1.5;
         }
 
         .symptom-card:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--success-h);
+            background: var(--success);
+            color: white;
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 16px rgba(13, 148, 136, 0.2);
         }
 
         .symptom-card:hover .symptom-icon {
-            color: #F1F5F9;
+            color: white;
         }
 
         .symptom-card.selected {
-            background: rgba(13, 148, 136, 0.15); /* Medical primary tint */
-            border-color: var(--medical-primary);
-            color: #FFFFFF;
-            box-shadow: 0 0 15px rgba(13, 148, 136, 0.3), inset 0 0 10px rgba(13, 148, 136, 0.1);
+            background: var(--success); 
+            border-color: var(--success-h);
+            color: white;
+            box-shadow: 0 0 15px rgba(13, 148, 136, 0.4), inset 0 0 10px rgba(0,0,0,0.1);
         }
 
         .symptom-card.selected .symptom-icon {
-            color: var(--medical-primary);
-            filter: drop-shadow(0 0 4px rgba(13, 148, 136, 0.5));
+            color: white;
         }
 
         /* RESULT PAGE: TAB SYSTEM */
@@ -4222,6 +4226,17 @@
         }
 
         function toggleSymptom(el, id) {
+            // Check limit before selecting
+            if (!el.classList.contains('selected')) {
+                const currentSelected = document.querySelectorAll('.symptom-card.selected');
+                if (currentSelected.length >= 3) {
+                    // Provide brief visual feedback that limit is reached
+                    el.style.animation = 'shake 0.4s';
+                    setTimeout(() => el.style.animation = '', 400);
+                    return;
+                }
+            }
+
             el.classList.toggle('selected');
             const selectedNodes = document.querySelectorAll('.symptom-card.selected');
 

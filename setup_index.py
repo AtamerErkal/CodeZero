@@ -76,10 +76,12 @@ def main() -> None:
         sys.exit(1)
 
     # Step 4: Chunk documents for indexing
-    logger.info("Chunking documents (chunk_size=1000, overlap=200)...")
+    # Smaller chunks (600 chars) with sentence-boundary awareness improve
+    # retrieval precision — each chunk stays within one clinical topic section.
+    logger.info("Chunking documents (chunk_size=600, overlap=80, sentence-boundary)...")
     all_chunks: list[dict] = []
     for doc in documents:
-        chunks = processor.chunk_document(doc, chunk_size=1000, overlap=200)
+        chunks = processor.chunk_document(doc, chunk_size=600, overlap=80)
         all_chunks.extend(chunks)
     logger.info("✅ Created %d chunks from %d documents.", len(all_chunks), len(documents))
 

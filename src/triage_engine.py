@@ -60,6 +60,111 @@ DEMOGRAPHIC_QUESTIONS: list[dict] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# OR-question post-processor
+# ---------------------------------------------------------------------------
+# When the AI generates a yes_no question that asks about two conditions
+# connected by "or" (e.g. "Do you have chest pain or shortness of breath?"),
+# the answer "Yes" is clinically meaningless — yes to which condition?
+# This function detects that pattern and converts the question to
+# multiple_choice so the patient can select exactly what applies.
+#
+# Applied to every question returned by generate_next_question() as a
+# second line of defence — the system prompt already forbids the pattern,
+# but AI models sometimes ignore instructions.
+
+import re as _re
+
+# Common English question prefixes that precede the actual symptom/condition description.
+# These are stripped from the left half of an OR split so we get the bare symptom label.
+_Q_PREFIX_RE = _re.compile(
+    r"^(?:"
+    r"do you (?:also |currently |still |now )?(?:have|feel|notice|experience|suffer from|get)|"
+    r"are you (?:also |currently |still |now )?(?:experiencing|having|feeling|noticing)|"
+    r"have you (?:also |been )?(?:experiencing|having|noticing|had)|"
+    r"is (?:the |your |there (?:any |also )?)?\w+(?:\s+\w+)? |"  # "is the discharge", "is your pain"
+    r"does (?:the |your )?\w+(?:\s+\w+)? "                       # "does the wound"
+    r")\s*",
+    _re.IGNORECASE,
+)
+
+
+def _fix_or_question(q: dict) -> None:
+    """Convert a malformed yes_no question that contains multiple findings into
+    multiple_choice in-place, so each finding becomes a selectable option.
+
+    Handles two patterns:
+      • 2-finding OR question  → ["Finding A", "Finding B", "Both", "Neither of these"]
+      • 3+ findings (commas+or) → ["Finding A", "Finding B", "Finding C", "None of these"]
+
+    If the question already has the correct type, or no multi-finding pattern is
+    detected, the dict is left unchanged.
+    """
+    if not q or q.get("type") != "yes_no":
+        return
+
+    text_en = q.get("question", "")
+
+    # ── Pattern 1: commas AND/OR connectors → 3+ findings ────────────────────
+    # Detect: "Does X, Y, or Z?", "Is there A, B, or C?"
+    has_comma = "," in text_en
+    has_or    = bool(_re.search(r"\bor\b", text_en, _re.IGNORECASE))
+
+    if has_comma and has_or:
+        # Split on commas and " or " to get individual fragments
+        raw_parts = _re.split(r"\s*,\s*|\s+or\s+", text_en, flags=_re.IGNORECASE)
+        # Also handle the case where a fragment still starts with "or " / "and "
+        # (happens when splitting ", or " — comma matches first, "or" is left over)
+        _connector_prefix = _re.compile(r"^\s*(?:or|and)\s+", _re.IGNORECASE)
+        fragments = []
+        for p in raw_parts:
+            # Remove leading "or"/"and" leftovers, then strip question-prefix words
+            p = _connector_prefix.sub("", p)
+            cleaned = _Q_PREFIX_RE.sub("", p).strip().rstrip("?,;.").strip()
+            if len(cleaned) >= 2:
+                fragments.append(cleaned[0].upper() + cleaned[1:])
+
+        if len(fragments) >= 3:
+            q["type"]    = "multiple_choice"
+            q["options"] = fragments + ["None of these"]
+            logger.info(
+                "_fix_or_question: 3+ findings yes_no → multiple_choice | options=%s",
+                q["options"],
+            )
+            return  # done
+
+    # ── Pattern 2: simple 2-finding OR question ───────────────────────────────
+    if not has_or:
+        return  # nothing to fix
+
+    parts = _re.split(r"\s+or\s+", text_en, maxsplit=1, flags=_re.IGNORECASE)
+    if len(parts) != 2:
+        return
+
+    opt_a = _Q_PREFIX_RE.sub("", parts[0]).strip().rstrip("?,;.").strip()
+    opt_b = parts[1].strip().rstrip("?,;.").strip()
+
+    if len(opt_a) < 2 or len(opt_b) < 2:
+        return
+
+    opt_a = opt_a[0].upper() + opt_a[1:]
+    opt_b = opt_b[0].upper() + opt_b[1:]
+
+    q["type"]    = "multiple_choice"
+    q["options"] = [opt_a, opt_b, "Both", "Neither of these"]
+    logger.info(
+        "_fix_or_question: 2-finding yes_no → multiple_choice | options=%s",
+        q["options"],
+    )
+
+
+def _fix_or_yes_no(result: dict) -> None:
+    """Wrapper for generate_next_question() result format: {done, question}."""
+    q = result.get("question")
+    if q:
+        _fix_or_question(q)
+
+
 class TriageEngine:
     """AI-powered medical triage engine with RAG grounding.
 
@@ -217,45 +322,150 @@ class TriageEngine:
     # RAG: Retrieve context from knowledge base
     # ------------------------------------------------------------------
 
-    def _retrieve_context(self, query: str) -> tuple[str, bool]:
+    # Medical synonym expansion for better retrieval recall
+    _COMPLAINT_SYNONYMS: dict[str, list[str]] = {
+        "chest pain": ["chest pain", "angina", "ACS", "STEMI", "myocardial"],
+        "heart attack": ["chest pain", "myocardial infarction", "ACS", "cardiac"],
+        "shortness of breath": ["dyspnea", "respiratory distress", "breathing difficulty", "SOB"],
+        "difficulty breathing": ["dyspnea", "respiratory", "breathing", "airway"],
+        "headache": ["headache", "migraine", "cephalgia", "head pain"],
+        "stomach pain": ["abdominal pain", "abdomen", "belly pain", "GI"],
+        "belly pain": ["abdominal pain", "abdomen", "GI", "gastro"],
+        "abdominal pain": ["abdominal pain", "abdomen", "GI", "gastro"],
+        "back pain": ["back pain", "lumbar", "spine"],
+        "dizzy": ["dizziness", "vertigo", "syncope", "lightheaded"],
+        "dizziness": ["dizziness", "vertigo", "syncope", "presyncope"],
+        "faint": ["syncope", "loss of consciousness", "LOC", "dizziness"],
+        "unconscious": ["cardiac arrest", "syncope", "LOC", "unresponsive"],
+        "collapsed": ["cardiac arrest", "syncope", "collapse", "unresponsive"],
+        "allergy": ["anaphylaxis", "allergic reaction", "hypersensitivity"],
+        "allergic": ["anaphylaxis", "allergic reaction", "hypersensitivity"],
+        "bee sting": ["anaphylaxis", "insect sting", "venom", "allergic"],
+        "swelling": ["angioedema", "oedema", "swelling"],
+        "throat swelling": ["anaphylaxis", "angioedema", "airway"],
+        "fever": ["fever", "infection", "sepsis", "pyrexia"],
+        "infection": ["sepsis", "infection", "fever", "inflammatory"],
+        "confusion": ["altered consciousness", "encephalopathy", "delirium", "sepsis"],
+        "seizure": ["seizure", "epilepsy", "convulsion", "status epilepticus"],
+        "fit": ["seizure", "epilepsy", "convulsion"],
+        "overdose": ["poisoning", "overdose", "toxicology", "intoxication"],
+        "poisoning": ["poisoning", "overdose", "toxicology"],
+        "stroke": ["stroke", "CVA", "TIA", "cerebrovascular", "facial droop", "weakness"],
+        "weakness": ["stroke", "neurological", "paralysis"],
+        "arm weakness": ["stroke", "CVA", "neurological"],
+        "leg pain": ["fracture", "DVT", "orthopedic", "trauma"],
+        "broken bone": ["fracture", "orthopedic", "trauma"],
+        "fracture": ["fracture", "orthopedic", "trauma", "bone"],
+        "fall": ["trauma", "fracture", "orthopedic", "injury"],
+        "injury": ["trauma", "fracture", "orthopedic"],
+        "trauma": ["trauma", "fracture", "orthopedic"],
+        "diabetes": ["diabetic", "hypoglycaemia", "hyperglycaemia", "glucose"],
+        "blood sugar": ["diabetic emergency", "hypoglycaemia", "hyperglycaemia"],
+        "low blood sugar": ["hypoglycaemia", "diabetic emergency"],
+        "high blood sugar": ["hyperglycaemia", "DKA", "diabetic ketoacidosis"],
+        "urine": ["urological", "UTI", "kidney", "renal"],
+        "kidney pain": ["renal colic", "urological", "kidney stone"],
+        "testicular pain": ["testicular torsion", "urological", "scrotal"],
+        "scrotal pain": ["testicular torsion", "urological", "scrotal"],
+        "child": ["paediatric", "pediatric", "child", "infant"],
+        "baby": ["paediatric", "pediatric", "infant", "neonate"],
+        "mental health": ["psychiatric", "mental health", "suicide", "depression"],
+        "suicidal": ["psychiatric emergency", "suicide", "mental health crisis"],
+        "self harm": ["psychiatric emergency", "self-harm", "mental health"],
+        "rash": ["skin", "dermatological", "meningococcal", "allergic"],
+        "bleeding": ["haemorrhage", "bleeding", "hemorrhage"],
+    }
+
+    def _enhance_query(self, complaint: str) -> str:
+        """Expand a chief complaint with clinical synonyms for better RAG recall.
+
+        Maps lay terms to medical terminology so that the search index
+        finds relevant protocol documents even when the patient uses
+        colloquial language (e.g. "belly pain" → "abdominal pain GI gastro").
+
+        Args:
+            complaint: Raw chief complaint text from the patient.
+
+        Returns:
+            Enriched query string combining original terms + medical synonyms.
+        """
+        complaint_lower = complaint.lower()
+        extra_terms: list[str] = []
+
+        for trigger, expansions in self._COMPLAINT_SYNONYMS.items():
+            if trigger in complaint_lower:
+                extra_terms.extend(expansions)
+
+        if extra_terms:
+            # Deduplicate while preserving order
+            seen: set[str] = set()
+            unique_extra: list[str] = []
+            for t in extra_terms:
+                if t.lower() not in seen:
+                    seen.add(t.lower())
+                    unique_extra.append(t)
+            enhanced = complaint + " " + " ".join(unique_extra[:12])
+            logger.info(
+                "RAG query enhanced: '%s' → '%s'", complaint[:50], enhanced[:100]
+            )
+            return enhanced
+
+        return complaint
+
+    def _retrieve_context(self, query: str) -> tuple[str, bool, list[str]]:
         """Search the medical knowledge base for relevant guidelines.
 
-        This is the "Retrieval" step of RAG. The search query
-        is derived from the patient's complaint. Results are concatenated
+        This is the "Retrieval" step of RAG. The search query is enhanced
+        with medical synonyms before searching, so lay patient language maps
+        to clinical protocol documents. Results are deduplicated, scored,
         and injected into the system prompt as grounding context.
 
-        Returns a tuple (context_text, rag_found) so callers can adapt
-        their prompts when the knowledge base has no relevant content.
+        Returns a 3-tuple (context_text, rag_found, sources) so callers can
+        adapt their prompts and surface citations to users.
 
         Args:
             query: Search query (usually the patient's chief complaint).
 
         Returns:
-            Tuple of (guideline text, rag_found flag).
+            Tuple of (guideline text, rag_found flag, list of source filenames).
             rag_found is True only when at least one result was retrieved.
         """
         if self.knowledge_indexer is None:
-            return "", False
+            return "", False, []
 
         try:
-            results = self.knowledge_indexer.search(query, top=3)
+            enhanced_query = self._enhance_query(query)
+            results = self.knowledge_indexer.search(enhanced_query, top=4)
             if not results:
-                logger.info("RAG: no results for query '%s' — AI will use general knowledge.", query[:60])
-                return "", False
+                logger.info(
+                    "RAG: no results for query '%s' — AI will use general knowledge.",
+                    query[:60],
+                )
+                return "", False, []
 
-            context_parts = []
+            context_parts: list[str] = []
+            sources: list[str] = []
             for r in results:
+                source_name = r.get("source", "Unknown")
                 context_parts.append(
-                    f"--- Source: {r.get('source', 'Unknown')} ---\n"
+                    f"--- Guideline: {r.get('title', source_name)} ---\n"
                     f"{r.get('content', '')}\n"
                 )
+                # Format source name for display (strip extension, humanise)
+                display_name = source_name.replace(".txt", "").replace("_", " ").title()
+                if display_name not in sources:
+                    sources.append(display_name)
+
             context_text = "\n".join(context_parts)
-            logger.info("RAG: found %d result(s) for query '%s'.", len(results), query[:60])
-            return context_text, True
+            logger.info(
+                "RAG: found %d result(s) for query '%s'. Sources: %s",
+                len(results), query[:60], sources,
+            )
+            return context_text, True, sources
 
         except Exception as exc:
             logger.error("RAG retrieval error: %s", exc)
-            return "", False
+            return "", False, []
 
     def _format_medical_history(self, medical_history: Optional[dict]) -> str:
         """Format the full medical record into a concise summary for GPT context."""
@@ -414,13 +624,14 @@ Respond ONLY with a JSON object:
         """
         if not self._initialized:
             count = len(previous_answers)
-            if count >= 4:
+            if count >= 5:
                 return {"done": True, "question": None}
             mock_qs = [
                 "Are you in severe pain?",
                 "Do you have a high fever?",
                 "Is it difficult to breathe?",
                 "Do you feel dizzy or faint?",
+                "Do you have any known medical conditions?",
             ]
             q_text = mock_qs[count] if count < len(mock_qs) else "Any other symptoms?"
             return {
@@ -432,6 +643,27 @@ Respond ONLY with a JSON object:
                     "clinical_rationale": "mock fallback",
                 },
             }
+
+        # ── Step 0: Enrich demographics from medical_history if not supplied ──
+        # health_number lookup already gives us sex, DOB, diagnoses etc. via
+        # medical_history["patient"]. Extract and merge so GPT has full context.
+        if not demographics and medical_history:
+            pat = medical_history.get("patient") or medical_history.get("demographics") or {}
+            enriched: dict = {}
+            if pat.get("sex"):
+                enriched["sex"] = pat["sex"]
+            if pat.get("date_of_birth"):
+                from datetime import datetime as _dt
+                try:
+                    enriched["age"] = _dt.now().year - int(str(pat["date_of_birth"])[:4])
+                except Exception:
+                    pass
+            if pat.get("blood_type"):
+                enriched["blood_type"] = pat["blood_type"]
+            if pat.get("nationality"):
+                enriched["nationality"] = pat["nationality"]
+            if enriched:
+                demographics = enriched
 
         # ── Step 1: Build or reuse clinical pre-assessment hypothesis ────────
         # On the first question (empty transcript) we run the full hypothesis LLM call.
@@ -456,7 +688,7 @@ hypothesis — start from the most dangerous differential and work down.
 """
 
         # ── Step 2: RAG context ──────────────────────────────────────────────
-        guidelines, _ = self._retrieve_context(chief_complaint)
+        guidelines, _, _rag_sources = self._retrieve_context(chief_complaint)
 
         # ── Step 3: Build system prompt ──────────────────────────────────────
         system_prompt = f"""You are AIVoN, a clinical triage assistant supporting ER nurses.
@@ -481,15 +713,62 @@ Decision rules:
 - Prioritise questions that target the most dangerous differential diagnoses first.
 - If a known chronic condition exists, ask about acute complications relevant to the complaint.
 - Prefer questions whose answer could change the triage classification.
-- Set "done" to true when: (a) you have enough information to classify confidently, or (b) the transcript already has 5 or more questions, or (c) the presentation is clearly life-threatening.
 - For visible injuries (cut, burn, rash, bleeding) with no photo in the transcript, set type to "photo_request".
 
-Question type rules — choose carefully:
-- "yes_no": any question where the answer is yes or no (e.g. "Do you have chest pain?", "Is there swelling in your leg?"). This is the most common type. Include options ["Yes", "No"].
-- "scale": ONLY when explicitly asking the patient to rate intensity/severity on a number scale (e.g. "Rate your pain from 1 to 10"). Do NOT use scale for symptom presence questions. Include options ["1","2","3","4","5","6","7","8","9","10"].
-- "multiple_choice": when there are 3 or more distinct options (e.g. onset timing, location). Include all options in the options array.
-- "free_text": when the answer is open-ended and cannot be captured by the above types. Leave options as [].
-- "photo_request": only when a visible physical finding needs to be assessed. Leave options as [].
+FIXED 5-QUESTION PROTOCOL — MANDATORY, NO EXCEPTIONS:
+The system will ask EXACTLY 5 questions — no more, no fewer.
+• If the transcript has fewer than 5 answers: ALWAYS return a new question (done: false).
+  This applies regardless of how urgent or clear the clinical picture seems.
+  Never set done:true before 5 answers have been collected.
+• If the transcript already contains 5 or more answers: set done:true immediately.
+
+Do NOT terminate early for any reason — not for apparent severity, not for "obvious" triage level,
+not for life-threatening complaints. The clinical picture is never complete without all 5 questions.
+The 5-question protocol is a non-negotiable safety standard.
+
+ONE FINDING PER QUESTION — This is the most important rule:
+Each question must test EXACTLY ONE clinical finding. Never combine two or more symptoms,
+signs, or conditions into a single question — not with "or", not with "and", not with commas.
+
+❌ WRONG (multiple findings in one question):
+  "Does pain worsen when you press on it, or when walking, or is there board-like rigidity?"
+  "Do you have chest pain or shortness of breath?"
+  "Is there nausea, vomiting, or diarrhoea?"
+  Reason: the patient cannot give a meaningful answer — which of these do they have?
+
+✅ CORRECT approach for related findings:
+  Use "multiple_choice" and convert the FINDINGS into the ANSWER OPTIONS.
+  The question text becomes a short, neutral prompt; the options list the specific findings.
+  The patient can select MULTIPLE options that apply (checkbox behaviour).
+
+  Example — instead of asking about 3 peritoneal signs at once:
+    question: "Which of these apply to your abdominal pain right now?"
+    type: "multiple_choice"
+    options: ["Pain worsens when I press on it", "Pain worsens when walking", "My abdomen feels board-like rigid", "None of these"]
+
+  Example — instead of "chest pain or shortness of breath?":
+    question: "Which of these do you have right now?"
+    type: "multiple_choice"
+    options: ["Chest pain", "Shortness of breath", "Both", "Neither of these"]
+
+QUESTION TYPE RULES:
+
+- "yes_no": ONLY for a single, unambiguous binary finding. Question text must mention ONE thing only.
+  Include options ["Yes", "No"].
+  Example: "Do you have chest pain?" / "Is there swelling?"
+
+- "multiple_choice": Use when:
+  (a) The answer has 3+ distinct values (onset timing, location, severity category), OR
+  (b) You want to screen for 2+ related findings at once — convert each finding into a separate option,
+      always include "None of these" as the last option so the patient can answer negatively.
+  Options are MULTI-SELECT — the patient can pick more than one.
+
+- "scale": ONLY for rating intensity on a numeric scale (1–10). Never for symptom presence.
+  Include options ["1","2","3","4","5","6","7","8","9","10"].
+
+- "free_text": open-ended answers only. Leave options as [].
+
+- "photo_request": only for visible physical findings that need visual assessment. Leave options as [].
 
 Output valid JSON only:
 - "done": boolean
@@ -548,10 +827,13 @@ Output valid JSON only:
                     cleaned = cleaned[4:]
                 cleaned = cleaned.strip()
             result = json.loads(cleaned)
+            # Post-process: fix OR questions that slipped through as yes_no
+            _fix_or_yes_no(result)
             logger.info(
-                "generate_next_question: done=%s q='%s'",
+                "generate_next_question: done=%s type=%s q='%s'",
                 result.get("done"),
-                str(result.get("question", {}).get("question", ""))[:80],
+                (result.get("question") or {}).get("type", "-"),
+                str((result.get("question") or {}).get("question", ""))[:80],
             )
             return result
 
@@ -602,7 +884,7 @@ Output valid JSON only:
             Types: 'yes_no', 'scale', 'multiple_choice', 'free_text'.
         """
         # Retrieve relevant medical guidelines (RAG)
-        context, rag_found = self._retrieve_context(chief_complaint)
+        context, rag_found, rag_sources = self._retrieve_context(chief_complaint)
 
         # Build demographic context string
         demo_context = ""
@@ -746,8 +1028,14 @@ OUTPUT FORMAT (strict JSON):
                 return self._mock_questions(chief_complaint)
 
             logger.info(
-                "AI generated %d questions for: %s", len(questions), chief_complaint[:50]
+                "AI generated %d questions for: %s (RAG sources: %s)",
+                len(questions), chief_complaint[:50], rag_sources,
             )
+            # Post-process: fix OR questions that slipped through as yes_no,
+            # then attach RAG citation metadata for UI display
+            for q in questions:
+                _fix_or_question(q)
+                q["rag_sources"] = rag_sources
             return questions
 
         except Exception as exc:
@@ -779,7 +1067,7 @@ OUTPUT FORMAT (strict JSON):
         Returns:
             Assessment dict with triage_level, assessment, patient_summary, clinical_report, etc.
         """
-        context, rag_found = self._retrieve_context(chief_complaint)
+        context, rag_found, rag_sources = self._retrieve_context(chief_complaint)
 
         answers_text = ""
         for ans in answers:
@@ -900,11 +1188,16 @@ Output valid JSON with these fields: triage_level (EMERGENCY/URGENT/ROUTINE), as
             ):
                 assessment["triage_level"] = TRIAGE_URGENT
 
+            # Attach RAG citation metadata for display in the UI
+            if rag_sources and not assessment.get("source_guidelines"):
+                assessment["source_guidelines"] = rag_sources
+
             logger.info(
-                "Triage assessment: %s (risk=%s) for '%s'",
+                "Triage assessment: %s (risk=%s) for '%s'. RAG sources: %s",
                 assessment.get("triage_level"),
                 assessment.get("risk_score"),
                 chief_complaint[:50],
+                rag_sources,
             )
             return assessment
 
@@ -958,7 +1251,7 @@ Output valid JSON with these fields: triage_level (EMERGENCY/URGENT/ROUTINE), as
         ]
 
         # ── Step 1: Try RAG for condition-specific protocol ───────────────
-        context, rag_found = self._retrieve_context(chief_complaint)
+        context, rag_found, _sources = self._retrieve_context(chief_complaint)
 
         if rag_found:
             knowledge_section = f"""Use the following medical guidelines to generate advice:
@@ -1215,7 +1508,7 @@ OUTPUT FORMAT (strict JSON, no extra text):
         risk_score      = assessment.get("risk_score", 5)
         time_sensitivity = assessment.get("time_sensitivity", "")
 
-        context, rag_found = self._retrieve_context(chief_complaint)
+        context, rag_found, _sources = self._retrieve_context(chief_complaint)
 
         if rag_found:
             knowledge_section = f"""Use the following medical guidelines:

@@ -105,56 +105,112 @@ class DocumentProcessor:
         return documents
 
     def chunk_document(
-        self, document: dict, chunk_size: int = 1000, overlap: int = 200
+        self, document: dict, chunk_size: int = 600, overlap: int = 80
     ) -> list[dict]:
         """Split a document into overlapping chunks for search indexing.
+
+        Uses a two-pass strategy:
+          1. Split at section boundaries (ALL-CAPS headings, numbered sections)
+             so each chunk stays within a coherent clinical topic.
+          2. Within each section, split at sentence boundaries (not mid-word)
+             to keep chunks semantically complete.
+        Overlap is appended as the closing sentences of the previous chunk.
 
         AI-102: Chunking is essential for RAG pipelines. Overlap ensures
         context is not lost at chunk boundaries.
 
         Args:
             document: Dict with ``title``, ``content``, ``source``.
-            chunk_size: Maximum characters per chunk.
-            overlap: Overlapping characters between consecutive chunks.
+            chunk_size: Target maximum characters per chunk (default 600).
+            overlap: Characters of overlap between consecutive chunks (default 80).
 
         Returns:
             List of chunk dicts with ``id``, ``title``, ``content``, ``source``.
         """
+        import re
+
         content = document.get("content", "")
         title = document.get("title", "Unknown")
         source = document.get("source", "Unknown")
-        chunks: list[dict] = []
 
-        if len(content) <= chunk_size:
-            chunks.append(
-                {
-                    "id": f"{source}_chunk_0",
-                    "title": title,
-                    "content": content,
-                    "source": source,
-                }
-            )
-            return chunks
+        if not content.strip():
+            return []
 
-        start = 0
-        chunk_idx = 0
-        while start < len(content):
-            end = start + chunk_size
-            chunk_text = content[start:end]
-            chunks.append(
-                {
-                    "id": f"{source}_chunk_{chunk_idx}",
-                    "title": title,
-                    "content": chunk_text,
-                    "source": source,
-                }
-            )
-            start += chunk_size - overlap
-            chunk_idx += 1
-
-        logger.debug(
-            "Document '%s' split into %d chunks", title, len(chunks)
+        # ── Step 1: Split into logical sections ──────────────────────────────
+        # A section boundary is a line that looks like a header:
+        #   "1. OVERVIEW", "RED FLAGS", "TRIAGE LEVELS", etc.
+        section_pattern = re.compile(
+            r'(?m)^(?:\d+\.\s+[A-Z]|[A-Z][A-Z\s\-/]{4,})\S*.*$'
         )
+        section_starts = [m.start() for m in section_pattern.finditer(content)]
+
+        if not section_starts:
+            # No section headers found — treat whole content as one section
+            sections = [("", content)]
+        else:
+            sections: list[tuple[str, str]] = []
+            for i, start in enumerate(section_starts):
+                end = section_starts[i + 1] if i + 1 < len(section_starts) else len(content)
+                header_line_end = content.find("\n", start)
+                if header_line_end == -1:
+                    header_line_end = start
+                section_header = content[start:header_line_end].strip()
+                section_body = content[start:end]
+                sections.append((section_header, section_body))
+
+        # ── Step 2: Chunk each section at sentence boundaries ─────────────────
+        sentence_end = re.compile(r'(?<=[.!?])\s+')
+        chunks: list[dict] = []
+        chunk_idx = 0
+
+        for section_header, section_text in sections:
+            # Split section into sentences
+            sentences = sentence_end.split(section_text)
+            if not sentences:
+                continue
+
+            current_chunk = ""
+            prev_tail = ""  # last ~overlap chars of previous chunk for overlap
+
+            for sentence in sentences:
+                candidate = (prev_tail + " " + sentence).strip() if prev_tail else sentence
+                if len(current_chunk) + len(sentence) + 1 <= chunk_size:
+                    current_chunk = (current_chunk + " " + sentence).strip() if current_chunk else sentence
+                else:
+                    if current_chunk:
+                        chunk_title = f"{title} — {section_header}" if section_header else title
+                        chunks.append({
+                            "id": f"{source}_chunk_{chunk_idx}",
+                            "title": chunk_title,
+                            "content": current_chunk,
+                            "source": source,
+                        })
+                        chunk_idx += 1
+                        # Carry overlap: last `overlap` chars of emitted chunk
+                        prev_tail = current_chunk[-overlap:] if len(current_chunk) > overlap else current_chunk
+                    current_chunk = sentence
+
+            # Flush last piece
+            if current_chunk.strip():
+                chunk_title = f"{title} — {section_header}" if section_header else title
+                chunks.append({
+                    "id": f"{source}_chunk_{chunk_idx}",
+                    "title": chunk_title,
+                    "content": current_chunk.strip(),
+                    "source": source,
+                })
+                chunk_idx += 1
+
+        # Fallback: if no chunks produced, return whole document as one chunk
+        if not chunks:
+            chunks.append({
+                "id": f"{source}_chunk_0",
+                "title": title,
+                "content": content[:chunk_size],
+                "source": source,
+            })
+
+        logger.debug("Document '%s' split into %d chunks", title, len(chunks))
         return chunks
 
     # ------------------------------------------------------------------

@@ -206,8 +206,9 @@ class KnowledgeIndexer:
     def search(
         self,
         query: str,
-        top: int = 3,
+        top: int = 4,
         use_semantic: bool = True,
+        min_score: float = 0.0,
     ) -> list[dict]:
         """Search the medical knowledge base.
 
@@ -217,11 +218,13 @@ class KnowledgeIndexer:
 
         Args:
             query: Natural language search query.
-            top: Maximum number of results.
+            top: Maximum number of results (default 4 for broader coverage).
             use_semantic: Whether to use semantic ranking.
+            min_score: Minimum score threshold to filter low-relevance results.
 
         Returns:
             List of result dicts with title, content, source, and score.
+            Results are deduplicated by source and sorted by score descending.
         """
         if not self._initialized or self._search_client is None:
             logger.warning("Search client not available. Using local fallback.")
@@ -231,7 +234,7 @@ class KnowledgeIndexer:
             kwargs: dict = {
                 "search_text": query,
                 "select": [FIELD_TITLE, FIELD_CONTENT, FIELD_SOURCE],
-                "top": top,
+                "top": top + 2,  # Fetch extra to allow for dedup + filtering
             }
 
             if use_semantic:
@@ -248,16 +251,33 @@ class KnowledgeIndexer:
             results = self._search_client.search(**kwargs)
 
             output: list[dict] = []
+            seen_sources: set[str] = set()
+
             for result in results:
+                score = getattr(result, "@search.score", 0.0) or 0.0
+                if score < min_score:
+                    continue
+                source = result.get(FIELD_SOURCE, "")
+                # Keep the highest-scoring chunk per source to avoid redundancy
+                if source in seen_sources:
+                    continue
+                seen_sources.add(source)
                 output.append(
                     {
                         "title": result.get(FIELD_TITLE, ""),
                         "content": result.get(FIELD_CONTENT, ""),
-                        "source": result.get(FIELD_SOURCE, ""),
-                        "score": getattr(result, "@search.score", 0.0),
+                        "source": source,
+                        "score": score,
                     }
                 )
-            logger.info("Search '%s' returned %d results.", query, len(output))
+                if len(output) >= top:
+                    break
+
+            output.sort(key=lambda x: x["score"], reverse=True)
+            logger.info(
+                "Search '%s' returned %d results (semantic=%s).",
+                query[:60], len(output), use_semantic,
+            )
             return output
 
         except Exception as exc:
@@ -268,48 +288,111 @@ class KnowledgeIndexer:
     # Fallback local search (demo / offline mode)
     # ------------------------------------------------------------------
 
-    def _local_fallback_search(self, query: str, top: int = 3) -> list[dict]:
-        """Simple keyword-based local search when Azure is unavailable.
+    def _local_fallback_search(self, query: str, top: int = 4) -> list[dict]:
+        """Chunk-based keyword search when Azure AI Search is unavailable.
 
-        Reads guideline files from the data directory and returns those
-        whose content contains any of the query keywords.
+        Splits each guideline file into sentence-boundary chunks, scores each
+        chunk by weighted keyword frequency (query terms weighted higher for
+        longer terms), and returns the top-scoring non-redundant chunks.
+
+        This is a significant improvement over returning entire files — the
+        caller receives focused, relevant passages rather than thousands of
+        characters of raw protocol text.
 
         Args:
-            query: Search query string.
-            top: Max results.
+            query: Natural language search query.
+            top: Max chunks to return.
 
         Returns:
-            Matching document chunks.
+            Matching document chunks sorted by relevance score descending.
         """
+        import re
         from pathlib import Path
 
         guidelines_dir = Path(__file__).parent.parent / "data" / "medical_guidelines"
         if not guidelines_dir.exists():
             return []
 
-        keywords = [kw.lower() for kw in query.split() if len(kw) > 2]
-        results: list[dict] = []
+        # Build keyword list: longer terms get higher weight
+        raw_keywords = [kw.lower() for kw in re.split(r'\W+', query) if len(kw) > 2]
+        # Remove duplicates, preserve order
+        seen_kw: set[str] = set()
+        keywords = []
+        for kw in raw_keywords:
+            if kw not in seen_kw:
+                seen_kw.add(kw)
+                keywords.append(kw)
+
+        if not keywords:
+            return []
+
+        # Keyword weight: +1 for each extra char beyond 3
+        kw_weights = {kw: 1 + max(0, len(kw) - 3) for kw in keywords}
+
+        CHUNK_SIZE = 600
+        sentence_end = re.compile(r'(?<=[.!?])\s+')
+        all_chunks: list[dict] = []
 
         for file_path in sorted(guidelines_dir.iterdir()):
             if file_path.suffix.lower() not in (".txt", ".md"):
                 continue
             try:
                 content = file_path.read_text(encoding="utf-8")
-                content_lower = content.lower()
-                score = sum(
-                    content_lower.count(kw) for kw in keywords
-                )
-                if score > 0:
-                    results.append(
-                        {
-                            "title": file_path.stem.replace("_", " ").title(),
-                            "content": content,
-                            "source": file_path.name,
-                            "score": score,
-                        }
-                    )
+                title = file_path.stem.replace("_", " ").title()
+                source = file_path.name
+
+                # Build sentence-boundary chunks
+                sentences = sentence_end.split(content)
+                current = ""
+                for sentence in sentences:
+                    if len(current) + len(sentence) + 1 <= CHUNK_SIZE:
+                        current = (current + " " + sentence).strip() if current else sentence
+                    else:
+                        if current:
+                            all_chunks.append({
+                                "title": title,
+                                "content": current,
+                                "source": source,
+                                "_raw_lower": current.lower(),
+                            })
+                        current = sentence
+                if current.strip():
+                    all_chunks.append({
+                        "title": title,
+                        "content": current.strip(),
+                        "source": source,
+                        "_raw_lower": current.lower(),
+                    })
+
             except Exception:
                 continue
 
-        results.sort(key=lambda x: x["score"], reverse=True)
-        return results[:top]
+        # Score each chunk
+        scored: list[dict] = []
+        for chunk in all_chunks:
+            cl = chunk["_raw_lower"]
+            score = sum(cl.count(kw) * w for kw, w in kw_weights.items())
+            if score > 0:
+                scored.append({
+                    "title": chunk["title"],
+                    "content": chunk["content"],
+                    "source": chunk["source"],
+                    "score": float(score),
+                })
+
+        # Sort and deduplicate by source (keep best chunk per file)
+        scored.sort(key=lambda x: x["score"], reverse=True)
+        seen_sources: set[str] = set()
+        deduped: list[dict] = []
+        for item in scored:
+            if item["source"] not in seen_sources:
+                seen_sources.add(item["source"])
+                deduped.append(item)
+            if len(deduped) >= top:
+                break
+
+        logger.info(
+            "Local fallback search '%s' returned %d chunks from %d candidates.",
+            query[:60], len(deduped), len(scored),
+        )
+        return deduped

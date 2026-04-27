@@ -1615,7 +1615,7 @@
       // Merge and sort by timestamp
       const allItems = [
         ...doctorMessages.map(a => ({ side: 'doctor', text: a.message, sender: a.sender || 'Doctor', ts: a.timestamp })),
-        ...replies.map(r => ({ side: 'patient', text: r.text_de, sender: '🙋 Patient', ts: r.ts })),
+        ...replies.map(r => ({ side: 'patient', text: r.text_en || r.text || '—', sender: '🙋 Patient', ts: r.ts })),
       ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
 
       messageHistoryEl.innerHTML = allItems.map(item => `
@@ -3737,7 +3737,7 @@
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: newTriageLevel ? 'MESSAGE_TRIAGE' : 'APPROVE',
+            action: newTriageLevel ? 'MESSAGE_TRIAGE' : 'MESSAGE',
             new_level: targetLevel,
             note: noteText
           })
@@ -5418,27 +5418,35 @@
     function loadActionHistory(pid, container) {
       const stats = calculatePatientStatistics(pid);
       const actions = getPatientActions(pid);
-      
-      // Update statistics
-      if (stats) {
-        const timeToDoctorEl = document.getElementById(`stats-time-to-doctor-${pid}`);
-        const timeToArrivalEl = document.getElementById(`stats-time-to-arrival-${pid}`);
-        const hospitalStayEl = document.getElementById(`stats-hospital-stay-${pid}`);
-        const messagesEl = document.getElementById(`stats-messages-${pid}`);
-        
-        if (timeToDoctorEl) {
-          timeToDoctorEl.textContent = stats.timeToDoctor !== null ? `${stats.timeToDoctor.toFixed(0)} min` : '—';
-        }
-        if (timeToArrivalEl) {
-          timeToArrivalEl.textContent = stats.timeToArrival !== null ? `${stats.timeToArrival.toFixed(0)} min` : '—';
-        }
-        if (hospitalStayEl) {
-          hospitalStayEl.textContent = stats.hospitalStayDuration !== null ? `${stats.hospitalStayDuration.toFixed(0)} min` : '—';
-        }
-        if (messagesEl) {
-          messagesEl.textContent = stats.messagesCount > 0 ? stats.messagesCount : '—';
-        }
-      }
+      const p = _patientCache[pid] || state.patients.find(x => x.patient_id === pid);
+
+      // Update statistics — prefer server timestamps over local action log
+      // (patient_entry actions are often stale in localStorage from prior sessions)
+      const timeToDoctorEl = document.getElementById(`stats-time-to-doctor-${pid}`);
+      const timeToArrivalEl = document.getElementById(`stats-time-to-arrival-${pid}`);
+      const hospitalStayEl = document.getElementById(`stats-hospital-stay-${pid}`);
+      const messagesEl = document.getElementById(`stats-messages-${pid}`);
+
+      const _minDiff = (a, b) => {
+        if (!a || !b) return null;
+        const diff = (new Date(String(b).replace(' ','T').replace(/(?<!Z)$/,'Z')) -
+                      new Date(String(a).replace(' ','T').replace(/(?<!Z)$/,'Z'))) / 60000;
+        return diff >= 0 && diff < 9999 ? diff : null;
+      };
+
+      const entryTs  = p?.created_at || null;
+      const docTs    = p?.doctor_assigned_at || (actions.find(a => a.type === 'doctor_assigned') || {}).timestamp || null;
+      const arrivedTs = (actions.find(a => a.type === 'patient_arrived') || {}).timestamp || null;
+      const discTs   = (actions.find(a => a.type === 'discharged') || {}).timestamp || null;
+
+      if (timeToDoctorEl)
+        timeToDoctorEl.textContent = _minDiff(entryTs, docTs) !== null ? `${Math.round(_minDiff(entryTs, docTs))} min` : '—';
+      if (timeToArrivalEl)
+        timeToArrivalEl.textContent = _minDiff(entryTs, arrivedTs) !== null ? `${Math.round(_minDiff(entryTs, arrivedTs))} min` : '—';
+      if (hospitalStayEl)
+        hospitalStayEl.textContent = _minDiff(arrivedTs, discTs) !== null ? `${Math.round(_minDiff(arrivedTs, discTs))} min` : '—';
+      if (messagesEl)
+        messagesEl.textContent = (stats?.messagesCount || 0) > 0 ? stats.messagesCount : '—';
       
       // Update timeline
       const timelineEl = document.getElementById(`action-timeline-${pid}`);
@@ -6226,6 +6234,57 @@
     document.getElementById('bed-filter-department').addEventListener('change', renderBedManagementPanel);
     document.getElementById('bed-filter-type').addEventListener('change', renderBedManagementPanel);
     document.getElementById('bed-filter-status').addEventListener('change', renderBedManagementPanel);
+
+    // ── Doctor voice-to-text mic for message modal ────────────────────────
+    let _dashMicRec = null, _dashMicChunks = [], _dashMicActive = false;
+    async function toggleDashMic() {
+      const btn = document.getElementById('dashMicBtn');
+      const status = document.getElementById('dashMicStatus');
+      const textarea = document.getElementById('newMessageText');
+      if (_dashMicActive) {
+        if (_dashMicRec && _dashMicRec.state !== 'inactive') _dashMicRec.stop();
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mime = ['audio/webm','audio/ogg','audio/mp4'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+        _dashMicRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+        _dashMicChunks = [];
+        _dashMicActive = true;
+        if (btn) { btn.textContent = '🛑'; btn.style.color = '#ef4444'; }
+        if (status) status.classList.remove('hidden');
+        _dashMicRec.ondataavailable = e => { if (e.data.size > 0) _dashMicChunks.push(e.data); };
+        _dashMicRec.onstop = async () => {
+          _dashMicActive = false;
+          stream.getTracks().forEach(t => t.stop());
+          if (btn) { btn.textContent = '⌛'; btn.style.color = '#f59e0b'; }
+          if (status) status.textContent = '⌛ Transcribing…';
+          try {
+            const blob = new Blob(_dashMicChunks, { type: 'audio/webm;codecs=opus' });
+            const form = new FormData();
+            form.append('audio', blob, 'doctor_note.webm');
+            form.append('lang', 'de');
+            const r = await fetch('/api/patient/transcribe', { method: 'POST', body: form });
+            const d = await r.json();
+            if (d.text && d.text.trim()) {
+              const old = (textarea?.value || '').trim();
+              if (textarea) textarea.value = (old ? old + ' ' : '') + d.text.trim();
+            } else {
+              toast('Could not understand audio — please try again or type', 'warn');
+            }
+          } catch(e) {
+            toast('Transcription failed', 'warn');
+          } finally {
+            if (btn) { btn.textContent = '🎤'; btn.style.color = ''; }
+            if (status) { status.textContent = '🔴 Recording… click mic to stop'; status.classList.add('hidden'); }
+          }
+        };
+        _dashMicRec.start(200);
+      } catch(e) {
+        toast('Microphone access denied', 'warn');
+        _dashMicActive = false;
+      }
+    }
   </script>
 <!-- Alert Modal -->
   <div id="alertModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -6412,7 +6471,12 @@
       <div class="space-y-3">
         <div>
           <label class="text-sm font-medium text-text2 mb-1 block">Message</label>
-          <textarea id="newMessageText" rows="3" class="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 text-sm resize-none" placeholder="Type your message to the patient..."></textarea>
+          <div class="flex gap-2 items-start">
+            <textarea id="newMessageText" rows="3" class="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 text-sm resize-none" placeholder="Type your message to the patient..."></textarea>
+            <button id="dashMicBtn" onclick="toggleDashMic()" title="Voice message (transcribed to text)"
+              class="flex-shrink-0 w-10 h-10 mt-0.5 rounded-full bg-slate-700/60 border border-slate-600/50 text-cyan-400 hover:bg-slate-600/60 transition-colors flex items-center justify-center text-lg">🎤</button>
+          </div>
+          <div id="dashMicStatus" class="text-xs text-text3 mt-1 hidden">🔴 Recording… click mic to stop</div>
         </div>
         
         <div>

@@ -216,6 +216,7 @@ class QuestionsRequest(_BM):
 class QuestionsResponse(_BM):
     questions:    list
     complaint_en: str
+    rag_sources:  list = []  # Guideline documents that grounded these questions
 
 class AnswerItem(_BM):
     question:        str
@@ -276,6 +277,156 @@ class SubmitRequest(_BM):
     ambulance_to_patient_eta: _Opt[int] = None  # ambulance→patient leg only
 
 # -- helpers -------------------------------------------------------------------
+
+# ── Shared translation helpers (used by both /questions and /questions/next) ──
+
+import json as _json
+import re as _re
+
+_LANG_GUIDES = {
+    "Turkish": (
+        "Write in simple, warm, everyday Turkish — NOT formal hospital Turkish or medical jargon.\n"
+        "The patient is anxious; use short, clear sentences.\n"
+        "Form: always use 'siz' (formal you). End questions with '?' \n"
+        "Good examples: 'Ağrınız ne zaman başladı?' (NOT 'Semptomların başlangıç zamanı nedir?')\n"
+        "Prefer: 'ağrı' over 'nosisepsyon', 'nefes darlığı' over 'dispne', 'baş dönmesi' over 'vertigo',\n"
+        "'tansiyon' over 'kan basıncı', 'bulantı' over 'kusma hissi', 'yorgunluk' over 'halsizlik'.\n"
+        "Answer options must also be in simple Turkish (e.g. 'Evet', 'Hayır', 'Emin değilim')."
+    ),
+    "German": (
+        "Write in simple, clear, everyday German — NOT medical Fachsprache or hospital bureaucratic language.\n"
+        "The patient is anxious; use short, direct sentences.\n"
+        "Form: always use 'Sie' (formal). End questions with '?'\n"
+        "Good examples: 'Wann hat der Schmerz begonnen?' (NOT 'Wann manifestierten sich die Symptome?')\n"
+        "Prefer: 'Schmerz' over 'Algodynie', 'Schwindel' over 'Vertigo', 'Kurzatmigkeit' over 'Dyspnoe',\n"
+        "'Übelkeit' over 'Nausea', 'Bewusstlosigkeit' over 'Synkope'.\n"
+        "Answer options must also be in simple German (e.g. 'Ja', 'Nein', 'Nicht sicher')."
+    ),
+    "French": (
+        "Write in simple, warm, everyday French — NOT medical jargon.\n"
+        "Form: 'vous'. Keep sentences short and reassuring for an anxious patient.\n"
+        "Answer options in simple French."
+    ),
+    "Spanish": (
+        "Write in simple, clear, everyday Spanish — NOT medical jargon.\n"
+        "Form: 'usted'. Keep sentences short and reassuring for an anxious patient.\n"
+        "Answer options in simple Spanish."
+    ),
+    "Arabic": (
+        "Write in clear Modern Standard Arabic — NOT medical terminology.\n"
+        "Keep sentences short and respectful for an anxious patient.\n"
+        "Answer options in simple Arabic."
+    ),
+    "Italian": (
+        "Write in simple, clear everyday Italian — NOT medical jargon.\n"
+        "Form: 'Lei'. Keep sentences short for an anxious patient.\n"
+        "Answer options in simple Italian."
+    ),
+}
+
+def _parse_translated_json(raw: str) -> list:
+    """Robustly extract JSON array from GPT response, handling code fences and stray text."""
+    raw = raw.strip()
+    if raw.startswith("```"):
+        parts = raw.split("```")
+        raw = parts[1] if len(parts) > 1 else raw
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+    try:
+        return _json.loads(raw)
+    except _json.JSONDecodeError:
+        m = _re.search(r'\[.*\]', raw, _re.DOTALL)
+        if m:
+            return _json.loads(m.group(0))
+        raise
+
+def _apply_translated_payload(questions: list, translated: list) -> None:
+    for i, q in enumerate(questions):
+        if i < len(translated):
+            tq = translated[i].get("q", "")
+            if tq:
+                q["question"] = tq
+            opts = translated[i].get("opts")
+            if opts:
+                q["options"] = opts
+
+def _translate_single_question(q: dict, lang_name: str, lang_hint: str,
+                                gpt_client, gpt_model: str, translator) -> None:
+    """Translate a single question dict in-place using GPT + style guides.
+
+    Uses the same language-specific style guides as the batch endpoint so
+    that adaptive questions sound equally natural and patient-friendly.
+    Falls back to Azure Translator if GPT is unavailable.
+
+    Args:
+        q: Question dict with 'question' and 'options' keys (modified in-place).
+        lang_name: Full language name, e.g. 'Turkish'.
+        lang_hint: BCP-47 code, e.g. 'tr-TR'.
+        gpt_client: Azure/OpenAI client instance (may be None).
+        gpt_model: Deployment/model name.
+        translator: Azure Translator instance (may be None).
+    """
+    import logging as _log
+    _logger = _log.getLogger(__name__)
+
+    lang_guide = _LANG_GUIDES.get(lang_name,
+        f"Write in simple, patient-friendly {lang_name}. Avoid medical jargon. "
+        f"The patient is anxious — use short, clear sentences.")
+
+    payload = [{"q": q.get("question", ""), "opts": q.get("options", [])}]
+
+    system_msg = (
+        f"You are converting an English emergency triage question into natural {lang_name} "
+        f"for a real patient who is anxious and possibly in pain.\n\n"
+        f"LANGUAGE STYLE:\n{lang_guide}\n\n"
+        f"TASK: Rewrite the question and its answer options entirely in {lang_name}. "
+        f"Do NOT translate word-for-word — write how a {lang_name}-speaking triage nurse "
+        f"would naturally ask this question to a patient.\n\n"
+        f"OUTPUT FORMAT: Return ONLY a valid JSON array with ONE element. "
+        f'Element: {{"q": "<question in {lang_name}>", "opts": ["<opt1>", "<opt2>", ...]}}. '
+        f"No markdown, no extra text."
+    )
+
+    gpt_success = False
+    if gpt_client:
+        try:
+            _r = gpt_client.chat.completions.create(
+                model=gpt_model,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": _json.dumps(payload, ensure_ascii=False)},
+                ],
+                max_tokens=500,
+                temperature=0.1,
+            )
+            raw = _r.choices[0].message.content.strip()
+            translated = _parse_translated_json(raw)
+            _apply_translated_payload([q], translated)
+            _logger.info("Single question localised to %s via GPT (%s)", lang_name, gpt_model)
+            gpt_success = True
+        except Exception as exc:
+            _logger.warning("GPT single-question localisation failed (%s) — trying translator", exc)
+
+    if not gpt_success and translator:
+        try:
+            tq = translator.translate_from_english(q.get("question", ""), lang_hint)
+            if tq:
+                q["question"] = tq
+        except Exception:
+            pass
+        if q.get("options"):
+            translated_opts = []
+            for opt in q["options"]:
+                try:
+                    to = translator.translate_from_english(opt, lang_hint)
+                    translated_opts.append(to if to else opt)
+                except Exception:
+                    translated_opts.append(opt)
+            q["options"] = translated_opts
+        if not gpt_success:
+            _logger.info("Single question translated to %s via Azure Translator", lang_name)
+
 
 def _enrich_patient(p: dict) -> dict:
     """Merge queue record with health-DB demographics and medical records."""
@@ -662,22 +813,29 @@ def patient_submit(body: SubmitRequest):
     qa = []
     for a in raw_answers:
         if isinstance(a, dict):
+            q_en   = a.get("question_en", a.get("question", ""))
+            q_orig = a.get("question_orig", a.get("question", ""))
             qa.append({
-                "question":        a.get("question", ""),
-                "question_en":     a.get("question_en", a.get("question", "")),  # English version
+                "question":        q_en,            # Always English for dashboard
+                "question_en":     q_en,            # Explicit English copy
+                "question_orig":   q_orig,          # Original language (shown as sub-note)
                 "answer":          a.get("answer", ""),
                 "original_answer": a.get("original_answer", a.get("originalAnswer", "")),
             })
         elif hasattr(a, "question"):
+            q_en   = getattr(a, "question_en", a.question)
+            q_orig = getattr(a, "question_orig", a.question)
             qa.append({
-                "question":        a.question,
-                "question_en":     getattr(a, "question_en", a.question),
+                "question":        q_en,
+                "question_en":     q_en,
+                "question_orig":   q_orig,
                 "answer":          a.answer,
                 "original_answer": getattr(a, "original_answer", None) or getattr(a, "answer", ""),
             })
 
     record["qa_transcript"]        = qa
-    record["complaint_text"]       = body.complaint          # original-language text
+    record["complaint_text"]       = body.complaint                       # original-language text
+    record["complaint_en"]         = body.complaint_en or body.complaint  # always English
     record["has_photo"]            = body.has_photo
     record["photo_count"]          = body.photo_count
     record["data_consent"]         = body.data_consent
@@ -685,7 +843,19 @@ def patient_submit(body: SubmitRequest):
     record["language"]             = body.detected_language or "en-US"  # FIXED: was detected_language
     record["location_lat"]         = body.lat
     record["location_lon"]         = body.lon
-    record["status"]               = "incoming"
+
+    # Status depends on triage level:
+    # IMMEDIATE/EMERGENCY/URGENT → patient is physically coming to the ER ("incoming")
+    # STANDARD/ROUTINE/NON_URGENT → doctor reviews remotely; patient is NOT rushing to ER
+    _triage_lvl_raw = (body.assessment or {}).get("triage_level", "") if isinstance(body.assessment, dict) else ""
+    _triage_lvl = str(_triage_lvl_raw).upper()
+    if _triage_lvl in ("ROUTINE", "NON_URGENT", "STANDARD"):
+        record["status"]        = "reviewing"   # in queue but not en-route
+        record["eta_minutes"]   = None          # no countdown timer
+        record["location_lat"]  = None          # don't animate toward hospital
+        record["location_lon"]  = None
+    else:
+        record["status"] = "incoming"           # IMMEDIATE / EMERGENCY / URGENT
 
     # Flatten assessment dict from patient_app into top-level record fields
     # ALWAYS overwrite with patient_app AI assessment (more accurate than create_patient_record fallback)
@@ -1005,105 +1175,77 @@ def patient_questions(body: QuestionsRequest):
     for q in questions:
         q["question_en"] = q.get("question", "")   # Always preserve English version
 
-    # -- Step 3: Translate questions/options using GPT for natural medical language --
-    # GPT produces far better medical translations than Azure Translator's machine output.
-    # We build one batched GPT call for all questions + options to minimize latency.
+    # -- Step 3: Translate questions/options using module-level GPT + style guides --
     if lang_name and not lang_hint.lower().startswith("en"):
         gpt_client = getattr(triage, "openai_client", None)
-        gpt_model  = getattr(triage, "deployment", "gpt-5.4-mini")
+        gpt_model  = getattr(triage, "deployment", "gpt-4o-mini")
+        lang_guide = _LANG_GUIDES.get(lang_name,
+            f"Write in simple, patient-friendly {lang_name}. Avoid medical jargon. "
+            f"The patient is anxious — use short, clear sentences.")
 
+        payload = [
+            {"q": q.get("question", ""), "opts": q.get("options", [])}
+            for q in questions
+        ]
+        system_msg = (
+            f"You are converting English emergency triage questions into natural {lang_name} "
+            f"for a real patient who is anxious and possibly in pain.\n\n"
+            f"LANGUAGE STYLE:\n{lang_guide}\n\n"
+            f"TASK: Rewrite each question and its answer options entirely in {lang_name}. "
+            f"Do NOT translate word-for-word — write how a {lang_name}-speaking triage nurse "
+            f"would naturally ask this question to a patient.\n\n"
+            f"OUTPUT FORMAT: Return ONLY a valid JSON array. "
+            f'Each element: {{"q": "<question in {lang_name}>", "opts": ["<opt1>", "<opt2>", ...]}}. '
+            f"Same number and order as input. No markdown, no extra text, no explanations."
+        )
+
+        gpt_success = False
         if gpt_client:
             try:
-                # Build a compact JSON payload so GPT translates everything in one call
-                import json as _json
-                payload = [
-                    {"q": q.get("question", ""), "opts": q.get("options", [])}
-                    for q in questions
-                ]
                 _r = gpt_client.chat.completions.create(
                     model=gpt_model,
                     messages=[
-                        {
-                            "role": "system",
-                            "content": (
-                                f"You are a professional medical translator specialising in emergency medicine. "
-                                f"Translate the clinical questions and answer options below to {lang_name}. "
-                                f"Use natural, clear {lang_name} appropriate for a patient in an emergency situation. "
-                                f"Return ONLY a JSON array with the same structure as the input — "
-                                f'each element must have "q" (translated question string) and "opts" (translated options array). '
-                                f"Preserve the exact number and order of items. No extra text."
-                            ),
-                        },
+                        {"role": "system", "content": system_msg},
                         {"role": "user", "content": _json.dumps(payload, ensure_ascii=False)},
                     ],
-                    max_tokens=1200,
-                    temperature=0,
+                    max_tokens=2000,
+                    temperature=0.1,
                 )
                 raw = _r.choices[0].message.content.strip()
-                # Strip markdown code fences if present
-                if raw.startswith("```"):
-                    raw = raw.split("```")[1]
-                    if raw.startswith("json"):
-                        raw = raw[4:]
-                translated_payload = _json.loads(raw)
-                for i, q in enumerate(questions):
-                    if i < len(translated_payload):
-                        tq = translated_payload[i].get("q", "")
+                translated_payload = _parse_translated_json(raw)
+                _apply_translated_payload(questions, translated_payload)
+                logger.info("Questions localised to %s via GPT (%s)", lang_name, gpt_model)
+                gpt_success = True
+            except Exception as exc:
+                logger.warning("GPT question localisation failed (%s) — trying Azure Translator fallback", exc)
+
+        if not gpt_success:
+            if translator:
+                for q in questions:
+                    try:
+                        tq = translator.translate_from_english(q.get("question", ""), body.detected_language)
                         if tq:
                             q["question"] = tq
-                        if "opts" in translated_payload[i] and translated_payload[i]["opts"]:
-                            q["options"] = translated_payload[i]["opts"]
-                logger.info("Questions translated to %s via GPT (%s)", lang_name, gpt_model)
-            except Exception as exc:
-                logger.warning("GPT batch question translation failed (%s) — falling back to Azure Translator", exc)
-                # Fallback: Azure Translator per-question
-                if translator:
-                    for q in questions:
-                        try:
-                            tq = translator.translate_from_english(q.get("question", ""), body.detected_language)
-                            if tq:
-                                q["question"] = tq
-                        except Exception:
-                            pass
-                        if "options" in q and q["options"]:
-                            q["options"] = [
-                                (translator.translate_from_english(o, body.detected_language) or o)
-                                for o in q["options"]
-                            ]
-        elif translator:
-            # No GPT client: use Azure Translator
-            for q in questions:
-                q_text = q.get("question", "")
-                try:
-                    tq = translator.translate_from_english(q_text, body.detected_language)
-                    if tq:
-                        q["question"] = tq
-                except Exception as exc:
-                    logger.warning("Question translation failed (%s)", exc)
-                if "options" in q and q["options"]:
-                    translated_opts = []
-                    for opt in q["options"]:
-                        try:
-                            to = translator.translate_from_english(opt, body.detected_language)
-                            translated_opts.append(to if to else opt)
-                        except Exception:
-                            translated_opts.append(opt)
-                    q["options"] = translated_opts
-        else:
-            # No GPT client, no Azure Translator: re-generate with language injection
-            gpt_complaint_lang = (
-                f"[IMPORTANT: Generate ALL questions and ALL answer options ENTIRELY in {lang_name}. "
-                f"Do not use English. Patient language: {lang_name}.] "
-                f"{complaint_en}"
-            )
-            translated_questions = triage.generate_questions(chief_complaint=gpt_complaint_lang)
-            for i, q in enumerate(questions):
-                if i < len(translated_questions):
-                    q["question"] = translated_questions[i].get("question", q["question"])
-                    if "options" in translated_questions[i]:
-                        q["options"] = translated_questions[i]["options"]
+                    except Exception:
+                        pass
+                    if "options" in q and q["options"]:
+                        q["options"] = [
+                            (translator.translate_from_english(o, body.detected_language) or o)
+                            for o in q["options"]
+                        ]
+                logger.info("Questions translated to %s via Azure Translator (GPT unavailable)", lang_name)
+            else:
+                logger.warning("No translation service available — questions served in English")
 
-    return QuestionsResponse(questions=questions, complaint_en=complaint_en)
+    # Extract RAG sources from questions (attached by triage_engine.generate_questions)
+    rag_sources: list = []
+    if questions:
+        rag_sources = questions[0].get("rag_sources", [])
+        # Remove rag_sources from individual question dicts (client doesn't need it per-question)
+        for q in questions:
+            q.pop("rag_sources", None)
+
+    return QuestionsResponse(questions=questions, complaint_en=complaint_en, rag_sources=rag_sources)
 
 
 @app.post("/api/patient/questions/next", response_model=NextQuestionResponse)
@@ -1113,7 +1255,6 @@ def patient_questions_next(body: NextQuestionRequest):
     """
     triage, translator = _get_triage_engine()
 
-    complaint_en = body.complaint_en or body.complaint
     lang_hint = body.detected_language or "en-US"
 
     _lang_map  = {
@@ -1124,6 +1265,49 @@ def patient_questions_next(body: NextQuestionRequest):
     }
     lang_name = next((v for k, v in _lang_map.items() if lang_hint.lower().startswith(k)), None)
 
+    # ── Translate complaint to English BEFORE passing to GPT ─────────────────
+    # The client sends the original complaint text as complaint_en on the first
+    # call (S.complaintEN starts empty → falls back to S.complaint). Without
+    # this translation, GPT receives a non-English complaint and generates
+    # non-English questions — so question_en ends up in the patient's language.
+    complaint_en = body.complaint_en or body.complaint
+    if lang_hint and not lang_hint.lower().startswith("en") and body.complaint.strip():
+        _complaint_translated: str = ""
+
+        # Try Azure Translator first
+        if translator:
+            try:
+                _t = translator.translate_to_english(body.complaint, source_language=lang_hint)
+                if _t:
+                    _complaint_translated = _t
+            except Exception as _exc:
+                logger.warning("/next Azure complaint translation failed (%s) — trying GPT.", _exc)
+
+        # GPT-4o-mini fallback if Azure failed or is unavailable
+        if not _complaint_translated:
+            _oai_key = __import__("os").getenv("OPENAI_API_KEY", "")
+            if _oai_key:
+                try:
+                    import openai as _oai_mod
+                    _oai_client = _oai_mod.OpenAI(api_key=_oai_key)
+                    _oai_resp = _oai_client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": "Translate the user's text to English. Reply with ONLY the translated text, nothing else."},
+                            {"role": "user",   "content": body.complaint},
+                        ],
+                        max_tokens=250, temperature=0,
+                    )
+                    _g = _oai_resp.choices[0].message.content.strip()
+                    if _g:
+                        _complaint_translated = _g
+                except Exception as _exc:
+                    logger.warning("/next GPT complaint translation failed (%s) — using original.", _exc)
+
+        if _complaint_translated:
+            complaint_en = _complaint_translated
+            logger.info("/next complaint %s→EN: '%s...'", lang_hint, complaint_en[:60])
+
     # 1. Translate answers to English
     qa_pairs = []
     for item in body.previous_answers:
@@ -1132,21 +1316,25 @@ def patient_questions_next(body: NextQuestionRequest):
         ans = item.get("answer", "")
         img = item.get("image", None)
 
-        ans_en = str(ans)
-        if ans and lang_hint and not lang_hint.lower().startswith("en"):
+        # Fix 3: photo marker strings don't need translation — they're placeholders, not natural language
+        _PHOTO_MARKERS = {"[Photo Uploaded]", "[Skipped photo request]"}
+        ans_str = str(ans)
+        ans_en = ans_str
+        if ans and lang_hint and not lang_hint.lower().startswith("en") and ans_str not in _PHOTO_MARKERS:
             if translator:
                 try:
-                    translated = translator.translate_to_english(str(ans), source_language=lang_hint)
+                    translated = translator.translate_to_english(ans_str, source_language=lang_hint)
                     if translated: ans_en = translated
                 except:
                     pass
 
         qa_pairs.append({
-            "question": q_en,
-            "question_orig": q_orig,
-            "answer": ans_en,
-            "original_answer": str(ans),
-            "image": img
+            "question":        q_en,      # English (for GPT context)
+            "question_en":     q_en,      # Explicit English copy for downstream use
+            "question_orig":   q_orig,    # Original language
+            "answer":          ans_en,    # English (for GPT context)
+            "original_answer": ans_str,   # Original language
+            "image":           img,
         })
 
     # 2. Get medical history if provided
@@ -1162,66 +1350,25 @@ def patient_questions_next(body: NextQuestionRequest):
         medical_history=medical_history
     )
 
-    is_done = result.get("done", False)
-    q = result.get("question", None)
+    # ── Hard 5-question guard (server-side, GPT cannot override) ──────────
+    # Regardless of what GPT returns: force done=False until 5 answers exist,
+    # force done=True at 5+ answers.
+    REQUIRED_QUESTIONS = 5
+    answer_count = len(body.previous_answers)
+    if answer_count < REQUIRED_QUESTIONS:
+        is_done = False   # never stop early
+    else:
+        is_done = True    # always stop at 5
+
+    q = result.get("question", None) if not is_done else None
 
     if q:
         q["question_en"] = q.get("question", "")
+        # Use module-level helper: GPT + style guides → same natural quality as batch mode
         if lang_name and not lang_hint.lower().startswith("en"):
-            if translator:
-                try:
-                    translated_q = translator.translate_from_english(q["question"], lang_hint)
-                    if translated_q:
-                        q["question"] = translated_q
-                except Exception as e:
-                    logger.warning("Next question translation failed: %s", e)
-
-                if "options" in q and q["options"]:
-                    translated_opts = []
-                    for opt in q["options"]:
-                        try:
-                            translated_opt = translator.translate_from_english(opt, lang_hint)
-                            translated_opts.append(translated_opt if translated_opt else opt)
-                        except:
-                            translated_opts.append(opt)
-                    q["options"] = translated_opts
-            else:
-                # No Azure Translator: use GPT to translate question + options
-                _openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
-                if _openai_key:
-                    try:
-                        import openai as _oai
-                        _client = _oai.OpenAI(api_key=_openai_key)
-
-                        # Translate question text
-                        _r = _client.chat.completions.create(
-                            model="gpt-4o-mini",
-                            messages=[
-                                {"role": "system", "content": f"You are a medical translator. Translate the following clinical question to {lang_name}. Reply with ONLY the translated question, nothing else."},
-                                {"role": "user", "content": q["question"]}
-                            ],
-                            max_tokens=200, temperature=0,
-                        )
-                        _tq = _r.choices[0].message.content.strip()
-                        if _tq:
-                            q["question"] = _tq
-
-                        # Translate answer options if present
-                        if "options" in q and q["options"]:
-                            opts_joined = "\n".join(q["options"])
-                            _ro = _client.chat.completions.create(
-                                model="gpt-4o-mini",
-                                messages=[
-                                    {"role": "system", "content": f"You are a medical translator. Translate the following answer options to {lang_name}. Each option is on a separate line. Reply with ONLY the translated options, one per line, in the same order."},
-                                    {"role": "user", "content": opts_joined}
-                                ],
-                                max_tokens=300, temperature=0,
-                            )
-                            _to = _ro.choices[0].message.content.strip().splitlines()
-                            if len(_to) == len(q["options"]):
-                                q["options"] = [o.strip() for o in _to]
-                    except Exception as e:
-                        logger.warning("GPT next-question translation failed: %s", e)
+            gpt_client = getattr(triage, "openai_client", None)
+            gpt_model  = getattr(triage, "deployment", "gpt-4o-mini")
+            _translate_single_question(q, lang_name, lang_hint, gpt_client, gpt_model, translator)
 
     return NextQuestionResponse(
         done=is_done,
@@ -1311,6 +1458,7 @@ def patient_assess(body: AssessRequest):
 
         qa_pairs.append({
             "question":        q_en,           # English question for GPT + dashboard
+            "question_en":     q_en,           # Explicit English copy so submit qa_transcript always has it
             "question_orig":   q_orig,         # Original language question
             "answer":          ans_en,         # English answer for GPT + dashboard
             "original_answer": ans_orig,       # Original language answer
@@ -1641,6 +1789,81 @@ def api_patient_reply(patient_id: str, body: dict):
         raise HTTPException(500, "DB error")
 
     return {"ok": True, "entry": entry}
+
+
+@app.post("/api/panic")
+def api_panic(body: dict):
+    """
+    Silent SOS panic alert from patient app.
+    Stores a high-priority alert on the matching patient record so the hospital
+    dashboard can surface it immediately.
+    """
+    import datetime as _dt_p, json as _json_p, sqlite3 as _sq3_p
+
+    patient_id  = (body.get("patient_id") or "").strip()
+    lat         = body.get("lat")
+    lng         = body.get("lng")
+    accuracy    = body.get("accuracy")
+    triage_data = body.get("triage_data") or {}
+
+    if not patient_id:
+        raise HTTPException(400, "patient_id required")
+
+    all_p = hq.get_all_patients(limit=200)
+    match = next((p for p in all_p if p["patient_id"] == patient_id), None)
+    if not match:
+        # Accept anyway — patient may not yet be in DB (pre-submit panic)
+        logger.warning("Panic alert from unknown patient_id=%s — storing in-memory", patient_id)
+
+    alert = {
+        "type": "SILENT_SOS",
+        "ts": _dt_p.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "lat": lat,
+        "lng": lng,
+        "accuracy_m": accuracy,
+        "triage_data": triage_data,
+    }
+    logger.warning(
+        "🆘 SILENT SOS RECEIVED — patient_id=%s lat=%s lng=%s",
+        patient_id, lat, lng,
+    )
+
+    if match:
+        try:
+            conn_p = _sq3_p.connect(str(hq.db_path))
+            row_p = conn_p.execute(
+                "SELECT panic_alerts FROM patient_queue WHERE patient_id=?",
+                (patient_id,),
+            ).fetchone()
+
+            existing_alerts: list = []
+            if row_p and row_p[0]:
+                try:
+                    existing_alerts = _json_p.loads(row_p[0])
+                except Exception:
+                    existing_alerts = []
+            existing_alerts.append(alert)
+
+            # Ensure the panic_alerts column exists (graceful migration)
+            try:
+                conn_p.execute(
+                    "ALTER TABLE patient_queue ADD COLUMN panic_alerts TEXT"
+                )
+                conn_p.commit()
+            except Exception:
+                pass  # column already exists
+
+            conn_p.execute(
+                "UPDATE patient_queue SET panic_alerts=? WHERE patient_id=?",
+                (_json_p.dumps(existing_alerts, ensure_ascii=False), patient_id),
+            )
+            conn_p.commit()
+            conn_p.close()
+        except Exception as exc:
+            logger.error("Panic alert DB persist failed: %s", exc)
+            # Do NOT raise — always acknowledge to patient app
+
+    return {"ok": True, "alert": alert}
 
 
 @app.get("/api/health_record/{health_number}")

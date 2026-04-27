@@ -37,7 +37,9 @@
             --glass-border: rgba(148, 163, 184, 0.22);
         }
 
+        /* ── Global font-size bump ── */
         body {
+            font-size: 15px; /* was browser default 16px but Tailwind xs/sm classes were tiny */
             font-family: Inter, Manrope, "Segoe UI", sans-serif;
             background:
                 radial-gradient(1200px 700px at 5% -5%, rgba(20, 184, 166, 0.16), transparent 50%),
@@ -1192,6 +1194,26 @@
         html.light-mode .leaflet-popup-content-wrapper {
             box-shadow: 0 8px 24px rgba(0, 0, 0, .14) !important;
         }
+
+        /* ── Readability: bump tiny text in patient cards & medical history ── */
+        /* Patient card chief complaint & secondary text */
+        .text-xs { font-size: 0.8rem !important; }
+        .text-\[10px\] { font-size: 0.72rem !important; }
+        .text-\[11px\] { font-size: 0.76rem !important; }
+        /* Medical history tab: all text one step larger */
+        [id^="dtab-"][id$="-history"] .text-xs { font-size: 0.85rem !important; }
+        [id^="dtab-"][id$="-history"] .text-sm  { font-size: 0.92rem !important; }
+        [id^="dtab-"][id$="-history"] .text-lg  { font-size: 1.15rem !important; }
+        [id^="dtab-"][id$="-history"] .text-\[10px\] { font-size: 0.78rem !important; }
+        /* Stats tab timeline */
+        [id^="dtab-"][id$="-actions"] .text-xs { font-size: 0.82rem !important; }
+        [id^="dtab-"][id$="-actions"] .text-\[10px\] { font-size: 0.75rem !important; }
+        /* Full patient card tab content */
+        [id^="dtab-"] p, [id^="dtab-"] li { font-size: 0.85rem; }
+        /* Patient name in cards */
+        .font-semibold.text-sm { font-size: 0.9rem !important; }
+        /* Stats grid metric labels */
+        [id^="stats-"] { font-size: 1.25rem !important; }
     </style>
 </head>
 
@@ -2223,7 +2245,7 @@
         const TRIAGE_ORDER = ["IMMEDIATE", "EMERGENCY", "URGENT", "STANDARD", "NON_URGENT"];
         const TRIAGE_CLASS = { IMMEDIATE: "I", EMERGENCY: "E", URGENT: "U", STANDARD: "S", NON_URGENT: "N", ROUTINE: "S" };
         const TRIAGE_COLOR = { IMMEDIATE: "#ef4444", EMERGENCY: "#f59e0b", URGENT: "#facc15", STANDARD: "#10b981", NON_URGENT: "#60a5fa", ROUTINE: "#10b981" };
-        const STATUS_LABEL = { incoming: "Incoming", en_route: "En Route", arrived: "Arrived", in_treatment: "In Treatment", discharged: "Discharged" };
+        const STATUS_LABEL = { incoming: "Incoming", en_route: "En Route", arrived: "Arrived", in_treatment: "In Treatment", discharged: "Discharged", reviewing: "Pending Review" };
 
         // fmt24 — parse any ISO/SQLite timestamp as UTC and display as local 24-hour time.
         // SQLite CURRENT_TIMESTAMP stores "YYYY-MM-DD HH:MM:SS" (UTC, no tz marker).
@@ -2386,7 +2408,7 @@
             }
 
             const allItems = [
-                ...doctorMessages.map(a => ({ side: 'doctor', text: a.message || '', sender: a.sender || 'Doctor', ts: a.timestamp })),
+                ...doctorMessages.map(a => ({ side: 'doctor', text: a.message || '', audioUrl: a.audioUrl || null, sender: a.sender || 'Doctor', ts: a.timestamp })),
                 ...replies.map(r => ({ side: 'patient', text: r.text_en || r.text || '', sender: '🙋 Patient', ts: r.ts })),
             ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
 
@@ -2395,6 +2417,20 @@
             messageHistoryEl.innerHTML = allItems.map(item => {
                 const isPatient = item.side === 'patient';
                 const timeStr = item.ts ? new Date(item.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                const bodyHtml = item.audioUrl
+                    ? `<div style="margin-top:4px;">
+                         <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:4px;">🎙 Voice note</div>
+                         <audio controls src="${item.audioUrl}" style="height:36px;width:220px;max-width:100%;border-radius:8px;"></audio>
+                       </div>`
+                    : isPatient
+                        ? `<div class="flex flex-col">
+                             <p class="text-sm text-slate-200 leading-relaxed m-0">${h(item.text)}</p>
+                             <div class="mt-1 flex items-center gap-1.5 opacity-40">
+                               <span class="w-1 h-1 rounded-full bg-cyan"></span>
+                               <span class="text-[10px] text-slate-300 italic">English translation</span>
+                             </div>
+                           </div>`
+                        : `<p class="text-sm text-slate-200 leading-relaxed m-0">${h(item.text)}</p>`;
                 return `
                 <div class="flex ${isPatient ? 'justify-end' : 'justify-start'} mb-2">
                   <div class="max-w-[80%] ${isPatient
@@ -2404,15 +2440,7 @@
                       <span class="text-[11px] font-bold ${isPatient ? 'text-cyan' : 'text-slate-400'}">${h(item.sender)}</span>
                       <span class="text-[10px] text-slate-500">${timeStr}</span>
                     </div>
-                    ${isPatient ? `
-                      <div class="flex flex-col">
-                        <p class="text-sm text-slate-200 leading-relaxed m-0">${h(item.text)}</p>
-                        <div class="mt-1 flex items-center gap-1.5 opacity-40">
-                          <span class="w-1 h-1 rounded-full bg-cyan"></span>
-                          <span class="text-[10px] text-slate-300 italic">English translation</span>
-                        </div>
-                      </div>
-                    ` : `<p class="text-sm text-slate-200 leading-relaxed m-0">${h(item.text)}</p>`}
+                    ${bodyHtml}
                   </div>
                 </div>`;
             }).join('');
@@ -2441,31 +2469,40 @@
             const doctorMsgs = actions.filter(a => a.type === 'message_sent');
             const replies = patientReplies[pid] || [];
             const allMsgs = [
-                ...doctorMsgs.map(a => ({ side: 'doctor', text: a.message || '', sender: a.sender || 'Doctor', ts: a.timestamp })),
+                ...doctorMsgs.map(a => ({ side: 'doctor', text: a.message || '', audioUrl: a.audioUrl || null, sender: a.sender || 'Doctor', ts: a.timestamp })),
                 ...replies.map(r => ({ side: 'patient', text: r.text_en || r.text || '', sender: '🙋 Patient', ts: r.ts })),
             ].sort((a, b) => new Date(a.ts) - new Date(b.ts));
             if (!allMsgs.length) {
                 histEl.innerHTML = '<div class="text-xs text-text3 italic text-center py-6">No messages yet</div>';
                 return;
             }
-            histEl.innerHTML = allMsgs.map(item => `
+            histEl.innerHTML = allMsgs.map(item => {
+                const timeStr = item.ts ? new Date(item.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                const bodyHtml = item.audioUrl
+                    ? `<div style="margin-top:4px;">
+                         <div style="font-size:0.7rem;color:var(--text-3,#94a3b8);margin-bottom:4px;">🎙 Voice note</div>
+                         <audio controls src="${item.audioUrl}" style="height:36px;width:220px;max-width:100%;border-radius:8px;"></audio>
+                       </div>`
+                    : item.side === 'patient'
+                      ? `<div class="flex flex-col">
+                           <p class="text-sm text-text1 leading-relaxed m-0">${h(item.text)}</p>
+                           <div class="mt-1 flex items-center gap-1.5 opacity-40">
+                             <span class="w-1 h-1 rounded-full bg-cyan"></span>
+                             <span class="text-[10px] text-text3 italic">English translation</span>
+                           </div>
+                         </div>`
+                      : `<p class="text-sm text-text1 leading-relaxed m-0">${h(item.text)}</p>`;
+                return `
               <div class="flex ${item.side === 'patient' ? 'justify-end' : 'justify-start'} mb-2">
                 <div class="max-w-[85%] rounded-2xl px-4 py-2.5 ${item.side === 'patient' ? 'bg-cyan/15 border border-cyan/25 rounded-tr-sm' : 'bg-surface2 border border-slate-700/50 rounded-tl-sm'}">
                   <div class="flex gap-3 items-center mb-1">
                     <span class="text-[11px] font-bold ${item.side === 'patient' ? 'text-cyan' : 'text-text3'}">${h(item.sender)}</span>
-                    <span class="text-[10px] text-slate-500">${item.ts ? new Date(item.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                    <span class="text-[10px] text-slate-500">${timeStr}</span>
                   </div>
-                  ${item.side === 'patient' ? `
-                    <div class="flex flex-col">
-                        <p class="text-sm text-text1 leading-relaxed m-0">${h(item.text)}</p>
-                        <div class="mt-1 flex items-center gap-1.5 opacity-40">
-                            <span class="w-1 h-1 rounded-full bg-cyan"></span>
-                            <span class="text-[10px] text-text3 italic">English translation</span>
-                        </div>
-                    </div>
-                  ` : `<p class="text-sm text-text1 leading-relaxed m-0">${h(item.text)}</p>`}
+                  ${bodyHtml}
                 </div>
-              </div>`).join('');
+              </div>`;
+            }).join('');
             histEl.scrollTop = histEl.scrollHeight;
         }
 
@@ -2481,6 +2518,95 @@
             if (textEl) textEl.value = '';
             setTimeout(() => refreshInlineComm(pid), 400);
         }
+
+        // ── Voice-to-text (Web Speech API → server Whisper fallback) ─────────────
+        let _voiceRecorder = null, _voiceChunks = [], _voiceRecordingPid = null;
+        let _webSpeechRec = null, _webSpeechActive = false;
+
+        async function toggleVoiceRecord(pid) {
+            const isModal = pid === '__modal__';
+            const btnId   = isModal ? 'voice-rec-btn-modal' : ('voice-rec-btn-' + pid);
+            const btn     = document.getElementById(btnId);
+            const taId    = isModal ? 'newMessageText' : ('inline-comm-text-' + pid);
+            const ta      = document.getElementById(taId);
+
+            // ── Stop if already active ────────────────────────────────────────
+            if (_webSpeechActive && _webSpeechRec) { _webSpeechRec.stop(); return; }
+            if (_voiceRecorder && _voiceRecorder.state === 'recording') { _voiceRecorder.stop(); return; }
+
+            const _resetBtn = () => {
+                if (btn) { btn.textContent = '🎙'; btn.style.background = ''; btn.style.color = ''; btn.title = 'Record voice note'; }
+            };
+            const _setRecordingBtn = () => {
+                if (btn) { btn.textContent = '⏹'; btn.style.background = 'rgba(239,68,68,0.25)'; btn.style.color = '#ef4444'; btn.title = 'Stop recording'; }
+            };
+
+            // ── Primary: browser Web Speech API (Chrome/Edge, no API key) ────
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SR) {
+                _webSpeechRec = new SR();
+                _webSpeechRec.lang = 'en-US';
+                _webSpeechRec.continuous = true;
+                _webSpeechRec.interimResults = true;
+                let _final = '';
+                _webSpeechRec.onresult = ev => {
+                    _final = '';
+                    for (let i = 0; i < ev.results.length; i++) _final += ev.results[i][0].transcript;
+                    if (ta) ta.value = _final;
+                };
+                _webSpeechRec.onend = () => {
+                    _webSpeechActive = false;
+                    _resetBtn();
+                    if (_final.trim()) toast('✅ Transcribed — review and click Send', 'ok');
+                };
+                _webSpeechRec.onerror = ev => {
+                    _webSpeechActive = false;
+                    _resetBtn();
+                    if (ev.error !== 'no-speech') toast('Voice error: ' + ev.error, 'warn');
+                };
+                try {
+                    _webSpeechRec.start();
+                    _webSpeechActive = true;
+                    _setRecordingBtn();
+                    toast('🎙 Listening… speak now, tap ⏹ to stop', 'ok');
+                } catch(e) { _resetBtn(); toast('Could not start voice recognition', 'warn'); }
+                return;
+            }
+
+            // ── Fallback: MediaRecorder → server Whisper ──────────────────────
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                _voiceChunks = [];
+                _voiceRecordingPid = pid;
+                _voiceRecorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '' });
+                _voiceRecorder.ondataavailable = e => { if (e.data.size > 0) _voiceChunks.push(e.data); };
+                _voiceRecorder.onstop = () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(_voiceChunks, { type: 'audio/webm' });
+                    if (btn) { btn.textContent = '⌛'; btn.title = 'Transcribing…'; }
+                    (async () => {
+                        try {
+                            const form = new FormData();
+                            form.append('audio', blob, 'doctor_note.webm');
+                            form.append('lang', 'en');
+                            const r = await fetch('/api/patient/transcribe', { method: 'POST', body: form });
+                            const d = await r.json();
+                            if (d.text && d.text.trim()) {
+                                if (ta) { ta.value = (ta.value.trim() ? ta.value + ' ' : '') + d.text.trim(); ta.focus(); }
+                                toast('✅ Transcribed — review and click Send', 'ok');
+                            } else {
+                                toast('Could not understand audio — type instead', 'warn');
+                            }
+                        } catch(e) { toast('Transcription failed — type instead', 'warn'); }
+                        finally { _resetBtn(); _voiceRecorder = null; }
+                    })();
+                };
+                _voiceRecorder.start(200);
+                _setRecordingBtn();
+                toast('🎙 Recording… tap ⏹ to stop', 'ok');
+            } catch(e) { toast('Microphone access denied', 'err'); }
+        }
+        window.toggleVoiceRecord = toggleVoiceRecord;
 
         let _lastCommCounts = {};
         function updateCommBadges() {
@@ -2509,55 +2635,60 @@
             const actions = getPatientActions(patientId);
             const patient = _patientCache[patientId] || state.patients.find(p => p.patient_id === patientId);
 
-            const stats = {
-                entryTime: null,
-                doctorAssignedTime: null,
-                arrivalTime: null,
-                dischargeTime: null,
-                firstTriageChangeTime: null,
-                ambDispatchTime: null,
-                timeToDoctor: null,
-                timeToDoctorReview: null,
-                timeToAmbDispatch: null,
-                timeToArrival: null,
-                timeToDischarge: null,
-                hospitalStayDuration: null,
-                messagesCount: 0,
-                bedAssignments: 0,
-                triageChanges: 0
-            };
+            // ── Use the SAME timestamp sources as the card timeline so numbers always match ──
+            // Prefer patient-object fields (server-authoritative); fall back to action log.
+            const actOfType = t => actions.find(a => a.type === t)?.timestamp || null;
 
-            // Pull ambulance dispatch + doctor review times from patient object
-            if (patient) {
-                if (patient.amb_dispatch_at) stats.ambDispatchTime = patient.amb_dispatch_at;
-                if (patient.triage_reviewed_at) stats.firstTriageChangeTime = patient.triage_reviewed_at;
-            }
+            // Entry = submission time (matches "Submitted" step)
+            const entryTime          = patient?.created_at || actOfType('patient_entry');
 
-            actions.forEach(action => {
-                switch (action.type) {
-                    case 'patient_entry': stats.entryTime = action.timestamp; break;
-                    case 'doctor_assigned': stats.doctorAssignedTime = action.timestamp; break;
-                    case 'patient_arrived': stats.arrivalTime = action.timestamp; break;
-                    case 'discharged': stats.dischargeTime = action.timestamp; break;
-                    case 'message_sent': stats.messagesCount++; break;
-                    case 'bed_assigned': stats.bedAssignments++; break;
-                    case 'triage_changed':
-                        stats.triageChanges++;
-                        if (!stats.firstTriageChangeTime) stats.firstTriageChangeTime = action.timestamp;
-                        break;
-                }
+            // Doctor assigned (matches "Dr. Assigned" step)
+            const doctorAssignedTime = patient?.doctor_assigned_at || actOfType('doctor_assigned');
+
+            // Arrival (matches "Arrived" step: arrivedAct || arrival_time || treatment_started_at)
+            const arrivalTime        = actOfType('patient_arrived')
+                                    || patient?.arrival_time
+                                    || patient?.treatment_started_at || null;
+
+            // Discharge (matches "Discharged" step)
+            const dischargeTime      = patient?.discharged_at || actOfType('discharged');
+
+            // Doctor review (matches "Reviewed" step)
+            const reviewTime         = patient?.triage_reviewed_at
+                                    || patient?.override_timestamp
+                                    || actOfType('triage_changed') || null;
+
+            // Ambulance dispatch (matches "Ambulance" step)
+            const ambDispatchTime    = actOfType('ambulance_dispatched')
+                                    || actOfType('ambulance_requested')
+                                    || patient?.ambulance_dispatched_at
+                                    || patient?.amb_dispatch_at || null;
+
+            // Count messages and other counters from action log
+            let messagesCount = 0, bedAssignments = 0, triageChanges = 0;
+            actions.forEach(a => {
+                if (a.type === 'message_sent')  messagesCount++;
+                if (a.type === 'bed_assigned')  bedAssignments++;
+                if (a.type === 'triage_changed') triageChanges++;
             });
+            // Also count replies from patients
+            messagesCount += (patientReplies[patientId] || []).length;
 
             const mins = (a, b) => a && b ? (new Date(b) - new Date(a)) / 60000 : null;
-            stats.timeToDoctor        = mins(stats.entryTime, stats.doctorAssignedTime);
-            stats.timeToAmbDispatch   = mins(stats.entryTime, stats.ambDispatchTime);
-            stats.timeToDoctorReview  = mins(stats.doctorAssignedTime, stats.firstTriageChangeTime);
-            stats.timeToArrival       = mins(stats.entryTime, stats.arrivalTime);
-            stats.timeToDischarge     = mins(stats.entryTime, stats.dischargeTime);
-            stats.hospitalStayDuration = mins(stats.arrivalTime, stats.dischargeTime);
+            const stats = {
+                entryTime, doctorAssignedTime, arrivalTime, dischargeTime,
+                firstTriageChangeTime: reviewTime, ambDispatchTime,
+                messagesCount, bedAssignments, triageChanges,
+                timeToDoctor:       mins(entryTime, doctorAssignedTime),
+                timeToAmbDispatch:  mins(entryTime, ambDispatchTime),
+                timeToDoctorReview: mins(doctorAssignedTime, reviewTime),
+                timeToArrival:      mins(entryTime, arrivalTime),
+                timeToDischarge:    mins(entryTime, dischargeTime),
+                hospitalStayDuration: mins(arrivalTime, dischargeTime),
+            };
             // If patient still in hospital, measure stay until now
-            if (stats.arrivalTime && !stats.dischargeTime) {
-                stats.hospitalStayDuration = (Date.now() - new Date(stats.arrivalTime)) / 60000;
+            if (arrivalTime && !dischargeTime) {
+                stats.hospitalStayDuration = (Date.now() - new Date(arrivalTime)) / 60000;
             }
 
             return stats;
@@ -2599,7 +2730,7 @@
             mapInstance = L.map('map', { center: HOSPITAL_COORDS, zoom: 12, preferCanvas: true });
 
             mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
                 subdomains: 'abcd', maxZoom: 20, detectRetina: true
             }).addTo(mapInstance);
 
@@ -2620,20 +2751,8 @@
         }
 
         async function fetchStaticHospitals() {
-            try {
-                const hospitals = await api('/api/hospitals/all');
-                staticHospitalsLayer = L.layerGroup().addTo(mapInstance);
-                hospitals.forEach(hosp => {
-                    if (Math.abs(hosp.lat - HOSPITAL_COORDS[0]) < 0.001 && Math.abs(hosp.lon - HOSPITAL_COORDS[1]) < 0.001) return;
-                    const icon = L.divIcon({
-                        html: '<div style="background:#334155;color:#e5e7eb;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;border:2px solid #475569;box-shadow:0 2px 4px rgba(0,0,0,0.3);">H</div>',
-                        className: '', iconSize: [16, 16], iconAnchor: [8, 8]
-                    });
-                    const marker = L.marker([hosp.lat, hosp.lon], { icon });
-                    marker.bindPopup(`<div style="font-size:13px;font-weight:700;padding:2px;">🏥 ${h(hosp.name)}</div>`);
-                    staticHospitalsLayer.addLayer(marker);
-                });
-            } catch (e) { console.warn('Could not load static hospitals', e); }
+            // Single-hospital system — Universitätsklinikum Ulm is already
+            // rendered as the fixed marker in initMap(). No other hospitals to show.
         }
 
         function focusPatientOnMap(pid) {
@@ -3061,7 +3180,8 @@
                     const lon = p.longitude ?? p.location?.lon;
                     const pid2 = p.patient_id || '';
                     const isAmb = p.transport_type === 'ambulance' || _demoAmbulanceSet.has(pid2)
-                        || p.override_action === 'AMBULANCE' || p.override_action === 'AMBULANCE_REQUEST';
+                        || p.override_action === 'AMBULANCE' || p.override_action === 'AMBULANCE_REQUEST'
+                        || p.ambulance_status === 'AMBULANCE' || !!(p.ambulance_note) || !!(p.ambulance_total_eta);
                     const transportBadge = !isIncoming ? '<span class="text-text3 text-xs">—</span>'
                         : isAmb
                             ? `<span class="chip text-[11px] font-bold" style="color:#ef4444;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)">🚑 Ambulance</span>`
@@ -3138,16 +3258,20 @@
                     // Phase 3 (returning): patient→hospital (progress 1→0)
                     const ambEtaOrig = p.amb_eta_patient;
                     let ambProgress = null;
+                    let ambPhaseStr = '→ To Patient';
                     if (hasAmb && ambEtaOrig && p.amb_dispatch_at) {
                         try {
                             const dispMs = new Date(p.amb_dispatch_at).getTime();
                             const elMin  = (Date.now() - dispMs) / 60000;
                             if (elMin <= ambEtaOrig) {
                                 ambProgress = Math.min(1, elMin / ambEtaOrig);
+                                ambPhaseStr = '→ To Patient';
                             } else if (elMin <= ambEtaOrig + 5) {
                                 ambProgress = 1;
+                                ambPhaseStr = 'With Patient';
                             } else {
                                 ambProgress = Math.max(0, 1 - (elMin - ambEtaOrig - 5) / ambEtaOrig);
+                                ambPhaseStr = '→ To Hospital';
                             }
                         } catch (_) {
                             ambProgress = hasAmb && ambEtaOrig && p.eta_minutes != null
@@ -3155,12 +3279,14 @@
                                 : null;
                         }
                     }
-                    const ambLat = ambProgress != null ? HOSPITAL_COORDS[0] + (lat - HOSPITAL_COORDS[0]) * ambProgress : null;
-                    const ambLon = ambProgress != null ? HOSPITAL_COORDS[1] + (lon - HOSPITAL_COORDS[1]) * ambProgress : null;
+                    // Default to hospital position (progress=0) when dispatched but timing unknown
+                    const _ambProg = ambProgress != null ? ambProgress : (hasAmb ? 0 : null);
+                    const ambLat = _ambProg != null ? HOSPITAL_COORDS[0] + (lat - HOSPITAL_COORDS[0]) * _ambProg : null;
+                    const ambLon = _ambProg != null ? HOSPITAL_COORDS[1] + (lon - HOSPITAL_COORDS[1]) * _ambProg : null;
 
                     const transportRow = hasAmb
                         ? `<div style="margin-top:8px;padding:8px;border-radius:8px;background:#ef444411;border:1px solid #ef444433;font-size:11px;color:#fca5a5">
-                 <div style="font-weight:700;color:#ef4444;margin-bottom:4px">🚑 Ambulance en route → Universitätsklinikum Ulm</div>
+                 <div style="font-weight:700;color:#ef4444;margin-bottom:4px">🚑 Ambulance ${ambPhaseStr}</div>
                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;text-align:center">
                    <div><div style="font-size:14px;font-weight:700;color:#fff">${p.eta_minutes != null ? p.eta_minutes + ' min' : '—'}</div><div style="color:#94a3b8">ETA</div></div>
                    <div><div style="font-size:14px;font-weight:700;color:#fff">${p.distance_km != null ? p.distance_km.toFixed(1) + ' km' : '—'}</div><div style="color:#94a3b8">Distance</div></div>
@@ -3177,7 +3303,7 @@
                 <span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:${col}22;color:${col};border:1px solid ${col}55">${tc} ${lvl.replace('_', ' ')}</span>
               </div>
             </div>
-            ${p.chief_complaint ? `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;padding-left:2px">💬 ${h(p.chief_complaint)}</div>` : ''}
+            ${(p.complaint_en || p.chief_complaint) ? `<div style="font-size:12px;color:var(--text2);margin-bottom:8px;padding-left:2px">💬 ${h((p.complaint_en || p.chief_complaint).substring(0, 60))}</div>` : ''}
             ${transportRow}
           </div>`;
 
@@ -3205,9 +3331,10 @@
                         });
                         if (_trackMarkerMap[ambMarkerKey]) {
                             _trackMarkerMap[ambMarkerKey].setLatLng([ambLat, ambLon]);
+                            _trackMarkerMap[ambMarkerKey].setTooltipContent(`🚑 Ambulance ${ambPhaseStr}`);
                         } else {
                             _trackMarkerMap[ambMarkerKey] = L.marker([ambLat, ambLon], { icon: ambIcon2 }).addTo(mapInstance)
-                                .bindTooltip('🚑 Ambulance en route', { permanent: false, direction: 'top' });
+                                .bindTooltip(`🚑 Ambulance ${ambPhaseStr}`, { permanent: false, direction: 'top' });
                         }
                     } else if (_trackMarkerMap[ambMarkerKey]) {
                         mapInstance.removeLayer(_trackMarkerMap[ambMarkerKey]);
@@ -3381,7 +3508,7 @@
             const tc = TRIAGE_COLOR[lvl] || '#f59e0b';
             const photo = p.profile_photo_url || `https://i.pravatar.cc/40?u=${encodeURIComponent(pid)}`;
             const eta = p.amb_eta_patient || p.eta_minutes || '?';
-            const complaint = h((p.chief_complaint || '').substring(0, 50));
+            const complaint = h((p.complaint_en || p.chief_complaint || '').substring(0, 50));
             const loc = (p.location_lat && p.location_lon)
                 ? `${Number(p.location_lat).toFixed(4)}, ${Number(p.location_lon).toFixed(4)}`
                 : 'No GPS';
@@ -3718,11 +3845,13 @@
             const tl = TRIAGE_CLASS[normalizeTriage(patient.triage_level)] || 'U';
             const actions = getPatientActions(pid);
             const arrivedAct = actions.find(a => a.type === 'patient_arrived');
+            const reviewedActLog = actions.find(a => a.type === 'triage_changed');
+            const reviewedTime = patient.triage_reviewed_at || reviewedActLog?.timestamp || (patient.override_action && !['AMBULANCE','AMBULANCE_REQUEST'].includes(patient.override_action) ? patient.updated_at : null) || null;
             const steps = [
                 { label: 'Submitted', time: patient.created_at, icon: '📱' },
                 { label: 'Dr. Assigned', time: patient.doctor_assigned_at, icon: '👨‍⚕️' },
-                { label: 'Reviewed', time: patient.triage_reviewed_at, icon: '📋' },
-                { label: 'Arrived', time: arrivedAct?.timestamp || patient.arrival_time || patient.treatment_started_at, icon: '🏥' },
+                { label: 'Reviewed', time: reviewedTime, icon: '📋' },
+                { label: 'Arrived', time: (['arrived','in_treatment','discharged'].includes(patient.status)) ? (arrivedAct?.timestamp || patient.arrival_time || patient.treatment_started_at) : null, icon: '🏥' },
                 { label: 'Bed', time: patient.bed_assigned_at, icon: '🛏️' },
                 { label: 'Discharged', time: patient.discharged_at, icon: '✅' },
             ];
@@ -3737,7 +3866,7 @@
               <div class="flex items-start justify-between gap-2">
                 <div>
                   <p class="font-bold text-white">${h(patient.full_name || pid)}</p>
-                  <p class="text-xs text-text2 mt-0.5 truncate">${h(patient.chief_complaint || '—')}</p>
+                  <p class="text-xs text-text2 mt-0.5 truncate">${h(patient.complaint_en || patient.chief_complaint || '—')}</p>
                 </div>
                 <div class="flex flex-col items-end gap-1 shrink-0">
                   <span class="text-[9px] font-bold px-2 py-0.5 rounded-full" style="background:${tc}20;color:${tc};border:1px solid ${tc}40">${tl}</span>
@@ -3887,7 +4016,7 @@
               <img src="${h(patient.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(patient.patient_id)}`)}" class="w-10 h-10 rounded-lg object-cover border-2 border-cyan/30" onerror="this.src='https://i.pravatar.cc/60?u=${encodeURIComponent(patient.patient_id)}'" />
               <div class="flex-1 min-w-0">
                 <p class="font-medium text-sm truncate">${h(patient.full_name || patient.patient_id)}</p>
-                <p class="text-xs text-text3 truncate">${h(patient.chief_complaint || 'No complaint')}</p>
+                <p class="text-xs text-text3 truncate">${h(patient.complaint_en || patient.chief_complaint || 'No complaint')}</p>
               </div>
             </div>
             
@@ -3969,7 +4098,12 @@
         }
 
         // ── EMERGENCY ALERT SYSTEM ──────────────────────────────────
-        const seenPatientIds = new Set();
+        // Persist across refreshes so alerts don't re-fire on every reload
+        const _seenRaw = (() => { try { return JSON.parse(localStorage.getItem('_seenPids') || '[]'); } catch { return []; } })();
+        const seenPatientIds = new Set(_seenRaw);
+        function _persistSeenIds() {
+            try { localStorage.setItem('_seenPids', JSON.stringify([...seenPatientIds])); } catch {}
+        }
 
         // ── Per-triage notification config ─────────────────────────────────────
         const NOTIF_CFG = {
@@ -4004,6 +4138,7 @@
 
         function triggerPatientAlert(p) {
             seenPatientIds.add(p.patient_id);
+            _persistSeenIds();
             const lvl = normalizeTriage(p.triage_level);
             const cfg = NOTIF_CFG[lvl] || NOTIF_CFG.STANDARD;
             const col = TRIAGE_COLOR[lvl] || cfg.border;
@@ -4038,7 +4173,7 @@
             card.className = 'notif-card';
             card.style.cssText = `background:${cfg.bg};border-left-color:${col};color:#f8fafc;`;
             const eta = p.eta_minutes != null ? `${p.eta_minutes} min` : 'Arrived';
-            const complaint = h(p.chief_complaint || '').slice(0, 55);
+            const complaint = h(p.complaint_en || p.chief_complaint || '').slice(0, 55);
             card.innerHTML = `
         <div class="notif-badge" style="background:${col}22;color:${col}">${TRIAGE_CLASS[lvl] || '?'}</div>
         <div class="notif-body">
@@ -4106,12 +4241,21 @@
 
                 // In-place card update — update cache then rebuild just this card
                 if (p) {
+                    const reviewedAt = new Date().toISOString();
                     p.triage_level = confirmedLevel;
                     p.override_action = action;
                     p.override_note = note;
-                    p.updated_at = new Date().toISOString();
+                    p.updated_at = reviewedAt;
+                    if (!p.triage_reviewed_at) p.triage_reviewed_at = reviewedAt;
                     _patientCache[pid] = p;
                     enforceTriageFloor(p);
+                    saveDoctorAssignmentsToStorage();
+                    logPatientAction(pid, 'triage_changed', {
+                        from: cur,
+                        to: confirmedLevel,
+                        action: action,
+                        message: `${action}: ${cur} → ${confirmedLevel}`
+                    });
                 }
                 if (window._lastPatients) {
                     const lp = window._lastPatients.find(x => x.patient_id === pid);
@@ -4233,15 +4377,16 @@
             document.getElementById('alertTriageLevel').textContent = triageLevel;
             document.getElementById('alertTriageLevel').style.background = `${triageColor}20`;
             document.getElementById('alertTriageLevel').style.color = triageColor;
-            document.getElementById('alertChiefComplaint').textContent = patient.chief_complaint || 'No complaint recorded';
+            document.getElementById('alertChiefComplaint').textContent = patient.complaint_en || patient.chief_complaint || 'No complaint recorded';
             document.getElementById('alertVitals').textContent = `BP: ${patient.bp || 'N/A'}, HR: ${patient.hr || 'N/A'}, SpO2: ${patient.spo2 || 'N/A'}`;
             document.getElementById('alertETA').textContent = patient.eta_minutes ? `${patient.eta_minutes} min` : 'Arrived';
 
             // Set recommendation based on triage
             let recommendation = 'Emergency Medicine';
-            if (triageLevel === '1' || patient.chief_complaint?.toLowerCase().includes('chest')) {
+            const _cc = (patient.complaint_en || patient.chief_complaint || '').toLowerCase();
+            if (triageLevel === '1' || _cc.includes('chest')) {
                 recommendation = 'Cardiology or Emergency Medicine';
-            } else if (triageLevel === '2' || patient.chief_complaint?.toLowerCase().includes('breathing')) {
+            } else if (triageLevel === '2' || _cc.includes('breathing')) {
                 recommendation = 'Emergency Medicine with Respiratory experience';
             }
             document.getElementById('alertRecommendation').textContent = recommendation;
@@ -4420,7 +4565,7 @@
             document.getElementById('bedPatientId').textContent = pid.slice(0, 8);
             document.getElementById('bedPatientId').setAttribute('data-full-id', pid);
             document.getElementById('bedPatientName').textContent = patient.full_name || 'Unknown';
-            document.getElementById('bedPatientComplaint').textContent = patient.chief_complaint || 'No complaint';
+            document.getElementById('bedPatientComplaint').textContent = patient.complaint_en || patient.chief_complaint || 'No complaint';
             document.getElementById('bedPatientInitials').textContent = (patient.full_name || patient.patient_id).split(' ').map(n => n[0]).join('');
 
             // Render bed grid
@@ -4531,7 +4676,7 @@
 
             document.getElementById('messagePatientId').textContent = patientId.slice(0, 8);
             document.getElementById('messagePatientName').textContent = patient.full_name || patientId;
-            document.getElementById('messagePatientComplaint').textContent = patient.chief_complaint || '—';
+            document.getElementById('messagePatientComplaint').textContent = patient.complaint_en || patient.chief_complaint || '—';
             document.getElementById('messagePatientPhoto').src = patient.profile_photo_url || `https://i.pravatar.cc/60?u=${encodeURIComponent(patientId)}`;
 
             document.getElementById('newMessageText').value = '';
@@ -4788,7 +4933,7 @@
       `).join('');
 
             // Status breakdown
-            const statusMap = { incoming: 'En Route', arrived: 'Arrived', in_treatment: 'In Treatment', discharged: 'Discharged' };
+            const statusMap = { incoming: 'En Route', arrived: 'Arrived', in_treatment: 'In Treatment', discharged: 'Discharged', reviewing: 'Pending Review' };
             const statusColors = { incoming: 'var(--blue2)', arrived: 'var(--urgent)', in_treatment: 'var(--routine)', discharged: 'var(--stable)' };
             const counts = {};
             pts.forEach(p => { const s = (p.status || 'incoming').toLowerCase(); counts[s] = (counts[s] || 0) + 1; });
@@ -5335,7 +5480,7 @@
         let activeTopFilter = null;    // 'all' | 'en_route' | 'in_treatment' | 'discharged'
         let activeTriageFilter = null; // 'immediate' | 'emergency' | 'urgent' | 'standard' | 'non_urgent'
         let sortMode = 'risk';
-        const STATUS_MAP = { incoming: '🚗 En Route', arrived: '🏥 Arrived', in_treatment: '💊 In Treatment', discharged: '✅ Discharged' };
+        const STATUS_MAP = { incoming: '🚗 En Route', arrived: '🏥 Arrived', in_treatment: '💊 In Treatment', discharged: '✅ Discharged', reviewing: '📋 Pending Review' };
 
         // Language strings
         const UI_STRINGS = {
@@ -5475,11 +5620,11 @@
 
         // MTS metadata for triage detail display
         const MTS_META = {
-            IMMEDIATE: { level: 1, mts_color: 'RED', max_wait: 0, subtitle: 'Level 1 — MTS Red — Immediate' },
-            EMERGENCY: { level: 2, mts_color: 'ORANGE', max_wait: 10, subtitle: 'Level 2 — MTS Orange — Max wait: 10 min' },
-            URGENT: { level: 3, mts_color: 'YELLOW', max_wait: 30, subtitle: 'Level 3 — MTS Yellow — Max wait: 30 min' },
-            STANDARD: { level: 4, mts_color: 'GREEN', max_wait: 90, subtitle: 'Level 4 — MTS Green — Max wait: 90 min' },
-            NON_URGENT: { level: 5, mts_color: 'BLUE', max_wait: 120, subtitle: 'Level 5 — MTS Blue — Max wait: 120 min' },
+            IMMEDIATE: { level: 1, mts_color: 'RED', max_wait: 0, label: 'IMMEDIATE', subtitle: 'Level 1 — MTS Red — Immediate' },
+            EMERGENCY: { level: 2, mts_color: 'ORANGE', max_wait: 10, label: 'EMERGENCY', subtitle: 'Level 2 — MTS Orange — Max wait: 10 min' },
+            URGENT: { level: 3, mts_color: 'YELLOW', max_wait: 30, label: 'URGENT', subtitle: 'Level 3 — MTS Yellow — Max wait: 30 min' },
+            STANDARD: { level: 4, mts_color: 'GREEN', max_wait: 90, label: 'STANDARD', subtitle: 'Level 4 — MTS Green — Max wait: 90 min' },
+            NON_URGENT: { level: 5, mts_color: 'BLUE', max_wait: 120, label: 'NON-URGENT', subtitle: 'Level 5 — MTS Blue — Max wait: 120 min' },
         };
         const FLAG_EMOJI = { DE: '🇩🇪', TR: '🇹🇷', UK: '🇬🇧', GB: '🇬🇧', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸', NL: '🇳🇱', PL: '🇵🇱', RU: '🇷🇺' };
         const LANG_NAME = { 'de-DE': 'Deutsch', 'tr-TR': 'Türkçe', 'en-GB': 'English', 'en-US': 'English', 'fr-FR': 'Français', 'ar-SA': 'العربية', 'es-ES': 'Español', 'it-IT': 'Italiano', 'nl-NL': 'Nederlands', 'pl-PL': 'Polski', 'ru-RU': 'Русский', 'zh-CN': '中文' };
@@ -5576,13 +5721,15 @@
             const qa = p.qa_transcript || [];
             const flags = (p.red_flags || []).filter(f => f && f !== 'none_identified');
             const conds = (p.suspected_conditions || []).map(condName).filter(Boolean);
-            const dest = p.destination_hospital || '';
+            const dest = p.destination_hospital || 'Universitätsklinikum Ulm';
             const allergyText = getAllergyText(p);
             const mts = MTS_META[lvl] || MTS_META.URGENT;
 
             // Assessment fields (V9 parity)
-            const asmt = (() => { const r = p.assessment; if (!r) return ''; if (typeof r === 'object') return r.patient_summary_en || r.clinical_report || r.summary || r.text || ''; return String(r); })();
-            const clinicalReport = (() => { const r = p.assessment; if (!r || typeof r !== 'object') return p.clinical_report || ''; return r.clinical_report || p.clinical_report || ''; })();
+            // stripQ: remove wrapping quotes that GPT sometimes adds to string values
+            const stripQ = s => (s || '').replace(/^["'\u201c\u201d]+|["'\u201c\u201d]+$/g, '').trim();
+            const asmt = (() => { const r = p.assessment; if (!r) return ''; if (typeof r === 'object') return stripQ(r.patient_summary_en) || stripQ(r.clinical_report) || ''; return String(r); })();
+            const clinicalReport = (() => { const r = p.assessment; if (!r || typeof r !== 'object') return p.clinical_report || ''; return stripQ(r.clinical_report) || p.clinical_report || ''; })();
             const sourceGuidelines = (() => { const r = p.assessment; if (!r || typeof r !== 'object') return []; return r.source_guidelines || []; })();
 
             // Quick status actions (V9 parity)
@@ -5599,12 +5746,14 @@
             </button>
           </div>`;
                 }
-                if (s === 'incoming' || s === 'arrived') {
+                if (s === 'reviewing') {
                     return `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-slate-800/20">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-text3">Quick:</span>
-            <button onclick="setStatus('${h(pid)}','in_treatment')" class="rounded-lg bg-violet-500/15 border border-violet-400/40 px-3 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/25 transition-all">💊 In Treatment</button>
-            <button onclick="setStatus('${h(pid)}','discharged')" class="rounded-lg bg-stable/15 border border-stable/40 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✓ Discharge</button>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-text3">Pending Review:</span>
+            <button onclick="setStatus('${h(pid)}','incoming')" class="rounded-lg bg-amber-500/15 border border-amber-400/40 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/25 transition-all">🏥 Call In</button>
+            <button onclick="setStatus('${h(pid)}','discharged')" class="rounded-lg bg-stable/15 border border-stable/40 px-3 py-1.5 text-xs font-semibold text-stable hover:bg-stable/25 transition-all">✓ No Action Needed</button>
           </div>`;
+                } else if (s === 'incoming' || s === 'arrived') {
+                    return '';
                 } else if (s === 'in_treatment') {
                     const ts = p.treatment_started_at ? ' · since ' + fmtTime(p.treatment_started_at) : '';
                     return `<div class="flex items-center gap-2 px-5 py-3 border-t border-slate-700/30 bg-violet-500/5">
@@ -5623,37 +5772,64 @@
             // Prep checklist
             const prepItems = buildPrep(p);
 
-            // Patient timeline (6 key timestamps)
+            // Patient timeline (7 key timestamps)
             const timelineHTML = (() => {
                 const actions = getPatientActions(pid);
                 const arrivedAct = actions.find(a => a.type === 'patient_arrived');
+                const isAmbulance = p.override_action === 'AMBULANCE' || p.override_action === 'AMBULANCE_REQUEST'
+                    || p.transport_type === 'ambulance' || p.ambulance_status === 'AMBULANCE'
+                    || !!(p.ambulance_note) || !!(p.ambulance_total_eta);
+                const ambDispatchAct = actions.find(a => a.type === 'ambulance_dispatched' || a.type === 'ambulance_requested' || a.type === 'ambulance_request');
+                const ambTime = ambDispatchAct?.timestamp || p.ambulance_dispatched_at || null;
+                const transportStep = isAmbulance
+                    ? { label: 'Ambulance', time: ambTime, icon: '🚑', color: '#f59e0b', note: null }
+                    : { label: 'Self-Transport', time: null, icon: '🚶', color: '#94a3b8',
+                        note: (['incoming','en_route','arrived','in_treatment','discharged'].includes(p.status)) ? 'En Route' : null };
+                const reviewAction = (p.override_action && !['AMBULANCE','AMBULANCE_REQUEST'].includes(p.override_action))
+                    ? p.override_action.toLowerCase() : null;
+                const reviewActLog = getPatientActions(pid).find(a => a.type === 'triage_changed');
+                const reviewTime = p.triage_reviewed_at || p.override_timestamp || reviewActLog?.timestamp || (reviewAction ? (p.updated_at || null) : null) || null;
+                const reviewNote = reviewTime
+                    ? (fmt24(reviewTime) + (reviewAction ? `<br><span style="font-size:8px;opacity:.75">(${reviewAction})</span>` : ''))
+                    : (reviewAction ? `<span style="font-size:9px">(${reviewAction})</span>` : null);
                 const steps = [
                     { label: 'Submitted', time: p.created_at, icon: '📱', color: '#60a5fa' },
+                    transportStep,
                     { label: 'Dr. Assigned', time: p.doctor_assigned_at, icon: '👨‍⚕️', color: '#22d3ee' },
-                    { label: 'Reviewed', time: p.triage_reviewed_at, icon: '📋', color: '#f59e0b' },
-                    { label: 'Arrived', time: (p.status === 'in_treatment' || p.status === 'discharged') ? (arrivedAct?.timestamp || p.arrival_time || p.treatment_started_at) : (arrivedAct?.timestamp || p.arrival_time || null), icon: '🏥', color: '#a78bfa' },
+                    { label: 'Reviewed', time: reviewTime, icon: '📋', color: '#f59e0b', note: reviewNote },
+                    { label: 'Arrived', time: (['arrived','in_treatment','discharged'].includes(p.status)) ? (arrivedAct?.timestamp || p.arrival_time || p.treatment_started_at) : null, icon: '🏥', color: '#a78bfa' },
                     { label: 'Bed Assigned', time: p.bed_assigned_at, icon: '🛏️', color: '#34d399' },
                     { label: 'Discharged', time: p.discharged_at, icon: '✅', color: '#10b981' },
                 ];
-                const anySet = steps.some(s => s.time);
+                const anySet = steps.some(s => s.time || s.note);
                 if (!anySet) return '';
+                const lastDoneIdx = steps.reduce((acc, s, i) => (s.time || s.note) ? i : acc, -1);
                 return `<div class="mt-3 pt-3 border-t border-slate-700/20">
-          <div class="grid grid-cols-6 gap-2">
-            ${steps.map(s => `
-              <div class="flex flex-col items-center gap-1 ${s.time ? '' : 'opacity-30'}">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm" style="background:${s.time ? s.color + '20' : 'rgba(51,65,85,.4)'};border:1px solid ${s.time ? s.color + '50' : 'rgba(51,65,85,.5)'}">
+          <div class="relative flex items-start">
+            <div class="absolute top-4 left-4 right-4 h-px" style="background:rgba(51,65,85,0.6);z-index:0;"></div>
+            ${steps.map((s, i) => {
+              const done = !!(s.time || s.note);
+              const isActive = done && i === lastDoneIdx;
+              return `<div class="flex flex-col items-center gap-1 flex-1" style="position:relative;z-index:1;opacity:${done ? 1 : 0.28}">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm" style="background:${done ? s.color+'28' : 'rgba(51,65,85,.5)'};border:1.5px solid ${done ? s.color+'70' : 'rgba(51,65,85,.4)'};${isActive ? 'box-shadow:0 0 0 3px '+s.color+'40;animation:elegant-pulse 2s ease-in-out infinite;' : ''}">
                   ${s.icon}
                 </div>
-                <span class="text-[10px] font-bold uppercase tracking-wide text-center leading-tight" style="color:${s.time ? s.color : 'var(--text-3)'}">${s.label}</span>
-                <span class="text-[11px] text-text2 mono font-medium">${fmt24(s.time)}</span>
-              </div>
-            `).join('')}
+                <span class="text-[9px] font-bold uppercase tracking-wide text-center leading-tight" style="color:${done ? s.color : 'var(--text-3)'}">${s.label}</span>
+                <span class="text-[10px] mono font-medium" style="color:${done ? 'var(--text-2)':'transparent'}">${s.note || fmt24(s.time) || '·'}</span>
+              </div>`;
+            }).join('')}
           </div>
         </div>`;
             })();
 
             return `
-        <div class="rounded-xl border border-slate-700/50 bg-slate-800/40 backdrop-blur-sm overflow-hidden triage-${tc} patient-card-modern" id="card-${pid}" style="border-left: 4px solid ${col}">
+        <div class="rounded-xl border border-slate-700/50 overflow-hidden triage-${tc} patient-card-modern" id="card-${pid}" style="display:flex">
+          <!-- Left triage band with vertical level label -->
+          <div style="width:30px;flex-shrink:0;background:${col};display:flex;align-items:center;justify-content:center;">
+            <span style="writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-size:12px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;white-space:nowrap;color:rgba(0,0,0,0.65);">${lvl.replace('_',' ')}</span>
+          </div>
+          <!-- Card body -->
+          <div style="flex:1;overflow:hidden;min-width:0;background:rgba(30,41,59,0.4);backdrop-filter:blur(4px);">
           <!-- MODERN HEADER -->
           <div class="p-5">
             <div class="flex items-start gap-5">
@@ -5678,27 +5854,47 @@
                       </span>
                       ` : ''}
                     </div>
-                    <p class="text-text2 text-base truncate mt-1">${h(p.chief_complaint || 'No complaint recorded')}</p>
+                    <p class="text-text2 text-base truncate mt-1">${h(p.complaint_en || p.chief_complaint || 'No complaint recorded')}</p>
                     ${p.doctor_assigned_at ? `
                     <p class="text-[10px] text-cyan/70 mt-0.5">Assigned at ${new Date(p.doctor_assigned_at).toLocaleTimeString()}</p>
                     ` : ''}
                     <!-- Level and Risk Badge -->
-                    <div class="flex items-center gap-2 mt-2">
+                    <div class="flex items-center gap-2 mt-2 flex-wrap">
                       <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style="background:${col}20;color:${col};border:1px solid ${col}60">
                         <span>Level ${lvl}</span>
                         <span class="w-px h-3 bg-current opacity-40"></span>
                         <span>Risk: ${p.risk_score ?? '—'}/10</span>
                       </span>
                       ${p._triage_upgraded_by_score ? `<span class="text-[10px] font-bold text-urgent bg-urgent/15 border border-urgent/30 rounded-full px-2 py-0.5">⚠️ AUTO-UPGRADED</span>` : ''}
+                      ${sourceGuidelines.length ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan/10 text-cyan/80 border border-cyan/25" title="${sourceGuidelines.join(', ')}">📚 ${sourceGuidelines.length} guideline${sourceGuidelines.length > 1 ? 's' : ''}</span>` : ''}
                     </div>
                   </div>
-                  <!-- Compact ETA & Status -->
-                  <div class="text-right shrink-0 flex flex-col items-end">
+                  <!-- ETA & Status -->
+                  <div class="text-right shrink-0 flex flex-col items-end gap-1">
+                    ${p.override_action === 'AMBULANCE_REQUEST' ? `
+                      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                        <span style="font-size:1.5rem;">🚑</span>
+                        <span style="background:rgba(245,158,11,.18);color:#f59e0b;border:1px solid rgba(245,158,11,.4);border-radius:99px;padding:3px 10px;font-size:0.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;animation:elegant-pulse 1.5s ease-in-out infinite;">Awaiting Dispatch</span>
+                      </div>
+                    ` : (() => {
+                      const isAmb = p.override_action === 'AMBULANCE' || p.transport_type === 'ambulance' || _demoAmbulanceSet.has(pid);
+                      let ambPhaseLabel = '';
+                      if (isAmb && p.amb_dispatch_at && p.amb_eta_patient) {
+                        const elMin = (Date.now() - new Date(p.amb_dispatch_at).getTime()) / 60000;
+                        if (elMin <= p.amb_eta_patient) ambPhaseLabel = '🚑 → To Patient';
+                        else if (elMin <= p.amb_eta_patient + 5) ambPhaseLabel = '🚑 With Patient';
+                        else ambPhaseLabel = '🚑 → To Hospital';
+                      } else if (isAmb) {
+                        ambPhaseLabel = '🚑 En Route';
+                      }
+                      return `
                     <div class="flex items-baseline gap-1">
-                      <span data-eta="${h(pid)}" class="text-2xl font-bold mono ${etaCls}">${eta != null ? eta : '—'}</span>
+                      <span data-eta="${h(pid)}" class="mono font-black" style="font-size:${eta != null && eta <= 5 ? '2rem' : '1.75rem'};color:${eta != null && eta <= 5 ? '#ef4444' : eta != null && eta <= 10 ? '#f59e0b' : 'var(--text-1)'}">${eta != null ? eta : '—'}</span>
                       <span class="text-xs text-text3">min</span>
                     </div>
-                    <span data-status-pill="${h(pid)}" class="inline-block rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider mt-1" style="background:${status === 'discharged' ? 'rgba(16,185,129,.2)' : status === 'in_treatment' ? 'rgba(139,92,246,.2)' : 'rgba(96,165,250,.2)'};color:${status === 'discharged' ? '#34d399' : status === 'in_treatment' ? '#c4b5fd' : '#93c5fd'}">${STATUS_LABEL[status] || status}</span>
+                    ${ambPhaseLabel ? `<span style="font-size:0.65rem;font-weight:800;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:99px;padding:2px 8px;">${ambPhaseLabel}</span>` : ''}
+                    <span data-status-pill="${h(pid)}" class="inline-block rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider" style="background:${status === 'discharged' ? 'rgba(16,185,129,.2)' : status === 'in_treatment' ? 'rgba(139,92,246,.2)' : 'rgba(96,165,250,.2)'};color:${status === 'discharged' ? '#34d399' : status === 'in_treatment' ? '#c4b5fd' : '#93c5fd'}">${STATUS_LABEL[status] || status}</span>`;
+                    })()}
                   </div>
                 </div>
 
@@ -5707,15 +5903,15 @@
                   <div class="h-full rounded-full transition-all duration-500" style="width:${eta != null ? Math.min(100, Math.max(3, 100 - (eta / 60) * 100)) : (status === 'arrived' || status === 'in_treatment' || status === 'discharged' ? 100 : 0)}%;background:${col}"></div>
                 </div>
 
-                <!-- Vitals Row - Larger Text -->
-                <div class="flex flex-wrap items-center gap-2 mt-3 text-sm">
-                  <span class="text-text3 text-xs uppercase tracking-wider">Vitals:</span>
-                  <span class="font-medium text-text1">${h(age)}<span class="text-xs text-text3">y</span></span>
+                <!-- Vitals Row -->
+                <div class="flex flex-wrap items-center gap-3 mt-3">
+                  <span class="text-text3 text-xs uppercase tracking-wider font-semibold">Vitals:</span>
+                  <span class="font-bold text-text1 text-base">${h(age)}<span class="text-sm text-text3 font-normal">y</span></span>
                   <span class="text-slate-600">•</span>
-                  <span class="font-medium text-text1">BMI ${h(bmi)}</span>
+                  <span class="font-bold text-text1 text-base">BMI <span class="text-text2">${h(bmi)}</span></span>
                   <span class="text-slate-600">•</span>
-                  <span class="font-medium text-emer">${h(blood)}</span>
-                  ${allergyText !== 'None Identified' ? `<span class="text-slate-600">•</span><span class="font-medium text-urgent flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>${h(allergyText)}</span>` : ''}
+                  <span class="font-bold text-base" style="color:#ef4444">${h(blood)}</span>
+                  ${allergyText !== 'None Identified' ? `<span class="text-slate-600">•</span><span class="font-bold text-base text-urgent flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>${h(allergyText)}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -5744,22 +5940,22 @@
                 <span class="mono">${h(pid.slice(0, 8))}</span>
                 ${nat ? `<span class="text-slate-600">|</span><span>${FLAG_EMOJI[nat] || ''} ${h(nat)}</span>` : ''}
               </div>
-              <div class="flex items-center gap-2">
-                <button onclick="alertTeam('${h(pid)}')" class="flex items-center gap-1.5 rounded-md bg-emer/10 border border-emer/30 px-3 py-1.5 text-xs font-semibold text-emer hover:bg-emer/20 transition-all" title="Doctor Assign">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                  <span>Doctor Assign</span>
+              <div class="flex items-center gap-1">
+                <button onclick="alertTeam('${h(pid)}')" class="flex items-center gap-1 rounded-md bg-emer/10 border border-emer/30 px-2 py-1 text-xs font-semibold text-emer hover:bg-emer/20 transition-all" title="Doctor Assign">
+                  <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                  <span>Assign</span>
                 </button>
-                <button onclick="assignBed('${h(pid)}')" class="flex items-center gap-1.5 rounded-md bg-urgent/10 border border-urgent/30 px-3 py-1.5 text-xs font-semibold text-urgent hover:bg-urgent/20 transition-all" title="Assign Bed">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                  <span>Bed Planning</span>
+                <button onclick="assignBed('${h(pid)}')" class="flex items-center gap-1 rounded-md bg-urgent/10 border border-urgent/30 px-2 py-1 text-xs font-semibold text-urgent hover:bg-urgent/20 transition-all" title="Bed Planning">
+                  <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                  <span>Bed</span>
                 </button>
-                <button onclick="viewRoute('${h(pid)}')" class="flex items-center gap-1.5 rounded-md bg-cyan/10 border border-cyan/30 px-3 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/20 transition-all" title="View Route">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-                  <span>See Map</span>
+                <button onclick="viewRoute('${h(pid)}')" class="flex items-center gap-1 rounded-md bg-cyan/10 border border-cyan/30 px-2 py-1 text-xs font-semibold text-cyan hover:bg-cyan/20 transition-all" title="See Map">
+                  <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                  <span>Map</span>
                 </button>
-                <button data-toggle="${h(pid)}" class="flex items-center gap-1.5 rounded-md bg-slate-700/50 border border-slate-600 px-3 py-1.5 text-xs font-semibold text-text2 hover:border-cyan/50 hover:text-cyan transition-all ml-1">
+                <button data-toggle="${h(pid)}" class="flex items-center gap-1 rounded-md bg-slate-700/50 border border-slate-600 px-2 py-1 text-xs font-semibold text-text2 hover:border-cyan/50 hover:text-cyan transition-all" title="Expand Details">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                   <span>Details</span>
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
               </div>
             </div>
@@ -5800,13 +5996,13 @@
                 </div>
               </div>
 
-              ${p.complaint_text ? `
+              ${(p.complaint_text || p.complaint_en || p.chief_complaint) ? `
               <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4">
-                <div class="flex items-center gap-2 mb-3"><span class="text-lg">🎙️</span><span class="text-sm font-bold text-text1">Voice Transcript</span></div>
+                <div class="flex items-center gap-2 mb-3"><span class="text-lg">🎙️</span><span class="text-sm font-bold text-text1">Chief Complaint</span></div>
                 <div class="bg-gradient-to-r from-cyan/10 to-teal/10 rounded-xl p-4 border-l-4 border-cyan/50">
-                  <p class="text-text1 text-sm italic leading-relaxed">"${h(p.chief_complaint || p.complaint_text)}"</p>
-                  ${p.complaint_text !== p.chief_complaint && p.complaint_text ? `<p class="text-xs text-text3 mt-2 italic">${h(p.complaint_text)}</p>` : ''}
-                  ${p.detected_language || p.language ? `<p class="text-xs text-text3 mt-2">Language: ${h(p.detected_language || p.language)}</p>` : ''}
+                  <p class="text-text1 text-sm font-medium leading-relaxed">${h(p.complaint_en || p.chief_complaint || p.complaint_text || '—')}</p>
+                  ${p.complaint_text && p.complaint_text !== (p.complaint_en || p.chief_complaint) ? '<p class="text-xs text-text3 mt-2 italic">Original: "' + h(p.complaint_text) + '"</p>' : ''}
+                  ${p.detected_language || p.language ? '<p class="text-xs text-text3 mt-2">Language: ' + h(p.detected_language || p.language) + '</p>' : ''}
                 </div>
               </div>` : ''}
 
@@ -5828,6 +6024,7 @@
                       <span class="text-xs font-bold text-cyan mt-0.5">Q${i + 1}</span>
                       <div class="flex-1">
                         <p class="text-sm text-text1 font-medium">${h(q.question_en || q.question || '—')}</p>
+                        ${(q.question_orig || (q.question && q.question !== q.question_en)) ? `<p class="text-xs text-text3 mt-0.5 italic">${h(q.question_orig || q.question)}</p>` : ''}
                         <p class="text-sm text-text2 mt-1 pl-3 border-l-2 border-slate-600"><strong>${h(q.answer || '—')}</strong></p>
                         ${q.original_answer && q.original_answer !== q.answer ? `<p class="text-xs text-text3 mt-1 pl-3 italic">${h(q.original_answer)}</p>` : ''}
                       </div>
@@ -5877,8 +6074,7 @@
               <div class="grid grid-cols-3 gap-3">
                 <div class="rounded-xl bg-surface2/40 border-2 p-4 text-center" style="border-color:${col}40">
                   <div class="text-[10px] font-bold uppercase tracking-wider text-text3 mb-2">MTS Level</div>
-                  <div class="text-2xl font-bold" style="color:${col}">${mts.level} — ${mts.mts_color}</div>
-                  <div class="text-xs text-text3 mt-1">${mts.subtitle}</div>
+                  <div class="text-2xl font-bold" style="color:${col}">LEVEL - ${mts.level} (${mts.label})</div>
                 </div>
                 <div class="rounded-xl bg-surface2/40 border border-slate-700/50 p-4 text-center">
                   <div class="text-[10px] font-bold uppercase tracking-wider text-text3 mb-2">AI Risk Score</div>
@@ -5900,7 +6096,12 @@
                   <span class="chip text-xs font-bold px-3 py-1" style="color:${col};border-color:${col}40;background:${col}15">${h(p.override_action)}</span>
                   ${p.updated_at ? `<span class="text-xs text-text3">🕒 ${new Date(p.updated_at).toLocaleString()}</span>` : ''}
                 </div>
-                ${p.override_note ? `<div class="space-y-1 mt-2">${p.override_note.split('\n---\n').map(entry => `<div class="text-xs text-text2 italic border-l-2 border-slate-600 pl-3 py-1">"${h(entry.trim())}"</div>`).join('')}</div>` : ''}
+                ${p.override_note && p.override_action !== 'AMBULANCE' ? (() => {
+                  const filtered = p.override_note.split('\n---\n')
+                    .map(e => e.trim())
+                    .filter(e => e && !e.startsWith('🚑') && !e.toLowerCase().includes('gönderildi') && !e.toLowerCase().includes('tahmini hastane') && !e.toLowerCase().includes('ambulans gond'));
+                  return filtered.length ? `<div class="space-y-1 mt-2">${filtered.map(entry => `<div class="text-xs text-text2 italic border-l-2 border-slate-600 pl-3 py-1">"${h(entry)}"</div>`).join('')}</div>` : '';
+                })() : ''}
               </div>` : ''}
 
               <!-- Physician Override — buttons only, no textarea -->
@@ -6043,14 +6244,20 @@
                 <textarea id="inline-comm-text-${h(pid)}" rows="2" placeholder="Type a message to patient…"
                   class="w-full rounded-xl bg-surface/60 border border-slate-700/50 px-3 py-2.5 text-sm text-text1 resize-none leading-relaxed focus:outline-none focus:border-cyan/50 transition-colors placeholder-text3"
                   onfocus="this.style.borderColor='var(--cyan,#22d3ee)'" onblur="this.style.borderColor=''"></textarea>
-                  <button onclick="sendInlineMsg('${h(pid)}')" class="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan/20 border border-cyan/40 text-cyan px-5 py-2.5 text-sm font-bold hover:bg-cyan/30 transition-all whitespace-nowrap">
-                    ➤ Send Message
-                  </button>
+                  <div class="flex gap-2">
+                    <button onclick="sendInlineMsg('${h(pid)}')" class="flex-1 flex items-center justify-center gap-2 rounded-xl bg-cyan/20 border border-cyan/40 text-cyan px-5 py-2.5 text-sm font-bold hover:bg-cyan/30 transition-all whitespace-nowrap">
+                      ➤ Send Message
+                    </button>
+                    <button id="voice-rec-btn-${h(pid)}" onclick="toggleVoiceRecord('${h(pid)}')" title="Record voice note"
+                      class="flex items-center justify-center rounded-xl border border-slate-600/60 bg-surface/60 hover:bg-surface2/60 transition-all px-3 py-2.5 text-lg"
+                      style="min-width:48px;">🎙</button>
+                  </div>
                 </div>
               </div>
             </div>
 
           </div>
+          </div><!-- /card body -->
         </div>
       `;
         }
@@ -6078,7 +6285,7 @@
                 <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style="background:${col}20;color:${col};border:1px solid ${col}50">${tc}</span>
                 ${p._triage_upgraded_by_score ? `<svg class="w-3.5 h-3.5 text-urgent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>` : ''}
               </div>
-              <p class="text-xs text-text2 truncate mt-0.5">${h(p.chief_complaint || 'No complaint recorded')}</p>
+              <p class="text-xs text-text2 truncate mt-0.5">${h(p.complaint_en || p.chief_complaint || 'No complaint recorded')}</p>
             </div>
 
             <!-- Right Side: ETA & Status -->
@@ -6172,7 +6379,8 @@
                     const col = TRIAGE_COLOR[lvl] || '#f59e0b';
                     const allergyText = getAllergyText(p);
                     const flags = (p.red_flags || []).filter(f => f && f !== 'none_identified');
-                    const asmt = (() => { const r = p.assessment; if (!r) return ''; if (typeof r === 'object') return r.patient_summary_en || r.clinical_report || r.summary || ''; return String(r); })();
+                    const _sQ = s => (s || '').replace(/^["'\u201c\u201d]+|["'\u201c\u201d]+$/g, '').trim();
+                    const asmt = (() => { const r = p.assessment; if (!r) return ''; if (typeof r === 'object') return _sQ(r.patient_summary_en) || _sQ(r.clinical_report) || ''; return String(r); })();
                     det.innerHTML = `
             <div class="space-y-2">
               <!-- Compact Vitals -->
@@ -6197,18 +6405,6 @@
               <!-- AI summary -->
               ${asmt ? `<div class="text-xs text-text2 leading-relaxed line-clamp-2 border-l-2 border-cyan/30 pl-2">${h(asmt)}</div>` : ''}
 
-              <!-- Modern Quick Actions -->
-              <div class="flex items-center gap-1.5 pt-2 border-t border-slate-700/30">
-                <button onclick="event.stopPropagation(); setStatus('${h(pid)}','in_treatment')" class="flex-1 rounded-md bg-violet-500/10 border border-violet-400/30 px-2 py-1 text-[11px] font-medium text-violet-300 hover:bg-violet-500/20 transition-all">In Treatment</button>
-                <button onclick="event.stopPropagation(); confirmDischarge('${h(pid)}',this)" class="flex-1 rounded-md bg-stable/10 border border-stable/30 px-2 py-1 text-[11px] font-medium text-stable hover:bg-stable/20 transition-all">Discharge</button>
-                <button onclick="event.stopPropagation(); alertTeam('${h(pid)}')" class="rounded-md bg-emer/10 border border-emer/30 p-1 text-emer hover:bg-emer/20 transition-all" title="Alert">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                </button>
-                <button onclick="event.stopPropagation(); viewRoute('${h(pid)}')" class="rounded-md bg-cyan/10 border border-cyan/30 p-1 text-cyan hover:bg-cyan/20 transition-all" title="Route">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-                </button>
-                <button onclick="event.stopPropagation(); toggleCompactMode(); toggleDet('${h(pid)}')" class="rounded-md bg-slate-700/50 border border-slate-600 px-2 py-1 text-[11px] text-text2 hover:border-cyan/50 hover:text-cyan transition-all">Full →</button>
-              </div>
             </div>`;
                     det.dataset.loaded = '1';
                 }
@@ -6251,9 +6447,33 @@
                 if (tab === 'media' && !selected.dataset.loaded) {
                     loadMediaForPatient(pid, selected);
                 }
-                // Load action history (stats tab) — always refresh
+                // Load action history (stats tab) — always refresh + start live interval
                 if (tab === 'actions') {
-                    loadActionHistory(pid, selected);
+                    // First fetch fresh patient data from server, then populate
+                    api(`/api/patient/${encodeURIComponent(pid)}`).then(fresh => {
+                        if (fresh && fresh.patient_id) {
+                            _patientCache[pid] = Object.assign(_patientCache[pid] || {}, fresh);
+                            const sp = state.patients.find(x => x.patient_id === pid);
+                            if (sp) Object.assign(sp, fresh);
+                        }
+                    }).catch(() => {}).finally(() => loadActionHistory(pid, selected));
+                    // Live refresh every 10s while tab is open
+                    if (window._statsRefreshInterval) clearInterval(window._statsRefreshInterval);
+                    window._statsRefreshInterval = setInterval(() => {
+                        if (!document.getElementById(`dtab-${pid}-actions`)?.classList.contains('hidden')) {
+                            api(`/api/patient/${encodeURIComponent(pid)}`).then(fresh => {
+                                if (fresh && fresh.patient_id) {
+                                    _patientCache[pid] = Object.assign(_patientCache[pid] || {}, fresh);
+                                    const sp = state.patients.find(x => x.patient_id === pid);
+                                    if (sp) Object.assign(sp, fresh);
+                                }
+                            }).catch(() => {}).finally(() => loadActionHistory(pid, selected));
+                        } else {
+                            clearInterval(window._statsRefreshInterval);
+                        }
+                    }, 10000);
+                } else {
+                    if (window._statsRefreshInterval) { clearInterval(window._statsRefreshInterval); window._statsRefreshInterval = null; }
                 }
                 // Communication tab — start polling, load messages, clear badge
                 if (tab === 'comm') {
@@ -6284,15 +6504,17 @@
             const stats = calculatePatientStatistics(pid);
             const actions = getPatientActions(pid);
 
-            // Update statistics
+            // Update statistics — use Math.floor to match human-readable clock diff
             if (stats) {
-                const fmt = v => v !== null ? `${Math.round(v)} min` : '—';
+                const fmt = v => v !== null ? `${Math.floor(v)} min` : '—';
                 const el = id => document.getElementById(id + pid);
                 const s = el('stats-time-to-doctor-');   if (s) s.textContent = fmt(stats.timeToDoctor);
                 const a = el('stats-amb-dispatch-');     if (a) a.textContent = fmt(stats.timeToAmbDispatch);
                 const r = el('stats-doctor-review-');    if (r) r.textContent = fmt(stats.timeToDoctorReview);
                 const ar = el('stats-time-to-arrival-'); if (ar) ar.textContent = fmt(stats.timeToArrival);
-                const hs = el('stats-hospital-stay-');   if (hs) hs.textContent = stats.hospitalStayDuration !== null ? `${Math.round(stats.hospitalStayDuration)} min${!_patientCache[pid]?.arrival_time || _patientCache[pid]?.status !== 'discharged' ? ' ▸' : ''}` : '—';
+                const ongoing = _patientCache[pid]?.status !== 'discharged';
+                const hs = el('stats-hospital-stay-');
+                if (hs) hs.textContent = stats.hospitalStayDuration !== null ? `${Math.floor(stats.hospitalStayDuration)} min${ongoing ? ' ▸' : ''}` : '—';
                 const ms = el('stats-messages-');        if (ms) ms.textContent = stats.messagesCount > 0 ? stats.messagesCount : '—';
             }
 
@@ -7279,10 +7501,14 @@
               class="flex-1 bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-text1 resize-none leading-relaxed focus:outline-none focus:border-cyan/50 transition-colors placeholder-slate-500"
               onfocus="this.style.borderColor='rgba(34,211,238,0.5)'" onblur="this.style.borderColor=''"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+            <button id="voice-rec-btn-modal" onclick="toggleVoiceRecord('__modal__')" title="Record voice note"
+              class="flex-shrink-0 w-11 h-11 rounded-xl border border-slate-600/60 bg-slate-800/60 hover:bg-slate-700/60 transition-all flex items-center justify-center text-lg">🎙</button>
             <button onclick="sendMessage()" class="flex-shrink-0 w-11 h-11 rounded-xl bg-cyan/20 border border-cyan/40 text-cyan hover:bg-cyan/30 transition-all flex items-center justify-center">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
             </button>
           </div>
+          <!-- Voice note playback area for modal -->
+          <div id="voice-playback-modal" class="hidden"></div>
         </div>
 
       </div>
