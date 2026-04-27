@@ -3559,11 +3559,26 @@
             try {
                 const res = await fetch(`/api/patient/${encodeURIComponent(pid)}/ambulance/dispatch`, { method: 'POST' });
                 if (!res.ok) throw new Error(await res.text());
-                // Optimistically update state
+                const data = await res.json().catch(() => ({}));
+
+                // Immediately patch state so cards + map reflect dispatch without waiting for next poll
                 const p = state.patients.find(x => x.patient_id === pid);
-                if (p) p.override_action = 'AMBULANCE';
+                if (p) {
+                    const now = data.dispatched_at || new Date().toISOString();
+                    const oneWay = p.amb_eta_patient || 10;
+                    p.override_action = 'AMBULANCE';
+                    p.amb_dispatch_at = now;
+                    p.eta_minutes = 2 * oneWay + 5;   // total round-trip ETA
+                    // Patch tracking state too so map updates immediately
+                    const tp = state.tracking && state.tracking.find(x => x.patient_id === pid);
+                    if (tp) { tp.override_action = 'AMBULANCE'; tp.amb_dispatch_at = now; tp.eta_minutes = p.eta_minutes; }
+                }
+
+                // Re-render card (phase label, ETA) and map (ambulance marker at hospital)
+                applyCurrentFilter();
+                loadTracking();
+
                 renderAmbulanceRequestsPanel();
-                // Show a brief confirmation toast
                 _showToast(`🚑 Ambulance dispatched for ${(p && p.full_name) || pid}`, 'success');
             } catch (e) {
                 if (btn) { btn.disabled = false; btn.textContent = '🚑 Dispatch'; }
