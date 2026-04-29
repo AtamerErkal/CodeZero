@@ -89,80 +89,253 @@ _Q_PREFIX_RE = _re.compile(
 )
 
 
-def _fix_or_question(q: dict) -> None:
+# ---------------------------------------------------------------------------
+# Drug & condition risk maps — deterministic clinical enrichment.
+# Applied before any LLM call so interpretation is code-guaranteed, not prompt-hoped.
+# ---------------------------------------------------------------------------
+_DRUG_RISK_MAP: dict[str, list[str]] = {
+    # alpha-1 blockers
+    "tamsulosin":   ["orthostatic hypotension", "first-dose syncope", "IFIS risk during eye surgery"],
+    "doxazosin":    ["orthostatic hypotension", "syncope on standing"],
+    "alfuzosin":    ["orthostatic hypotension", "syncope on standing"],
+    # anticoagulants — any trauma/head/abdominal pain threshold drops
+    "warfarin":     ["major bleeding risk", "INR-dependent", "intracranial haemorrhage on minor head trauma"],
+    "apixaban":     ["major GI/intracranial bleeding", "occult bleeding on minor trauma"],
+    "rivaroxaban":  ["major GI/intracranial bleeding", "occult bleeding on minor trauma"],
+    "dabigatran":   ["GI bleeding", "intracranial bleeding risk"],
+    "edoxaban":     ["GI bleeding", "intracranial bleeding risk"],
+    "clopidogrel":  ["bleeding risk amplified with aspirin", "GI bleeding"],
+    "ticagrelor":   ["bleeding risk", "dyspnoea side-effect"],
+    "aspirin":      ["GI bleeding risk", "antiplatelet effect"],
+    "heparin":      ["HIT risk", "major bleeding"],
+    # beta-blockers — mask tachycardia, blunt compensatory HR
+    "metoprolol":   ["masks tachycardia in shock/sepsis", "blunts compensatory HR", "bradycardia risk"],
+    "bisoprolol":   ["masks tachycardia in shock/sepsis", "blunts compensatory HR"],
+    "atenolol":     ["masks tachycardia in shock/sepsis", "blunts compensatory HR"],
+    "carvedilol":   ["masks tachycardia", "orthostatic hypotension"],
+    "propranolol":  ["masks tachycardia", "bronchospasm risk in asthma"],
+    # ACE-I / ARB
+    "lisinopril":   ["angioedema risk", "hyperkalaemia", "AKI in dehydration/NSAID co-use"],
+    "enalapril":    ["angioedema risk", "hyperkalaemia"],
+    "ramipril":     ["angioedema risk", "hyperkalaemia"],
+    "losartan":     ["hyperkalaemia", "AKI in dehydration"],
+    "valsartan":    ["hyperkalaemia", "AKI in dehydration"],
+    "candesartan":  ["hyperkalaemia", "AKI in dehydration"],
+    # diuretics
+    "furosemide":   ["hypokalaemia", "dehydration/orthostasis", "prerenal AKI"],
+    "spironolactone": ["hyperkalaemia", "gynaecomastia"],
+    "hydrochlorothiazide": ["hypokalaemia", "hyponatraemia", "dehydration"],
+    # statins
+    "atorvastatin": ["myopathy/rhabdomyolysis risk (rare but critical in muscle pain)"],
+    "simvastatin":  ["myopathy/rhabdomyolysis risk"],
+    # diabetes drugs
+    "metformin":    ["lactic acidosis in AKI/sepsis/contrast exposure"],
+    "insulin":      ["hypoglycaemia presenting as confusion/seizure/syncope"],
+    "glipizide":    ["hypoglycaemia"],
+    "glyburide":    ["prolonged hypoglycaemia risk"],
+    "sitagliptin":  ["pancreatitis association"],
+    # immunosuppression / steroids
+    "prednisolone": ["masked infection signs", "adrenal crisis if dose missed", "GI ulcer", "AVN"],
+    "prednisone":   ["masked infection signs", "adrenal crisis if dose missed", "GI ulcer"],
+    "dexamethasone":["masked infection/fever", "hyperglycaemia"],
+    "methotrexate": ["pancytopenia ->atypical infection", "hepatotoxicity"],
+    "azathioprine": ["immunosuppression ->atypical infection presentation"],
+    "ciclosporin":  ["nephrotoxicity", "hypertension", "drug interactions"],
+    "tacrolimus":   ["nephrotoxicity", "neurotoxicity", "PTLD"],
+    # psychiatric
+    "lithium":      ["lithium toxicity in dehydration/AKI — narrow therapeutic index"],
+    "clozapine":    ["agranulocytosis ->sepsis risk", "QTc prolongation", "myocarditis"],
+    "haloperidol":  ["QTc prolongation", "NMS risk"],
+    "quetiapine":   ["QTc prolongation", "orthostatic hypotension"],
+    "olanzapine":   ["metabolic syndrome", "QTc prolongation"],
+    "amitriptyline":["QTc prolongation", "anticholinergic toxicity in overdose"],
+    "sertraline":   ["SSRI + NSAID ->GI bleeding", "serotonin syndrome risk"],
+    "fluoxetine":   ["SSRI + NSAID ->GI bleeding", "serotonin syndrome risk", "long half-life"],
+    # cardiac / anti-arrhythmic
+    "digoxin":      ["digoxin toxicity in dehydration/AKI/hypokalaemia — narrow therapeutic index"],
+    "amiodarone":   ["thyroid toxicity", "pulmonary toxicity", "photosensitivity", "QTc prolongation"],
+    "diltiazem":    ["bradycardia + AV block risk", "negative inotropy"],
+    "verapamil":    ["bradycardia + AV block risk", "negative inotropy", "constipation"],
+    # antibiotics
+    "ciprofloxacin":["tendon rupture risk", "QTc prolongation", "C.diff risk"],
+    "levofloxacin": ["tendon rupture risk", "QTc prolongation", "C.diff risk"],
+    "azithromycin": ["QTc prolongation"],
+    # NSAIDs
+    "ibuprofen":    ["GI bleeding", "AKI in dehydration", "worsens heart failure"],
+    "naproxen":     ["GI bleeding", "AKI in dehydration", "worsens heart failure"],
+    "diclofenac":   ["GI bleeding", "AKI in dehydration", "cardiac risk"],
+    # opioids
+    "morphine":     ["respiratory depression", "constipation ->obstruction"],
+    "oxycodone":    ["respiratory depression", "constipation"],
+    "codeine":      ["variable metabolism — ultra-rapid metaboliser toxicity risk"],
+    "tramadol":     ["serotonin syndrome with SSRIs", "seizure threshold lowering"],
+    # hormonal
+    "ocp":          ["VTE/PE risk — especially smoker ≥35", "hypertension"],
+    "combined oral contraceptive": ["VTE/PE risk", "hypertension"],
+    "hrt":          ["VTE/PE risk", "breast cancer association"],
+    "testosterone": ["polycythaemia", "VTE risk"],
+    # prostate-specific
+    "bicalutamide": ["hepatotoxicity", "hot flushes", "DVT risk"],
+    "leuprolide":   ["osteoporosis", "metabolic syndrome", "DVT risk"],
+}
+
+_CONDITION_RISK_MAP: dict[str, list[str]] = {
+    "atrial fibrillation":           ["embolic stroke", "embolic mesenteric ischaemia", "rate-dependent acute CHF"],
+    "heart failure":                 ["acute decompensation on fluid/salt load", "low cardiac reserve", "arrhythmia"],
+    "previous mi":                   ["lower threshold for ACS work-up — recurrence risk × 3"],
+    "coronary artery disease":       ["ACS — lower symptom threshold", "stent thrombosis"],
+    "hypertension":                  ["aortic dissection risk", "hypertensive emergency", "stroke risk"],
+    "diabetes":                      ["silent MI", "DKA/HHS", "atypical infection presentation", "DAN — atypical pain"],
+    "diabetes mellitus":             ["silent MI", "DKA/HHS", "atypical infection presentation"],
+    "copd":                          ["CO2 retention on high-flow O2", "right heart strain", "spontaneous pneumothorax"],
+    "asthma":                        ["status asthmaticus", "NSAID-sensitive subtype", "steroid-dependent"],
+    "ckd":                           ["hyperkalaemia", "contrast nephropathy risk", "altered drug clearance", "fluid overload"],
+    "chronic kidney disease":        ["hyperkalaemia", "contrast nephropathy risk", "altered drug clearance"],
+    "liver cirrhosis":               ["variceal bleeding", "hepatic encephalopathy", "spontaneous bacterial peritonitis"],
+    "previous dvt":                  ["DVT recurrence risk ~10× baseline", "PE risk elevated"],
+    "previous pe":                   ["PE recurrence risk elevated", "chronic thromboembolic disease"],
+    "malignancy":                    ["hypercoagulable state", "bone metastasis ->cord compression/fracture", "infection in neutropenia"],
+    "cancer":                        ["hypercoagulable state", "bone metastasis ->cord compression/fracture", "infection in neutropenia"],
+    "prostate cancer":               ["mild hypercoagulable state", "bone metastasis ->pathological fracture/cord compression", "spinal cord compression risk"],
+    "post-prostatectomy":            ["VTE/PE risk elevated", "lymphoedema", "urinary baseline altered"],
+    "prostatectomy":                 ["VTE/PE risk elevated", "urinary baseline altered"],
+    "stroke":                        ["recurrent stroke/TIA", "dysphagia ->aspiration risk", "reduced mobility ->DVT"],
+    "previous stroke":               ["recurrent stroke/TIA — lower NIHSS threshold for imaging"],
+    "epilepsy":                      ["post-ictal state mimics other conditions", "SUDEP risk with poor control"],
+    "immunocompromised":             ["atypical infection presentation", "opportunistic pathogens", "fever may be absent"],
+    "hiv":                           ["opportunistic infection", "immune reconstitution", "drug interactions with ART"],
+    "sickle cell":                   ["vaso-occlusive crisis", "acute chest syndrome", "splenic sequestration", "stroke"],
+    "sickle cell disease":           ["vaso-occlusive crisis", "acute chest syndrome — life-threatening"],
+    "pregnancy":                     ["ectopic pregnancy if early", "pre-eclampsia/eclampsia if 20+ weeks", "PE risk elevated"],
+    "aaa":                           ["rupture — immediately life-threatening", "endoleak post-repair"],
+    "abdominal aortic aneurysm":     ["rupture — immediately life-threatening"],
+    "aortic stenosis":               ["syncope = severe ->high mortality", "heart failure", "sudden cardiac death"],
+    "osteoporosis":                  ["fragility fracture on minimal trauma", "vertebral compression fracture"],
+    "parkinsons":                    ["orthostatic hypotension", "aspiration risk", "falls risk"],
+    "dementia":                      ["atypical presentation of all conditions", "pain reporting unreliable"],
+    "myasthenia gravis":             ["myasthenic crisis with infections/certain drugs", "respiratory compromise"],
+}
+
+
+def _fix_or_question(q: dict, lang_base: str = "en") -> None:
     """Convert a malformed yes_no question that contains multiple findings into
     multiple_choice in-place, so each finding becomes a selectable option.
 
-    Handles two patterns:
-      • 2-finding OR question  → ["Finding A", "Finding B", "Both", "Neither of these"]
-      • 3+ findings (commas+or) → ["Finding A", "Finding B", "Finding C", "None of these"]
+    Always operates on question_en (always English) — question may be German.
+    Uses language-appropriate labels for "Both" and "Neither".
 
-    If the question already has the correct type, or no multi-finding pattern is
-    detected, the dict is left unchanged.
+    Handles two patterns:
+      • 2-finding OR question  ->["Finding A", "Finding B", <both>, <neither>]
+      • 3+ findings (commas+or) ->["Finding A", "Finding B", "Finding C", <none>]
     """
     if not q or q.get("type") != "yes_no":
         return
 
-    text_en = q.get("question", "")
+    # For non-English: don't generate option labels from English question fragments.
+    # _validate_question detects OR in question_en and forces an LLM retry that
+    # will produce correct Turkish/German options directly.
+    if lang_base not in ("en", "tr", ""):
+        return
 
-    # ── Pattern 1: commas AND/OR connectors → 3+ findings ────────────────────
-    # Detect: "Does X, Y, or Z?", "Is there A, B, or C?"
+    # Language-specific aggregate labels
+    _both    = {"de": "Beides",           "tr": "Her ikisi"}.get(lang_base, "Both")
+    _neither = {"de": "Keines von beiden", "tr": "Hiçbiri"  }.get(lang_base, "Neither of these")
+    _none    = {"de": "Keines davon",      "tr": "Hiçbiri"  }.get(lang_base, "None of these")
+
+    # Use question_en for English regex matching; question may be German
+    text_en = (q.get("question_en") or q.get("question", "")).strip()
+
     has_comma = "," in text_en
     has_or    = bool(_re.search(r"\bor\b", text_en, _re.IGNORECASE))
 
+    _connector_prefix = _re.compile(r"^\s*(?:or|and)\s+", _re.IGNORECASE)
+
+    def _clean_fragment(raw: str) -> str:
+        raw = _connector_prefix.sub("", raw)
+        raw = _Q_PREFIX_RE.sub("", raw).strip().rstrip("?,;.").strip()
+        words = raw.split()
+        if len(words) > 4:
+            raw = " ".join(words[:4])
+        return (raw[0].upper() + raw[1:]) if raw else ""
+
+    # ── Pattern 1: commas AND/OR connectors ->3+ findings ────────────────────
     if has_comma and has_or:
-        # Split on commas and " or " to get individual fragments
         raw_parts = _re.split(r"\s*,\s*|\s+or\s+", text_en, flags=_re.IGNORECASE)
-        # Also handle the case where a fragment still starts with "or " / "and "
-        # (happens when splitting ", or " — comma matches first, "or" is left over)
-        _connector_prefix = _re.compile(r"^\s*(?:or|and)\s+", _re.IGNORECASE)
-        fragments = []
-        for p in raw_parts:
-            # Remove leading "or"/"and" leftovers, then strip question-prefix words
-            p = _connector_prefix.sub("", p)
-            cleaned = _Q_PREFIX_RE.sub("", p).strip().rstrip("?,;.").strip()
-            if len(cleaned) >= 2:
-                fragments.append(cleaned[0].upper() + cleaned[1:])
+        fragments = [_clean_fragment(p) for p in raw_parts]
+        fragments = [f for f in fragments if len(f) >= 2]
 
         if len(fragments) >= 3:
             q["type"]    = "multiple_choice"
-            q["options"] = fragments + ["None of these"]
+            q["options"] = fragments + [_none]
             logger.info(
-                "_fix_or_question: 3+ findings yes_no → multiple_choice | options=%s",
+                "_fix_or_question: 3+ findings yes_no ->multiple_choice | options=%s",
                 q["options"],
             )
-            return  # done
+            return
 
     # ── Pattern 2: simple 2-finding OR question ───────────────────────────────
     if not has_or:
-        return  # nothing to fix
+        return
 
     parts = _re.split(r"\s+or\s+", text_en, maxsplit=1, flags=_re.IGNORECASE)
     if len(parts) != 2:
         return
 
-    opt_a = _Q_PREFIX_RE.sub("", parts[0]).strip().rstrip("?,;.").strip()
-    opt_b = parts[1].strip().rstrip("?,;.").strip()
+    opt_a = _clean_fragment(parts[0])
+    opt_b = _clean_fragment(parts[1])
 
     if len(opt_a) < 2 or len(opt_b) < 2:
         return
 
-    opt_a = opt_a[0].upper() + opt_a[1:]
-    opt_b = opt_b[0].upper() + opt_b[1:]
-
     q["type"]    = "multiple_choice"
-    q["options"] = [opt_a, opt_b, "Both", "Neither of these"]
+    q["options"] = [opt_a, opt_b, _both, _neither]
     logger.info(
-        "_fix_or_question: 2-finding yes_no → multiple_choice | options=%s",
+        "_fix_or_question: 2-finding yes_no ->multiple_choice | options=%s",
         q["options"],
     )
 
 
-def _fix_or_yes_no(result: dict) -> None:
+def _normalize_options(q: dict, lang_base: str = "en") -> None:
+    """Post-process question options in-place after LLM generation.
+
+    1. yes_no: enforce exact standard forms per language — no informal variants.
+    2. multiple_choice: remove options that are question fragments (end with '?')
+       or are excessively long sentences (> 8 words), which indicate the LLM
+       used question text as option labels instead of clean answer choices.
+    """
+    if not q:
+        return
+
+    qtype   = q.get("type", "")
+    options = q.get("options") or []
+
+    if qtype == "yes_no":
+        _yn: dict[str, list[str]] = {
+            "de": ["Ja", "Nein"],
+        }
+        q["options"] = _yn.get(lang_base, ["Yes", "No"])
+        return
+
+    if qtype == "multiple_choice" and options:
+        cleaned: list[str] = []
+        for opt in options:
+            s = str(opt).strip()
+            if s.endswith("?"):          # question fragment
+                continue
+            if len(s.split()) > 8:       # sentence, not a label
+                # Truncate to first 6 words rather than drop entirely
+                s = " ".join(s.split()[:6])
+            if s:
+                cleaned.append(s)
+        if len(cleaned) >= 2:
+            q["options"] = cleaned
+
+
+def _fix_or_yes_no(result: dict, lang_base: str = "en") -> None:
     """Wrapper for generate_next_question() result format: {done, question}."""
     q = result.get("question")
     if q:
-        _fix_or_question(q)
+        _fix_or_question(q, lang_base)
 
 
 class TriageEngine:
@@ -197,6 +370,7 @@ class TriageEngine:
         self.translator = translator
         self._initialized = False
         self._init_error: str = ""
+        self._hypothesis_cache: dict = {}
         self._init_openai()
 
     def _init_openai(self) -> None:
@@ -381,7 +555,7 @@ class TriageEngine:
 
         Maps lay terms to medical terminology so that the search index
         finds relevant protocol documents even when the patient uses
-        colloquial language (e.g. "belly pain" → "abdominal pain GI gastro").
+        colloquial language (e.g. "belly pain" ->"abdominal pain GI gastro").
 
         Args:
             complaint: Raw chief complaint text from the patient.
@@ -406,7 +580,7 @@ class TriageEngine:
                     unique_extra.append(t)
             enhanced = complaint + " " + " ".join(unique_extra[:12])
             logger.info(
-                "RAG query enhanced: '%s' → '%s'", complaint[:50], enhanced[:100]
+                "RAG query enhanced: '%s' ->'%s'", complaint[:50], enhanced[:100]
             )
             return enhanced
 
@@ -520,6 +694,241 @@ class TriageEngine:
         
         return "\n".join(parts)
 
+    def _structured_patient_context(
+        self,
+        medical_history: Optional[dict],
+        chief_complaint: str = "",
+    ) -> dict:
+        """Deterministic code-level clinical enrichment. Converts raw medical history
+        into an interpreted risk profile BEFORE any LLM call. All drug/condition
+        risks are guaranteed by the code — not hoped-for from a prompt."""
+        if not medical_history:
+            return {"has_history": False}
+
+        pat = medical_history.get("patient") or medical_history.get("demographics") or {}
+
+        # exact age
+        age: Optional[int] = None
+        dob = pat.get("date_of_birth")
+        if dob:
+            try:
+                age = datetime.now(timezone.utc).year - int(str(dob)[:4])
+            except Exception:
+                pass
+
+        # active conditions
+        active_conditions = [
+            d.get("description", "").strip()
+            for d in medical_history.get("diagnoses", [])
+            if d.get("status") == "active" and d.get("description")
+        ]
+
+        # active medications
+        active_meds_raw = [
+            {
+                "name": (m.get("name") or "").strip(),
+                "name_lower": (m.get("name") or "").strip().lower(),
+                "dose": m.get("dosage", ""),
+                "display": f"{(m.get('name') or '').strip()} {m.get('dosage', '')}".strip(),
+            }
+            for m in medical_history.get("medications", [])
+            if m.get("status") == "active" and m.get("name")
+        ]
+
+        # drug-specific risks (deterministic lookup)
+        drug_risks: list[dict] = []
+        for med in active_meds_raw:
+            ml = med["name_lower"]
+            for key, risks in _DRUG_RISK_MAP.items():
+                if key in ml:
+                    drug_risks.append({"drug": med["display"], "risks": risks})
+                    break  # one match per drug
+
+        # condition-specific risks
+        condition_risks: list[dict] = []
+        for cond in active_conditions:
+            cl = cond.lower()
+            for key, risks in _CONDITION_RISK_MAP.items():
+                if key in cl:
+                    condition_risks.append({"condition": cond, "risks": risks})
+                    break
+
+        # combinatorial red flags — multi-factor interactions
+        combo_flags: list[str] = []
+        meds_lower = " ".join(m["name_lower"] for m in active_meds_raw)
+        conds_lower = " ".join(active_conditions).lower()
+        comp_lower  = chief_complaint.lower()
+
+        anticoag_drugs = {"warfarin", "apixaban", "rivaroxaban", "dabigatran", "edoxaban"}
+        if any(d in meds_lower for d in anticoag_drugs):
+            if any(w in comp_lower for w in ["head", "trauma", "fall", "abdom", "back", "chest"]):
+                combo_flags.append(
+                    "ANTICOAGULATED PATIENT: even minor-mechanism trauma or pain must be "
+                    "treated as potential major bleeding event. Lower imaging threshold significantly."
+                )
+
+        alpha1_drugs = {"tamsulosin", "doxazosin", "alfuzosin"}
+        if any(d in meds_lower for d in alpha1_drugs):
+            if any(w in comp_lower for w in ["dizz", "faint", "syncope", "fall", "lightheaded", "black"]):
+                combo_flags.append(
+                    "ALPHA-1 BLOCKER + POSTURAL SYMPTOMS: orthostatic hypotension is primary hypothesis. "
+                    "Test with lying→standing BP and symptom reproduction before pursuing cardiac/neuro paths."
+                )
+
+        if age and age >= 65 and any(d in meds_lower for d in alpha1_drugs):
+            combo_flags.append(
+                "ELDERLY + ALPHA-BLOCKER: fall risk from orthostasis is high. "
+                "Assess for injury from fall AND causative syncope mechanism."
+            )
+
+        beta_drugs = {"metoprolol", "bisoprolol", "atenolol", "carvedilol", "propranolol"}
+        if any(d in meds_lower for d in beta_drugs):
+            if any(w in comp_lower for w in ["sepsis", "infect", "fever", "shock", "pale", "weak"]):
+                combo_flags.append(
+                    "BETA-BLOCKER: tachycardia is pharmacologically blunted. "
+                    "Normal or low HR does NOT exclude shock/sepsis. "
+                    "Weight cap-refill, mentation, BP trend more heavily than HR."
+                )
+
+        if "diabetes" in conds_lower or "diabetes mellitus" in conds_lower:
+            if any(w in comp_lower for w in ["chest", "epigast", "indigest", "jaw", "arm"]):
+                combo_flags.append(
+                    "DIABETIC PATIENT + CHEST/EPIGASTRIC PAIN: silent MI is common due to "
+                    "diabetic autonomic neuropathy. Lower threshold for cardiac work-up even if pain is mild."
+                )
+
+        if any(w in conds_lower for w in ["cancer", "carcinoma", "metasta", "lymphoma", "leukaemia"]):
+            if any(w in comp_lower for w in ["back", "spine", "leg weak", "bowel", "bladder"]):
+                combo_flags.append(
+                    "KNOWN MALIGNANCY + BACK/NEURO SYMPTOMS: spinal cord compression / "
+                    "pathological fracture must be ruled out. "
+                    "Q1: bowel or bladder dysfunction, saddle anaesthesia, bilateral leg weakness."
+                )
+
+        if "lithium" in meds_lower:
+            combo_flags.append(
+                "LITHIUM: narrow therapeutic index — any dehydration, AKI, new medication, "
+                "or reduced oral intake can precipitate toxicity (tremor, confusion, GI symptoms)."
+            )
+
+        if "digoxin" in meds_lower:
+            combo_flags.append(
+                "DIGOXIN: narrow therapeutic index — toxicity risk with dehydration, AKI, "
+                "hypokalaemia, or drug interactions. GI and visual symptoms may indicate toxicity."
+            )
+
+        if age and age >= 75:
+            n_meds = len(active_meds_raw)
+            if n_meds >= 4:
+                combo_flags.append(
+                    f"GERIATRIC POLYPHARMACY ({n_meds} active medications): atypical presentations "
+                    "are the rule. Screen for delirium, occult infection, drug-drug interactions, "
+                    "fall risk. Pain reporting may be unreliable."
+                )
+
+        # allergies
+        allergies = [
+            {"allergen": a.get("allergen"), "reaction": a.get("reaction")}
+            for a in medical_history.get("allergies", [])
+            if a.get("allergen")
+        ]
+
+        # baseline vitals
+        baseline_vitals = None
+        vitals = medical_history.get("vitals", [])
+        if vitals:
+            v = vitals[0]
+            baseline_vitals = {
+                "bp":   f"{v.get('bp_systolic','?')}/{v.get('bp_diastolic','?')}",
+                "hr":   v.get("heart_rate"),
+                "spo2": v.get("spo2"),
+                "temp": v.get("temperature"),
+                "date": v.get("recorded_at"),
+            }
+
+        # recent doctor notes
+        recent_notes = [
+            {"date": n.get("note_date"), "assessment": n.get("assessment"), "plan": n.get("plan")}
+            for n in (medical_history.get("doctor_notes") or [])[:2]
+        ]
+
+        return {
+            "has_history":             True,
+            "age":                     age,
+            "sex":                     pat.get("sex"),
+            "name":                    f"{pat.get('first_name','')} {pat.get('last_name','')}".strip(),
+            "active_conditions":       active_conditions,
+            "active_medications":      [m["display"] for m in active_meds_raw],
+            "drug_specific_risks":     drug_risks,
+            "condition_specific_risks": condition_risks,
+            "combinatorial_red_flags": combo_flags,
+            "allergies":               allergies,
+            "baseline_vitals":         baseline_vitals,
+            "recent_notes":            recent_notes,
+            "social_history":          medical_history.get("social_history") or {},
+            "family_history":          medical_history.get("family_history") or [],
+        }
+
+    def _format_structured_context(self, ctx: dict) -> str:
+        """Render a structured patient context dict as a clinical brief for LLM injection.
+        Already-interpreted — the LLM reads conclusions, not raw lists."""
+        if not ctx.get("has_history"):
+            return "No prior medical history on file. Treat as de-novo presentation."
+
+        lines: list[str] = []
+        lines.append(
+            f"PATIENT: {ctx.get('name') or 'Unknown'} | "
+            f"Age {ctx.get('age','?')} | Sex {ctx.get('sex','?')}"
+        )
+
+        if ctx["active_conditions"]:
+            lines.append("ACTIVE CONDITIONS: " + " | ".join(ctx["active_conditions"]))
+
+        if ctx["condition_specific_risks"]:
+            lines.append("CONDITION-DRIVEN CLINICAL RISKS:")
+            for r in ctx["condition_specific_risks"]:
+                lines.append(f"  • {r['condition']} ->{', '.join(r['risks'])}")
+
+        if ctx["active_medications"]:
+            lines.append("CURRENT MEDICATIONS: " + " | ".join(ctx["active_medications"]))
+
+        if ctx["drug_specific_risks"]:
+            lines.append("MEDICATION-DRIVEN RISKS (may be the cause or a complicating factor):")
+            for r in ctx["drug_specific_risks"]:
+                lines.append(f"  • {r['drug']} ->{', '.join(r['risks'])}")
+
+        if ctx["combinatorial_red_flags"]:
+            lines.append("⚠ COMBINATORIAL RED FLAGS (multi-factor interactions):")
+            for f in ctx["combinatorial_red_flags"]:
+                lines.append(f"  ⚠ {f}")
+
+        if ctx["allergies"]:
+            lines.append("ALLERGIES: " + " | ".join(
+                f"{a['allergen']} ->{a['reaction']}" for a in ctx["allergies"]
+            ))
+
+        if ctx["baseline_vitals"]:
+            v = ctx["baseline_vitals"]
+            lines.append(
+                f"BASELINE VITALS ({v['date']}, historical NOT current): "
+                f"BP {v['bp']} | HR {v['hr']} | SpO2 {v['spo2']}% | Temp {v['temp']}°C"
+            )
+
+        if ctx["recent_notes"]:
+            lines.append("RECENT CLINICAL NOTES:")
+            for n in ctx["recent_notes"]:
+                lines.append(f"  {n['date']}: {n['assessment']} (Plan: {n['plan']})")
+
+        if ctx.get("social_history"):
+            lines.append(f"SOCIAL HISTORY: {json.dumps(ctx['social_history'])}")
+
+        if ctx.get("family_history"):
+            fh = ctx["family_history"]
+            fh_str = json.dumps(fh)[:300]
+            lines.append(f"FAMILY HISTORY: {fh_str}")
+
+        return "\n".join(lines)
+
     def _clinical_lens(self, chief_complaint: str, demographics: Optional[dict]) -> str:
         """Return protocol-level questioning strategy for this complaint + demographic combo.
 
@@ -543,7 +952,7 @@ class TriageEngine:
         lenses: list[str] = []
 
         # ── CHEST PAIN ────────────────────────────────────────────────
-        if any(w in c for w in ["chest", "göğüs", "brust", "thorax", "sternum", "cardiac"]):
+        if any(w in c for w in ["chest", "brust", "thorax", "sternum", "cardiac", "göğüs", "kalp", "iman tahtası"]):
             if age and age >= 45 and is_male:
                 lenses.append(
                     "CARDIAC PROTOCOL (Male ≥45): ACS probability is HIGH.\n"
@@ -574,10 +983,30 @@ class TriageEngine:
                 )
 
         # ── HEADACHE ─────────────────────────────────────────────────
-        if any(w in c for w in ["headache", "head pain", "baş ağr", "kopfschmerz", "migraine", "migräne"]):
-            if age and age >= 50:
+        is_headache = any(w in c for w in ["headache", "head pain", "kopfschmerz", "migraine", "migräne", "baş ağrısı", "başım ağrıyor"])
+        has_fever_in_complaint = any(w in c for w in ["fever", "fieber", "temperature", "fièvre", "pyrexia", "ateş", "sıcaklık", "yanıyorum"])
+
+        if is_headache:
+            # Combined headache + fever — meningitis/encephalitis/SAH pathway FIRST
+            if has_fever_in_complaint:
                 lenses.append(
-                    "HEADACHE PROTOCOL (≥50): Giant cell arteritis AND SAH are must-rule-outs.\n"
+                    "HEADACHE + FEVER PROTOCOL — MENINGITIS / ENCEPHALITIS / SAH:\n"
+                    "This combination is a medical emergency until proven otherwise.\n"
+                    "THREE MUST-ASK questions before any others:\n"
+                    "  1. NECK STIFFNESS — ask if patient cannot touch chin to chest (meningismus).\n"
+                    "  2. PHOTOPHOBIA — 'Does bright light make your headache worse?' "
+                    "(meningitis triad: headache + fever + photophobia — if all 3 present, EMERGENCY).\n"
+                    "  3. PETECHIAL RASH — 'Do you have a rash anywhere on your body, especially "
+                    "small red or purple spots that do NOT blanch when pressed?' "
+                    "(meningococcaemia — immediately life-threatening, management changes NOW).\n"
+                    "Q4: Thunderclap / 'worst headache of your life' — SAH co-exists with infection.\n"
+                    "Q5: Altered consciousness / confusion (encephalitis, severe meningitis, cerebral abscess).\n"
+                    "NEVER deprioritise rash question — meningococcal purpura = immediate IV benzylpenicillin.\n"
+                    "NEVER use 'vision changes' as a substitute for photophobia — they are different findings."
+                )
+            elif age and age >= 50:
+                lenses.append(
+                    "HEADACHE PROTOCOL (>=50): Giant cell arteritis AND SAH are must-rule-outs.\n"
                     "Q1: Thunderclap / 'worst headache of life' — SAH until proven otherwise.\n"
                     "Q2: Scalp tenderness or jaw claudication (giant cell arteritis — leads to blindness).\n"
                     "Q3: Focal neurological deficit — vision, speech, limb (stroke, space-occupying lesion).\n"
@@ -588,18 +1017,18 @@ class TriageEngine:
                 lenses.append(
                     "HEADACHE PROTOCOL — SNOOP criteria:\n"
                     "Q1: Sudden onset / thunderclap — 'worst headache of life' (SAH until excluded).\n"
-                    "Q2: Neurological symptoms — vision change, speech, limb weakness (stroke/SOL).\n"
-                    "Q3: Systemic signs — fever + neck stiffness (meningitis/encephalitis).\n"
+                    "Q2: Neurological symptoms — focal weakness, speech, limb weakness (stroke/SOL).\n"
+                    "Q3: Systemic signs — fever + neck stiffness + photophobia (meningitis triad).\n"
                     "Q4: Trigger — exertion (SAH/exercise headache), Valsalva, position (Chiari/ICP).\n"
                     "Q5: Pattern change — new type, progressively worsening, or waking from sleep."
                 )
 
         # ── ABDOMINAL PAIN ────────────────────────────────────────────
-        if any(w in c for w in ["abdom", "belly", "stomach", "karın", "bauch", "nausea", "vomit", "epigast", "pelvic"]):
+        if any(w in c for w in ["abdom", "belly", "stomach", "bauch", "nausea", "vomit", "epigast", "pelvic", "karın", "mide", "bulantı", "kusma", "kasık"]):
             if is_female and age and 15 <= age <= 50:
                 lenses.append(
                     "ABDOMINAL PAIN PROTOCOL (Female 15–50): ECTOPIC PREGNANCY is life-threatening priority.\n"
-                    "Q1: Last menstrual period — is pregnancy possible? If delayed → IMMEDIATE risk.\n"
+                    "Q1: Last menstrual period — is pregnancy possible? If delayed ->IMMEDIATE risk.\n"
                     "Q2: Vaginal bleeding or unusual discharge (ectopic, PID, miscarriage).\n"
                     "Q3: Pain location — right iliac fossa (appendicitis), left (ovarian torsion), diffuse (peritonism).\n"
                     "Q4: Rigidity / guarding / rebound tenderness on movement (peritonitis = surgical).\n"
@@ -608,7 +1037,7 @@ class TriageEngine:
             elif age and age >= 60:
                 lenses.append(
                     "ABDOMINAL PAIN PROTOCOL (≥60): Mesenteric ischaemia and AAA are highest-priority.\n"
-                    "Q1: Pain out of proportion to examination — patient writhing, diaphoretic (mesenteric ischaemia → IMMEDIATE).\n"
+                    "Q1: Pain out of proportion to examination — patient writhing, diaphoretic (mesenteric ischaemia ->IMMEDIATE).\n"
                     "Q2: Pulsatile abdominal sensation or known AAA (rupture).\n"
                     "Q3: Bloody or dark stool (ischaemia, volvulus, lower GI bleed).\n"
                     "Q4: Epigastric radiation to back (pancreatitis, AAA, posterior ulcer).\n"
@@ -617,7 +1046,7 @@ class TriageEngine:
             else:
                 lenses.append(
                     "ABDOMINAL PAIN PROTOCOL:\n"
-                    "Q1: Location + migration — periumbilical → right iliac fossa (appendicitis classic).\n"
+                    "Q1: Location + migration — periumbilical ->right iliac fossa (appendicitis classic).\n"
                     "Q2: Character — constant/severe (surgical/inflammatory) vs crampy (obstruction, IBS).\n"
                     "Q3: Movement worsens pain (peritoneal signs = surgical emergency).\n"
                     "Q4: Nausea/vomiting timing relative to pain onset (surgical vs medical).\n"
@@ -625,7 +1054,7 @@ class TriageEngine:
                 )
 
         # ── SHORTNESS OF BREATH ───────────────────────────────────────
-        if any(w in c for w in ["breath", "dyspnoea", "dyspnea", "nefes", "atemnot", "luftnot", "respiratory"]):
+        if any(w in c for w in ["breath", "dyspnoea", "dyspnea", "atemnot", "luftnot", "respiratory", "nefes", "solunum", "boğuluyor", "tıkandı"]):
             lenses.append(
                 "DYSPNOEA PROTOCOL:\n"
                 "Q1: PE risk — Wells: recent surgery/immobility ≥3 days, DVT history, haemoptysis, HR>100.\n"
@@ -636,18 +1065,18 @@ class TriageEngine:
             )
 
         # ── LEG PAIN / SWELLING ───────────────────────────────────────
-        if any(w in c for w in ["leg", "calf", "swelling", "dvt", "bacak", "bein", "waden", "thrombos"]):
+        if any(w in c for w in ["leg", "calf", "swelling", "dvt", "bein", "waden", "thrombos", "bacak", "baldır", "şişme", "ödem", "uyluk"]):
             lenses.append(
                 "LOWER LIMB PROTOCOL:\n"
                 "Q1: Unilateral calf swelling + tenderness + no other explanation (DVT — Wells ≥2 = high risk).\n"
-                "Q2: Associated dyspnoea or chest pain (DVT + dyspnoea = PE until excluded → IMMEDIATE).\n"
+                "Q2: Associated dyspnoea or chest pain (DVT + dyspnoea = PE until excluded ->IMMEDIATE).\n"
                 "Q3: Risk factors — immobility >3 days, recent surgery/flight, OCP/HRT, malignancy.\n"
                 "Q4: Skin — erythema + warmth (DVT/cellulitis) vs pallor + pulselessness + cold (acute arterial).\n"
                 "Q5: Claudication on walking relieved by rest (PAD, especially ≥60)."
             )
 
         # ── DIZZINESS / SYNCOPE ───────────────────────────────────────
-        if any(w in c for w in ["dizz", "vertigo", "faint", "syncop", "baş dön", "schwindel", "ohnmacht", "lightheaded"]):
+        if any(w in c for w in ["dizz", "vertigo", "faint", "syncop", "schwindel", "ohnmacht", "lightheaded", "baş dön", "bayıl", "gözüm karar", "sersem"]):
             if age and age >= 55:
                 lenses.append(
                     "DIZZINESS PROTOCOL (≥55): POSTERIOR STROKE is must-rule-out — HINTS criteria apply.\n"
@@ -668,11 +1097,11 @@ class TriageEngine:
                 )
 
         # ── BACK PAIN ─────────────────────────────────────────────────
-        if any(w in c for w in ["back pain", "backache", "sırt", "rückenschmerz", "lumbar", "spine", "low back"]):
+        if any(w in c for w in ["back pain", "backache", "rückenschmerz", "lumbar", "spine", "low back", "bel ağrısı", "sırt ağrısı", "omurga", "böbrek"]):
             if age and age >= 55 and is_male:
                 lenses.append(
                     "BACK PAIN PROTOCOL (Male ≥55): AAA rupture is life-threatening priority.\n"
-                    "Q1: Pulsatile/tearing quality + diaphoresis + hypotension feeling (AAA rupture → IMMEDIATE).\n"
+                    "Q1: Pulsatile/tearing quality + diaphoresis + hypotension feeling (AAA rupture ->IMMEDIATE).\n"
                     "Q2: Cauda equina screen — bladder/bowel incontinence or retention, saddle anaesthesia (SURGICAL EMERGENCY).\n"
                     "Q3: Radiation to groin (renal colic, AAA) vs to leg below knee (disc/nerve root).\n"
                     "Q4: Fever + night sweats + immunosuppression (epidural abscess, vertebral osteomyelitis).\n"
@@ -689,18 +1118,18 @@ class TriageEngine:
                 )
 
         # ── STROKE / FOCAL NEUROLOGY ──────────────────────────────────
-        if any(w in c for w in ["weakness", "numbness", "speech", "facial drop", "stroke", "felç", "schlaganfall", "lähmung", "paralys"]):
+        if any(w in c for w in ["weakness", "numbness", "speech", "facial drop", "stroke", "schlaganfall", "lähmung", "paralys", "felç", "inme", "uyuşma", "güç kaybı", "peltek"]):
             lenses.append(
                 "STROKE PROTOCOL — TIME IS BRAIN:\n"
                 "Q1: EXACT last-known-well time — tPA window is 4.5 hours (thrombectomy up to 24 h in selected).\n"
-                "Q2: FAST positive — facial droop, arm drift, speech abnormality (if yes → IMMEDIATE now).\n"
+                "Q2: FAST positive — facial droop, arm drift, speech abnormality (if yes ->IMMEDIATE now).\n"
                 "Q3: Posterior symptoms — double vision, vertigo, dysphagia, ataxia (basilar artery).\n"
                 "Q4: Haemorrhagic features — severe headache, vomiting, very high BP history (ICH vs ischaemic).\n"
                 "Q5: Contraindications to thrombolysis — anticoagulants (warfarin/DOAC), recent surgery, active bleeding."
             )
 
         # ── TRAUMA ────────────────────────────────────────────────────
-        if any(w in c for w in ["trauma", "injury", "fall", "wound", "cut", "fracture", "düşme", "kaza", "verletz", "hit", "accident"]):
+        if any(w in c for w in ["trauma", "injury", "fall", "wound", "cut", "fracture", "verletz", "hit", "accident", "yaralanma", "kaza", "düştü", "kesik", "kırık", "darbe"]):
             lenses.append(
                 "TRAUMA PROTOCOL:\n"
                 "Q1: Mechanism — height of fall, vehicle speed, direction of impact (energy = severity).\n"
@@ -717,95 +1146,475 @@ class TriageEngine:
             + "\n\n".join(lenses)
         )
 
+    def _personalise_lens(
+        self,
+        base_lens: str,
+        chief_complaint: str,
+        structured_ctx: dict,
+    ) -> str:
+        """Layer patient-specific overrides on top of the generic clinical lens.
+
+        The base lens is derived from complaint + demographics alone.
+        This method reads the enriched patient context and adds targeted
+        override blocks that take precedence over the base protocol.
+        This is where 'generic protocol' becomes 'patient-specific'.
+        """
+        if not structured_ctx.get("has_history"):
+            return base_lens
+
+        overrides: list[str] = []
+        c = chief_complaint.lower()
+        meds_lower = " ".join(m.lower() for m in structured_ctx.get("active_medications", []))
+        conds_lower = " ".join(structured_ctx.get("active_conditions", [])).lower()
+        age = structured_ctx.get("age") or 0
+
+        anticoag_set = {"warfarin", "apixaban", "rivaroxaban", "dabigatran", "edoxaban"}
+        has_anticoag = any(d in meds_lower for d in anticoag_set)
+
+        alpha1_set = {"tamsulosin", "doxazosin", "alfuzosin"}
+        has_alpha1 = any(d in meds_lower for d in alpha1_set)
+
+        beta_set = {"metoprolol", "bisoprolol", "atenolol", "carvedilol", "propranolol"}
+        has_beta = any(d in meds_lower for d in beta_set)
+
+        # ANTICOAGULANT + trauma / head / abdominal / back pain
+        if has_anticoag and any(w in c for w in ["head", "trauma", "fall", "abdom", "back", "chest", "baş", "darbe", "düşme", "karın", "sırt", "göğüs"]):
+            overrides.append(
+                "PATIENT-SPECIFIC OVERRIDE — ANTICOAGULATED PATIENT:\n"
+                "  This patient is on anticoagulation. The normal 'minor trauma' reassurance does NOT apply.\n"
+                "  Q1: Screen for any head trauma in the past 7 days regardless of severity (intracranial bleed risk).\n"
+                "  Q2: Any new neurological symptom since the onset (focal weakness, speech change, confusion).\n"
+                "  Q3: Evidence of GI bleeding — dark/tarry stools, haematemesis, abdominal pain.\n"
+                "  ➔ Lower imaging threshold by at least one category compared to non-anticoagulated patient."
+            )
+
+        # ALPHA-1 BLOCKER + dizziness / syncope / fall
+        if has_alpha1 and any(w in c for w in ["dizz", "faint", "syncope", "fall", "lightheaded", "black"]):
+            overrides.append(
+                "PATIENT-SPECIFIC OVERRIDE — ALPHA-1 BLOCKER + POSTURAL SYMPTOMS:\n"
+                "  Tamsulosin/doxazosin causes orthostatic hypotension. This is the PRIMARY hypothesis.\n"
+                "  Q1: Are symptoms worse on standing or getting up from a seat/bed? (postural trigger)\n"
+                "  Q2: Did this happen on first dose or after dose increase?\n"
+                "  Q3: Rule out injury from a fall before pursuing cardiac/neuro pathway.\n"
+                "  ➔ Cardiac and central pathways are SECONDARY unless postural trigger is convincingly absent."
+            )
+
+        # BETA-BLOCKER — masks tachycardia in any acutely ill presentation
+        if has_beta and any(w in c for w in ["fever", "infect", "sepsis", "weak", "pale", "unwell"]):
+            overrides.append(
+                "PATIENT-SPECIFIC OVERRIDE — BETA-BLOCKER MASKS TACHYCARDIA:\n"
+                "  Normal or low HR CANNOT be used to exclude shock or sepsis in this patient.\n"
+                "  Weight capillary refill, mentation status, blood pressure trend, and skin colour.\n"
+                "  Q: Ask specifically about dizziness on exertion — relative bradycardia is the masked signal."
+            )
+
+        # DIABETES + vomiting / nausea / abdominal pain — DKA
+        if ("diabetes" in conds_lower) and any(w in c for w in ["vomit", "nausea", "diarrh", "abdom", "stomach", "belly"]):
+            overrides.append(
+                "PATIENT-SPECIFIC OVERRIDE — DIABETIC PATIENT + GI SYMPTOMS (DKA RISK):\n"
+                "  DKA is a MUST-NOT-MISS in any diabetic patient with vomiting/nausea/abdominal pain.\n"
+                "  Q1: Recent blood glucose reading — was it high (above 14 mmol/L / 250 mg/dL)?\n"
+                "  Q2: Is the patient urinating more than usual, or feeling very thirsty? (polyuria/polydipsia = DKA signal)\n"
+                "  Q3: Does the breath smell fruity or sweet? (ketone breath)\n"
+                "  Q4: Any missed insulin doses or recent illness that could trigger DKA?\n"
+                "  ➔ Do NOT attribute vomiting to gastroenteritis until DKA is excluded.\n"
+                "  ➔ Dehydration from vomiting worsens DKA — assess fluid intake and urine output."
+            )
+
+        # DIABETES + chest / epigastric — silent MI
+        if ("diabetes" in conds_lower) and any(w in c for w in ["chest", "epigast", "indigest", "jaw", "arm", "shoulder"]):
+            overrides.append(
+                "PATIENT-SPECIFIC OVERRIDE — DIABETIC PATIENT + CHEST/EPIGASTRIC COMPLAINT:\n"
+                "  Diabetic autonomic neuropathy ->silent MI is common. Chest pain may be mild, absent, or atypical.\n"
+                "  Q1: Diaphoresis (cold sweats) — strongest independent MI predictor even in atypical presentations.\n"
+                "  Q2: Associated fatigue, dyspnoea, or nausea (diabetic MI triad).\n"
+                "  ➔ Lower threshold for ACS work-up regardless of pain intensity."
+            )
+
+        # KNOWN MALIGNANCY + back / neurological symptoms
+        if any(w in conds_lower for w in ["cancer", "carcinoma", "metasta", "lymphoma", "leukaemia", "myeloma"]):
+            if any(w in c for w in ["back", "spine", "leg", "weak", "numb", "bowel", "bladder"]):
+                overrides.append(
+                    "PATIENT-SPECIFIC OVERRIDE — KNOWN MALIGNANCY + BACK/NEURO SYMPTOMS:\n"
+                    "  Spinal cord compression and pathological fracture are IMMEDIATE must-rule-outs.\n"
+                    "  Q1: Bowel or bladder dysfunction (new incontinence or retention) — surgical emergency.\n"
+                    "  Q2: Saddle anaesthesia or bilateral leg weakness/numbness.\n"
+                    "  Q3: Point tenderness on vertebral percussion (metastatic bone lesion).\n"
+                    "  ➔ Do not attribute to 'simple mechanical pain' without excluding cord compression first."
+                )
+
+        # POST-PROSTATECTOMY / PROSTATE CANCER + leg / chest / breathlessness
+        if any(w in conds_lower for w in ["prostatect", "prostate cancer"]):
+            if any(w in c for w in ["leg", "calf", "chest", "breath", "swelling"]):
+                overrides.append(
+                    "PATIENT-SPECIFIC OVERRIDE — POST-PROSTATECTOMY HYPERCOAGULABLE STATE:\n"
+                    "  VTE/PE risk is meaningfully elevated post-prostatectomy.\n"
+                    "  Q1: Unilateral calf swelling + tenderness (DVT).\n"
+                    "  Q2: Associated chest pain or dyspnoea (PE).\n"
+                    "  ➔ Treat as high pre-test probability on Wells score."
+                )
+
+        # LITHIUM — any non-specific GI / neuro complaint
+        if "lithium" in meds_lower:
+            overrides.append(
+                "PATIENT-SPECIFIC OVERRIDE — LITHIUM THERAPY:\n"
+                "  Narrow therapeutic index. Any dehydration, AKI, new drug, or reduced fluid intake\n"
+                "  can precipitate lithium toxicity (tremor, confusion, GI, seizure).\n"
+                "  Q: Recent fluid intake change, new medications, vomiting, or diarrhoea?\n"
+                "  ➔ Toxicity must be on the differential for any neuro/GI/renal complaint."
+            )
+
+        # DIGOXIN — any GI / visual / rhythm complaint
+        if "digoxin" in meds_lower:
+            overrides.append(
+                "PATIENT-SPECIFIC OVERRIDE — DIGOXIN THERAPY:\n"
+                "  Toxicity is precipitated by dehydration, AKI, or hypokalaemia.\n"
+                "  Q: Nausea, vomiting, visual disturbance (yellow/green tinge), or palpitations?\n"
+                "  ➔ GI/visual symptoms in a digoxin patient = toxicity screen immediately."
+            )
+
+        # CLOZAPINE — any systemic complaint
+        if "clozapine" in meds_lower:
+            overrides.append(
+                "PATIENT-SPECIFIC OVERRIDE — CLOZAPINE THERAPY:\n"
+                "  Agranulocytosis risk: fever or infection in clozapine patient = FBC urgently.\n"
+                "  Myocarditis risk in first 6 months: chest pain + tachycardia = urgent cardiac screen.\n"
+                "  ➔ Any acute presentation in clozapine patient escalates one triage tier."
+            )
+
+        # GERIATRIC + POLYPHARMACY — non-specific complaint
+        n_meds = len(structured_ctx.get("active_medications", []))
+        if age >= 75 and n_meds >= 4:
+            overrides.append(
+                f"PATIENT-SPECIFIC OVERRIDE — GERIATRIC PATIENT ({age}yo, {n_meds} medications):\n"
+                "  Atypical presentations are the norm. Pain reporting is unreliable.\n"
+                "  Screen for: delirium (acute confusion onset), occult infection (no fever possible),\n"
+                "  drug-drug interactions (recent prescription change?), fall risk.\n"
+                "  ➔ Do not anchor on the most obvious explanation without geriatric overlay."
+            )
+
+        if not overrides:
+            return base_lens
+
+        return (
+            base_lens
+            + ("\n\n" if base_lens else "")
+            + "═══════════════════════════════════════════════════════\n"
+            + "PATIENT-SPECIFIC OVERRIDES — TAKE PRIORITY OVER BASE PROTOCOL\n"
+            + "═══════════════════════════════════════════════════════\n"
+            + "\n\n".join(overrides)
+        )
+
     # ------------------------------------------------------------------
     # Dynamic question generation (Agentic AI)
     # ------------------------------------------------------------------
+
+    def _validate_question(self, q: dict) -> tuple[bool, str]:
+        """Gen-time structural validator. Runs before a question reaches the patient.
+        Returns (True, '') if valid or (False, reason) if it must be rejected/retried."""
+        if not q:
+            return False, "question object is None"
+
+        text  = (q.get("question") or "").strip()
+        qtype = (q.get("type") or "").strip()
+
+        if not text:
+            return False, "empty question text"
+
+        if qtype not in ("yes_no", "multiple_choice", "scale", "photo_request", "free_text"):
+            return False, f"unknown type '{qtype}'"
+
+        text_lower = text.lower()
+
+        if qtype == "yes_no":
+            # OR-finding rule — check both the displayed question AND question_en
+            if _re.search(r"\bor\b", text_lower) or _re.search(r"\bor\b", text_en_check):
+                return False, "yes_no contains 'or' — use multiple_choice with findings as options in patient's language"
+            # 2+ findings with 'and'
+            _finding_words = r"(?:pain|swelling|fever|nausea|vomit|cough|bleed|dizziness|shortness|breath|headache|weak|numb|rash|bruise)"
+            if _re.search(_finding_words + r".*\band\b.*" + _finding_words, text_lower):
+                return False, "yes_no combines two findings with 'and' — split into separate questions"
+            # comma list
+            if text.count(",") >= 2:
+                return False, "yes_no with comma-listed findings — use multiple_choice"
+
+        if qtype == "scale":
+            intensity_words = {"pain", "intensity", "severe", "rate", "scale", "discomfort", "hurt"}
+            if not any(w in text_lower for w in intensity_words):
+                return False, "scale type used for non-intensity question — reconsider type"
+
+        options = q.get("options") or []
+        if qtype in ("yes_no", "multiple_choice", "scale") and not options:
+            return False, f"type '{qtype}' requires non-empty options"
+
+        if qtype == "yes_no" and options:
+            _informal = {"nope", "yep", "yeah", "sure", "correct", "negative", "affirmative"}
+            bad = [o for o in options if str(o).lower() in _informal]
+            if bad:
+                return False, f"yes_no options contain informal forms {bad} — use Yes/No or language equivalent"
+
+        if qtype == "multiple_choice" and options:
+            fragment_opts = [o for o in options if str(o).strip().endswith("?")]
+            if fragment_opts:
+                return False, f"multiple_choice options contain question fragments: {fragment_opts}"
+
+        return True, ""
+
+    # ---------------------------------------------------------------------------
+    # Clinical dimensions — complaint-specific coverage tracking
+    # ---------------------------------------------------------------------------
+
+    _COMPLAINT_DIMENSIONS: dict[str, list[str]] = {
+        "chest":     ["character", "onset", "radiation", "diaphoresis", "exertional", "cardiac_history"],
+        "headache":  ["onset_type", "character", "neuro_symptoms", "systemic", "pattern_change"],
+        "abdominal": ["location", "character", "onset", "peritoneal_signs", "associated_gi"],
+        "breath":    ["onset", "character", "orthopnoea", "pe_risk", "fever_cough"],
+        "dyspnoea":  ["onset", "character", "orthopnoea", "pe_risk", "fever_cough"],
+        "vomit":     ["frequency", "blood_in_vomit", "associated_pain", "hydration_status", "fever", "duration"],
+        "nausea":    ["associated_vomiting", "associated_pain", "hydration_status", "fever", "duration"],
+        "diarrhea":  ["frequency", "blood_in_stool", "associated_pain", "hydration_status", "fever", "duration"],
+        "diarrhoea": ["frequency", "blood_in_stool", "associated_pain", "hydration_status", "fever", "duration"],
+        "leg":       ["unilateral_swelling", "associated_breathing", "dvt_risk", "skin_changes", "claudication"],
+        "dizziness": ["type", "positional", "hearing", "neuro_symptoms", "cardiac"],
+        "syncope":   ["trigger", "prodrome", "duration", "neuro_symptoms", "cardiac"],
+        "back":      ["cauda_equina", "radiation", "systemic", "mechanism", "character"],
+        "stroke":    ["last_known_well", "fast_screen", "posterior_symptoms", "haemorrhagic", "contraindications"],
+        "trauma":    ["mechanism", "loc", "spine", "hidden_injuries", "anticoag"],
+        "weakness":  ["distribution", "onset", "associated_symptoms", "last_known_well", "pain"],
+        "fever":     ["systemic_source", "rigors", "localising_symptoms", "immunocompromise", "travel"],
+    }
+
+    def _required_dimensions(self, chief_complaint: str) -> list[str]:
+        """Return the clinical dimensions that must be covered for this complaint."""
+        c = chief_complaint.lower()
+        for key, dims in self._COMPLAINT_DIMENSIONS.items():
+            if key in c:
+                return dims
+        return ["onset", "character", "severity", "associated_symptoms", "relevant_history"]
+
+    def _extract_covered_findings(self, previous_answers: list[dict]) -> dict[str, str]:
+        """Parse answered questions to build a findings-covered map.
+        Maps dimension name ->'positive'|'negative'|'answered' so we know
+        which clinical areas no longer need probing."""
+        covered: dict[str, str] = {}
+        for ans in previous_answers:
+            q_text = (ans.get("question") or "").lower()
+            answer  = str(ans.get("answer") or "").lower()
+            dim     = (ans.get("tested_dimension") or "").strip()
+            if dim:
+                covered[dim] = "positive" if any(
+                    w in answer for w in ["yes", "positive", "severe", "crushing", "tearing"]
+                ) else "answered"
+                continue
+            # fallback: keyword heuristic
+            if any(w in q_text for w in ["radiation", "radiat", "spread", "jaw", "arm"]):
+                covered["radiation"] = "answered"
+            if any(w in q_text for w in ["sweat", "diaphoresis", "cold sweat"]):
+                covered["diaphoresis"] = "positive" if "yes" in answer else "negative"
+            if any(w in q_text for w in ["exertion", "exertional", "effort", "walking"]):
+                covered["exertional"] = "answered"
+            if any(w in q_text for w in ["onset", "start", "begin", "when"]):
+                covered["onset"] = "answered"
+            if any(w in q_text for w in ["charact", "describ", "type", "quality", "nature"]):
+                covered["character"] = "answered"
+            if any(w in q_text for w in ["bowel", "bladder", "incontinence"]):
+                covered["cauda_equina"] = "answered"
+            if any(w in q_text for w in ["last known well", "when did", "time"]):
+                covered["last_known_well"] = "answered"
+            if any(w in q_text for w in ["cardiac", "heart", "previous mi", "stent"]):
+                covered["cardiac_history"] = "answered"
+            if any(w in q_text for w in ["dvt", "clot", "immob", "travel", "surgery"]):
+                covered["dvt_risk"] = "answered"
+            if any(w in q_text for w in ["neuro", "weakness", "speech", "vision", "facial"]):
+                covered["neuro_symptoms"] = "answered"
+        return covered
+
+    def _question_budget(
+        self,
+        hypothesis: dict,
+        covered: dict,
+        required_dims: list[str],
+        n_asked: int,
+        chief_complaint: str,
+    ) -> dict:
+        """Compute adaptive question budget for this turn."""
+        budget_min = 3
+        budget_max = 7
+
+        # Elevate minimum for high-stakes hypotheses
+        must_not_miss = hypothesis.get("must_not_miss", [])
+        high_stakes = {"ACS", "dissection", "SAH", "PE", "aortic", "cord compression", "stroke"}
+        if any(any(h in d for h in high_stakes) for d in must_not_miss):
+            budget_min = 4
+
+        missing_dims = [d for d in required_dims if d not in covered]
+
+        # High-confidence emergency stop — classic ACS + diaphoresis positive etc.
+        high_confidence_emergency = (
+            n_asked >= budget_min
+            and covered.get("diaphoresis") == "positive"
+            and covered.get("radiation") in ("answered", "positive")
+            and any(w in chief_complaint.lower() for w in ["chest", "cardiac"])
+        )
+
+        all_dims_covered = not missing_dims and n_asked >= budget_min
+        at_max = n_asked >= budget_max
+        should_stop = high_confidence_emergency or all_dims_covered or at_max
+
+        stop_reason = ""
+        if high_confidence_emergency:
+            stop_reason = "high_confidence_emergency"
+        elif all_dims_covered:
+            stop_reason = "all_dimensions_covered"
+        elif at_max:
+            stop_reason = "max_budget_reached"
+
+        return {
+            "min": budget_min,
+            "max": budget_max,
+            "missing_dims": missing_dims,
+            "should_stop_eligible": should_stop,
+            "stop_reason": stop_reason,
+        }
+
+    def _session_cache_key(
+        self,
+        chief_complaint: str,
+        medical_history: Optional[dict],
+        demographics: Optional[dict],
+    ) -> str:
+        """Stable cache key — based on complaint + history identity (not full hash for perf)."""
+        import hashlib
+        raw = chief_complaint + str(sorted((demographics or {}).items()))
+        if medical_history:
+            # Use patient id + complaint so a new complaint invalidates the cache
+            pat = medical_history.get("patient") or medical_history.get("demographics") or {}
+            raw += str(pat.get("id") or pat.get("first_name", "") + pat.get("last_name", ""))
+        return hashlib.md5(raw.encode()).hexdigest()[:16]
 
     def _build_pre_assessment_hypothesis(
         self,
         chief_complaint: str,
         medical_history: Optional[dict],
         demographics: Optional[dict],
-    ) -> str:
-        """Build a clinical hypothesis block that AIVoN uses before asking the first question.
+        structured_ctx: Optional[dict] = None,
+    ) -> dict:
+        """Build a rich clinical hypothesis dict cached for the full session.
 
-        This is the core of the "think before you ask" behaviour: AIVoN synthesises the
-        patient's full medical background and the current complaint into a prioritised list
-        of differential diagnoses it wants to rule in or out. Every subsequent question is
-        then driven by this hypothesis rather than a generic symptom checklist.
+        Called once per patient-complaint session, then reused every turn.
+        Returns a dict (not a string) so callers can access individual fields
+        for adaptive budget calculation, questioning strategy, etc.
 
-        Returns a formatted string injected into the system prompt so the model has an
-        explicit internal reasoning frame when it produces the first question.
+        Schema:
+            primary_hypothesis        — most likely Dx
+            secondary_hypotheses      — ≤3 alternative Dx in priority order
+            must_not_miss             — life-threats to actively rule out
+            history_driven_concerns   — each: {factor, mechanism, test_question_topic}
+            questioning_strategy      — one-sentence priority approach
+            low_probability_dismissed — diagnoses ruled out by history
         """
+        _empty = {
+            "primary_hypothesis":      "Unknown — no history available",
+            "secondary_hypotheses":    [],
+            "must_not_miss":           [],
+            "history_driven_concerns": [],
+            "questioning_strategy":    "Ask broad screening questions first.",
+            "low_probability_dismissed": [],
+        }
+
         if not medical_history:
-            return (
-                "No prior medical history on file. "
-                "Approach this as a de-novo presentation and ask broad screening questions first."
-            )
+            return _empty
 
-        hist_str = self._format_medical_history(medical_history)
+        if not self._initialized:
+            return {
+                "primary_hypothesis":      f"Pre-assessment (mock): complaint={chief_complaint}",
+                "secondary_hypotheses":    [],
+                "must_not_miss":           [],
+                "history_driven_concerns": [],
+                "questioning_strategy":    "Proceed with targeted questioning.",
+                "low_probability_dismissed": [],
+            }
 
-        # Build a compact demographics note
+        ctx = structured_ctx or self._structured_patient_context(medical_history, chief_complaint)
+        ctx_str = self._format_structured_context(ctx)
+
         demo_note = ""
         if demographics:
-            age   = demographics.get("age_range", "")
-            sex   = demographics.get("sex", "")
-            if age or sex:
-                demo_note = f"Patient demographics: {sex}, {age}."
+            age = demographics.get("age_range") or demographics.get("age", "")
+            sex = demographics.get("sex", "")
+            demo_note = f"Patient: {sex}, {age}."
 
-        hypothesis_prompt = f"""You are a senior emergency physician conducting a rapid pre-assessment 
-before starting patient questioning. You have the patient's FULL medical history and their current complaint.
+        hypothesis_prompt = f"""You are a senior emergency physician performing a 30-second bedside
+pre-assessment before your first question. You have the patient's full enriched medical history
+and their current chief complaint. Reason like an experienced clinician — not a protocol robot.
 
 {demo_note}
 
-[FULL MEDICAL HISTORY]
-{hist_str}
+[ENRICHED PATIENT CONTEXT — already interpreted, treat as truth]
+{ctx_str}
 
 [CURRENT CHIEF COMPLAINT]
 {chief_complaint}
 
-TASK: In 5 sentences, reason through the following and produce a structured clinical hypothesis:
-1. Which of the patient's known conditions are MOST LIKELY connected to the current complaint?
-2. What is your PRIMARY differential diagnosis given the combination of history + complaint?
-3. What are the 2-3 most dangerous conditions you MUST rule out first (red flag differentials)?
-4. Which specific aspect of this patient's history (medications, allergies, past procedures) 
-   should most influence your line of questioning?
+YOUR TASK — produce a JSON hypothesis object:
 
-Respond ONLY with a JSON object:
+1. PRIMARY HYPOTHESIS: The single most likely diagnosis given this patient's specific history + complaint.
+   Do NOT default to the statistically commonest cause — adjust for THIS patient's risk profile.
+
+2. SECONDARY HYPOTHESES: Up to 3 alternative diagnoses in descending probability order.
+
+3. MUST NOT MISS: Up to 3 immediately life-threatening diagnoses you must actively rule out,
+   even if currently less likely. Include WHY based on this patient's history.
+
+4. HISTORY-DRIVEN CONCERNS: For each relevant history item (medication, condition, past procedure),
+   state: the history factor, the clinical mechanism it creates, and the specific question topic
+   that would test for it. Only include items genuinely relevant to this complaint.
+
+5. QUESTIONING STRATEGY: One sentence on how this patient's history should bias your question order
+   compared to a generic patient with the same complaint.
+
+6. LOW PROBABILITY DISMISSED: Diagnoses that would normally be in the differential but are
+   significantly less likely given this patient's specific history (explain why).
+
+Respond ONLY with valid JSON — no prose, no code fences:
 {{
-  "primary_hypothesis": "One sentence: most likely diagnosis given history + complaint",
-  "red_flag_differentials": ["condition1", "condition2", "condition3"],
-  "history_risk_factors": ["most relevant risk factor from history", "..."],
-  "questioning_strategy": "One sentence: how history should shape the questions asked"
+  "primary_hypothesis": "...",
+  "secondary_hypotheses": ["...", "..."],
+  "must_not_miss": [
+    {{"condition": "...", "reason": "..."}},
+    {{"condition": "...", "reason": "..."}}
+  ],
+  "history_driven_concerns": [
+    {{"factor": "...", "mechanism": "...", "test_question_topic": "..."}},
+    {{"factor": "...", "mechanism": "...", "test_question_topic": "..."}}
+  ],
+  "questioning_strategy": "...",
+  "low_probability_dismissed": [
+    {{"condition": "...", "reason": "..."}}
+  ]
 }}"""
-
-        if not self._initialized:
-            return (
-                f"Pre-assessment (mock): Patient has known medical history. "
-                f"Current complaint: {chief_complaint}. "
-                f"Proceed with targeted questioning based on risk profile."
-            )
 
         try:
             response_content = self._chat_complete(
-                messages=[
-                    {"role": "user", "content": hypothesis_prompt},
-                ],
-                max_tokens=400,
+                messages=[{"role": "user", "content": hypothesis_prompt}],
+                max_tokens=700,
             )
-            hyp = json.loads(response_content)
-            parts = [
-                f"PRIMARY HYPOTHESIS: {hyp.get('primary_hypothesis', '')}",
-                f"RED FLAG DIFFERENTIALS TO RULE OUT: {', '.join(hyp.get('red_flag_differentials', []))}",
-                f"RELEVANT HISTORY RISK FACTORS: {', '.join(hyp.get('history_risk_factors', []))}",
-                f"QUESTIONING STRATEGY: {hyp.get('questioning_strategy', '')}",
-            ]
-            hypothesis_text = "\n".join(parts)
-            logger.info("Pre-assessment hypothesis built for complaint: %s", chief_complaint[:60])
-            return hypothesis_text
+            cleaned = response_content.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("```")[1]
+                if cleaned.startswith("json"):
+                    cleaned = cleaned[4:]
+                cleaned = cleaned.strip()
+            hyp = json.loads(cleaned)
+            logger.info(
+                "Pre-assessment hypothesis built: primary='%s' must_not_miss=%s",
+                str(hyp.get("primary_hypothesis", ""))[:80],
+                [m.get("condition") if isinstance(m, dict) else m for m in hyp.get("must_not_miss", [])],
+            )
+            return hyp
         except Exception as exc:
-            logger.warning("Pre-assessment hypothesis generation failed (%s) — using history summary.", exc)
-            return self._format_medical_history(medical_history)
+            logger.warning("Hypothesis generation failed (%s) — returning empty frame.", exc)
+            return _empty
 
     def generate_next_question(
         self,
@@ -813,17 +1622,18 @@ Respond ONLY with a JSON object:
         previous_answers: list[dict],
         demographics: Optional[dict] = None,
         medical_history: Optional[dict] = None,
+        target_language: Optional[str] = None,
     ) -> dict:
-        """Generate EXACTLY ONE focused clinical follow-up question.
+        """Generate ONE high-yield clinical follow-up question per call.
 
-        On the very first call (previous_answers is empty) AIVoN builds a clinical
-        pre-assessment hypothesis by cross-referencing the patient's full medical
-        history with the current complaint. This hypothesis is injected into the
-        system prompt so every question is driven by a targeted differential
-        diagnosis strategy rather than a generic symptom checklist.
-
-        On subsequent calls the hypothesis is rebuilt cheaply from the cached history
-        string and the evolving transcript is used to avoid repetition.
+        Architecture (history-aware, patient-specific):
+        Step 0 — Enrich demographics from medical history.
+        Step 1 — Build structured patient context (deterministic code enrichment).
+        Step 2 — Get or build session-cached clinical hypothesis (LLM, once per session).
+        Step 3 — Build personalised clinical lens (base protocol + patient-specific overrides).
+        Step 4 — Compute adaptive question budget (min/max + dimension coverage).
+        Step 5 — Build system prompt with all context layers.
+        Step 6 — Call LLM, validate output, retry once on structural failure.
         """
         if not self._initialized:
             count = len(previous_answers)
@@ -847,19 +1657,16 @@ Respond ONLY with a JSON object:
                 },
             }
 
-        # ── Step 0: Enrich demographics ──────────────────────────────────────
-        # Always prefer exact age from medical history DOB over the frontend's age_range string.
-        # Also backfill sex/blood_type/nationality from medical history when missing from demographics.
+        # ── Step 0: Enrich demographics from medical history ─────────────────
         if medical_history:
             pat = medical_history.get("patient") or medical_history.get("demographics") or {}
             demographics = dict(demographics or {})
             if pat.get("sex") and not demographics.get("sex"):
                 demographics["sex"] = pat["sex"]
             if pat.get("date_of_birth"):
-                from datetime import datetime as _dt
                 try:
-                    exact_age = _dt.now().year - int(str(pat["date_of_birth"])[:4])
-                    demographics["age"] = exact_age   # exact age always overrides age_range
+                    exact_age = datetime.now(timezone.utc).year - int(str(pat["date_of_birth"])[:4])
+                    demographics["age"] = exact_age
                 except Exception:
                     pass
             if pat.get("blood_type") and not demographics.get("blood_type"):
@@ -867,121 +1674,305 @@ Respond ONLY with a JSON object:
             if pat.get("nationality") and not demographics.get("nationality"):
                 demographics["nationality"] = pat["nationality"]
 
-        # ── Step 1: Build or reuse clinical pre-assessment hypothesis ────────
-        # On the first question (empty transcript) we run the full hypothesis LLM call.
-        # On subsequent questions we reuse the cheaper formatted history string so we
-        # do not burn extra tokens on every turn.
-        is_first_question = len(previous_answers) == 0
-        if is_first_question and medical_history:
-            hypothesis_block = self._build_pre_assessment_hypothesis(
-                chief_complaint, medical_history, demographics
+        # ── Step 1: Structured patient context (deterministic, code-level) ───
+        structured_ctx = self._structured_patient_context(medical_history, chief_complaint)
+        structured_ctx_text = self._format_structured_context(structured_ctx)
+
+        # ── Step 2: Session-cached hypothesis (LLM call, once per session) ───
+        cache_key = self._session_cache_key(chief_complaint, medical_history, demographics)
+        if cache_key not in self._hypothesis_cache:
+            hyp = self._build_pre_assessment_hypothesis(
+                chief_complaint, medical_history, demographics, structured_ctx
             )
-            hypothesis_section = f"""[AI PRE-ASSESSMENT HYPOTHESIS]
-Before asking any questions, AIVoN has already reviewed the patient's full medical history
-and formed the following clinical reasoning frame. Every question MUST be driven by this
-hypothesis — start from the most dangerous differential and work down.
+            self._hypothesis_cache[cache_key] = hyp
+        hypothesis = self._hypothesis_cache[cache_key]
 
-{hypothesis_block}
-"""
-        else:
-            # Subsequent questions: include history summary without re-running hypothesis LLM
-            hypothesis_section = f"""[PATIENT MEDICAL HISTORY SUMMARY]
-{self._format_medical_history(medical_history)}
-"""
+        # ── Step 3: Personalised clinical lens ───────────────────────────────
+        base_lens    = self._clinical_lens(chief_complaint, demographics)
+        clinical_lens = self._personalise_lens(base_lens, chief_complaint, structured_ctx)
 
-        # ── Step 2: RAG context + clinical lens ─────────────────────────────
+        # ── Step 4: Adaptive question budget ─────────────────────────────────
         guidelines, _, _rag_sources = self._retrieve_context(chief_complaint)
-        clinical_lens = self._clinical_lens(chief_complaint, demographics)
+        n_asked        = len(previous_answers)
+        required_dims  = self._required_dimensions(chief_complaint)
+        covered        = self._extract_covered_findings(previous_answers)
+        budget         = self._question_budget(hypothesis, covered, required_dims, n_asked, chief_complaint)
 
-        # ── Step 3: Build system prompt ──────────────────────────────────────
-        system_prompt = f"""You are AIVoN, a clinical triage assistant supporting ER nurses.
-Your task: select the single most diagnostically valuable follow-up question for the patient below.
+        # Hard stop — max budget reached
+        if n_asked >= budget["max"]:
+            return {"done": True, "question": None, "stop_reason": "max_budget_reached"}
 
-Clinical guidelines:
-{guidelines if guidelines else "Apply evidence-based emergency medicine principles."}
+        # Format hypothesis for prompt
+        must_not_miss_list = [
+            (m.get("condition") + " — " + m.get("reason", "")) if isinstance(m, dict) else str(m)
+            for m in hypothesis.get("must_not_miss", [])
+        ]
+        history_concerns_lines = "\n".join(
+            f"  • {c.get('factor','?')} ->{c.get('mechanism','?')} "
+            f"[test topic: {c.get('test_question_topic','?')}]"
+            for c in hypothesis.get("history_driven_concerns", [])
+            if isinstance(c, dict)
+        ) or "  (none — no notable history-complaint interactions)"
 
-{hypothesis_section}
+        covered_str = ", ".join(f"{k}({v})" for k, v in covered.items()) if covered else "none yet"
+        missing_str = ", ".join(budget["missing_dims"]) if budget["missing_dims"] else "all covered"
 
-{f"[CLINICAL PROTOCOL — follow this question sequence for this specific presentation]{chr(10)}{clinical_lens}{chr(10)}" if clinical_lens else ""}
-Patient demographics:
-{json.dumps(demographics or {})}
+        if budget["should_stop_eligible"]:
+            budget_rule = (
+                f"STOP DECISION: You MAY return done:true now (reason: {budget['stop_reason']}).\n"
+                f"Do so only if you have a confident clinical picture. If one high-value question\n"
+                f"remains, ask it and stop after that answer."
+            )
+        else:
+            budget_rule = (
+                f"CONTINUE: Return done:false with the next best question.\n"
+                f"Questions asked so far: {n_asked}. Minimum before stop: {budget['min']}."
+            )
 
-Chief complaint:
-{chief_complaint}
+        # ── Step 5a: Language generation instruction ─────────────────────────
+        # Turkish (tr) and German (de): generate the question DIRECTLY in the target
+        # language — GPT writes as a native triage nurse, no separate translation step.
+        # All other languages: English only (question == question_en).
+        _tl = (target_language or "").lower()
+        _tl_base = _tl.split("-")[0]
 
-Questions already asked (do not repeat any of these):
+        _LANG_GENERATION_GUIDES: dict[str, tuple[str, str]] = {
+            "tr": (
+                "Turkish",
+                "You are an experienced Turkish triage nurse (triaj hemşiresi).\n"
+                "Generate the 'question' field DIRECTLY in Turkish — do NOT translate from English.\n"
+                "Write exactly as you would speak to an anxious patient in a Turkish ER.\n"
+                "STYLE RULES:\n"
+                "  • Always use formal 'siz' form. Every question ends with '?'\n"
+                "  • Simple everyday Turkish — 8th-grade level. Never medical jargon.\n"
+                "  • Preferred terms: 'ağrı' (not nosisepsyon), 'nefes darlığı' (not dispne),\n"
+                "    'baş dönmesi' (not vertigo), 'bulantı' (not nausea), 'halsizlik',\n"
+                "    'ışığa hassasiyet' (not fotofobi), 'boyun sertliği' (not meningismus),\n"
+                "    'döküntü'/'kırmızı lekeler' (not peteşi), 'titreme' (not rijor),\n"
+                "    'kollarınızda/bacaklarınızda güçsüzlük' (never 'uzuv zayıflığı')\n"
+                "  • Onset: 'Baş ağrınız aniden mi başladı?' (NOT 'Ani başlangıçla oluyor mu?')\n"
+                "  • State/condition questions: NEVER use 'ne hale getiriyor' or 'sizi ne yapıyor'.\n"
+                "    Ask directly: 'Kendinizi nasıl hissediyorsunuz?' / 'Şu anki durumunuzu nasıl\n"
+                "    tanımlarsınız?' / 'Şu anda ne yaşıyorsunuz?'\n"
+                "  • yes_no options MUST be exactly: ['Evet', 'Hayır']\n"
+                "  • For multiple_choice: use 'Her ikisi de' (Both), 'Hiçbiri' (None/Neither)\n"
+                "  • Other options in natural Turkish: 'Emin değilim', 'Şimdi başladı',\n"
+                "    '1 saatten az', '1-6 saat', '6-24 saat', 'Hafif', 'Orta', 'Şiddetli'\n\n"
+                "CRITICAL — ALL options MUST be in Turkish. NEVER mix Turkish question with English options.\n"
+                "  ❌ WRONG: options: ['Swelling of your lips', 'Tongue', 'Throat', 'Hiçbiri']\n"
+                "  ✅ CORRECT: options: ['Dudaklarımda', 'Dilimde', 'Boğazımda', 'Hiçbirinde']\n\n"
+                "  ❌ WRONG: options: ['Did you faint', 'Have a seizure', 'Her ikisi de', 'Hiçbiri']\n"
+                "  ✅ CORRECT: options: ['Bayıldım', 'Nöbet geçirdim', 'Her ikisi de', 'Hiçbiri']\n\n"
+                "  ❌ WRONG: options: ['Weakness in your arms', 'In your legs', 'Both', 'Neither']\n"
+                "  ✅ CORRECT: options: ['Kollarımda', 'Bacaklarımda', 'Her ikisinde de', 'Hiçbirinde']"
+            ),
+            "de": (
+                "German",
+                "You are an experienced German triage nurse (Notfallpflegekraft).\n"
+                "Generate the 'question' field DIRECTLY in German — do NOT translate from English.\n"
+                "Write exactly as you would speak to an anxious patient in a German ER.\n"
+                "STYLE RULES:\n"
+                "  • Always use formal 'Sie' form. Every question ends with '?'\n"
+                "  • Simple everyday German — NOT medical Fachsprache.\n"
+                "  • Preferred terms: 'Schmerz' (not Algodynie), 'Kurzatmigkeit' (not Dyspnoe),\n"
+                "    'Schwindel' (not Vertigo), 'Übelkeit' (not Nausea),\n"
+                "    'Ohnmacht' (not Synkope), 'Ausschlag' (not Exanthem), 'Zittern' (not Rigor)\n"
+                "  • yes_no options MUST be exactly: ['Ja', 'Nein']\n"
+                "  • For multiple_choice: use 'Beides' (Both), 'Keines davon' (None/Neither)\n"
+                "  • Other options in natural German: 'Bin nicht sicher', 'Gerade eben',\n"
+                "    'Vor weniger als 1 Stunde', '1–6 Stunden', 'Leicht', 'Mittel', 'Stark'\n\n"
+                "CRITICAL — ALL options MUST be in German. NEVER mix German question with English options.\n"
+                "  ❌ WRONG: options: ['Swelling of your lips', 'Tongue', 'Throat', 'Keines davon']\n"
+                "  ✅ CORRECT: options: ['Lippen', 'Zunge', 'Rachen', 'Keines davon']\n\n"
+                "  ❌ WRONG: options: ['Did you faint', 'Have a seizure', 'Beides', 'Keines davon']\n"
+                "  ✅ CORRECT: options: ['Ohnmacht', 'Krampfanfall', 'Beides', 'Keines davon']"
+            ),
+        }
+
+        lang_entry = _LANG_GENERATION_GUIDES.get(_tl_base)
+        needs_localisation = bool(lang_entry and not _tl_base.startswith("en"))
+
+        if needs_localisation:
+            lang_display, lang_style = lang_entry
+            language_instruction = (
+                f"LANGUAGE — {lang_display.upper()}:\n"
+                f"{lang_style}\n\n"
+                f"FIELDS:\n"
+                f"  • 'question'    → the question in {lang_display} "
+                f"(native generation — NOT a translation of English)\n"
+                f"  • 'question_en' → the same question restated in English "
+                f"(required for backend logging)\n"
+                f"  • 'options'     → answer options in {lang_display} (follow style rules above)\n"
+            )
+            translation_field_note = f" — in {lang_display} (native generation)"
+            translation_options_note = f" — in {lang_display}"
+        else:
+            language_instruction = (
+                "LANGUAGE: English only. "
+                "Set 'question' and 'question_en' to the same English text. "
+                "Options in English.\n"
+            )
+            translation_field_note = " — in English"
+            translation_options_note = ""
+
+        # ── Step 5b: System prompt — all layers ──────────────────────────────
+        system_prompt = f"""You are AIVoN, a senior emergency-medicine clinical reasoning engine.
+Your task: produce ONE high-yield triage question that maximally advances the clinical picture.
+Think like a consultant ED physician at the bedside — not like a checklist reader.
+
+══════════════════════════════════════════════════════════════════════════
+SECTION 1 — STRUCTURED PATIENT CONTEXT (code-interpreted, treat as truth)
+══════════════════════════════════════════════════════════════════════════
+{structured_ctx_text}
+
+══════════════════════════════════════════════════════════════════════════
+SECTION 2 — CLINICAL PRE-ASSESSMENT HYPOTHESIS (your reasoning frame)
+══════════════════════════════════════════════════════════════════════════
+PRIMARY HYPOTHESIS:   {hypothesis.get('primary_hypothesis', 'Unknown')}
+SECONDARY HYPOTHESES: {', '.join(hypothesis.get('secondary_hypotheses', []) or ['—'])}
+MUST NOT MISS:
+{chr(10).join('  ⚠ ' + m for m in must_not_miss_list) or '  —'}
+
+HISTORY-DRIVEN CONCERNS — at least ONE must be tested in your first 3 questions:
+{history_concerns_lines}
+
+QUESTIONING STRATEGY: {hypothesis.get('questioning_strategy', 'Standard EM approach.')}
+
+══════════════════════════════════════════════════════════════════════════
+SECTION 3 — CLINICAL LENS + PATIENT-SPECIFIC OVERRIDES
+══════════════════════════════════════════════════════════════════════════
+{clinical_lens if clinical_lens else "Apply evidence-based emergency medicine principles."}
+
+══════════════════════════════════════════════════════════════════════════
+SECTION 4 — RAG GUIDELINES
+══════════════════════════════════════════════════════════════════════════
+{guidelines if guidelines else "No specific RAG protocol retrieved. Apply evidence-based EM principles."}
+
+══════════════════════════════════════════════════════════════════════════
+SECTION 5 — CONVERSATION STATE
+══════════════════════════════════════════════════════════════════════════
+Chief complaint:        {chief_complaint}
+Demographics:           {json.dumps(demographics or {})}
+Questions asked so far: {n_asked}
+Required dimensions:    {', '.join(required_dims)}
+Already covered:        {covered_str}
+Still missing:          {missing_str}
+
+Transcript (do NOT repeat or re-ask any of these):
 {json.dumps(previous_answers, indent=2)}
 
-Decision rules:
-- Follow the CLINICAL PROTOCOL above — it defines the optimal question sequence for this exact complaint and demographic.
-- If the clinical protocol specifies Q1/Q2/Q3 order, respect it — these are ordered by diagnostic priority.
-- Choose the next unasked question from the protocol that has not already been covered by a previous answer.
-- If a known chronic condition exists, ask about acute complications relevant to the complaint.
-- Prefer questions whose answer could change the triage classification.
-- For visible injuries (cut, burn, rash, bleeding) with no photo in the transcript, set type to "photo_request".
+══════════════════════════════════════════════════════════════════════════
+SECTION 6 — ADAPTIVE QUESTION BUDGET
+══════════════════════════════════════════════════════════════════════════
+Minimum before stop: {budget['min']} | Maximum hard ceiling: {budget['max']}
+{budget_rule}
 
-FIXED 5-QUESTION PROTOCOL — MANDATORY, NO EXCEPTIONS:
-The system will ask EXACTLY 5 questions — no more, no fewer.
-• If the transcript has fewer than 5 answers: ALWAYS return a new question (done: false).
-  This applies regardless of how urgent or clear the clinical picture seems.
-  Never set done:true before 5 answers have been collected.
-• If the transcript already contains 5 or more answers: set done:true immediately.
+══════════════════════════════════════════════════════════════════════════
+SECTION 7 — DECISION RULES
+══════════════════════════════════════════════════════════════════════════
+• Choose the question whose answer would most change the triage classification OR
+  rule in/out a MUST-NOT-MISS diagnosis OR test a HISTORY-DRIVEN CONCERN.
+• Follow the CLINICAL LENS question order where unasked dimensions remain.
+• PATIENT-SPECIFIC OVERRIDES in Section 3 take priority over the base lens.
+• If a known chronic condition exists, ask about acute complications first.
+• For visible injuries (cut, burn, rash, bleeding) with no photo in transcript:
+  set type to "photo_request".
 
-Do NOT terminate early for any reason — not for apparent severity, not for "obvious" triage level,
-not for life-threatening complaints. The clinical picture is never complete without all 5 questions.
-The 5-question protocol is a non-negotiable safety standard.
+══════════════════════════════════════════════════════════════════════════
+SECTION 7b — PATIENT-COMPREHENSIBILITY RULES (HARD RULES)
+══════════════════════════════════════════════════════════════════════════
+The patient is a non-medical person in distress. Every word must be understandable
+to someone with no medical training.
 
-ONE FINDING PER QUESTION — This is the most important rule:
-Each question must test EXACTLY ONE clinical finding. Never combine two or more symptoms,
-signs, or conditions into a single question — not with "or", not with "and", not with commas.
+❌ FORBIDDEN — clinical examination terminology the patient cannot understand:
+  • "out of proportion to touch" / "out of proportion to examination"
+    → instead ask: "Is your pain MUCH worse when someone touches or presses on your belly?"
+  • "peritoneal signs" / "peritonism" / "rebound tenderness"
+    → instead ask: "Does the pain get sharper when you release pressure from your belly?"
+  • "meningismus" / "meningeal irritation"
+    → instead ask: "Is it painful to move your head forward or tuck your chin to your chest?"
+  • "guarding" / "voluntary guarding"
+    → instead ask: "Do you tense your stomach muscles because you're afraid of the pain?"
+  • Any Latin medical term or clinical examination finding the patient cannot self-report.
 
-❌ WRONG (multiple findings in one question):
-  "Does pain worsen when you press on it, or when walking, or is there board-like rigidity?"
-  "Do you have chest pain or shortness of breath?"
-  "Is there nausea, vomiting, or diarrhoea?"
-  Reason: the patient cannot give a meaningful answer — which of these do they have?
+❌ FORBIDDEN — anatomically contradictory phrasing:
+  • NEVER describe pain as being in TWO different locations in the same question.
+  • WRONG: "Do you have abdominal pain in your back?" — abdomen and back are different anatomical regions.
+  • CORRECT (radiation): "Does the pain spread or travel to your back?"
+  • CORRECT (location): Use multiple_choice with all location options as separate items.
 
-✅ CORRECT approach for related findings:
-  Use "multiple_choice" and convert the FINDINGS into the ANSWER OPTIONS.
-  The question text becomes a short, neutral prompt; the options list the specific findings.
-  The patient can select MULTIPLE options that apply (checkbox behaviour).
+❌ FORBIDDEN — non-standard severity terminology:
+  • "Lightweight" → use "Mild"
+  • "Heavy" (for pain severity) → use "Severe"
+  • "A lot of pain" → use "Severe"
+  • MANDATORY severity scale: ["Mild", "Moderate", "Severe"] — no variations allowed.
 
-  Example — instead of asking about 3 peritoneal signs at once:
-    question: "Which of these apply to your abdominal pain right now?"
-    type: "multiple_choice"
-    options: ["Pain worsens when I press on it", "Pain worsens when walking", "My abdomen feels board-like rigid", "None of these"]
+❌ FORBIDDEN — vague temporal terms:
+  • "Recently" → specify: "In the last hour?" / "In the last 24 hours?"
+  • "Often" → specify: "More than 3 times?" / "Every few minutes?"
 
-  Example — instead of "chest pain or shortness of breath?":
-    question: "Which of these do you have right now?"
-    type: "multiple_choice"
-    options: ["Chest pain", "Shortness of breath", "Both", "Neither of these"]
+══════════════════════════════════════════════════════════════════════════
+SECTION 8 — ONE FINDING PER QUESTION (HARD RULE)
+══════════════════════════════════════════════════════════════════════════
+Each question tests EXACTLY ONE clinical finding.
 
-QUESTION TYPE RULES:
+❌ FORBIDDEN in yes_no type:
+  • Any "or" between findings:      "Pain or breathlessness?"
+  • Any "and" between findings:     "Pain and swelling?"
+  • Comma-separated finding list:   "Nausea, vomiting, diarrhoea?"
 
-- "yes_no": ONLY for a single, unambiguous binary finding. Question text must mention ONE thing only.
-  Include options ["Yes", "No"].
-  Example: "Do you have chest pain?" / "Is there swelling?"
+✅ CORRECT for related findings — use multiple_choice, findings become options:
+  question: "Which of these do you have right now?"
+  type: "multiple_choice"
+  options: ["Chest pain", "Shortness of breath", "Cold sweats", "None of these"]
 
-- "multiple_choice": Use when:
-  (a) The answer has 3+ distinct values (onset timing, location, severity category), OR
-  (b) You want to screen for 2+ related findings at once — convert each finding into a separate option,
-      always include "None of these" as the last option so the patient can answer negatively.
-  Options are MULTI-SELECT — the patient can pick more than one.
+  question: "How did your symptoms start?"
+  type: "multiple_choice"
+  options: ["Suddenly (seconds)", "Over minutes", "Over hours", "Over days"]
 
-- "scale": ONLY for rating intensity on a numeric scale (1–10). Never for symptom presence.
-  Include options ["1","2","3","4","5","6","7","8","9","10"].
+OPTIONS MUST BE SHORT STANDALONE LABELS (1–5 words):
+  ❌ WRONG — fragment of the question:  "Weakness in your arms right now"
+  ❌ WRONG — a question as option:      "Do you have leg weakness?"
+  ❌ WRONG — possessive noise:          "Your fever", "Your pain"
+  ✅ CORRECT — clean noun labels:       "Arms", "Legs", "Both", "Neither"
+  ✅ CORRECT — clean symptom labels:    "Fever", "Neck stiffness", "Both", "Neither"
+  ✅ CORRECT — clean time labels:       "Just now", "Within 1 hour", "1–6 hours"
 
-- "free_text": open-ended answers only. Leave options as [].
+══════════════════════════════════════════════════════════════════════════
+SECTION 9 — QUESTION TYPE RULES
+══════════════════════════════════════════════════════════════════════════
+• yes_no       — ONE binary finding only.
+  English: options=["Yes","No"] exactly — NEVER "Yep", "Nope", "Sure", "Correct".
+  Turkish: options=["Evet","Hayır"]. German: options=["Ja","Nein"].
+• multiple_choice — ≥3 value categories OR ≥2 related findings as options.
+  MANDATORY for: pain location, radiation pattern, onset timing, pain character,
+  aggravating/relieving factors, screening ≥2 associated symptoms.
+  Always end with "None of these" as the negative option.
+  ⚠ Location questions MUST always be multiple_choice — there are always ≥3 possible
+    locations. A yes_no for location is ALWAYS wrong.
+• scale         — ONLY numeric intensity (1–10). options=["1"…"10"].
+• photo_request — ONLY for visible findings without an existing image.
+• free_text     — FORBIDDEN. Patient is in distress and cannot type.
 
-- "photo_request": only for visible physical findings that need visual assessment. Leave options as [].
+══════════════════════════════════════════════════════════════════════════
+SECTION 10 — OUTPUT FORMAT (strict JSON only — no prose, no code fences)
+══════════════════════════════════════════════════════════════════════════
+{language_instruction}
+{{
+  "done": <bool>,
+  "question": null | {{
+    "question": "<≤15 words, ONE finding, patient-friendly{translation_field_note}>",
+    "question_en": "<same question in English — always required>",
+    "options": [...{translation_options_note}],
+    "type": "yes_no" | "multiple_choice" | "scale" | "photo_request",
+    "clinical_rationale": "<1 sentence: which hypothesis/dimension/concern this tests>",
+    "tested_dimension": "<one required dimension from Section 5, e.g. 'radiation'>",
+    "tests_history_concern": "<factor name from Section 2 history-driven concerns, or null>"
+  }},
+  "stop_reason": "<if done:true — one of: all_dimensions_covered, high_confidence_emergency, max_budget_reached>"
+}}"""
 
-Output valid JSON only:
-- "done": boolean
-- "question": object with "question" (string), "type" (one of the types above), "options" (array), "clinical_rationale" (one sentence)
-- When done is true, set "question" to null
-"""
-
-        # ── Step 4: Build user message; attach images only when present ─────
+        # ── Step 6: Build user message; attach images if present ─────────────
         has_images = any(ans.get("image") for ans in previous_answers)
 
         if has_images:
@@ -1001,13 +1992,12 @@ Output valid JSON only:
                         b64 = f"data:image/jpeg;base64,{b64}"
                     content.append({"type": "image_url", "image_url": {"url": b64}})
         else:
-            # Plain string avoids multimodal content-filter edge cases
             content = (
                 f"Patient complaint: {chief_complaint}\n\n"
                 f"Assessment so far:\n{json.dumps(previous_answers, indent=2)}"
             )
 
-        # ── Step 5: Call GPT ─────────────────────────────────────────────────
+        # ── Step 7: Call LLM, validate, retry once if structurally invalid ───
         _fallback_questions = [
             "Are you in severe pain right now?",
             "Do you have a high fever?",
@@ -1016,50 +2006,73 @@ Output valid JSON only:
             "Have you had any loss of consciousness?",
         ]
 
-        try:
-            response_content = self._chat_complete(
+        def _call_and_parse(prompt: str) -> Optional[dict]:
+            rc = self._chat_complete(
                 messages=[
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": prompt},
                     {"role": "user",   "content": content},
                 ],
-                max_tokens=800,
+                max_tokens=900,
             )
-            # Strip markdown code fences GPT sometimes wraps JSON in
-            cleaned = response_content.strip()
+            cleaned = rc.strip()
             if cleaned.startswith("```"):
                 cleaned = cleaned.split("```")[1]
                 if cleaned.startswith("json"):
                     cleaned = cleaned[4:]
                 cleaned = cleaned.strip()
-            result = json.loads(cleaned)
-            # Post-process: fix OR questions that slipped through as yes_no
-            _fix_or_yes_no(result)
+            return json.loads(cleaned)
+
+        try:
+            result = _call_and_parse(system_prompt)
+            _fix_or_yes_no(result, _tl_base)
+            _normalize_options(result.get("question") or {}, _tl_base)
+
+            # Validate structural quality; retry once with correction hint
+            ok, reason = self._validate_question(result.get("question") or {})
+            if not ok and not result.get("done"):
+                logger.warning("Question rejected (%s) — retrying with correction hint.", reason)
+                correction_hint = (
+                    f"\n\nCRITICAL CORRECTION REQUIRED — your previous output was rejected:\n"
+                    f"Reason: {reason}\n"
+                    f"Fix this violation and output a corrected JSON. The question MUST pass "
+                    f"the ONE-FINDING rule. Use multiple_choice if needed.\n"
+                    f"REMINDER — options must be SHORT STANDALONE LABELS (1-5 words), "
+                    f"not sentence fragments or questions."
+                )
+                result = _call_and_parse(system_prompt + correction_hint)
+                _fix_or_yes_no(result, _tl_base)
+                _normalize_options(result.get("question") or {}, _tl_base)
+
+            # Normalise question_en — server route relies on this field
+            q_obj = result.get("question") or {}
+            if q_obj and not q_obj.get("question_en"):
+                q_obj["question_en"] = q_obj.get("question", "")
+
             logger.info(
-                "generate_next_question: done=%s type=%s q='%s'",
+                "generate_next_question: done=%s type=%s dim='%s' lang=%s q='%s'",
                 result.get("done"),
-                (result.get("question") or {}).get("type", "-"),
-                str((result.get("question") or {}).get("question", ""))[:80],
+                q_obj.get("type", "-"),
+                q_obj.get("tested_dimension", "-"),
+                target_language or "en",
+                str(q_obj.get("question_en", q_obj.get("question", "")))[:80],
             )
             return result
 
         except json.JSONDecodeError as exc:
-            logger.error(
-                "generate_next_question: JSON parse error — raw response was: %r — error: %s",
-                response_content if "response_content" in dir() else "<no response>",
-                exc,
-            )
+            logger.error("generate_next_question: JSON parse error: %s", exc)
         except Exception as exc:
             logger.error("generate_next_question: API error: %s", exc, exc_info=True)
 
-        count = len(previous_answers)
-        q_text = _fallback_questions[count % len(_fallback_questions)]
+        q_text = _fallback_questions[n_asked % len(_fallback_questions)]
         return {
-            "done": count >= 5,
+            "done": n_asked >= budget["max"],
             "question": {
                 "question": q_text,
                 "type": "yes_no",
                 "options": ["Yes", "No"],
                 "clinical_rationale": "fallback — API/parse error",
+                "tested_dimension": None,
+                "tests_history_concern": None,
             },
         }
 
@@ -1104,7 +2117,7 @@ Output valid JSON only:
         if previous_answers:
             answers_context = "\nPrevious patient answers:\n"
             for ans in previous_answers:
-                answers_context += f"- Q: {ans.get('question', '')} → A: {ans.get('answer', '')}\n"
+                answers_context += f"- Q: {ans.get('question', '')} ->A: {ans.get('answer', '')}\n"
 
         # AI-102: Adapt system prompt based on RAG availability
         if rag_found:
@@ -1279,9 +2292,9 @@ OUTPUT FORMAT (strict JSON):
             q = ans.get('question', '')
             a = ans.get('answer', '')
             if ans.get('image'):
-                answers_text += f"Q: {q} → A: [User provided an image]\n"
+                answers_text += f"Q: {q} ->A: [User provided an image]\n"
             else:
-                answers_text += f"Q: {q} → A: {a}\n"
+                answers_text += f"Q: {q} ->A: {a}\n"
 
         # Use the full rich formatter (same as generate_next_question) so the
         # clinical report has access to vitals, recent doctor notes, and allergies —
@@ -1306,7 +2319,7 @@ Use evidence-based clinical principles. Set source_guidelines to an empty list [
                 if d.get("status") == "active"
             ]
             allergies = [
-                f"{a.get('allergen')} → {a.get('reaction')}"
+                f"{a.get('allergen')} ->{a.get('reaction')}"
                 for a in medical_history.get("allergies", [])
             ]
             active_meds = [

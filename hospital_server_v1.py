@@ -285,42 +285,58 @@ import re as _re
 
 _LANG_GUIDES = {
     "Turkish": (
-        "Write in simple, warm, everyday Turkish — NOT formal hospital Turkish or medical jargon.\n"
-        "The patient is anxious; use short, clear sentences.\n"
-        "Form: always use 'siz' (formal you). End questions with '?' \n"
-        "Good examples: 'Ağrınız ne zaman başladı?' (NOT 'Semptomların başlangıç zamanı nedir?')\n"
-        "Prefer: 'ağrı' over 'nosisepsyon', 'nefes darlığı' over 'dispne', 'baş dönmesi' over 'vertigo',\n"
-        "'tansiyon' over 'kan basıncı', 'bulantı' over 'kusma hissi', 'yorgunluk' over 'halsizlik'.\n"
-        "Answer options must also be in simple Turkish (e.g. 'Evet', 'Hayır', 'Emin değilim')."
+        "You are an experienced Turkish-speaking emergency triage nurse (triaj hemşiresi) with 15+ years "
+        "of experience talking to anxious and possibly pained patients in Turkey.\n\n"
+        "LANGUAGE STYLE (strictly follow):\n"
+        "- Use simple, everyday spoken Turkish (8-10. sınıf seviyesi). Be warm, calm and reassuring.\n"
+        "- Always use formal 'siz' form. End every question with '?'\n"
+        "- Never use medical jargon or hospital Turkish.\n"
+        "  Preferred words:\n"
+        "  • 'ağrı' (not nosisepsyon)\n"
+        "  • 'nefes darlığı' or 'nefesiniz daralıyor mu' (not dispne)\n"
+        "  • 'baş dönmesi' (not vertigo)\n"
+        "  • 'tansiyon' (not kan basıncı)\n"
+        "  • 'bulantı' or 'mideniz bulanıyor mu' (not nausea)\n"
+        "  • 'yorgunluk' or 'halsizlik'\n"
+        "  • 'ışığa hassasiyet' or 'ışık gözlerinizi rahatsız ediyor mu' (not fotofobi)\n"
+        "  • 'boyun sertliği' or 'çenenizi göğsünüze değdirebiliyor musunuz' (not meningismus)\n"
+        "  • 'döküntü' or 'vücudunuzda kırmızı lekeler var mı' (not peteşi/purpura)\n"
+        "  • 'kollarınızda/bacaklarınızda güçsüzlük' (never 'uzuv zayıflığı' or 'uzuv zafsanlığı')\n"
+        "  • 'baş ağrınız aniden mi başladı' (not 'ani başlangıçla baş ağrınız oluyor mu')\n"
+        "  • 'titreme' or 'üşüme-titreme' (not rijor)\n"
+        "- CRITICAL: Always write grammatically complete Turkish questions.\n"
+        "  WRONG: 'Ani başlangıçla baş ağrınız mı oluyor?' (habitual -iyor wrong for single episode)\n"
+        "  CORRECT: 'Baş ağrınız aniden mi başladı?' or 'Ağrınız birdenbire mi başladı?'\n"
+        "- Answer options in simple, natural Turkish: 'Evet', 'Hayır', 'Emin değilim',\n"
+        "  'Şimdi başladı', '1 saatten az', 'Hafif', 'Orta', 'Şiddetli'\n\n"
+        "EXAMPLES:\n"
+        "Input:  {\"q\": \"Does the pain radiate to your arm or jaw?\", \"opts\": [\"Yes\", \"No\"]}\n"
+        "Output: {\"q\": \"Ağrı kolunuza veya çenenize doğru yayılıyor mu?\", \"opts\": [\"Evet\", \"Hayır\"]}\n\n"
+        "Input:  {\"q\": \"Do you have limb weakness?\", \"opts\": [\"Yes\", \"No\"]}\n"
+        "Output: {\"q\": \"Kollarınızda veya bacaklarınızda güçsüzlük var mı?\", \"opts\": [\"Evet\", \"Hayır\"]}\n\n"
+        "Input:  {\"q\": \"Do you have a headache with sudden onset?\", \"opts\": [\"Yes\", \"No\"]}\n"
+        "Output: {\"q\": \"Baş ağrınız aniden mi başladı?\", \"opts\": [\"Evet\", \"Hayır\"]}\n\n"
+        "Input:  {\"q\": \"Is there sensitivity to bright light?\", \"opts\": [\"Yes\", \"No\"]}\n"
+        "Output: {\"q\": \"Parlak ışık baş ağrınızı daha da kötüleştiriyor mu?\", \"opts\": [\"Evet\", \"Hayır\"]}"
     ),
     "German": (
-        "Write in simple, clear, everyday German — NOT medical Fachsprache or hospital bureaucratic language.\n"
-        "The patient is anxious; use short, direct sentences.\n"
-        "Form: always use 'Sie' (formal). End questions with '?'\n"
-        "Good examples: 'Wann hat der Schmerz begonnen?' (NOT 'Wann manifestierten sich die Symptome?')\n"
-        "Prefer: 'Schmerz' over 'Algodynie', 'Schwindel' over 'Vertigo', 'Kurzatmigkeit' over 'Dyspnoe',\n"
-        "'Übelkeit' over 'Nausea', 'Bewusstlosigkeit' over 'Synkope'.\n"
-        "Answer options must also be in simple German (e.g. 'Ja', 'Nein', 'Nicht sicher')."
-    ),
-    "French": (
-        "Write in simple, warm, everyday French — NOT medical jargon.\n"
-        "Form: 'vous'. Keep sentences short and reassuring for an anxious patient.\n"
-        "Answer options in simple French."
-    ),
-    "Spanish": (
-        "Write in simple, clear, everyday Spanish — NOT medical jargon.\n"
-        "Form: 'usted'. Keep sentences short and reassuring for an anxious patient.\n"
-        "Answer options in simple Spanish."
-    ),
-    "Arabic": (
-        "Write in clear Modern Standard Arabic — NOT medical terminology.\n"
-        "Keep sentences short and respectful for an anxious patient.\n"
-        "Answer options in simple Arabic."
-    ),
-    "Italian": (
-        "Write in simple, clear everyday Italian — NOT medical jargon.\n"
-        "Form: 'Lei'. Keep sentences short for an anxious patient.\n"
-        "Answer options in simple Italian."
+        "You are an experienced German-speaking emergency triage nurse (Notfallpflegekraft) with 15+ years "
+        "of experience talking to anxious and possibly pained patients in Germany.\n\n"
+        "LANGUAGE STYLE (strictly follow):\n"
+        "- Use simple, everyday spoken German — NOT medical Fachsprache or bureaucratic hospital language.\n"
+        "- Be calm, direct and reassuring. Always use formal 'Sie' form. End every question with '?'\n"
+        "- Preferred natural terms:\n"
+        "  • 'Schmerz' (not Algodynie)\n"
+        "  • 'Kurzatmigkeit' or 'Bekommen Sie schlecht Luft?' (not Dyspnoe)\n"
+        "  • 'Schwindel' (not Vertigo)\n"
+        "  • 'Übelkeit' or 'Ist Ihnen übel?' (not Nausea)\n"
+        "  • 'Bewusstlosigkeit' or 'Ohnmacht' (not Synkope)\n"
+        "  • 'Ausschlag' (not Exanthem), 'Zittern' (not Rigor)\n"
+        "- Answer options in simple, natural German: 'Ja', 'Nein', 'Nicht sicher',\n"
+        "  'Gerade eben', 'Vor weniger als 1 Stunde', 'Leicht', 'Mittel', 'Stark'\n\n"
+        "EXAMPLE:\n"
+        "Input:  {\"q\": \"Does the pain radiate to your arm or jaw?\", \"opts\": [\"Yes\", \"No\"]}\n"
+        "Output: {\"q\": \"Strahlt der Schmerz in Ihren Arm oder Kiefer aus?\", \"opts\": [\"Ja\", \"Nein\"]}"
     ),
 }
 
@@ -350,82 +366,6 @@ def _apply_translated_payload(questions: list, translated: list) -> None:
             opts = translated[i].get("opts")
             if opts:
                 q["options"] = opts
-
-def _translate_single_question(q: dict, lang_name: str, lang_hint: str,
-                                gpt_client, gpt_model: str, translator) -> None:
-    """Translate a single question dict in-place using GPT + style guides.
-
-    Uses the same language-specific style guides as the batch endpoint so
-    that adaptive questions sound equally natural and patient-friendly.
-    Falls back to Azure Translator if GPT is unavailable.
-
-    Args:
-        q: Question dict with 'question' and 'options' keys (modified in-place).
-        lang_name: Full language name, e.g. 'Turkish'.
-        lang_hint: BCP-47 code, e.g. 'tr-TR'.
-        gpt_client: Azure/OpenAI client instance (may be None).
-        gpt_model: Deployment/model name.
-        translator: Azure Translator instance (may be None).
-    """
-    import logging as _log
-    _logger = _log.getLogger(__name__)
-
-    lang_guide = _LANG_GUIDES.get(lang_name,
-        f"Write in simple, patient-friendly {lang_name}. Avoid medical jargon. "
-        f"The patient is anxious — use short, clear sentences.")
-
-    payload = [{"q": q.get("question", ""), "opts": q.get("options", [])}]
-
-    system_msg = (
-        f"You are converting an English emergency triage question into natural {lang_name} "
-        f"for a real patient who is anxious and possibly in pain.\n\n"
-        f"LANGUAGE STYLE:\n{lang_guide}\n\n"
-        f"TASK: Rewrite the question and its answer options entirely in {lang_name}. "
-        f"Do NOT translate word-for-word — write how a {lang_name}-speaking triage nurse "
-        f"would naturally ask this question to a patient.\n\n"
-        f"OUTPUT FORMAT: Return ONLY a valid JSON array with ONE element. "
-        f'Element: {{"q": "<question in {lang_name}>", "opts": ["<opt1>", "<opt2>", ...]}}. '
-        f"No markdown, no extra text."
-    )
-
-    gpt_success = False
-    if gpt_client:
-        try:
-            _r = gpt_client.chat.completions.create(
-                model=gpt_model,
-                messages=[
-                    {"role": "system", "content": system_msg},
-                    {"role": "user", "content": _json.dumps(payload, ensure_ascii=False)},
-                ],
-                max_tokens=500,
-                temperature=0.1,
-            )
-            raw = _r.choices[0].message.content.strip()
-            translated = _parse_translated_json(raw)
-            _apply_translated_payload([q], translated)
-            _logger.info("Single question localised to %s via GPT (%s)", lang_name, gpt_model)
-            gpt_success = True
-        except Exception as exc:
-            _logger.warning("GPT single-question localisation failed (%s) — trying translator", exc)
-
-    if not gpt_success and translator:
-        try:
-            tq = translator.translate_from_english(q.get("question", ""), lang_hint)
-            if tq:
-                q["question"] = tq
-        except Exception:
-            pass
-        if q.get("options"):
-            translated_opts = []
-            for opt in q["options"]:
-                try:
-                    to = translator.translate_from_english(opt, lang_hint)
-                    translated_opts.append(to if to else opt)
-                except Exception:
-                    translated_opts.append(opt)
-            q["options"] = translated_opts
-        if not gpt_success:
-            _logger.info("Single question translated to %s via Azure Translator", lang_name)
 
 
 def _enrich_patient(p: dict) -> dict:
@@ -1159,47 +1099,37 @@ def patient_questions(body: QuestionsRequest):
     # English questions are the ground truth (question_en), then translated for the patient.
     # Do NOT inject language into GPT prompt - generate clean English questions,
     # then translate them in Step 3 so the dashboard always has question_en available.
-    lang_hint  = body.detected_language or "en-US"
-    _lang_map  = {
-        "tr": "Turkish", "de": "German",  "fr": "French",
-        "es": "Spanish", "ar": "Arabic",  "nl": "Dutch",
-        "it": "Italian", "pl": "Polish",  "pt": "Portuguese",
-        "ru": "Russian", "zh": "Chinese",
-    }
+    lang_hint = body.detected_language or "en-US"
+    _lang_map = {"tr": "Turkish", "de": "German"}
     lang_name = next((v for k, v in _lang_map.items() if lang_hint.lower().startswith(k)), None)
 
     questions = triage.generate_questions(chief_complaint=complaint_en)
     logger.info("Generated %d questions (lang=%s): '%s...'", len(questions), lang_hint, complaint_en[:50])
 
-    # Step 2b: Tag each question with its English original before any translation
+    # Tag each question with its English original before any localisation
     for q in questions:
-        q["question_en"] = q.get("question", "")   # Always preserve English version
+        q["question_en"] = q.get("question", "")
 
-    # -- Step 3: Translate questions/options using module-level GPT + style guides --
+    # Localise to Turkish or German using GPT + style guides
     if lang_name and not lang_hint.lower().startswith("en"):
         gpt_client = getattr(triage, "openai_client", None)
         gpt_model  = getattr(triage, "deployment", "gpt-4o-mini")
-        lang_guide = _LANG_GUIDES.get(lang_name,
-            f"Write in simple, patient-friendly {lang_name}. Avoid medical jargon. "
-            f"The patient is anxious — use short, clear sentences.")
+        lang_guide = _LANG_GUIDES[lang_name]
 
         payload = [
             {"q": q.get("question", ""), "opts": q.get("options", [])}
             for q in questions
         ]
         system_msg = (
-            f"You are converting English emergency triage questions into natural {lang_name} "
-            f"for a real patient who is anxious and possibly in pain.\n\n"
-            f"LANGUAGE STYLE:\n{lang_guide}\n\n"
-            f"TASK: Rewrite each question and its answer options entirely in {lang_name}. "
-            f"Do NOT translate word-for-word — write how a {lang_name}-speaking triage nurse "
-            f"would naturally ask this question to a patient.\n\n"
+            f"{lang_guide}\n\n"
+            f"TASK: Rewrite each question and its answer options entirely in {lang_name}, "
+            f"exactly as you would say them directly to the patient right now. "
+            f"Do NOT translate word-for-word — rewrite naturally.\n\n"
             f"OUTPUT FORMAT: Return ONLY a valid JSON array. "
             f'Each element: {{"q": "<question in {lang_name}>", "opts": ["<opt1>", "<opt2>", ...]}}. '
             f"Same number and order as input. No markdown, no extra text, no explanations."
         )
 
-        gpt_success = False
         if gpt_client:
             try:
                 _r = gpt_client.chat.completions.create(
@@ -1215,27 +1145,8 @@ def patient_questions(body: QuestionsRequest):
                 translated_payload = _parse_translated_json(raw)
                 _apply_translated_payload(questions, translated_payload)
                 logger.info("Questions localised to %s via GPT (%s)", lang_name, gpt_model)
-                gpt_success = True
             except Exception as exc:
-                logger.warning("GPT question localisation failed (%s) — trying Azure Translator fallback", exc)
-
-        if not gpt_success:
-            if translator:
-                for q in questions:
-                    try:
-                        tq = translator.translate_from_english(q.get("question", ""), body.detected_language)
-                        if tq:
-                            q["question"] = tq
-                    except Exception:
-                        pass
-                    if "options" in q and q["options"]:
-                        q["options"] = [
-                            (translator.translate_from_english(o, body.detected_language) or o)
-                            for o in q["options"]
-                        ]
-                logger.info("Questions translated to %s via Azure Translator (GPT unavailable)", lang_name)
-            else:
-                logger.warning("No translation service available — questions served in English")
+                logger.warning("GPT question localisation failed (%s) — serving English", exc)
 
     # Extract RAG sources from questions (attached by triage_engine.generate_questions)
     rag_sources: list = []
@@ -1256,14 +1167,6 @@ def patient_questions_next(body: NextQuestionRequest):
     triage, translator = _get_triage_engine()
 
     lang_hint = body.detected_language or "en-US"
-
-    _lang_map  = {
-        "tr": "Turkish", "de": "German",  "fr": "French",
-        "es": "Spanish", "ar": "Arabic",  "nl": "Dutch",
-        "it": "Italian", "pl": "Polish",  "pt": "Portuguese",
-        "ru": "Russian", "zh": "Chinese",
-    }
-    lang_name = next((v for k, v in _lang_map.items() if lang_hint.lower().startswith(k)), None)
 
     # ── Translate complaint to English BEFORE passing to GPT ─────────────────
     # The client sends the original complaint text as complaint_en on the first
@@ -1342,33 +1245,24 @@ def patient_questions_next(body: NextQuestionRequest):
     if body.health_number:
         medical_history = get_full_record(body.health_number)
 
-    # 3. Generate Next Question
+    # 3. Generate Next Question — engine uses adaptive budget (min 3 / max 7,
+    # dimension-coverage based). For Turkish (tr) and German (de) the engine
+    # generates directly in the target language via _LANG_GENERATION_GUIDES.
     result = triage.generate_next_question(
         chief_complaint=complaint_en,
         previous_answers=qa_pairs,
         demographics=body.demographics,
-        medical_history=medical_history
+        medical_history=medical_history,
+        target_language=lang_hint,
     )
 
-    # ── Hard 5-question guard (server-side, GPT cannot override) ──────────
-    # Regardless of what GPT returns: force done=False until 5 answers exist,
-    # force done=True at 5+ answers.
-    REQUIRED_QUESTIONS = 5
-    answer_count = len(body.previous_answers)
-    if answer_count < REQUIRED_QUESTIONS:
-        is_done = False   # never stop early
-    else:
-        is_done = True    # always stop at 5
-
+    is_done = result.get("done", False)
     q = result.get("question", None) if not is_done else None
 
     if q:
-        q["question_en"] = q.get("question", "")
-        # Use module-level helper: GPT + style guides → same natural quality as batch mode
-        if lang_name and not lang_hint.lower().startswith("en"):
-            gpt_client = getattr(triage, "openai_client", None)
-            gpt_model  = getattr(triage, "deployment", "gpt-4o-mini")
-            _translate_single_question(q, lang_name, lang_hint, gpt_client, gpt_model, translator)
+        # question_en is set by the engine; fall back to English question if missing.
+        if not q.get("question_en"):
+            q["question_en"] = q.get("question", "")
 
     return NextQuestionResponse(
         done=is_done,

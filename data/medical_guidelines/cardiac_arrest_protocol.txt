@@ -1,0 +1,67 @@
+CARDIAC ARREST AND RESUSCITATION - EMERGENCY TRIAGE PROTOCOL
+=============================================================
+Version: 1.0 | Last Updated: 2025-11-01
+Source: Adapted from ERC/AHA Resuscitation Guidelines 2021
+
+1. OVERVIEW
+-----------
+Cardiac arrest is the sudden cessation of cardiac mechanical activity confirmed by
+unresponsiveness, absent breathing (or only gasping), and absence of detectable pulse.
+Every minute without CPR reduces survival by 7-10%. Brain damage begins at 4 minutes.
+Most survivable cardiac arrests are in shockable rhythms: VF and pulseless VT.
+
+2. RECOGNITION AND RED FLAGS
+------------------------------
+  - Unresponsive patient who cannot be roused
+  - No normal breathing (no breathing, agonal/gasping only)
+  - No pulse detected (check carotid for 10 seconds maximum)
+  - Witnessed collapse in public or at home
+  - AED delivered shock before arrival (prehospital shockable rhythm)
+  - Patient found down with unknown downtime
+  - Syncope that did not resolve (sustained loss of consciousness)
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red) — ACTIVATE RESUSCITATION TEAM IMMEDIATELY:
+  Criteria: No pulse + no breathing. ANY unresponsive patient.
+  Action:
+    - Call resuscitation team IMMEDIATELY
+    - Begin CPR: 30 compressions : 2 breaths (or continuous compressions if no airway)
+    - Compression rate: 100-120/min, depth: 5-6 cm, full chest recoil
+    - Attach AED/defibrillator as soon as available
+    - If VF/pulseless VT: defibrillate immediately (360J monophasic, 200J biphasic)
+    - IV/IO access, adrenaline 1mg IV every 3-5 minutes
+    - Identify and treat reversible causes (4H/4T)
+  Timeframe: No delay — every second counts
+
+4. REVERSIBLE CAUSES (4H / 4T)
+--------------------------------
+  4H: Hypoxia, Hypovolaemia, Hypo/Hyperkalaemia, Hypothermia
+  4T: Tension pneumothorax, Tamponade, Toxins/Overdose, Thrombosis (PE or coronary)
+
+5. POST-RESUSCITATION CARE (ROSC)
+-----------------------------------
+  - Targeted Temperature Management: 32-36°C for 24 hours if comatose
+  - 12-lead ECG immediately (STEMI → activate cath lab)
+  - CT head if neurological cause suspected
+  - Continuous monitoring: SpO2, ETCO2, BP, glucose
+  - Avoid hypoxia (target SpO2 94-98%) and hyperoxia
+
+6. KEY ASSESSMENT QUESTIONS FOR WITNESSED COLLAPSE
+----------------------------------------------------
+  Q1: Was the collapse witnessed? How long ago?
+  Q2: Did the patient complain of chest pain or palpitations before collapsing?
+  Q3: Was there any seizure activity?
+  Q4: Does the patient have known heart disease, arrhythmia, or cardiomyopathy?
+  Q5: Any medications — especially antiarrhythmics, digoxin, QT-prolonging drugs?
+  Q6: Any recent drug or alcohol use? (toxicological cause)
+  Q7: Was an AED used? How many shocks? Any ROSC?
+
+7. SPECIAL CONSIDERATIONS
+---------------------------
+  Drowning: Hypothermia is protective — extend resuscitation. Core temperature must be
+  assessed before declaring death (rewarming resuscitation).
+  Pregnancy: Left lateral tilt. Manual uterine displacement during CPR. Consider perimortem C-section at 4 minutes.
+  Paediatric: Use weight-based dosing. Airway management is first priority (hypoxic arrest).
+  Trauma: Control haemorrhage first. Tension pneumothorax must be decompressed before CPR is effective.

@@ -1,0 +1,74 @@
+MENTAL HEALTH CRISIS AND PSYCHIATRIC EMERGENCY - TRIAGE PROTOCOL
+==================================================================
+Version: 1.0 | Last Updated: 2025-11-01
+Source: Adapted from NICE CG136, ACEP Psychiatric Guidelines 2023
+
+1. OVERVIEW
+-----------
+Psychiatric emergencies require rapid assessment of risk (suicide, self-harm, violence),
+medical causes of altered behaviour, and appropriate safe environment. Always consider
+organic causes first: hypoglycaemia, intoxication, sepsis, head injury, metabolic crisis.
+Never assume a presentation is purely psychiatric without a medical evaluation.
+
+2. RED FLAGS — IMMEDIATE RISK
+------------------------------
+  - Active suicidal ideation with plan and means (intent)
+  - Recent deliberate self-harm or suicide attempt (overdose, laceration, hanging)
+  - Command hallucinations instructing harm to self or others
+  - Violent or agitated patient with risk to self or staff
+  - Suspected overdose: altered consciousness, coma, vomiting, bradycardia/tachycardia
+  - Acute psychosis with severe agitation or paranoid aggression
+  - Catatonia (stupor, rigidity, mutism) — may be life-threatening
+  - Neuroleptic malignant syndrome: hyperthermia, rigidity, altered consciousness in antipsychotic user
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Active self-harm/suicide attempt, drug overdose, violent/restrained patient, NMS
+  Action: Secure environment. Medical assessment. Resuscitation if needed. 1:1 supervision.
+  Timeframe: Immediate
+  Suspected: Overdose, serious self-harm, psychotic crisis, NMS
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Active suicidal ideation with plan, acute psychosis, severe agitation
+  Action: Safe environment, psychiatric assessment, consider medication (lorazepam, haloperidol)
+  Timeframe: Assessment within 30 minutes
+  Suspected: Acute psychotic episode, severe mood episode, high-risk suicidal ideation
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Stable mood crisis, chronic suicidal thoughts (no plan/intent), anxiety
+  Action: Mental health liaison, social support assessment, GP referral
+  Timeframe: Assessment within 2 hours
+  Suspected: Crisis reaction, adjustment disorder, chronic low-risk self-harm
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: Are you having thoughts of hurting yourself or ending your life?
+  Q2: Have you harmed yourself today or taken anything? (overdose screening)
+  Q3: Do you have a plan? Do you have access to means (medications, weapons)?
+  Q4: Have you heard voices or seen things others cannot see?
+  Q5: Are you feeling very agitated or unable to control your behaviour?
+  Q6: What medications do you take? Have you taken them all? Any substances?
+  Q7: Is there someone with you or who can stay with you?
+
+5. RISK STRATIFICATION (Columbia Scale)
+-----------------------------------------
+  High risk: Active intent, plan, access to means, prior attempt, social isolation
+  Moderate risk: Passive ideation, no clear plan, some protective factors
+  Low risk: Fleeting thoughts, strong protective factors, good support, engages with help
+
+6. ORGANIC CAUSES TO EXCLUDE
+------------------------------
+  Metabolic: Hypoglycaemia, uraemia, hepatic encephalopathy, thyroid crisis
+  CNS: Head injury, stroke, encephalitis, brain tumour, seizure (postictal)
+  Substances: Alcohol intoxication/withdrawal, stimulant intoxication, opioid overdose
+  Medications: Serotonin syndrome (SSRI + MAOI), NMS (antipsychotics), steroid psychosis
+
+7. DE-ESCALATION PRINCIPLES
+-----------------------------
+  - Use calm, non-threatening language. Introduce yourself clearly.
+  - Give personal space. Avoid blocking exits (patient safety + staff safety).
+  - Listen actively — acknowledge distress without challenging delusions.
+  - Offer food/drink when safe — basic needs first.
+  - Involve family/support person if consented and safe to do so.

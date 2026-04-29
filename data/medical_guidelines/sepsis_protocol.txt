@@ -1,0 +1,75 @@
+SEPSIS AND SEPTIC SHOCK - EMERGENCY TRIAGE PROTOCOL
+====================================================
+Version: 1.0 | Last Updated: 2025-11-01
+Source: Adapted from Surviving Sepsis Campaign Guidelines 2021
+
+1. OVERVIEW
+-----------
+Sepsis is a life-threatening organ dysfunction caused by a dysregulated host response
+to infection. Septic shock is a subset with circulatory and cellular/metabolic
+abnormalities. Early recognition and the "Sepsis 1-Hour Bundle" are critical.
+Mortality increases by ~7% for each hour without antibiotics in septic shock.
+
+2. RED FLAGS — SEPSIS CRITERIA (qSOFA + Clinical Suspicion)
+------------------------------------------------------------
+qSOFA criteria (2+ = high risk):
+  - Altered mental status (confusion, agitation, new onset)
+  - Respiratory rate ≥22 breaths/minute
+  - Systolic BP ≤100 mmHg
+
+Additional red flags:
+  - Temperature >38.3°C or <36°C (fever or hypothermia)
+  - Heart rate >90 bpm
+  - Suspected infection source (pneumonia, UTI, wound, IV line, surgical site)
+  - WBC >12,000 or <4,000 cells/μL
+  - Lactate >2 mmol/L (tissue hypoperfusion)
+  - Mottled skin, prolonged capillary refill >3 seconds
+  - Urine output <0.5 mL/kg/hour (oliguria)
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Suspected infection + septic shock (vasopressor requirement OR lactate >2)
+  Action: Activate Sepsis Alert. IV access x2. Lactate STAT. Blood cultures x2 (before abx).
+          Broad-spectrum antibiotics within 1 hour. 30mL/kg crystalloid bolus.
+  Timeframe: Immediate. Sepsis 1-Hour Bundle starts now.
+  Suspected: Septic shock, severe sepsis
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Suspected infection + 2+ qSOFA OR fever with haemodynamic instability
+  Action: Blood cultures, lactate, CBC, CMP, CRP, procalcitonin. IV antibiotics within 3 hours.
+  Timeframe: Assessment within 30 minutes
+  Suspected: Sepsis (without shock)
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Infection suspected, NO qSOFA criteria, haemodynamically stable
+  Action: Standard workup, oral antibiotics if appropriate
+  Timeframe: Assessment within 2 hours
+  Suspected: Localised infection, cellulitis, uncomplicated UTI
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: Do you have a fever, chills, or feel very cold?
+  Q2: Are you confused or not thinking clearly? (to nurse: assess orientation)
+  Q3: Is your breathing faster than normal?
+  Q4: Do you have a known infection, wound, or have you had recent surgery?
+  Q5: Are you urinating less than normal?
+  Q6: Do you have a central line, urinary catheter, or other device?
+  Q7: Do you have diabetes, cancer, or are you on immunosuppressants?
+
+5. INFECTION SOURCE SCREENING
+------------------------------
+  Pulmonary: Cough, purulent sputum, infiltrate on CXR
+  Urinary: Dysuria, flank pain, cloudy urine, recent catheter
+  Intra-abdominal: Abdominal pain, distension, recent surgery, peritonitis signs
+  Skin/Soft tissue: Wound, cellulitis, abscess, IV line site erythema
+  CNS: Headache, neck stiffness, photophobia (consider meningitis)
+
+6. ONE-HOUR BUNDLE (Surviving Sepsis Campaign)
+-----------------------------------------------
+  □ Measure lactate level
+  □ Obtain blood cultures before antibiotics
+  □ Administer broad-spectrum antibiotics
+  □ Begin 30 mL/kg crystalloid for hypotension or lactate ≥4 mmol/L
+  □ Apply vasopressors if septic shock persists after fluids

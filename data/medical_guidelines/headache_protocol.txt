@@ -1,0 +1,69 @@
+HEADACHE — EMERGENCY TRIAGE PROTOCOL
+======================================
+Version: 1.0 | Last Updated: 2025-11-01
+Source: Adapted from ACEP Clinical Policies, EFNS/EHF Guidelines 2023
+
+1. OVERVIEW
+-----------
+Headache is one of the most frequent ED presentations. While most headaches are
+benign (migraine, tension-type), a small but critical proportion represent serious
+pathology. The "worst headache of my life" (thunderclap) must be treated as
+subarachnoid haemorrhage until proven otherwise.
+
+2. RED FLAGS — IMMEDIATE DANGER ("SNOOPV" Criteria)
+-----------------------------------------------------
+  - S: Systemic symptoms (fever, neck stiffness, rash) — meningitis / encephalitis
+  - N: Neurological symptoms (focal deficit, confusion, diplopia, speech problems)
+  - O: Onset sudden / "thunderclap" (peak severity in <1 minute) — subarachnoid
+  - O: Onset after age 50 (new headache in older adult — giant cell arteritis, tumour)
+  - P: Positional headache (worse lying down — raised ICP; better standing — low pressure)
+  - V: Vomiting at peak headache intensity (subarachnoid, raised ICP)
+  Additional red flags:
+  - Headache triggered by exertion, sex, or Valsalva (coital headache, subarachnoid)
+  - Immunocompromised patient with new headache (opportunistic infection)
+  - HIV-positive patient with headache (cryptococcal meningitis)
+  - Headache with papilloedema on fundoscopy (raised ICP)
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Thunderclap onset, OR fever + neck stiffness, OR focal neuro deficit
+  Action: CT head (non-contrast) STAT. If CT negative + thunderclap → LP. Neurological assessment.
+  Timeframe: Immediate
+  Suspected: Subarachnoid haemorrhage, meningitis, encephalitis, stroke, epidural haematoma
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: New headache pattern, >50 years, or any SNOOPV criteria without shock
+  Action: Neurological exam, CT head within 1 hour, full history
+  Timeframe: Assessment within 30 minutes
+  Suspected: Temporal arteritis, intracranial hypertension, subdural haematoma
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Known migraine/tension pattern, NO red flags, prior similar episodes
+  Action: Pain relief protocol, migraine cocktail, antiemetics
+  Timeframe: Assessment within 2 hours
+  Suspected: Migraine, tension-type headache, cluster headache
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: Did this headache come on very suddenly, reaching maximum pain within seconds? (thunderclap)
+  Q2: Do you have a fever, stiff neck, or light sensitivity? (meningitis triad)
+  Q3: Is this the worst headache you have ever had? (subarachnoid alarm)
+  Q4: Do you have any weakness, numbness, vision changes, or speech problems? (focal deficit)
+  Q5: Where exactly is the pain? (temporal = arteritis, occipital = posterior fossa)
+  Q6: Have you had headaches like this before?
+  Q7: Did the headache start during or after physical exertion or sexual activity?
+
+5. MIGRAINE MANAGEMENT (Routine)
+----------------------------------
+  First line: Sumatriptan 6mg SC or 100mg PO, metoclopramide 10mg IV, aspirin 1g PO
+  Second line: Prochlorperazine 10mg IV, dexamethasone 10mg IV (reduces recurrence)
+  Hydration: 1L normal saline if dehydrated
+  Contraindication: Triptans contraindicated in hemiplegic migraine, basilar migraine
+
+6. THUNDERCLAP HEADACHE WORKUP
+--------------------------------
+  Step 1: CT head without contrast (90% sensitive for SAH within 6h of onset)
+  Step 2: If CT negative → LP at 12h post onset (xanthochromia)
+  Step 3: CT angiography if LP positive or high suspicion

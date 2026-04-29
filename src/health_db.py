@@ -1,8 +1,8 @@
 """
 Health Record Database — CodeZero v3
 ======================================
-30 rich demo patients: 10 DE + 10 TR + 10 UK
-Health number format: DEMO-DE-001, DEMO-TR-001, DEMO-UK-001
+30 rich demo patients: 10 DE + 10 UK + 10 TR
+Health number format: DEMO-DE-001, DEMO-UK-001, DEMO-TR-001
 
 v3 additions:
   - Extended anamnesis (symptoms, mood, social/family history)
@@ -443,7 +443,6 @@ def _seed(con):
          "Never smoker","Occasional (1-2 glasses wine/week)",
          "High school teacher","Married",
          "Mother: Hypothyroidism, T2DM. Sister: Hashimoto thyroiditis.",
-         "Active. Yoga 3x/week. Takes levothyroxine consistently in the morning.",
          "Stable mood. Occasionally fatigued prior to TSH review.",
          "Fully functional."),
         ("DEMO-TR-001","Ahmet","Yılmaz","1965-03-10","Male","B+","TR","tr-TR",
@@ -689,6 +688,7 @@ def _seed(con):
         ("DEMO-TR-008","D50.9","Iron-deficiency anaemia","active","2023-02-18","Dr. Koç","Hb 9.8 g/dL at dx. Now 10.2 on ferrous sulfate. Heavy menses."),
         ("DEMO-TR-009","G20","Parkinson disease, mild","active","2020-11-05","Dr. Başar","Hoehn-Yahr stage 2. Co-careldopa TID. Physiotherapy."),
         ("DEMO-TR-010","M81.0","Postmenopausal osteoporosis","active","2018-04-12","Dr. Erdoğan","T-score -2.8. Alendronate + calcium/VitD."),
+
         ("DEMO-UK-001","I25.10","Ischaemic heart disease","active","2016-09-14","Dr. Thompson","Stable on maximal medical therapy."),
         ("DEMO-UK-001","I50.9","Heart failure with reduced EF (40%)","active","2020-03-22","Dr. Thompson","NYHA II-III. NT-proBNP 1240 pg/mL."),
         ("DEMO-UK-002","J45.20","Moderate asthma","active","2005-03-22","Dr. Hall","Well-controlled. History of status asthmaticus 2025."),
@@ -750,6 +750,7 @@ def _seed(con):
         ("DEMO-TR-009","Co-careldopa 125mg (100/25)","125mg","Three times daily","2020-11-10",None,"Dr. Başar","active","End-of-dose wearing off — timing adjusted","Good — wife supervises administration"),
         ("DEMO-TR-010","Alendronic acid 70mg","70mg","Once weekly — fasting, remain upright 30 min","2018-04-18",None,"Dr. Erdoğan","active","Mild oesophageal discomfort initially (technique reinforced)","Good"),
         ("DEMO-TR-010","Calcium carbonate + Vit D3 1200mg/800IU","1 tablet","Twice daily with meals","2018-04-18",None,"Dr. Erdoğan","active","Mild constipation (manageable)","Good"),
+
         ("DEMO-UK-001","Furosemide 40mg","40mg","Once daily morning","2020-03-25",None,"Dr. Thompson","active","Electrolytes monitored. Nocturia reduced by AM dosing.","Good — weighs daily, dose titrated by weight"),
         ("DEMO-UK-001","Bisoprolol 5mg","5mg","Once daily","2020-03-25",None,"Dr. Thompson","active","Fatigue","Good"),
         ("DEMO-UK-001","Ramipril 10mg","10mg","Once daily","2020-03-25",None,"Dr. Thompson","active","Dry cough — accepting","Good"),
@@ -797,6 +798,7 @@ def _seed(con):
         ("DEMO-TR-008","2026-02-20T10:00:00",100,62,96,98.5,36.3,50.0,166.0,18.1,4.5,16,0),
         ("DEMO-TR-009","2026-01-28T09:30:00",118,72,68,97.5,36.6,73.0,168.0,25.9,5.1,16,1),
         ("DEMO-TR-010","2026-02-10T10:30:00",130,80,76,97.5,36.5,70.0,158.0,28.1,5.0,15,0),
+
         ("DEMO-UK-001","2026-02-12T10:00:00",142,88,68,96.5,36.6,86.0,176.0,27.7,5.3,18,2),
         ("DEMO-UK-002","2026-01-20T14:30:00",118,74,68,98.8,36.4,62.0,168.0,22.0,4.8,16,0),
         ("DEMO-UK-003","2026-02-08T09:00:00",144,90,82,92.5,36.8,84.0,180.0,25.9,6.8,22,3),
@@ -852,6 +854,7 @@ def _seed(con):
         ("DEMO-TR-008","Ferritin","8","µg/L","12-150","low","2026-02-20","Antalya Lab","Dr. Koç","Depleted iron stores. Continue treatment for 3 more months."),
         ("DEMO-TR-008","MCV","72","fL","80-100","low","2026-02-20","Antalya Lab","Dr. Koç","Microcytic anaemia consistent with iron deficiency."),
         ("DEMO-TR-009","DAT (dopamine transporter scan)","Reduced uptake bilateral","qualitative","Normal bilateral uptake","abnormal","2021-03-10","Samsun Nükleer Tıp","Dr. Başar","Confirms nigrostriatal dopaminergic deficit. Consistent with PD."),
+
         ("DEMO-UK-001","NT-proBNP","1240","pg/mL","< 400","high","2026-02-12","NHS Lab London","Dr. Thompson","Elevated. Consistent with HFrEF. Monitor trend."),
         ("DEMO-UK-001","eGFR","55","ml/min/1.73m²","≥ 60","low","2026-02-12","NHS Lab London","Dr. Thompson","CKD stage 3a. Monitor on diuretic + ACEI."),
         ("DEMO-UK-001","Potassium","4.1","mmol/L","3.5-5.0","normal","2026-02-12","NHS Lab London","Dr. Thompson","Normal on furosemide + ramipril. Recheck in 3 months."),
@@ -887,6 +890,7 @@ def _seed(con):
         ("DEMO-DE-006","Bee venom","Anaphylaxis — urticaria, stridor, hypotension. Required IM epinephrine.","severe","2019-06-01","Venom immunotherapy under evaluation. EpiPen x2 prescribed. MedicAlert bracelet worn."),
         ("DEMO-TR-001","Sulfonamides","Maculopapular rash","mild","2018-03-01","Avoid trimethoprim-sulfamethoxazole. Other antibiotics safe."),
         ("DEMO-TR-003","Codeine","Severe respiratory depression — ICU admission 2010","severe","2010-05-15","Avoid all opioids if possible. If required, use with extreme caution in monitored setting. Document prominently."),
+
         ("DEMO-UK-001","Aspirin","Severe bronchospasm","severe","2008-11-30","NSAID-exacerbated respiratory disease. Avoid all NSAIDs."),
         ("DEMO-UK-002","Latex","Urticaria and rhinitis on contact","moderate","2012-04-22","Alert surgical and procedural teams. Use latex-free equipment in all settings."),
         ("DEMO-UK-009","Digoxin","Toxicity at sub-therapeutic levels — bradycardia, visual halos","moderate","2020-01-05","Hypersensitivity to digoxin. Avoid in future management."),
@@ -947,6 +951,7 @@ def _seed(con):
          "Observation 24h, levetiracetam dose reviewed (500mg BD continued), sleep hygiene counselled",
          "Discharged next day. MRI brain unchanged. Neurology f/u 4 weeks.",
          "Dr. Öztürk",1,"2023-05-20"),
+
         ("DEMO-UK-004","2024-11-10","Inpatient","Edinburgh Royal Infirmary","Gastroenterology",
          "Crohn's flare — bloody diarrhoea x8/day, CRP 68, faecal calprotectin 1800",
          "Moderate Crohn's flare — ileocolonic",
@@ -993,6 +998,7 @@ def _seed(con):
          "None intraoperatively. Post-op urinary retention requiring catheter for 2 weeks.",
          "Pathology: pT2c N0 M0. Gleason 3+4=7. Clear margins. Biochemical remission.",
          "PSA undetectable at 3 months. Monitoring 6-monthly. Pelvic floor physiotherapy commenced."),
+
         ("DEMO-UK-002","2025-06-14","Emergency bronchoscopy — not performed (conservative management)",
          "Status asthmaticus — bronchoscopy considered but avoided after magnesium response",
          "Dr. Hall","—","Guy's Hospital",0,"N/A — bronchoscopy deferred",
@@ -1043,6 +1049,7 @@ def _seed(con):
          "Spinal block T8 level achieved. No airway intervention required.",
          "Mild hypotension at T+15 min — treated with IV ephedrine 6mg + 500mL crystalloid. Resolved promptly.",
          "Block regressed by 3h. Mobilised at 5h. No post-dural puncture headache."),
+
         ("DEMO-UK-004",None,"2016-05-10","Dr. Campbell","General anaesthesia",
          "23y female. No significant medical history. No allergies. BMI 21. Pre-op bloods normal.",
          "ASA I","Propofol 150mg IV, sevoflurane maintenance, fentanyl 75mcg, atracurium 25mg",
@@ -1153,6 +1160,7 @@ def _seed(con):
          "L1-L4 T-score -2.8, Z-score -1.2. Total hip T-score -2.4. Trabecular bone score low.",
          "Osteoporosis — T-score below -2.5 at lumbar spine. Bisphosphonate therapy indicated. FRAX 10-year hip fracture risk 8%.",
          "Dr. Erdoğan (Radiology)","Dr. Erdoğan","İstanbul Kemik Dansitometre Merkezi"),
+
         ("DEMO-UK-001","2026-02-12","Echocardiogram","Heart",
          "Heart failure — EF and haemodynamic assessment",
          "EF 40%. Dilated LV (LVEDD 62mm). Global hypokinesis. Moderate MR (functional). Raised E/e' ratio 16. No pericardial effusion.",
@@ -1256,7 +1264,7 @@ def _seed(con):
          "1. Continue current insulin pump programme. 2. Adjust overnight basal to reduce nocturnal lows — reviewed with pump nurse. 3. HbA1c in 3 months. 4. Annual review: renal function, eyes, feet — all up to date. 5. No changes to other medications.",
          None),
         ("DEMO-TR-001","2026-02-15","Outpatient follow-up","Dr. Kaya","Endocrinology",
-         "Patient frustrated. Reports eating large carbohydrate meals, irregular medication. BG at home 12-18 mmol/L fasting. Nocturia x3/night. Denies symptoms of DKA. Refuses insulin.",
+         "Patient reports frustrated. Reports eating large carbohydrate meals, irregular medication. BG at home 12-18 mmol/L fasting. Nocturia x3/night. Denies symptoms of DKA. Refuses insulin.",
          "BP 158/98. HR 86. Weight 87kg. BMI 28.7. HbA1c 8.2%. Urine ACR 48 mg/g. Feet: reduced monofilament sensation left 1st and 5th MTP. Eyes: fundoscopy — mild background diabetic retinopathy.",
          "Poorly controlled T2DM. Hypertension above target. Microalbuminuria. Early peripheral neuropathy. Mild NPDR on fundoscopy. Metabolic syndrome.",
          "1. Strongly recommend basal insulin — patient counselled again, declined for now. 2. Add Rosuvastatin 10mg for dyslipidaemia (TC 6.1). 3. Uptitrate amlodipine to 10mg. 4. Refer to diabetes nurse educator. 5. Ophthalmology referral for NPDR monitoring. 6. Podiatry referral for neuropathy. 7. Review again in 6 weeks.",
@@ -1292,6 +1300,8 @@ def _seed(con):
          "NSTEMI — LAD territory (mid-LAD 80% stenosis on emergency coronary angiogram). High-risk features: dynamic troponin, ECG changes, known CAD. GRACE score 148 — high risk. Immediate angiography performed — successful PCI with DES to mid-LAD.",
          "1. Loading doses: Ticagrelor 180mg + Aspirin 300mg pre-procedure. 2. Emergency PCI performed — DES to mid-LAD, TIMI 3 flow restored. 3. Post-PCI: Ticagrelor 90mg BD + Aspirin 100mg OD for 12 months (DAPT). 4. Continue Bisoprolol and Rosuvastatin. 5. PROMINENT ALLERGY FLAG: Codeine — severe respiratory depression, ICU 2010. No opioids without senior review. 6. Discharge in 3 days. Outpatient review in 4 weeks.",
          None),
+
+
     ]
     con.executemany(
         "INSERT OR IGNORE INTO doctor_notes (health_number,note_date,note_type,author,department,subjective,objective,assessment,plan,full_note) VALUES (?,?,?,?,?,?,?,?,?,?)",

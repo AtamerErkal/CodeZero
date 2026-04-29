@@ -1,0 +1,67 @@
+ANAPHYLAXIS - EMERGENCY TRIAGE PROTOCOL
+========================================
+Version: 1.0 | Last Updated: 2025-11-01
+Source: Adapted from WAO Anaphylaxis Guidelines 2023
+
+1. OVERVIEW
+-----------
+Anaphylaxis is a severe, life-threatening systemic hypersensitivity reaction. It can
+develop within seconds to minutes after exposure to a trigger. Epinephrine
+(adrenaline) is the first-line treatment. Any delay increases mortality risk.
+Common triggers: foods (nuts, shellfish, milk), medications (penicillin, NSAIDs),
+insect stings (bee, wasp), latex.
+
+2. RED FLAGS (Requires Immediate Emergency Triage)
+---------------------------------------------------
+  - Throat swelling, stridor, difficulty swallowing (angioedema of airway)
+  - Severe difficulty breathing, wheezing (bronchospasm)
+  - Hypotension (systolic <90 mmHg), dizziness, loss of consciousness
+  - Rapidly spreading urticaria or angioedema after known allergen exposure
+  - Abdominal cramps, vomiting after allergen with skin or respiratory symptoms
+  - History of prior severe allergic reaction (epi-pen user)
+  - Pale, diaphoretic, clammy skin (circulatory collapse)
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Airway compromise, OR circulatory collapse, OR severe respiratory distress
+  Action: Epinephrine 0.5mg IM (lateral thigh) IMMEDIATELY. IV access. Lie flat, legs elevated.
+  Timeframe: Immediate — no delay acceptable
+  Suspected: Anaphylactic shock, airway anaphylaxis
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Generalised urticaria + any systemic symptom (GI, mild wheeze, mild hypotension)
+  Action: Epinephrine IM, antihistamine IV, monitor closely. IV access.
+  Timeframe: Assessment within 15 minutes
+  Suspected: Moderate anaphylaxis, generalised allergic reaction
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Isolated urticaria or angioedema, NO systemic symptoms, NO airway involvement
+  Action: Antihistamine, monitor for 4 hours (biphasic risk)
+  Timeframe: Assessment within 1 hour
+  Suspected: Local allergic reaction, isolated urticaria
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: What did you come into contact with before symptoms started? (allergen identification)
+  Q2: Do you have difficulty breathing or is your throat swelling? (airway)
+  Q3: Do you feel dizzy, faint, or is your heart racing? (circulatory)
+  Q4: Do you have hives, rash, or skin swelling? Where on the body?
+  Q5: Do you have stomach cramps or vomiting?
+  Q6: Have you had a severe allergic reaction before? Do you carry an EpiPen?
+  Q7: Have you already used your EpiPen?
+
+5. ALLERGEN CATEGORIES
+-----------------------
+  Foods: Peanuts, tree nuts, shellfish, fish, milk, egg, wheat, sesame
+  Medications: Penicillin, aspirin, NSAIDs, ACE inhibitors, contrast agents
+  Stings: Bee, wasp, hornet, fire ant
+  Other: Latex, exercise-induced, cold-induced, idiopathic
+
+6. BIPHASIC REACTION
+---------------------
+  - 5-20% of anaphylaxis cases have a biphasic reaction (return of symptoms 1-72h later)
+  - All patients treated for anaphylaxis must be observed for minimum 4 hours
+  - Patients with severe reactions must be observed 6-12 hours
+  - Prescribe EpiPen x2 at discharge for all confirmed anaphylaxis patients

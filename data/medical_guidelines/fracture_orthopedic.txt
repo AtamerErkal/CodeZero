@@ -1,0 +1,76 @@
+FRACTURES AND ORTHOPEDIC EMERGENCIES - TRIAGE PROTOCOL
+========================================================
+Version: 1.0 | Last Updated: 2025-11-01
+Source: Adapted from ATLS 10th Edition, NICE NG38 2023
+
+1. OVERVIEW
+-----------
+Fractures range from life-threatening (long-bone fractures with haemorrhage, spinal
+cord injury, open fractures) to urgent (displaced fractures, joint dislocations) to
+routine (undisplaced limb fractures). Key priorities: neurovascular assessment of the
+limb distal to the injury, haemorrhage control, spinal precautions where indicated.
+
+2. RED FLAGS — IMMEDIATE DANGER
+---------------------------------
+  - Open (compound) fracture with bone visible or wound communicating with fracture
+  - Vascular compromise distal to fracture (absent pulse, pallor, paraesthesia, paralysis)
+  - Femoral or pelvic fracture with haemodynamic instability (massive haemorrhage risk)
+  - Suspected spinal injury with neurological symptoms (paralysis, paraesthesia, incontinence)
+  - Compartment syndrome: severe pain out of proportion, tense swelling, pain on passive stretch
+  - Fat embolism: respiratory distress + confusion + petechial rash after long bone fracture
+  - Crush injury with extensive soft tissue involvement
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Vascular compromise, haemodynamic instability from fracture, spinal cord injury, compartment syndrome
+  Action: Haemorrhage control (tourniquet for extremity, pelvic binder for pelvis).
+          Spinal immobilisation. Immediate orthopaedic and vascular surgery consultation.
+  Timeframe: Immediate
+  Suspected: Traumatic haemorrhage, spinal cord injury, compartment syndrome, open fracture
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Open fracture (neurovascularly intact), joint dislocation, displaced fracture
+  Action: X-ray, orthopaedic consultation, IV analgesia, neurovascular check q30 min.
+          Open fractures: IV antibiotics within 1 hour, tetanus prophylaxis, wound coverage.
+  Timeframe: Assessment within 30 minutes
+  Suspected: Open fracture (stable), joint dislocation (hip, knee, ankle)
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Closed undisplaced fracture, no neurovascular compromise
+  Action: X-ray, analgesia, splint/cast, orthopaedic follow-up
+  Timeframe: Assessment within 2 hours
+  Suspected: Closed limb fracture, wrist fracture, ankle fracture, rib fracture
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: How did the injury happen? (mechanism — fall, RTC, sports, crush)
+  Q2: Can you feel and move the fingers/toes of the injured limb? (neurovascular)
+  Q3: Is the skin broken over or near the fracture site? (open fracture)
+  Q4: Is the pain getting worse despite rest? Or is the limb numb? (compartment syndrome)
+  Q5: Did you feel or hear a crack at time of injury?
+  Q6: Do you have any weakness or numbness in your legs? (spinal cord)
+  Q7: Do you have osteoporosis, cancer, or have you had prior fractures? (pathological fracture)
+
+5. COMPARTMENT SYNDROME
+------------------------
+  Classic 5 Ps: Pain, Pressure (tense compartment), Paraesthesia, Paralysis, Pallor
+  The 6th P: Pulselessness (late sign — do not wait for this)
+  Diagnostic: Compartment pressure >30 mmHg or within 30 mmHg of diastolic BP
+  Treatment: Immediate fasciotomy — cannot be reversed by elevation or analgesia
+  High-risk fractures: Tibial shaft, distal radius, forearm, calcaneus
+
+6. PELVIC FRACTURES
+--------------------
+  High-energy mechanism: RTC, fall from height, crush
+  Haemorrhage control: Pelvic binder application (reduce volume) — never remove in trauma bay
+  Associated injuries: Urethral injury, bladder injury, rectal injury, vaginal injury
+  Blood loss: Pelvic fractures can hide 3-4 litres of blood
+
+7. HIP FRACTURES (ELDERLY)
+----------------------------
+  Population: >65 years, often osteoporotic, low-energy mechanism (ground-level fall)
+  Risk: Immobility → DVT, pressure ulcer, pneumonia, aspiration, mortality
+  Target: Surgical fixation within 48 hours of admission
+  Key assessment: Pre-injury mobility, cognitive function, social circumstances

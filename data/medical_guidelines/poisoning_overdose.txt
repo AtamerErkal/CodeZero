@@ -1,0 +1,78 @@
+POISONING AND DRUG OVERDOSE - TRIAGE PROTOCOL
+===============================================
+Version: 1.0 | Last Updated: 2025-11-01
+Source: Adapted from TOXBASE, WHO Poisoning Management Guidelines 2023
+
+1. OVERVIEW
+-----------
+Poisoning and overdose are common emergency presentations. The clinical syndrome
+("toxidrome") often identifies the responsible substance class before laboratory
+confirmation. Time is critical for antidote-responsive poisons (paracetamol, opioids,
+organophosphates). Always consider intentional overdose in a mental health context.
+
+2. RED FLAGS — IMMEDIATE DANGER
+---------------------------------
+  - Decreased or rapidly decreasing level of consciousness (GCS <13)
+  - Respiratory depression (<12 breaths/min) or apnoea (opioid toxidrome)
+  - Seizures (tricyclics, isoniazid, cocaine, carbon monoxide, organophosphates)
+  - Hypotension or haemodynamic instability
+  - Cardiac arrhythmias (QRS widening — TCAs; QT prolongation — antipsychotics)
+  - Metabolic acidosis with high anion gap (methanol, ethylene glycol, salicylates, CO)
+  - Hyperthermia >40°C (serotonin syndrome, sympathomimetics, NMS)
+  - Ingestion of unknown substance in child
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Altered consciousness, respiratory failure, seizures, cardiovascular compromise
+  Action: ABCDE. IV access. Monitor. Specific antidotes as appropriate (see below).
+  Timeframe: Immediate
+  Suspected: Opioid overdose, TCA overdose, CO poisoning, organophosphate
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Symptomatic, haemodynamically stable, potential toxicity risk (paracetamol overdose within 4h)
+  Action: Bloods (paracetamol level at 4h post ingestion, LFT, INR, creatinine, ECG)
+  Timeframe: Assessment within 30 minutes
+  Suspected: Paracetamol overdose, benzodiazepine overdose, alcohol poisoning
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Asymptomatic, low toxicity substance, >4h post-ingestion, small/unknown dose
+  Action: Poison control consultation, observation, bloods if indicated
+  Timeframe: Assessment within 2 hours
+  Suspected: Non-toxic ingestion, asymptomatic minor overdose
+
+4. TOXIDROMES — CLINICAL RECOGNITION
+--------------------------------------
+  Opioid: Miosis, respiratory depression, coma, bradycardia | Antidote: Naloxone 0.4-2mg IV/IM/IN
+  Sympathomimetic: Mydriasis, tachycardia, hypertension, diaphoresis, agitation | Benzodiazepines
+  Anticholinergic: Dry skin, mydriasis, tachycardia, urinary retention, hyperthermia, delirium
+  Cholinergic: SLUDGE (salivation, lacrimation, urination, defecation, GI cramps, emesis) + bradycardia | Atropine
+  Serotonin Syndrome: Clonus, hyperreflexia, agitation, hyperthermia, diaphoresis | Cyproheptadine
+  TCA Toxicity: QRS widening, hypotension, seizures | Sodium bicarbonate
+  CO Poisoning: Headache, cherry-red skin, altered consciousness | 100% oxygen
+
+5. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: What did you take? How much? When? (substance, dose, timing)
+  Q2: Did you take it intentionally or accidentally?
+  Q3: Did you take alcohol or other substances at the same time?
+  Q4: Do you feel very sleepy, confused, or is it hard to stay awake?
+  Q5: Are you having difficulty breathing?
+  Q6: Do you have any chest pains or irregular heartbeat?
+  Q7: Have you vomited? (decontamination status)
+
+6. PARACETAMOL (ACETAMINOPHEN) OVERDOSE
+-----------------------------------------
+  Threshold: >150mg/kg or >7.5g in adults is potentially toxic
+  Key window: Activated charcoal if <1 hour post ingestion
+  Antidote: N-acetylcysteine (NAC) — start if Rumack-Matthew nomogram indicates risk
+  Paracetamol level: Measured at 4 hours post ingestion (earlier unreliable)
+  LFTs: May be normal for 24-48h then rise sharply — do not falsely reassure
+
+7. DECONTAMINATION
+-------------------
+  Activated charcoal: Only if conscious, able to protect airway, within 1h of ingestion
+  Do NOT induce vomiting: Risks aspiration, no evidence of benefit
+  Gastric lavage: Rarely used — only for massive ingestion of immediately life-threatening substance
+  Whole bowel irrigation: For sustained-release preparations, body packing

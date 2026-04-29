@@ -1,0 +1,87 @@
+PAEDIATRIC EMERGENCIES - TRIAGE PROTOCOL
+=========================================
+Version: 1.0 | Last Updated: 2025-11-01
+Source: Adapted from APLS Guidelines, NICE NG51, WHO IMCI 2023
+
+1. OVERVIEW
+-----------
+Children are not small adults. Anatomical and physiological differences mean their
+presentations differ significantly from adults. The Paediatric Assessment Triangle
+(appearance, work of breathing, circulation) is the first-line tool. Children
+compensate well until sudden decompensation — early recognition is critical.
+
+2. PAEDIATRIC ASSESSMENT TRIANGLE (PAT)
+-----------------------------------------
+  Appearance: Tone, interactiveness, consolability, look/gaze, speech/cry
+  Work of Breathing: Retractions, nasal flaring, head bobbing, grunting, wheezing
+  Circulation to Skin: Pallor, mottling, cyanosis, capillary refill time
+
+3. RED FLAGS — IMMEDIATE DANGER
+---------------------------------
+  - Altered level of consciousness (AVPU < Voice)
+  - Severe respiratory distress with retractions, grunting, cyanosis
+  - Stridor at rest (partial airway obstruction — croup, epiglottitis, foreign body)
+  - Apnoea or irregular breathing
+  - Severe dehydration: sunken fontanelle, dry mucous membranes, no tears, no urine >8h
+  - Non-blanching petechial/purpuric rash with fever (meningococcal sepsis)
+  - Limp or refusal to bear weight after minimal/no trauma (septic arthritis, NAI)
+  - Seizure lasting >5 minutes or status epilepticus
+  - Bilious vomiting in neonate (bowel obstruction until proven otherwise)
+
+4. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Altered consciousness, severe respiratory distress, circulatory failure, status epilepticus
+  Action: ABCDE approach. Call paediatric team. Airway management. IV/IO access.
+  Timeframe: Immediate
+  Suspected: Respiratory failure, septic shock, meningococcal disease, status epilepticus
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Moderate respiratory distress, febrile child <3 months, significant dehydration
+  Action: Continuous monitoring, IV access, targeted investigations
+  Timeframe: Assessment within 30 minutes
+  Suspected: Bronchiolitis, pneumonia, UTI in infant, moderate dehydration
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Well-appearing child, mild illness, good perfusion, age-appropriate behaviour
+  Action: History, examination, targeted treatment
+  Timeframe: Assessment within 2 hours
+  Suspected: Viral URTI, otitis media, gastroenteritis (mild), minor injury
+
+5. COMMON PAEDIATRIC PRESENTATIONS
+------------------------------------
+
+CROUP (Laryngotracheobronchitis):
+  Age: 6 months - 3 years | Season: autumn/winter | Cause: parainfluenza virus
+  Features: Barking cough, stridor, hoarse voice, preceded by URTI
+  Management: Single dose oral/IM dexamethasone 0.15-0.6mg/kg. Severe: nebulised adrenaline.
+
+FEBRILE SEIZURE:
+  Age: 6 months - 5 years | Type: simple (generalised, <15 min, once in 24h) vs complex
+  Management: Benzodiazepine if continuing >5 min (buccal midazolam 0.2mg/kg or rectal diazepam)
+  Lumbar puncture: Required if <12 months, signs of meningism, or complex seizure
+
+BRONCHIOLITIS:
+  Age: <2 years | Season: winter | Cause: RSV most common
+  Features: Wheeze, subcostal retractions, crackles, tachypnoea, feeding difficulty
+  Management: Supportive — oxygen if SpO2 <92%, NG/IV fluids if unable to feed
+
+6. KEY ASSESSMENT QUESTIONS (to parent/caregiver)
+---------------------------------------------------
+  Q1: How old is your child? Weight?
+  Q2: Is your child responding normally — interacting, recognising you?
+  Q3: Is your child breathing fast or working hard to breathe?
+  Q4: Does your child have a fever? How high? For how long?
+  Q5: When did your child last eat, drink, or urinate?
+  Q6: Has your child had a fit or seizure?
+  Q7: Does your child have a rash? Where? Does it disappear when pressed?
+
+7. NORMAL VITAL SIGNS BY AGE
+------------------------------
+  Neonate (0-1m): HR 100-160, RR 30-60, SBP 60-80 mmHg
+  Infant (1-12m): HR 100-150, RR 25-45, SBP 70-95 mmHg
+  Toddler (1-3y): HR 90-150, RR 20-35, SBP 80-100 mmHg
+  Preschool (3-6y): HR 80-140, RR 20-30, SBP 80-105 mmHg
+  School age (6-12y): HR 70-120, RR 15-25, SBP 85-110 mmHg
+  Adolescent (12-18y): HR 60-100, RR 12-20, SBP 95-120 mmHg

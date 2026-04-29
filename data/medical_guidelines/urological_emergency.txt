@@ -1,0 +1,68 @@
+UROLOGICAL EMERGENCIES - TRIAGE PROTOCOL
+=========================================
+Version: 1.0 | Last Updated: 2025-11-01
+Source: Adapted from EAU Guidelines on Urological Infections and Emergencies 2023
+
+1. OVERVIEW
+-----------
+Urological emergencies include conditions that are time-critical (testicular torsion,
+priapism) and conditions that are severely painful (renal colic) or infectious
+(pyelonephritis, sepsis from urological source). Testicular torsion has a 6-hour
+window for 90-100% testicular salvage; this drops to <10% after 24 hours.
+
+2. RED FLAGS
+------------
+  - Severe scrotal pain with sudden onset (testicular torsion until proven otherwise)
+  - Scrotal swelling with absent cremasteric reflex (torsion)
+  - Urological source of sepsis: fever + flank pain + haemodynamic instability
+  - Painless haematuria in smoker >50 years (bladder cancer screening urgency)
+  - Acute urinary retention with suprapubic distension (>500mL in bladder)
+  - Priapism >4 hours (ischaemic) — penile compartment syndrome
+  - Flank pain radiating to groin with nausea/vomiting (renal colic — rule out AAA)
+
+3. TRIAGE LEVELS
+-----------------
+
+LEVEL 1 - EMERGENCY (Red):
+  Criteria: Sudden severe scrotal pain (torsion), anuric renal failure, septic shock from UTI
+  Action: Urological surgeon STAT for suspected torsion. No delay for imaging if clinical torsion.
+  Timeframe: Immediate — torsion window is 6 hours
+  Suspected: Testicular torsion, urosepsis with shock, anuric obstructive uropathy
+
+LEVEL 2 - URGENT (Orange):
+  Criteria: Renal colic (severe), pyelonephritis, urinary retention, haematuria with clots
+  Action: IV analgesia (ketorolac + morphine), IV fluids, urinalysis + culture, CT KUB (no contrast)
+  Timeframe: Assessment within 30 minutes
+  Suspected: Ureteric calculus, pyelonephritis, obstructive uropathy, bladder cancer
+
+LEVEL 3 - ROUTINE (Green):
+  Criteria: Dysuria without systemic features, minor haematuria, chronic retention symptoms
+  Action: Urinalysis, culture, oral antibiotics if UTI, GP follow-up
+  Timeframe: Assessment within 2 hours
+  Suspected: Uncomplicated UTI, cystitis, benign prostatic hypertrophy symptoms
+
+4. KEY ASSESSMENT QUESTIONS
+----------------------------
+  Q1: Is the pain in your scrotum or testicle? Did it start suddenly? (torsion screening)
+  Q2: Where exactly is the pain — side, back, groin, or lower abdomen? (location of stone/infection)
+  Q3: Do you have a fever, chills, or feel very unwell? (infection/sepsis)
+  Q4: Is there blood in your urine? What colour?
+  Q5: Can you pass urine? Is there a complete inability to urinate? (retention)
+  Q6: Do you have nausea or vomiting with the pain? (renal colic signature)
+  Q7: Have you had kidney stones before? Do you have a history of urological problems?
+
+5. RENAL COLIC MANAGEMENT
+---------------------------
+  Analgesia: Ketorolac 30mg IV (NSAID first-line) + Morphine 0.1mg/kg IV PRN
+  Antiemetics: Metoclopramide or ondansetron
+  Imaging: CT KUB (non-contrast) — gold standard. Ultrasound if pregnant.
+  Urology referral: Stones >10mm, obstructed/infected kidney, single kidney, failed medical management
+  Alpha-blocker: Tamsulosin 0.4mg OD if stone <10mm (facilitates spontaneous passage)
+
+6. TESTICULAR TORSION
+-----------------------
+  Classic: Sudden severe pain, nausea, high-riding testicle, absent cremasteric reflex
+  Age: 12-18 most common (but can occur at any age)
+  Management: URGENT surgical exploration. Doppler USS only if diagnosis uncertain AND can be done immediately.
+  NEVER delay surgery for imaging if clinical suspicion is high.
+  Detorsion: Manual detorsion in ED (rotate outward) as temporising measure only.
