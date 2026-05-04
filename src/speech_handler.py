@@ -203,15 +203,15 @@ class SpeechHandler:
             wav_path = src_path.replace(source_suffix, ".wav")
 
             # Strategy 1: ffmpeg (most reliable, handles all browser formats)
+            # No audio filters — Azure Speech has its own noise handling and
+            # aggressive filters (afftdn+loudnorm) were stripping the speech signal.
             try:
                 subprocess.run(
                     [
                         "ffmpeg", "-y", "-i", src_path,
-                        "-ar", "16000",          # 16 kHz — Azure Speech requirement
-                        "-ac", "1",              # mono
-                        "-sample_fmt", "s16",    # 16-bit PCM
-                        # Normalize + light denoise so Azure handles quiet/noisy mic input
-                        "-af", "afftdn=nf=-25,loudnorm=I=-16:TP=-1.5:LRA=11",
+                        "-ar", "16000",      # 16 kHz — Azure Speech requirement
+                        "-ac", "1",          # mono
+                        "-sample_fmt", "s16", # 16-bit PCM
                         wav_path,
                     ],
                     check=True,
@@ -385,7 +385,8 @@ class SpeechHandler:
             }
 
         elif result.reason == speechsdk.ResultReason.NoMatch:
-            logger.warning("No speech recognized.")
+            no_match_detail = getattr(result, "no_match_details", None)
+            logger.warning("Azure Speech NoMatch — no speech recognized. Details: %s", no_match_detail)
             return None
 
         elif result.reason == speechsdk.ResultReason.Canceled:

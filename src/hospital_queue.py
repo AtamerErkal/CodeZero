@@ -136,6 +136,7 @@ class HospitalQueue:
                 ("has_photo", "INTEGER DEFAULT 0"),
                 ("photo_count", "INTEGER DEFAULT 0"),
                 ("complaint_text", "TEXT DEFAULT ''"),
+                ("complaint_en",   "TEXT DEFAULT ''"),
                 ("ai_triage_level", "TEXT"),
                 ("amb_eta_patient", "INTEGER"),
                 ("amb_dispatch_at", "TEXT"),
@@ -205,8 +206,8 @@ class HospitalQueue:
                     eta_minutes, arrival_time, location_lat, location_lon,
                     language, destination_hospital, status, updated_at,
                     qa_transcript, health_number, has_photo, photo_count, complaint_text,
-                    ai_triage_level
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incoming', ?, ?, ?, ?, ?, ?, ?)
+                    complaint_en, ai_triage_level
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incoming', ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     record.get("patient_id", ""),
@@ -232,6 +233,7 @@ class HospitalQueue:
                     1 if record.get("has_photo") else 0,
                     int(record.get("photo_count", 0)),
                     record.get("complaint_text", ""),
+                    record.get("complaint_en", record.get("chief_complaint", "")),
                     record.get("triage_level", "URGENT"),  # ai_triage_level: immutable original AI level
                 ),
             )

@@ -947,14 +947,34 @@
         }
 
         @keyframes pulseMic {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(34, 211, 238, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4);
+            }
+
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 8px rgba(34, 211, 238, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(34, 211, 238, 0);
+            }
         }
+
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         .mic-btn.recording::after {
@@ -2214,8 +2234,15 @@
         }
 
         @keyframes mic-pulse {
-            0% { filter: drop-shadow(0px 8px 16px rgba(13, 148, 136, 0.2)); transform: scale(1); }
-            100% { filter: drop-shadow(0px 12px 25px rgba(20, 184, 166, 0.6)); transform: scale(1.02); }
+            0% {
+                filter: drop-shadow(0px 8px 16px rgba(13, 148, 136, 0.2));
+                transform: scale(1);
+            }
+
+            100% {
+                filter: drop-shadow(0px 12px 25px rgba(20, 184, 166, 0.6));
+                transform: scale(1.02);
+            }
         }
 
         @keyframes elegant-pulse {
@@ -2250,9 +2277,19 @@
         }
 
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-4px); }
-            75% { transform: translateX(4px); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-4px);
+            }
+
+            75% {
+                transform: translateX(4px);
+            }
         }
 
         .symptom-card {
@@ -2272,7 +2309,7 @@
             justify-content: center;
             min-height: 100px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            
+
             word-wrap: break-word;
             word-break: break-word;
             white-space: normal;
@@ -2283,7 +2320,8 @@
             width: 32px;
             height: 32px;
             margin-bottom: 10px;
-            color: var(--success); /* Muted icon color */
+            color: var(--success);
+            /* Muted icon color */
             transition: all 0.25s ease;
             stroke-width: 1.5;
         }
@@ -2301,10 +2339,10 @@
         }
 
         .symptom-card.selected {
-            background: var(--success); 
+            background: var(--success);
             border-color: var(--success-h);
             color: white;
-            box-shadow: 0 0 15px rgba(13, 148, 136, 0.4), inset 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 15px rgba(13, 148, 136, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         .symptom-card.selected .symptom-icon {
@@ -3164,7 +3202,8 @@
         ══════════════════════════════════════════════════════ */
         .ass-header {
             position: sticky;
-            top: 72px; /* right below topbar */
+            top: 72px;
+            /* right below topbar */
             z-index: 900;
             background: var(--ios-bg);
             padding: 12px 20px 8px;
@@ -3236,10 +3275,21 @@
         }
 
         /* Tile variants */
-        .ass-tile.dos { border-bottom: 4px solid var(--success); }
-        .ass-tile.contact { border-bottom: 4px solid var(--primary); }
-        .ass-tile.qr { border-bottom: 4px solid #8B5CF6; }
-        .ass-tile.report { border-bottom: 4px solid #F59E0B; }
+        .ass-tile.dos {
+            border-bottom: 4px solid var(--success);
+        }
+
+        .ass-tile.contact {
+            border-bottom: 4px solid var(--primary);
+        }
+
+        .ass-tile.qr {
+            border-bottom: 4px solid #8B5CF6;
+        }
+
+        .ass-tile.report {
+            border-bottom: 4px solid #F59E0B;
+        }
 
         .ass-action-card {
             background: var(--card);
@@ -3274,7 +3324,7 @@
             position: fixed;
             inset: 0;
             z-index: 2000;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             display: none;
             align-items: flex-end;
             justify-content: center;
@@ -3334,6 +3384,7 @@
             flex-direction: column;
             gap: 12px;
         }
+
         .dos-item {
             display: flex;
             align-items: flex-start;
@@ -3342,8 +3393,14 @@
             padding: 16px;
             border-radius: 16px;
         }
-        .dos-item.do { border-left: 4px solid var(--success); }
-        .dos-item.dont { border-left: 4px solid var(--danger); }
+
+        .dos-item.do {
+            border-left: 4px solid var(--success);
+        }
+
+        .dos-item.dont {
+            border-left: 4px solid var(--danger);
+        }
 
         .qr-area {
             display: flex;
@@ -3352,6 +3409,7 @@
             padding: 20px;
             text-align: center;
         }
+
         .qr-code-placeholder {
             width: 200px;
             height: 200px;
@@ -3436,10 +3494,11 @@
                     <div class="lang-code-box">TR</div>
                     <div class="lang-texts">
                         <h4 class="lang-main-name">Türkçe</h4>
-                        <p class="lang-desc">Tıbbi acil asistan</p>
+                        <p class="lang-desc">Tıbbi acil durum asistanı</p>
                     </div>
                     <i data-lucide="chevron-right"></i>
                 </div>
+
             </div>
 
         </div>
@@ -3524,7 +3583,8 @@
                     <button id="micBtn" class="mic-btn" onclick="toggleRecording()"
                         style="width:140px;height:140px;border-radius:50%;background:none!important;border:none;display:flex;align-items:center;justify-content:center;box-shadow:none!important;cursor:pointer;transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);padding:0;">
                         <!-- Premium 3D Glass/Metal Microphone Icon -->
-                        <svg class="mic-premium-glow" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
+                        <svg class="mic-premium-glow" viewBox="0 0 140 140" fill="none"
+                            xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
                             <defs>
                                 <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
                                     <stop offset="0%" stop-color="#FFFFFF" />
@@ -3543,48 +3603,62 @@
                                     <stop offset="100%" stop-color="#042F2E" />
                                 </linearGradient>
                                 <radialGradient id="greenGlow" cx="50%" cy="50%" r="50%">
-                                    <stop offset="0%" stop-color="#14B8A6" stop-opacity="0.4"/>
-                                    <stop offset="100%" stop-color="#0D9488" stop-opacity="0"/>
+                                    <stop offset="0%" stop-color="#14B8A6" stop-opacity="0.4" />
+                                    <stop offset="100%" stop-color="#0D9488" stop-opacity="0" />
                                 </radialGradient>
                                 <filter id="innerShadow" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feOffset dx="0" dy="4"/>
-                                    <feGaussianBlur stdDeviation="4" result="offset-blur"/>
-                                    <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
-                                    <feFlood flood-color="black" flood-opacity="0.6" result="color"/>
-                                    <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
-                                    <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+                                    <feOffset dx="0" dy="4" />
+                                    <feGaussianBlur stdDeviation="4" result="offset-blur" />
+                                    <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse" />
+                                    <feFlood flood-color="black" flood-opacity="0.6" result="color" />
+                                    <feComposite operator="in" in="color" in2="inverse" result="shadow" />
+                                    <feComposite operator="over" in="shadow" in2="SourceGraphic" />
                                 </filter>
                                 <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feDropShadow dx="0" dy="6" stdDeviation="6" flood-opacity="0.3" flood-color="#000" />
+                                    <feDropShadow dx="0" dy="6" stdDeviation="6" flood-opacity="0.3"
+                                        flood-color="#000" />
                                 </filter>
                             </defs>
-                            
+
                             <!-- Outer Ambient Glow -->
                             <circle cx="70" cy="70" r="60" fill="url(#greenGlow)" />
-                            
+
                             <!-- Metallic Base Ring -->
-                            <circle cx="70" cy="70" r="54" fill="rgba(255,255,255,0.05)" stroke="url(#metal)" stroke-width="3" filter="url(#dropShadow)"/>
-                            <circle cx="70" cy="70" r="48" fill="rgba(13,148,136,0.1)" stroke="rgba(20,184,166,0.5)" stroke-width="1"/>
+                            <circle cx="70" cy="70" r="54" fill="rgba(255,255,255,0.05)" stroke="url(#metal)"
+                                stroke-width="3" filter="url(#dropShadow)" />
+                            <circle cx="70" cy="70" r="48" fill="rgba(13,148,136,0.1)" stroke="rgba(20,184,166,0.5)"
+                                stroke-width="1" />
 
                             <!-- Mic Head (Grill Body) -->
-                            <rect x="52" y="30" width="36" height="58" rx="18" fill="url(#greenGloss)" filter="url(#innerShadow)" />
-                            <rect x="52" y="30" width="36" height="58" rx="18" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
-                            
+                            <rect x="52" y="30" width="36" height="58" rx="18" fill="url(#greenGloss)"
+                                filter="url(#innerShadow)" />
+                            <rect x="52" y="30" width="36" height="58" rx="18" fill="none"
+                                stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+
                             <!-- Metallic Grill Highlights (Horizontal Lines) -->
-                            <line x1="56" y1="42" x2="84" y2="42" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"/>
-                            <line x1="56" y1="50" x2="84" y2="50" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"/>
-                            <line x1="56" y1="58" x2="84" y2="58" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"/>
-                            <line x1="56" y1="66" x2="84" y2="66" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"/>
-                            <line x1="56" y1="74" x2="84" y2="74" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="56" y1="42" x2="84" y2="42" stroke="rgba(255,255,255,0.5)" stroke-width="2"
+                                stroke-linecap="round" />
+                            <line x1="56" y1="50" x2="84" y2="50" stroke="rgba(255,255,255,0.5)" stroke-width="2"
+                                stroke-linecap="round" />
+                            <line x1="56" y1="58" x2="84" y2="58" stroke="rgba(255,255,255,0.5)" stroke-width="2"
+                                stroke-linecap="round" />
+                            <line x1="56" y1="66" x2="84" y2="66" stroke="rgba(255,255,255,0.5)" stroke-width="2"
+                                stroke-linecap="round" />
+                            <line x1="56" y1="74" x2="84" y2="74" stroke="rgba(255,255,255,0.5)" stroke-width="2"
+                                stroke-linecap="round" />
 
                             <!-- Arm / Stand (Silver Metallic) -->
-                            <path d="M38 65c0 17.6 14.4 32 32 32s32-14.4 32-32" stroke="url(#metal)" stroke-width="7" stroke-linecap="round" fill="none" filter="url(#dropShadow)"/>
-                            <path d="M38 65c0 17.6 14.4 32 32 32s32-14.4 32-32" stroke="rgba(255,255,255,0.6)" stroke-width="1" stroke-linecap="round" fill="none"/>
-                            
+                            <path d="M38 65c0 17.6 14.4 32 32 32s32-14.4 32-32" stroke="url(#metal)" stroke-width="7"
+                                stroke-linecap="round" fill="none" filter="url(#dropShadow)" />
+                            <path d="M38 65c0 17.6 14.4 32 32 32s32-14.4 32-32" stroke="rgba(255,255,255,0.6)"
+                                stroke-width="1" stroke-linecap="round" fill="none" />
+
                             <!-- Base Connection -->
-                            <line x1="70" y1="97" x2="70" y2="110" stroke="url(#metal)" stroke-width="8" stroke-linecap="round" filter="url(#dropShadow)"/>
-                            <path d="M54 112h32" stroke="url(#metalDark)" stroke-width="10" stroke-linecap="round" filter="url(#dropShadow)"/>
-                            <path d="M54 112h32" stroke="url(#metal)" stroke-width="4" stroke-linecap="round"/>
+                            <line x1="70" y1="97" x2="70" y2="110" stroke="url(#metal)" stroke-width="8"
+                                stroke-linecap="round" filter="url(#dropShadow)" />
+                            <path d="M54 112h32" stroke="url(#metalDark)" stroke-width="10" stroke-linecap="round"
+                                filter="url(#dropShadow)" />
+                            <path d="M54 112h32" stroke="url(#metal)" stroke-width="4" stroke-linecap="round" />
                         </svg>
                     </button>
                     <div style="text-align: center;">
@@ -3652,8 +3726,10 @@
             <div class="media-add-row" id="mediaAddRow" style="flex-direction: column; gap: 15px;">
                 <label class="media-add-btn"
                     style="cursor:pointer; min-height: 120px; border-radius: 20px; background: rgba(26, 32, 44, 0.4); border: 2px solid rgba(13,148,136,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); backdrop-filter: blur(8px);">
-                    <span class="icon" style="margin-bottom: 12px; filter: drop-shadow(0px 4px 6px rgba(13,148,136,0.4));">
-                        <svg viewBox="0 0 100 100" width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <span class="icon"
+                        style="margin-bottom: 12px; filter: drop-shadow(0px 4px 6px rgba(13,148,136,0.4));">
+                        <svg viewBox="0 0 100 100" width="48" height="48" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
                             <defs>
                                 <linearGradient id="camMetal" x1="0%" y1="0%" x2="100%" y2="100%">
                                     <stop offset="0%" stop-color="#E2E8F0" />
@@ -3666,12 +3742,14 @@
                                     <stop offset="100%" stop-color="#34D399" />
                                 </linearGradient>
                             </defs>
-                            <rect x="10" y="25" width="80" height="55" rx="12" fill="url(#camMetal)" stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.5"/>
-                            <path d="M30 25 V18 A6 6 0 0 1 36 12 H64 A6 6 0 0 1 70 18 V25" fill="url(#camMetal)" stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.5"/>
-                            <circle cx="50" cy="52" r="20" fill="#1E293B" stroke="url(#camMetal)" stroke-width="4"/>
-                            <circle cx="50" cy="52" r="14" fill="url(#camLens)"/>
-                            <circle cx="54" cy="48" r="4" fill="#FFFFFF" fill-opacity="0.6"/>
-                            <circle cx="80" cy="35" r="4" fill="#34D399"/>
+                            <rect x="10" y="25" width="80" height="55" rx="12" fill="url(#camMetal)" stroke="#FFFFFF"
+                                stroke-width="2" stroke-opacity="0.5" />
+                            <path d="M30 25 V18 A6 6 0 0 1 36 12 H64 A6 6 0 0 1 70 18 V25" fill="url(#camMetal)"
+                                stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.5" />
+                            <circle cx="50" cy="52" r="20" fill="#1E293B" stroke="url(#camMetal)" stroke-width="4" />
+                            <circle cx="50" cy="52" r="14" fill="url(#camLens)" />
+                            <circle cx="54" cy="48" r="4" fill="#FFFFFF" fill-opacity="0.6" />
+                            <circle cx="80" cy="35" r="4" fill="#34D399" />
                         </svg>
                     </span>
                     <span id="ph_addPhoto" style="font-size: 1.1rem; font-weight: 800; color: var(--text);"></span>
@@ -3681,8 +3759,10 @@
 
                 <label class="media-add-btn"
                     style="cursor:pointer; min-height: 120px; border-radius: 20px; background: rgba(26, 32, 44, 0.4); border: 2px solid rgba(13,148,136,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); backdrop-filter: blur(8px);">
-                    <span class="icon" style="margin-bottom: 12px; filter: drop-shadow(0px 4px 6px rgba(13,148,136,0.4));">
-                        <svg viewBox="0 0 100 100" width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <span class="icon"
+                        style="margin-bottom: 12px; filter: drop-shadow(0px 4px 6px rgba(13,148,136,0.4));">
+                        <svg viewBox="0 0 100 100" width="48" height="48" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
                             <defs>
                                 <linearGradient id="vidMetal" x1="0%" y1="0%" x2="100%" y2="100%">
                                     <stop offset="0%" stop-color="#E2E8F0" />
@@ -3695,11 +3775,13 @@
                                     <stop offset="100%" stop-color="#34D399" />
                                 </linearGradient>
                             </defs>
-                            <rect x="10" y="25" width="60" height="50" rx="12" fill="url(#vidMetal)" stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.5"/>
-                            <polygon points="70,40 90,25 90,75 70,60" fill="url(#vidMetal)" stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.5"/>
-                            <circle cx="40" cy="50" r="14" fill="#1E293B" stroke="url(#vidMetal)" stroke-width="3"/>
-                            <circle cx="40" cy="50" r="8" fill="url(#vidLens)"/>
-                            <circle cx="42" cy="48" r="2" fill="#FFFFFF" fill-opacity="0.6"/>
+                            <rect x="10" y="25" width="60" height="50" rx="12" fill="url(#vidMetal)" stroke="#FFFFFF"
+                                stroke-width="2" stroke-opacity="0.5" />
+                            <polygon points="70,40 90,25 90,75 70,60" fill="url(#vidMetal)" stroke="#FFFFFF"
+                                stroke-width="2" stroke-opacity="0.5" />
+                            <circle cx="40" cy="50" r="14" fill="#1E293B" stroke="url(#vidMetal)" stroke-width="3" />
+                            <circle cx="40" cy="50" r="8" fill="url(#vidLens)" />
+                            <circle cx="42" cy="48" r="2" fill="#FFFFFF" fill-opacity="0.6" />
                         </svg>
                     </span>
                     <span id="ph_addVideo" style="font-size: 1.1rem; font-weight: 800; color: var(--text);"></span>
@@ -3840,20 +3922,23 @@
         <div class="page" id="page-consent">
             <div style="text-align:center;padding:8px 0 18px">
                 <div style="margin:0 auto 12px;width:64px;height:64px;">
-                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;filter:drop-shadow(0px 8px 12px rgba(13,148,136,0.25));">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"
+                        style="width:100%;height:100%;display:block;filter:drop-shadow(0px 8px 12px rgba(13,148,136,0.25));">
                         <defs>
                             <linearGradient id="shieldBg" x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" stop-color="#2DD4BF" />
                                 <stop offset="100%" stop-color="#0F766E" />
                             </linearGradient>
                             <linearGradient id="shieldEdge" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6"/>
-                                <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+                                <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6" />
+                                <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
                             </linearGradient>
                         </defs>
                         <path d="M32 6L10 16v18c0 14 10 24 22 28 12-4 22-14 22-28V16L32 6z" fill="url(#shieldBg)" />
-                        <path d="M32 6L10 16v18c0 14 10 24 22 28 12-4 22-14 22-28V16L32 6z" stroke="url(#shieldEdge)" stroke-width="2" fill="none" />
-                        <path d="M26 32l5 5 11-12" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0px 2px 4px rgba(0,0,0,0.3));" />
+                        <path d="M32 6L10 16v18c0 14 10 24 22 28 12-4 22-14 22-28V16L32 6z" stroke="url(#shieldEdge)"
+                            stroke-width="2" fill="none" />
+                        <path d="M26 32l5 5 11-12" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"
+                            stroke-linejoin="round" style="filter:drop-shadow(0px 2px 4px rgba(0,0,0,0.3));" />
                     </svg>
                 </div>
                 <h2 id="cs_title"></h2>
@@ -4143,7 +4228,7 @@
         <div class="page" id="page-assessment">
             <div id="assessmentContent"></div>
         </div>
-        
+
         <!-- Global Smart Dashboard Overlay -->
         <div id="assOverlay" class="ass-overlay" onclick="if(event.target===this)closeAssOverlay()">
             <div class="ass-sheet">
@@ -4170,9 +4255,9 @@
             eta_minutes: 12, distance_km: null, occupancy_label: ''
         };
         function _haversineKm(lat1, lon1, lat2, lon2) {
-            const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
         function _buildUlmHospital() {
             const h = { ...ULM_HOSPITAL };
@@ -4263,18 +4348,6 @@
         // DEMO PATIENTS per language
         // ═══════════════════════════════════════════════════════════
         const DEMO_PATIENTS = {
-            tr: [
-                { id: 'DEMO-TR-001', name: 'Ahmet Yılmaz', detail: 'E · 61y · B+ · T2DM, HT' },
-                { id: 'DEMO-TR-002', name: 'Fatma Kaya', detail: 'K · 48y · A+ · Romatoid Artrit' },
-                { id: 'DEMO-TR-003', name: 'Mustafa Demir', detail: 'E · 76y · O+ · KAH post-KABG' },
-                { id: 'DEMO-TR-004', name: 'Zeynep Şahin', detail: 'K · 36y · AB+ · Epilepsi' },
-                { id: 'DEMO-TR-005', name: 'Mehmet Çelik', detail: 'E · 54y · A- · KOAH' },
-                { id: 'DEMO-TR-006', name: 'Ayşe Arslan', detail: 'K · 41y · B- · Hashimoto' },
-                { id: 'DEMO-TR-007', name: 'Ali Doğan', detail: 'E · 68y · O- · Prostat Ca post-op' },
-                { id: 'DEMO-TR-008', name: 'Elif Yıldız', detail: 'K · 24y · A+ · Demir eksikliği anemisi' },
-                { id: 'DEMO-TR-009', name: 'İbrahim Koç', detail: 'E · 82y · AB+ · Parkinson' },
-                { id: 'DEMO-TR-010', name: 'Hatice Öztürk', detail: 'K · 58y · O+ · Osteoporoz' },
-            ],
             de: [
                 { id: 'DEMO-DE-001', name: 'Klaus Müller', detail: 'M · 68y · A+ · KHK, Hypertonie' },
                 { id: 'DEMO-DE-002', name: 'Anna Schneider', detail: 'W · 41y · O+ · T1DM, Insulinpumpe' },
@@ -4298,6 +4371,18 @@
                 { id: 'DEMO-UK-008', name: 'Isabella Davies', detail: 'F · 43y · O+ · Migraine, Endometriosis' },
                 { id: 'DEMO-UK-009', name: 'Henry Moore', detail: 'M · 88y · A+ · Aortic Stenosis, AF' },
                 { id: 'DEMO-UK-010', name: 'Amelia Garcia', detail: 'F · 49y · AB- · SLE' },
+            ],
+            tr: [
+                { id: 'DEMO-TR-001', name: 'Ahmet Yılmaz', detail: 'E · 61y · B+ · T2DM, Hipertansiyon' },
+                { id: 'DEMO-TR-002', name: 'Fatma Kaya', detail: 'K · 47y · A+ · Romatoid Artrit' },
+                { id: 'DEMO-TR-003', name: 'Mustafa Demir', detail: 'E · 75y · O+ · İskemik Kalp Hastalığı' },
+                { id: 'DEMO-TR-004', name: 'Zeynep Şahin', detail: 'K · 36y · AB+ · Epilepsi' },
+                { id: 'DEMO-TR-005', name: 'Mehmet Çelik', detail: 'E · 54y · A- · KOAH, Sigara' },
+                { id: 'DEMO-TR-006', name: 'Ayşe Arslan', detail: 'K · 41y · B- · Hashimoto' },
+                { id: 'DEMO-TR-007', name: 'Ali Doğan', detail: 'E · 67y · O- · Prostat Kanseri' },
+                { id: 'DEMO-TR-008', name: 'Elif Yıldız', detail: 'K · 24y · A+ · Demir Eksikliği' },
+                { id: 'DEMO-TR-009', name: 'İbrahim Koç', detail: 'E · 82y · AB+ · Parkinson' },
+                { id: 'DEMO-TR-010', name: 'Hatice Öztürk', detail: 'K · 57y · O+ · Osteoporoz' },
             ],
         };
 
@@ -4610,6 +4695,8 @@
                 ass_share_btn: 'Yes — Notify Hospital & Get Directions',
                 ass_shared_msg: '🏥 Hospital notified at',
                 ass_shared_go: 'Please head to the hospital now.',
+                ass_loading: 'Fetching hospital info…',
+                ass_confirm_location_btn: 'Enable Location & Confirm',
                 ass_nav_btn: 'Open Navigation →',
                 ass_gps_title: 'Enable Live Tracking',
                 ass_gps_desc: 'Allow location access so the hospital can monitor your arrival in real time.',
@@ -4920,6 +5007,8 @@
                 ass_share_btn: 'Ja — Krankenhaus informieren & Route öffnen',
                 ass_shared_msg: '🏥 Krankenhaus informiert um',
                 ass_shared_go: 'Bitte begeben Sie sich jetzt ins Krankenhaus.',
+                ass_loading: 'Krankenhaus-Info wird geladen…',
+                ass_confirm_location_btn: 'Standort freigeben & Bestätigen',
                 ass_nav_btn: 'Navigation öffnen →',
                 ass_gps_title: 'Live-Tracking aktivieren',
                 ass_gps_desc: 'Erlauben Sie den Standortzugriff, damit das Krankenhaus Ihre Ankunft verfolgen kann.',
@@ -4975,58 +5064,48 @@
                 rs_dash_directive_navigate: 'Navigation öffnen',
                 rs_dash_directive_ambulance: 'Ambulanz unterwegs',
                 rs_dash_contact_notified: 'Kontaktperson benachrichtigt',
-                ass_insight_title: 'AiVoN Klinische Beurteilung',
-                rs_timeline_title: 'Live-Zeitstrahl',
-                rs_timeline_sent: 'Einschätzung an Krankenhaus gesendet',
-                rs_timeline_shared: 'Informationen und Standort geteilt',
+                rs_timeline_title: 'Live-Verlauf',
+                rs_timeline_sent: 'Bewertung an Krankenhaus gesendet',
+                rs_timeline_assigned: 'Arzt zugewiesen',
+                rs_timeline_action: 'Arztentscheidung',
+                rs_timeline_confirmed: 'Bewertung bestätigt',
+                rs_timeline_upgraded: 'Priorität erhöht',
+                rs_timeline_downgraded: 'Priorität gesenkt',
+                rs_timeline_adjusted: 'Priorität angepasst',
+                rs_timeline_shared: 'Ihre Daten und Ihr Standort wurden geteilt',
+                rs_timeline_track_btn: 'Live-Tracking',
                 rs_timeline_amb_req: 'Krankenwagen angefordert',
                 rs_timeline_amb_disp: 'Krankenwagen ist unterwegs',
-                rs_timeline_track_btn: 'Live-Verfolgung',
-                rs_timeline_assigned: 'Arzt zugewiesen',
-                rs_timeline_action: 'Ärztliche Maßnahme',
-                rs_timeline_triaged: 'Ärztliche Triage-Einschätzung',
-                rs_timeline_confirmed: 'Beurteilung bestätigt',
-                rs_timeline_upgraded: 'Triage-Level heraufgestuft',
-                rs_timeline_downgraded: 'Triage-Level herabgestuft',
-                rs_timeline_adjusted: 'Triage-Level angepasst',
-                rec_title: 'Empfehlung von ΛiVoN',
-                rec_l1: 'Ich teile Ihre Informationen mit dem nächsten Krankenhaus und fordere einen Krankenwagen an.',
-                rec_l2: 'Sie müssen dringend ins Krankenhaus. Wie möchten Sie reisen?',
-                rec_l3: 'Sie müssen dringend ins Krankenhaus. Ich teile Ihre Informationen und Ihren Standort zur Verfolgung mit dem nächsten Krankenhaus.',
-                rec_l4: 'Ihr Zustand scheint stabil zu sein, bitte vereinbaren Sie einen Termin bei Ihrem Hausarzt. Möchten Sie dennoch Ihre Informationen zur ärztlichen Überprüfung an das nächste Krankenhaus senden? Falls ein Arzt Ihren Fall als dringlicher einschätzt, werden Sie benachrichtigt.',
-                rec_l5: 'Ihr Zustand scheint stabil zu sein, bitte vereinbaren Sie einen Termin bei Ihrem Hausarzt.',
+                rec_l1: 'Ich teile Ihre Daten mit dem nächsten Krankenhaus und fordere einen Krankenwagen an.',
+                rec_l2: 'Sie müssen dringend ins Krankenhaus. Wie kommen Sie dorthin?',
                 rec_btn_confirm: 'BESTÄTIGEN',
                 rec_btn_ambulance: 'Krankenwagen',
-                rec_btn_self: 'Eigene Anreise',
-                rs_timeline_action: 'Ärztliche Maßnahme',
-                rs_timeline_triaged: 'Ärztliche Triage-Einschätzung',
-                rs_timeline_confirmed: 'Einschätzung bestätigt',
-                rs_timeline_upgraded: 'Priorität erhöht',
-                physician_decision_title: '👨‍⚕️ Arzt-Entscheidung',
-                physician_decision_confirmed: 'Ein Arzt hat Ihre Informationen überprüft und Ihre Priorität bestätigt',
-                physician_decision_upgraded: 'Ein Arzt hat Ihre Informationen überprüft und Ihre Priorität erhöht',
-                physician_decision_downgraded: 'Ein Arzt hat Ihre Informationen überprüft und Ihre Priorität herabgestuft',
-                physician_decision_adjusted: 'Ein Arzt hat Ihre Informationen überprüft und Ihre Priorität angepasst',
+                rec_btn_self: 'Selbst fahren',
+                physician_decision_title: '👨‍⚕️ Arztentscheidung',
+                physician_decision_confirmed: 'Ein Arzt hat Ihre Daten überprüft und Ihre Prioritätsstufe bestätigt',
+                physician_decision_upgraded: 'Ein Arzt hat Ihre Daten überprüft und Ihre Prioritätsstufe hochgestuft',
+                physician_decision_downgraded: 'Ein Arzt hat Ihre Daten überprüft und Ihre Prioritätsstufe herabgestuft',
+                physician_decision_adjusted: 'Ein Arzt hat Ihre Daten überprüft und Ihre Prioritätsstufe angepasst',
             },
             tr: {
                 topbarLang: 'TR',
-                wl_whatLabel: 'VitalNavAI nedir?',
-                wl_whatDesc: 'Tıbbi bir acil durumda <strong>VitalNavAI</strong> yapay zekayı şunlar için kullanır:',
-                wl_b1: 'Sizi ve hastaneyi durumunuz hakkında <strong>varmadan önce</strong> bilgilendirmek',
-                wl_b2: 'Acil servisteki <strong>bekleme sürenizi</strong> en aza indirmek',
-                wl_b3: 'Sizi <strong>en uygun yakın hastaneye</strong> yönlendirmek',
-                wl_howLabel: 'Nasıl kullanılır',
-                wl_s1: '<strong style="color:var(--navy)">🎤 Konuşun</strong> — belirtilerinizi anlatın, gerekirse fotoğraf ekleyin.',
-                wl_s2: '<strong style="color:var(--navy)">❓ Sorular</strong> — AI size kısa, kişiselleştirilmiş sorular sorar.',
-                wl_s3: '<strong style="color:var(--navy)">🏥 Hastane</strong> — en yakın hastaneyi seçin; anında bildirilirler.',
-                wl_demo: "Yalnızca demo. Gerçek acillerde 112'yi arayın.",
-                wl_hnLabel: 'Sağlık kaydınızı seçin', wl_hnReq: 'ZORUNLU',
-                wl_hnHintText: 'Tıbbi geçmişiniz bu ziyaretle ilişkilendirilecek',
-                btnStart: 'Başlayın →',
-                inp_title: 'Rahatsızlığınızı anlatın',
-                inp_sub: 'Sesli olarak anlatın veya rahatsızlığınızı seçin.',
-                inp_orSelect: 'Veya rahatsızlığınızı seçin',
-                micStatus: 'Dokunun ve Konuşun',
+                wl_whatLabel: 'VitalNavAI Nedir?',
+                wl_whatDesc: 'Tıbbi bir acil durumla karşılaştığınızda VitalNavAI yapay zekayı kullanarak:',
+                wl_b1: 'Hastaneye <strong>varmadan önce</strong> durumunuz hakkında sizi ve hastaneyi bilgilendirir',
+                wl_b2: 'Acil servisteki <strong>bekleme sürenizi</strong> en aza indirir',
+                wl_b3: 'Sizi yakınınızdaki <strong>en uygun hastaneye</strong> yönlendirir',
+                wl_howLabel: 'Nasıl kullanılır?',
+                wl_s1: '<strong style="color:var(--navy)">🎤 Konuşun</strong> — belirtilerinizi kendi kelimelerinizle anlatın, isteğe bağlı olarak fotoğraf ekleyin.',
+                wl_s2: '<strong style="color:var(--navy)">❓ Sorular</strong> — Yapay zeka size özel kısa takip soruları sorar.',
+                wl_s3: '<strong style="color:var(--navy)">🏥 Hastane</strong> — en iyi yakın hastaneyi seçin; onları anında bilgilendirelim.',
+                wl_demo: 'Sadece demo. Gerçek acil durumlar için 112\'yi arayın.',
+                wl_hnLabel: 'Demo için sağlık numaranızı seçin', wl_hnReq: 'ZORUNLU',
+                wl_hnHintText: 'Tıbbi geçmişiniz bu ziyaretle ilişkilendirilecektir',
+                btnStart: 'Başlat →',
+                inp_title: 'Belirtilerinizi anlatın',
+                inp_sub: 'Sesinizi kullanın veya aşağıdan belirtileri seçin.',
+                inp_orSelect: 'Veya belirti seçin',
+                micStatus: 'Konuşmak için Dokun',
                 sym_chest_pain: 'Göğüs Ağrısı',
                 sym_shortness_breath: 'Nefes Darlığı',
                 sym_headache: 'Şiddetli Baş Ağrısı',
@@ -5034,289 +5113,298 @@
                 sym_dizziness: 'Baş Dönmesi',
                 sym_abdominal_pain: 'Karın Ağrısı',
                 sym_fainting: 'Bayılma',
-                sym_severe_bleeding: 'Durdurulamayan Kanama',
+                sym_severe_bleeding: 'Şiddetli/Durdurulamayan Kanama',
                 sym_allergic_reaction: 'Şiddetli Alerjik Reaksiyon',
-                sym_vomiting_diarrhea: 'Sürekli Kusma veya İshal',
-                sym_numbness_weakness: 'Uyuşma veya Güçsüzlük',
-                sym_altered_consciousness: 'Bilinç Değişikliği',
+                sym_vomiting_diarrhea: 'Geçmeyen Kusma veya İshal',
+                sym_numbness_weakness: 'Vücutta Uyuşma veya Güçsüzlük',
+                sym_altered_consciousness: 'Bilinç Bulanıklığı',
                 micLabelIdle: 'Konuşmak için dokunun',
-                micSubIdle: 'Belirtilerinizi anlatın',
+                micSubIdle: 'Belirtilerinizi bize anlatın',
                 micLabelRec: 'Dinleniyor...',
                 micSubRec: 'Durdurmak için dokunun',
                 micLabelDone: 'Kaydedildi',
-                micSubDone: 'Yeniden kaydetmek için dokunun',
-                transcriptLang: 'Ses Metne Dönüştürme',
+                micSubDone: 'Tekrar kaydetmek için dokunun',
+                transcriptLang: 'YZ Transkripti',
                 inputSpinnerText: 'Ses işleniyor...',
                 inp_continueTxt: 'Analizi Başlat',
-                inp_examples: ['Göğüs ağrısı', 'Nefes darlığı', 'Şiddetli baş ağrısı', 'Yüksek ateş', 'Baş dönmesi', 'Karın ağrısı', 'Bulantı / kusma', 'Bacak şişliği', 'Sırt ağrısı', 'Bayılma', 'Çarpıntı', 'Alerjik reaksiyon'],
+                inp_examples: ['Göğüs ağrısı', 'Nefes darlığı', 'Şiddetli baş ağrısı', 'Yüksek ateş', 'Baş dönmesi', 'Karın ağrısı', 'Bulantı / kusma', 'Bacak şişmesi', 'Sırt ağrısı', 'Bayılma', 'Çarpıntı', 'Alerjik reaksiyon'],
                 ph_title: 'Fotoğraf veya video ekleyin',
-                ph_sub: '<span style="color: var(--primary); font-weight: 900; text-transform: uppercase; font-size: 0.875rem; letter-spacing: 1px; background: rgba(10,132,255,0.1); padding: 4px 10px; border-radius: 8px;">İsteğe Bağlı</span><br><span style="font-size: 1.05rem; color: var(--text-2); line-height: 1.5; display: block; margin-top: 12px;">Görünür bir yara, döküntü, şişlik varsa veya kısa bir video durumunuzu daha iyi açıklayacaksa lütfen yükleyin. Bu, sağlık ekibinin siz gelmeden önce hazırlık yapmasına yardımcı olur.</span>',
+                ph_sub: '<span style="color: var(--primary); font-weight: 900; text-transform: uppercase; font-size: 0.875rem; letter-spacing: 1px; background: rgba(10,132,255,0.1); padding: 4px 10px; border-radius: 8px;">İsteğe bağlı</span><br><span style="font-size: 1.05rem; color: var(--text-2); line-height: 1.5; display: block; margin-top: 12px;">Görünür bir yaranız, döküntünüz, şişliğiniz varsa veya kısa bir video klip durumunuzu açıklamaya yardımcı olabilirse lütfen yükleyin. Bu, tıbbi ekibin siz gelmeden önce hazırlanmasına yardımcı olur.</span>',
                 ph_continueTxt: 'Sorulara Devam Et',
-                ph_addPhoto: 'Fotoğraf', ph_addVideo: 'Video', ph_skip: 'Atla, ekleyecek fotoğrafım yok →',
-                ql_topBanner: 'Durumunuzu doğru değerlendirebilmek için birkaç kısa soru sorulacak.',
-                questionsIntro: 'AI Emergency Assistant\'ınız <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>, sizin için kişiselleştirilmiş sorular hazırlıyor…',
+                ph_addPhoto: 'Fotoğraf', ph_addVideo: 'Video', ph_skip: 'Atla, fotoğraf yok →',
+                ql_topBanner: 'Durumunuzu doğru değerlendirmek için lütfen birkaç kısa soruyu yanıtlayın.',
+                questionsIntro: 'YZ Acil Durum Asistanınız <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> size özel sorular oluşturuyor…',
                 questionsSpinnerText: 'Sorular oluşturuluyor…',
-                aiMode_real: '🤖 Yapay zeka soruları', aiMode_mock: '⚠️ Demo modu — YZ çevrimdışı',
-                fq_onset: 'Şikayetleriniz ne zaman başladı?',
-                fq_onset_now: 'Az önce (< 15 dk)', fq_onset_1h: 'Son bir saat içinde', fq_onset_6h: '1–6 saat önce', fq_onset_24h: '6–24 saat önce', fq_onset_days: 'Bir günden fazla önce',
-                fq_pain_scale: 'Ağrınızı 1-10 skalasında nasıl değerlendirirsiniz?',
-                fq_breathing: 'Şu anda nefes almakta güçlük çekiyor musunuz?', fq_fever: 'Yaklaşık ateşiniz nedir?',
-                fq_nausea: 'Bulantı veya kusma yaşıyor musunuz?', fq_conditions: 'Bilinen bir kronik hastalığınız var mı?',
+                aiMode_real: '🤖 YZ tarafından oluşturulan sorular', aiMode_mock: '⚠️ Demo modu — YZ çevrimdışı',
+                fq_onset: 'Belirtileriniz ne zaman başladı?',
+                fq_onset_now: 'Az önce (< 15 dk)', fq_onset_1h: 'Son bir saat içinde', fq_onset_6h: '1–6 saat önce', fq_onset_24h: '6–24 saat önce', fq_onset_days: 'Bir günden fazla zaman önce',
+                fq_pain_scale: 'Ağrınızı 1–10 arası nasıl derecelendirirsiniz?',
+                fq_breathing: 'Şu anda nefes almakta zorlanıyor musunuz?',
+                fq_fever: 'Yaklaşık ateşiniz nedir?',
+                fq_nausea: 'Bulantı veya kusma yaşıyor musunuz?',
+                fq_conditions: 'Bilinen bir tıbbi durumunuz var mı?',
                 fq_cond_none: 'Yok', fq_cond_heart: 'Kalp hastalığı', fq_cond_diab: 'Diyabet', fq_cond_bp: 'Yüksek tansiyon', fq_cond_other: 'Diğer',
-                fq_medications: 'Şu anda herhangi bir ilaç kullanıyor musunuz?', fq_allergies: 'Bilinen ilaç alerjiniz var mı?',
+                fq_medications: 'Şu anda herhangi bir ilaç kullanıyor musunuz?',
+                fq_allergies: 'Bilinen bir ilaç alerjiniz var mı?',
                 fq_yes: 'Evet', fq_no: 'Hayır', fq_unsure: 'Emin değilim',
-                q_back: 'Geri', q_next: 'İleri', q_of: '/', q_done: 'Bitti →',
-                q_skip_assess: 'Durumum çok kritik — doğrudan değerlendirmeye geç',
-                cs_title: 'Son adım', cs_sub: '',
+                q_back: 'Geri', q_next: 'İleri', q_of: '/', q_done: 'Tamamla →',
+                q_skip_assess: 'Durumum kritik — değerlendirmeye atla',
+                cs_title: 'Son bir adım', cs_sub: '',
                 cs_consentLabel: 'Veri paylaşım onayı',
-                cs_consentDesc: 'Hastanenin siz gelmeden hazırlık yapabilmesi ve zaman kaybının önlenmesi için aşağıdaki bilgilerin seçtiğiniz hastane ile paylaşılmasına onay veriyor musunuz?',
-                cs_line1: 'Semptom açıklaması ve soru yanıtları', cs_photoLine: 'Medya: {n} dosya eklendi',
-                cs_line3: 'Yapay zeka triaj değerlendirmesi ve risk düzeyi', cs_line4: 'Gerçek zamanlı konum (canlı takip)',
-                cs_yes: '✅ Evet — bilgilerimi paylaş', cs_no: '❌ Hayır — paylaşma',
+                cs_consentDesc: 'Hastanenin siz varmadan hazırlanmasını sağlamak ve gecikmeleri önlemek için aşağıdaki bilgilerin seçilen hastaneyle paylaşılmasına izin veriyor musunuz?',
+                cs_line1: 'Belirti açıklaması ve Soru-Cevap yanıtları',
+                cs_photoLine: 'Medya: {n} dosya eklendi',
+                cs_line3: 'YZ triaj değerlendirmesi ve risk seviyesi',
+                cs_line4: 'Gerçek zamanlı konum (canlı takip)',
+                cs_yes: '✅ Evet — bilgilerimi paylaş', cs_no: '❌ Hayır — verilerimi paylaşma',
                 consentWarning: 'Devam etmek için onay vermelisiniz.',
-                assessSpinnerText: 'Semptomlarınız yapay zeka ile analiz ediliyor…', cs_btnTxt: 'Değerlendirmemi al →',
-                cs_secureText: 'Verileriniz güvenli bir şekilde işlenmektedir.',
-                gps_waitTitle: 'Konumunuz algılanıyor…', gps_waitSub: "Tarayıcınız sorduğunda <strong>İzin Ver</strong>'e dokunun.",
-                gps_deniedTitle: '🔒 Konum erişimi gerekli', gps_deniedDesc: 'En yakın hastaneyi bulmak için konumunuza ihtiyacımız var.',
-                gps_deniedSteps: "① Adres çubuğundaki 🔒 simgesine dokunun<br>② Site ayarları → Konum → <strong>İzin Ver</strong><br>③ Geri dönün ve Yeniden Dene'ye dokunun",
-                gps_retryBtn: '🔄 Yeniden dene',
+                assessSpinnerText: 'Belirtileriniz YZ ile analiz ediliyor…',
+                cs_btnTxt: 'Değerlendirmemi al →',
+                cs_secureText: 'Verileriniz güvenli bir şekilde işlenir.',
+                gps_waitTitle: 'Konumunuz algılanıyor…',
+                gps_waitSub: 'Tarayıcınız sorduğunda <strong>İzin Ver</strong>\'e dokunun.',
+                gps_deniedTitle: '🔒 Konum erişimi gerekli',
+                gps_deniedDesc: 'En yakın hastaneyi bulmak için konumunuza ihtiyacımız var.',
+                gps_deniedSteps: '① Tarayıcı çubuğundaki 🔒 kilide dokunun<br>② Site ayarları → Konum → <strong>İzin Ver</strong><br>③ Geri gelip Tekrar Dene\'ye dokunun',
+                gps_retryBtn: '🔄 Tekrar Dene',
                 gpsDetecting: 'Konum algılanıyor…', gpsOk: 'Konum doğrulandı', gpsDenied: 'Konum reddedildi',
-                tr_nearestLabel: 'Mevcut <strong>trafik</strong> durumu ve hastane acillerinin <strong>yoğunluk</strong> durumuna göre tavsiye edilen hastaneler',
-                tr_adviceLabel: 'Varmadan önce', tr_fastest: 'En iyi seçim',
-                tr_hospSpinner: 'En uygun hastaneler aranıyor…', tr_noHosp: 'Yakında hastane bulunamadı.', tr_notifying: 'Hastane bilgilendiriliyor…',
-                tr_imm_title: '🔴 KRİTİK ACİL DURUM', tr_imm_sub: 'Anında müdahale gerekiyor — ambulans çağrıldı',
-                tr_emg_title: '🚨 Hemen acile gidin', tr_emg_sub: 'Semptomlarınız acil bakım gerektiriyor — lütfen hemen yola çıkın',
-                tr_urg_title: '⚠️ En kısa sürede hastaneye gitmelisiniz', tr_urg_sub: 'Lütfen en kısa sürede bir hastane bulun',
+                tr_nearestLabel: 'Güncel trafik ve hastane doluluğu — önerilen hastanelerden birini seçin',
+                tr_adviceLabel: 'Varmadan önce', tr_fastest: 'En iyi seçenek',
+                tr_hospSpinner: 'En iyi hastaneler bulunuyor…', tr_noHosp: 'Yakınlarda hastane bulunamadı.', tr_notifying: 'Hastane bilgilendiriliyor…',
+                tr_imm_title: '🔴 KRİTİK ACİL DURUM', tr_imm_sub: 'Acil müdahale gerekli — ambulans sevk edildi',
+                tr_emg_title: '🚨 Derhal Acil Servise Gidin', tr_emg_sub: 'Belirtileriniz acil bakım gerektiriyor — lütfen şimdi yola çıkın',
+                tr_urg_title: '⚠️ Yakında hastane bakımı almalısınız', tr_urg_sub: 'Lütfen en kısa sürede bir hastaneye gidin',
                 tr_std_title: '✅ Standart Öncelik', tr_std_sub: 'Aile hekimi veya klinik ziyareti önerilir',
-                tr_nurg_title: 'ℹ️ Acil Değil', tr_nurg_sub: 'Evde bakım ve rutin randevu önerilir',
-                tr_rtn_title: 'ℹ️ Bugün bir doktora görünün', tr_rtn_sub: 'Semptomlarınız hemen hayati tehlike oluşturmuyor',
-                tr_orBelow: '— veya aşağıdan hastane seçin —', tr_doLabel: '✅ YAPILACAKLAR:', tr_dontLabel: '❌ YAPILMAYACAKLAR:',
-                rs_regLabel: 'Kayıt numaranız', rs_regHint: 'Varışta hastane resepsiyonunda gösterin.',
-                rs_notified_emg: '🚨 Hastane Bilgilendirildi — hemen yola çıkın!', rs_notified_sub_emg: 'Sağlık ekibi varışınıza hazırlanıyor.',
-                rs_notified_urg: '✅ Hastane Bilgilendirildi', rs_notified_sub_urg: 'Ekip bilgilendirildi. Aşağıdaki talimatları izleyin.',
-                rs_notified_rtn: '✅ Bilgileriniz Gönderildi', rs_notified_sub_rtn: 'Ayrılmadan önce lütfen talimatları okuyun.',
-                rs_trackTitle: 'Yolculuk sırasında konumu açık bırakın', rs_trackSub: 'Bakım ekibiniz varışınızı gerçek zamanlı takip eder.',
+                tr_nurg_title: 'ℹ️ Acil Değil', tr_nurg_sub: 'Kendi kendine bakım ve rutin randevu önerilir',
+                tr_rtn_title: 'ℹ️ Bugün bir doktora görünmelisiniz', tr_rtn_sub: 'Belirtileriniz anlık hayati tehlike taşımıyor',
+                tr_orBelow: '— veya aşağıdan bir hastane seçin —',
+                tr_doLabel: '✅ YAPIN:', tr_dontLabel: "❌ YAPMAYIN:",
+                rs_regLabel: 'Kayıt numaranız', rs_regHint: 'Vardığınızda hastane resepsiyonunda bunu gösterin.',
+                rs_notified_emg: '🚨 Hastane Bilgilendirildi — şimdi gidin!', rs_notified_sub_emg: 'Tıbbi ekip varışınız için hazırlanıyor.',
+                rs_notified_urg: '✅ Hastane Bilgilendirildi', rs_notified_sub_urg: 'Ekip bilgilerine sahip. Aşağıdaki talimatları izleyin.',
+                rs_notified_rtn: '✅ Bilgi Gönderildi', rs_notified_sub_rtn: 'Lütfen yola çıkmadan önce talimatları okuyun.',
+                rs_trackTitle: 'Yolculuk sırasında konumu açık tutun', rs_trackSub: 'Bakım ekibiniz varışınızı gerçek zamanlı takip eder.',
                 rs_newBtn: 'Yeni değerlendirme',
-                rs_passFooter: 'Varışta bu kartı görevliye gösterin veya girişteki cihaza QR kodunuzu okutun.',
-                rs_tab_status: 'Giriş İzni',
+                rs_passFooter: 'Bu geçiş kartını triaj hemşiresine gösterin veya vardığınızda hastane girişindeki QR kodunuzu taratın.',
+                rs_tab_status: 'Giriş Onayı',
                 rs_tab_instructions: 'Talimatlar',
-                rs_tab_contact: 'Acil Kişisi',
-                rs_openNav: 'Navigasyonu Aç', rs_liveTrackingTitle: 'CANLI TAKİP AKTİF', rs_liveTrackingSub: 'Sağlık ekibi varışınızı GPS ile izliyor.', rs_passFooter: 'Varışta bu kartı görevliye gösterin veya girişteki cihaza QR kodunuzu okutun.',
-                wl_langHeroSub: 'AI Emergency Assistant — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Geri', ph_backBtn: 'Geri', gps_privacyText: 'Konumunuz yalnızca en uygun hastaneyi bulmak için kullanılmaktadır. Kimliğiniz gizli tutulmaktadır.', rs_contactTitle: 'Bu bilgiler kayıtlı ACİL kişinize gönderilecek', rs_contactDesc: 'Acil kişinize şunlar gönderilecek:', rs_contactItem1: 'Rahatsızlığınızın özeti', rs_contactItem2: 'Atanan hastane adı ve adresi', rs_contactItem3: 'Mevcut konumunuz', rs_contactItem4: 'Hastane kayıt numarası', rs_contactSendBtn: 'Bildirimi gönder', rs_demo: "⚠️ Yalnızca demo. Gerçek acillerde 112'yi arayın.",
-                aiChecking: 'Yapay zeka durumu kontrol ediliyor…', aiConnected: '🤖 Yapay zeka bağlı — gerçek zamanlı analiz', aiDemo: '⚙️ Demo modu — YZ yapılandırılmamış',
-                adv_call112: "Hemen 112'yi arayın veya birine aratın", adv_sit_still: 'Oturun ya da uzanın ve hareket etmeyin', adv_stay_calm: 'Sakin olun ve yavaş nefes alın', adv_rest: 'Dinlenin ve fiziksel efordan kaçının', adv_someone_with_you: 'Hastaneye birinin eşliğinde gidin', adv_bring_meds: 'Kullandığınız tüm ilaçları yanınıza alın', adv_bring_id: 'Kimliğinizi ve sigorta kartınızı getirin', adv_no_drive: 'Hastaneye KENDİNİZ araba kullanarak gitmeyin', adv_no_eat: 'Muayene edilene kadar hiçbir şey yemeyin ya da içmeyin', adv_chest_loose: 'Göğsünüzün etrafındaki dar giysileri gevşetin', adv_chest_no_stress: 'Fiziksel veya duygusal stresten kaçının', adv_bleed_pressure: 'Temiz bir bezle yaraya sıkıca bastırın', adv_bleed_no_remove: 'Yaraya saplanmış bir nesneyi çıkarmayın', adv_breath_upright: 'Dik oturun — yatmayın', adv_breath_no_lie: 'Düz yatmayın — solunumu kötüleştirir', adv_head_dark: 'Mümkünse sakin, karanlık bir odada dinlenin', adv_head_no_screen: 'Ekranlardan, parlak ışıktan ve gürültüden kaçının', adv_proceed_er: 'En kısa sürede acil servise gidin',
+                rs_tab_contact: 'Acil Durum Kişisi',
+                rs_openNav: 'Navigasyonu Aç', rs_liveTrackingTitle: 'CANLI TAKİP AKTİF', rs_liveTrackingSub: 'Tıbbi ekip varış için GPS\'inizi izliyor.', rs_passFooter: 'Vardığınızda bu kartı derhal triaj hemşiresine gösterin.',
+                wl_langHeroSub: 'YZ Acil Durum Asistanı — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Geri', ph_backBtn: 'Geri', gps_privacyText: 'Konumunuz sadece en uygun hastaneyi bulmak için kullanılır. Kimliğiniz gizli tutulur.', rs_contactTitle: 'İlgili Kişiyi Bilgilendir', rs_contactDesc: 'Acil durum kişinize şunlar gönderilecek:', rs_contactItem1: 'Durumunuzun özeti', rs_contactItem2: 'Atanan hastane adı ve adresi', rs_contactItem3: 'Mevcut konumunuz', rs_contactItem4: 'Hastane kayıt numarası', rs_contactSendBtn: 'Şimdi bildirim gönder', rs_demo: '⚠️ Sadece demo. Gerçek acil durumlar için 112\'yi arayın.', aiChecking: 'YZ kontrol ediliyor…', aiConnected: '🤖 YZ bağlı — gerçek zamanlı analiz', aiDemo: '⚙️ Demo modu — YZ yapılandırılmamış',
+                adv_call112: 'Derhal 112\'yi arayın veya birine arattırın', adv_sit_still: 'Oturun veya uzanın ve hareket etmeyin', adv_stay_calm: 'Sakin kalın ve yavaş nefes alın', adv_rest: 'Dinlenin ve fiziksel efordan kaçının', adv_someone_with_you: 'Hastaneye birinin size eşlik etmesini sağlayın', adv_bring_meds: 'Mevcut tüm ilaçlarınızı yanınızda getirin', adv_bring_id: 'Kimliğinizi ve sigorta kartınızı yanınızda getirin', adv_no_drive: 'Hastaneye kendiniz ARAÇ SÜRMEYİN', adv_no_eat: 'Muayene edilene kadar hiçbir şey yemeyin veya içmeyin', adv_chest_loose: 'Göğüs bölgenizdeki dar giysileri gevşetin', adv_chest_no_stress: 'Fiziksel veya duygusal stresten kaçının', adv_bleed_pressure: 'Temiz bir bezle yaraya sertçe bastırın', adv_bleed_no_remove: 'Yaraya saplanmış hiçbir nesneyi çıkarmayın', adv_breath_upright: 'Dik oturun — düz yatmayın', adv_breath_no_lie: 'Düz yatmayın — bu nefes almayı zorlaştırır', adv_head_dark: 'Mümkünse sessiz, karanlık bir odada dinlenin', adv_head_no_screen: 'Ekranlardan, parlak ışıklardan ve gürültüden kaçının', adv_proceed_er: 'En kısa sürede acil servise gidin',
                 hnPlaceholder: 'Sağlık kaydınızı seçin…',
                 tr_aiVoNOverview: '<span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> Değerlendirmesi',
                 tr_aiRoutingTitle: '<span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> Akıllı Yönlendirme',
-                tr_aiRoutingSub: '<span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>, anlık trafik ve acil yoğunluğuna göre en uygun hastaneyi belirler; klinik özetinizi önceden paylaşır — sağlık ekibi siz gelmeden hazır olur.',
+                tr_aiRoutingSub: '<span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> canlı trafik ve kapasiteye göre en iyi acil servisi seçer — ve siz varmadan ekibin hazır olması için klinik özetinizi önceden paylaşır.',
                 tr_liveTraffic: 'Trafik',
-                tr_erCapacity: 'Acil Yoğunluğu',
-                tr_selectHospital: 'Önerilen Hastanelerden Birini Seçin',
-                tr_traffic_clear: 'Açık', tr_traffic_medium: 'Yoğun', tr_traffic_heavy: 'Çok Yoğun',
-                tr_er_low: 'Az', tr_er_medium: 'Orta', tr_er_high: 'Fazla', tr_er_full: 'Dolu',
-                tr_why_aivon_pick: '✦ ΛiVoN Seçimi', tr_why_closest: 'En Yakın Acil', tr_why_fastest_eta: 'En Hızlı Güzergah', tr_why_lowest_wait: 'En Az Bekleme',
-                wl_system_notice: 'Bu sistem tıbbi öncelikleri belirlemek amacıyla geliştirilmiştir.',
-                cs_data_secure: 'Verileriniz güvenli bir şekilde işlenmektedir.',
+                tr_erCapacity: 'Acil Servis Yoğunluğu',
+                tr_selectHospital: 'Önerilen Bir Hastane Seçin',
+                tr_traffic_clear: 'Açık', tr_traffic_medium: 'Orta', tr_traffic_heavy: 'Yoğun',
+                tr_er_low: 'Düşük', tr_er_medium: 'Orta', tr_er_high: 'Yüksek', tr_er_full: 'Dolu',
+                tr_why_aivon_pick: '✦ ΛiVoN Seçimi', tr_why_closest: 'En Yakın Acil Servis', tr_why_fastest_eta: 'En Hızlı Rota', tr_why_lowest_wait: 'En Kısa Bekleme',
+                wl_system_notice: 'Bu sistem tıbbi öncelikleri belirlemek için geliştirilmiştir.',
+                cs_data_secure: 'Verileriniz güvenli bir şekilde işlenir.',
                 rs_patientId: 'Hasta Kimlik Numarası',
                 rs_checkinAuth: 'GİRİŞ YETKİSİ',
-                ql_step1: 'Semptomlar Analiz Edildi',
-                ql_step2: 'Tıbbi Veriler İşleniyor',
+                ql_step1: 'Belirtiler Analiz Edildi',
+                ql_step2: 'Tıbbi Bağlam İşleniyor',
                 questionsSpinnerText: 'Sorular oluşturuluyor...',
-                cs_detailsToggleLabel: 'Neler paylaşılıyor',
+                cs_detailsToggleLabel: 'Nelerin paylaşıldığını görün',
                 cs_agreeText: 'Verilerimin hastaneyle paylaşılmasını onaylıyorum.',
                 cs_submitLabel: 'Onayla ve Devam Et',
                 an_title: 'Veriler Analiz Ediliyor...',
-                an_sub: 'AI Emergency Assistant\'ınız <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>, tıbbi profilinizi değerlendiriyor ve tavsiyelerini hazırlıyor.',
-                an_step1: 'Veriler şifrelendi ve güvende',
-                an_step2: 'Aciliyet seviyesi hesaplanıyor...',
-                transcript_approve_hint: 'Bunu mu dediniz?',
+                an_sub: 'YZ Acil Durum Asistanınız <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> tıbbi profilinizi değerlendiriyor ve öneriler hazırlıyor.',
+                an_step1: 'Veriler güvende ve şifrelenmiş',
+                an_step2: 'Triaj seviyesi hesaplanıyor...',
+                transcript_approve_hint: 'Söylediğiniz bu mu?',
                 transcript_approve: 'Bunu kullan',
-                transcript_rerecord: 'Yeniden kaydet',
-                amb_header_imm: '🚨 KRİTİK ACİL — Ambulans talep edildi',
-                amb_nearest_er: 'En Uygun Acil Servisi',
-                amb_header_emg: '⚠️ ACİL — Ambulans yollandı',
-                amb_do_not_move: 'Anlık tehlikede değilseniz HAREKET ETMEYİN.',
+                transcript_rerecord: 'Tekrar kaydet',
+                amb_header_imm: '🚨 KRİTİK ACİL DURUM — Ambulans Talep Edildi',
+                amb_nearest_er: 'Acil Servis',
+                amb_header_emg: '⚠️ ACİL DURUM — Ambulans sevk edildi',
+                amb_do_not_move: 'Hayati bir tehlike altında olmadığınız sürece hareket ETMEYİN.',
                 amb_en_route: 'Ambulans Yolda',
-                amb_eta_label: 'Ambulans size geliyor',
-                amb_hosp_eta_label: 'Tahmini hastaneye varış',
-                amb_dispatched: 'Yollandı',
-                amb_arriving: 'Geliyor',
-                amb_while_wait: '📋 Beklerken yapılacaklar',
-                amb_wait1: 'Sakin olun ve bulunduğunuz yerde kalın',
-                amb_wait2: 'Telefonunuzu yakında ve şarjlı tutun',
-                amb_wait3: 'Mümkünse kapıyı açın veya kilidi açın',
+                amb_eta_label: 'Ambulansın varış süresi',
+                amb_hosp_eta_label: 'Tahmini hastane varışı',
+                amb_dispatched: 'Sevk Edildi',
+                amb_arriving: 'Varıyor',
+                amb_while_wait: '📋 Beklerken',
+                amb_wait1: 'Sakin kalın ve olduğunuz yerde kalın',
+                amb_wait2: 'Telefonunuzu yakınınızda ve şarjlı tutun',
+                amb_wait3: 'Mümkünse kapıyı kilitlemeyin veya açın',
                 amb_wait4: 'Erişebiliyorsanız ilaçlarınızı toplayın',
                 amb_arrived_msg: '🚑 Ambulans konumunuza ulaştı!',
-                amb_arrived_sub: 'Lütfen sağlık ekibinin talimatlarını izleyin.',
-                amb_arriving_now: 'Şimdi geliyor!',
+                amb_arrived_sub: 'Lütfen sağlık görevlilerinin talimatlarını izleyin.',
+                amb_arriving_now: 'Şimdi varıyor!',
                 amb_track_title: '🛰️ Canlı Takip',
                 amb_track_sim: 'Simülasyon',
                 amb_track_you: 'Siz',
                 amb_track_hospital: 'Hastane',
                 amb_aivon_title: 'AiVoN Değerlendirmesi',
-                amb_aivon_do: 'Yapılacaklar',
-                amb_aivon_dont: 'Yapılmayacaklar',
+                amb_aivon_do: 'Ne yapmalı',
+                amb_aivon_dont: 'Ne yapMAMALI',
                 amb_map_title: '🗺️ Canlı Harita',
-                amb_modal_sub: 'Ambulans ekibi yola çıktı ve size doğru geliyor.',
+                amb_modal_sub: 'Ambulans ekibi yolda ve size geliyor.',
                 amb_modal_eta_label: 'Tahmini Varış',
                 time_unit_min: 'dk',
-                emg_header: '⚠️ ACİL',
-                emg_header_sub: 'Acil tıbbi yardıma ihtiyacınız var.',
+                emg_header: '⚠️ ACİL DURUM',
+                emg_header_sub: 'Derhal tıbbi müdahale almanız gerekiyor.',
                 emg_transport_q: 'Hastaneye nasıl gideceksiniz?',
-                emg_transport_hint: 'Zaman kritik. Şu anda mevcut en hızlı seçeneği seçin.',
+                emg_transport_hint: 'Zaman kritiktir. Lütfen şu anda sizin için en hızlı seçeneği belirleyin.',
                 emg_self_title: 'Evet, gelebilirim',
                 emg_self_sub: 'Biri beni hastaneye götürecek',
                 emg_amb_title: 'Hayır, ambulans gönderin',
-                emg_amb_sub: 'Tek başıma güvenli şekilde seyahat edemem',
+                emg_amb_sub: 'Kendi başıma güvenle seyahat edemem',
                 phys_review_active: '🔁 Uzman İncelemesi Aktif',
-                phys_review_sub: 'Bir doktor vakanızı inceliyor ve değerlendirmenizi kısa süre içinde onaylayacak veya güncelleyecek.',
-                phys_approved_msg: 'Bir doktor değerlendirmenizi inceledi ve onayladı:',
-                phys_upgraded_msg: 'ÖNEMLİ: Bir acil doktoru değerlendirmenizi yükseltti:',
-                phys_adjusted_msg: 'Bir doktor değerlendirmenizi güncelledi:',
+                phys_review_sub: 'Bir doktor vakanızı inceliyor ve kısa süre içinde değerlendirmenizi onaylayacak veya ayarlayacak.',
+                phys_approved_msg: 'Bir doktor değerlendirmenizi inceledi ve şu şekilde onayladı:',
+                phys_upgraded_msg: 'ÖNEMLİ: Bir acil servis doktoru önceliğinizi şu seviyeye yükseltti:',
+                phys_adjusted_msg: 'Bir doktor değerlendirmenizi şu şekilde ayarladı:',
                 phys_note_label: 'Doktor Notu',
                 phys_action_required: 'Eylem Gerekli',
-                phys_btn_immediate: '🚨 Acil Talimatları Göster',
-                phys_btn_emergency: '⚠️ Acil Seçeneklerini Göster',
+                phys_btn_immediate: '🚨 Acil Durum Talimatlarını Göster',
+                phys_btn_emergency: '⚠️ Acil Durum Seçeneklerini Göster',
                 phys_btn_urgent: '⚡ Acil Servis Bul',
                 doc_assigned_notif: 'size atandı',
                 reply_to_doctor: '💬 Doktora Yanıt Ver',
                 reply_placeholder: 'Mesajınızı yazın…',
-                reply_send: 'Gönder',
-                reply_sent: '✅ Mesajınız doktora iletildi',
-                std_header_title: '✅ Standart Öncelik Değerlendirmesi',
-                std_header_sub: 'Durumunuz değerlendirildi. Lütfen yakın zamanda bir kliniğe veya doktora başvurun.',
+                reply_send: 'Yanıtı Gönder',
+                reply_sent: '✅ Mesaj doktora gönderildi',
+                std_header_title: '✅ Standart Öncelikli Değerlendirme',
+                std_header_sub: 'Durumunuz değerlendirildi. Lütfen yakında bir klinik veya aile hekimini ziyaret edin.',
                 std_next_title: 'Bundan sonra ne yapmalısınız',
-                std_next_desc: 'Lütfen en kısa sürede aile hekiminizden randevu alın. Değerlendirmeniz uzman doktor incelemesi için en yakın acil servise iletildi.',
+                std_next_desc: 'Lütfen en kısa sürede aile hekiminizden bir randevu alın. Değerlendirmeniz, uzman doktor incelemesi için en yakın acil servise iletilmiştir.',
                 std_rec_title: '📌 Öneriler',
-                std_time_label: 'Önerilen: Tıbbi yardım',
-                std_time_val: '90 dakika içinde',
-                std_time_sub: 'MTS Düzey 4 — Yeşil',
+                std_time_label: 'Önerilen: Tıbbi müdahale süresi',
+                std_time_val: '90 dakika',
+                std_time_sub: 'MTS Seviye 4 — Yeşil',
                 std_new_assessment: 'Yeni Değerlendirme Başlat',
                 nurg_header_title: 'ℹ️ Acil Olmayan Değerlendirme',
-                nurg_header_sub: 'Semptomlarınız şu anda acil bir durum belirtmiyor.',
+                nurg_header_sub: 'Belirtileriniz şu anda bir acil duruma işaret etmiyor.',
                 nurg_rec_title: 'Önerimiz',
-                nurg_rec_desc: 'Aile hekiminizden rutin bir randevu almanızı öneririz. Semptomlarınız kötüleşirse VitalNav.ai\'yi tekrar kullanın veya hemen <strong>112</strong>\'yi arayın.',
-                nurg_self_care_title: '💙 Evde Bakım Önerileri',
-                nurg_logged: 'Değerlendirmeniz isteğe bağlı doktor incelemesi için kaydedildi. Bir doktor değerlendirmenizi güncellerse bildirim alacaksınız.',
+                nurg_rec_desc: 'Aile hekiminizden rutin bir randevu almanızı öneririz. Belirtileriniz kötüleşirse, lütfen VitalNav.ai\'yi tekrar kullanın veya derhal <strong>112</strong>\'yi arayın.',
+                nurg_self_care_title: '💙 Kendi Kendine Bakım Önerileri',
+                nurg_logged: 'Değerlendirmeniz isteğe bağlı doktor incelemesi için kaydedildi. Bir doktor değerlendirmenizi ayarlarsa size bildirilecektir.',
                 nurg_new_assessment: 'Yeni Değerlendirme Başlat',
-                amb_dispatched_note: 'Ambulans gönderildi →',
+                amb_dispatched_note: 'Ambulans sevk edildi →',
                 amb_est_arrival: 'tahmini hastane varışı',
                 amb_status_pending: 'Talep Durumu',
                 amb_waiting_approval: 'Ambulans Onayı Bekleniyor',
-                amb_waiting_desc: 'Ambulans talebiniz alındı. Hastane personeli inceliyor ve kısa sürede ambulans gönderecek.',
-                amb_waiting_eta_hint: 'Tahmini varış süresi onay sonrası gösterilecek',
+                amb_waiting_desc: 'Ambulans talebiniz alındı. Hastane personeli inceliyor ve kısa süre içinde bir ambulans gönderecek.',
+                amb_waiting_eta_hint: 'Tahmini varış süresi onaylandıktan sonra gösterilecektir',
                 te_result_label: 'Değerlendirme Sonucu',
-                te_auto_advance: 'Otomatik devam',
+                te_auto_advance: 'Otomatik ilerleme:',
                 te_auto_advance_s: 'sn…',
-                te_found: 'Bulgular',
-                te_why: 'Bu değerlendirmenin nedeni',
-                te_do: 'Yapmanız gerekenler',
-                te_avoid: 'Yapmamanız gerekenler',
-                te_corrected: 'Triyaj seviyesi güncellendi',
-                te_imm_required: 'Acil müdahale gerekiyor',
-                te_imm_notified: 'Acil servisler haberdar edildi. Gecikmeyiniz.',
-                te_continue: 'Devam',
-                lvl_IMMEDIATE: 'Hayati', lvl_EMERGENCY: 'Çok Acil',
-                lvl_URGENT: 'Acil', lvl_STANDARD: 'Standart / Az Acil', lvl_NON_URGENT: 'Acil Olmayan',
-                level_word: 'Düzey',
+                te_found: 'Bulgularımız',
+                te_why: 'Neden bu değerlendirme',
+                te_do: 'Ne yapmalısınız',
+                te_avoid: 'Nelerden kaçınmalısınız',
+                te_corrected: 'Triaj Seviyesi Güncellendi',
+                te_imm_required: 'Anlık yanıt gerekli',
+                te_imm_notified: 'Acil servisler bilgilendirildi. Gecikmeyin.',
+                te_continue: 'Devam Et',
+                lvl_IMMEDIATE: 'Anında', lvl_EMERGENCY: 'Acil',
+                lvl_URGENT: 'Acil', lvl_STANDARD: 'Standart', lvl_NON_URGENT: 'Acil Değil',
+                level_word: 'Seviye',
                 contact_sending: 'Gönderiliyor…', contact_notified: 'Kişi Bilgilendirildi',
-                // ── Assessment result page (v1) ──
-                ass_rec_title: "AiVoN'un Tavsiyesi",
-                ass_gp_title: 'Aile Hekiminize Başvurun',
-                ass_gp_desc: "Değerlendirmenize göre durumunuz acil değil. Lütfen aile hekiminizden randevu alın.",
-                ass_gp_share_q: 'Bilgilerinizin yine de hastane ile paylaşılmasını ister misiniz?',
-                ass_gp_share_btn: 'Üniversite Hastanesi Ulm ile Paylaş',
+                ass_rec_title: "AiVoN Önerisi",
+                ass_gp_title: 'Aile Hekiminize Danışın',
+                ass_gp_desc: 'Değerlendirmenize göre bu durum acil değildir. Lütfen aile hekiminizden bir randevu alın.',
+                ass_gp_share_q: 'Bilgilerinizin yine de hastaneyle paylaşılmasını ister misiniz?',
+                ass_gp_share_btn: 'Hastaneye Bilgi Gönder',
                 ass_gp_shared: '✅ Hastane bilgilendirildi:',
-                ass_worsens_warning: "Belirtileriniz kötüleşirse veya kendinizi çok daha kötü hissederseniz lütfen hemen geri dönün ya da 112'yi arayın.",
-                ass_urg_title: 'En Kısa Sürede Hastaneye Gidin',
-                ass_urg_desc: 'Durumunuz hastane bakımı gerektiriyor. Lütfen acil servise en kısa sürede gidin.',
-                ass_share_q: 'Gelisinize hazırlanabilmesi için hastaneyi bilgilendirelim mi?',
-                ass_share_btn: 'Evet — Hastaneyi Bilgilendir ve Yön Al',
+                ass_worsens_warning: 'Belirtileriniz kötüleşirse veya kendinizi önemli ölçüde daha kötü hissederseniz, lütfen derhal geri dönün veya 112\'yi arayın.',
+                ass_urg_title: "Hastaneye Gidin — Lütfen Gecikmeyin",
+                ass_urg_desc: 'Durumunuz hastane bakımı gerektiriyor. Lütfen en kısa sürede acil servise gidin.',
+                ass_share_q: 'Ekibin gelişinize hazırlanabilmesi için hastaneyi bilgilendirelim mi?',
+                ass_share_btn: 'Evet — Hastaneyi Bilgilendir ve Yol Tarifi Al',
                 ass_shared_msg: '🏥 Hastane bilgilendirildi:',
                 ass_shared_go: 'Lütfen şimdi hastaneye gidin.',
+                ass_loading: 'Hastane bilgileri alınıyor…',
+                ass_confirm_location_btn: 'Konumu Etkinleştir and Onayla',
                 ass_nav_btn: 'Navigasyonu Aç →',
                 ass_gps_title: 'Canlı Takibi Etkinleştir',
-                ass_gps_desc: 'Hastanenin gelisinizi anlık takip edebilmesi için konum erişimine izin verin.',
+                ass_gps_desc: 'Hastanenin varışınızı gerçek zamanlı izleyebilmesi için konum erişimine izin verin.',
                 ass_gps_btn: 'Konumu Etkinleştir',
-                ass_emg_transport_title: 'Hastaneye Nasıl Gideceksiniz?',
-                ass_emg_self_title: 'Kendi imkânlarımla gideceğim',
-                ass_emg_self_sub: 'Arabamla, taksiyle veya biri beni götürecek',
+                ass_emg_transport_title: 'Hastaneye nasıl gideceksiniz?',
+                ass_emg_self_title: "Kendi imkanlarımla gideceğim",
+                ass_emg_self_sub: 'Araba, taksi veya biri beni götürecek',
                 ass_emg_amb_title: 'Ambulansa ihtiyacım var',
-                ass_emg_amb_sub: 'Bulunduğum yere yardım gönder',
-                ass_share_er_label: 'Acil Servisle Bilgi Paylaş',
-                ass_share_er_expand: 'Hastanenin acil servis ekibiyle şunlar paylaşılacak:',
-                ass_dos_label: 'Size Özel Tavsiyeler',
-                ass_entry_label: 'Hastane Giriş Yetkilendirmesi',
-                ass_entry_sub: 'Varışta bu QR kodu triaj hemşiresine gösterin.',
+                ass_emg_amb_sub: 'Mevcut konumuma yardım gönderin',
+                ass_share_er_label: 'Bilgileri Acil Servisle Paylaş',
+                ass_share_er_expand: 'Aşağıdaki bilgiler hastane acil ekibiyle paylaşılacaktır:',
+                ass_dos_label: 'Sizin İçin Öneriler',
+                ass_entry_label: 'Hastane Giriş Yetkisi',
+                ass_entry_sub: 'Vardığınızda bu QR kodu triaj hemşiresine gösterin.',
                 ass_doctor_chat_btn: '💬 Sohbeti Aç',
                 ass_doctor_chat_close: 'Sohbeti Kapat',
                 ass_doctor_msg_placeholder: 'Doktora mesajınızı yazın…',
                 ass_doctor_send_btn: 'Gönder',
                 ass_doctor_chat_sent: '✅ Gönderildi',
-                doc_chat_warning: 'Doktorun yoğunluğunu dikkate alın ve sadece doktorun sorularını cevaplarken veya acil durumunuz için kullanın.',
-                panic_btn_label: 'SOS Uyarısı',
+                doc_chat_warning: 'Lütfen doktorun iş yükünü göz önünde bulundurun — bu sohbeti sadece doktorun sorularını yanıtlamak veya acil konular için kullanın.',
+                panic_btn_label: 'SOS Alarmı',
                 panic_btn_sub: 'Hastaneye giderken durumunuz kötüleşirse kullanın',
-                sos_section_label: 'Acil',
-                sos_overlay_title: 'SOS Uyarısı',
-                sos_overlay_desc: 'GPS konumunuz ve triyaj verileriniz sessizce acil servise iletilecektir — arama gerekmez.',
-                sos_overlay_note: '⚠️ Hastaneye giderken durumunuz kötüleşirse kullanın.',
-                sos_overlay_confirm: '🆘 SOS Gönder',
+                sos_section_label: 'Acil Durum',
+                sos_overlay_title: 'SOS Alarmı',
+                sos_overlay_desc: 'GPS konumunuz ve triaj verileriniz sessizce acil servislere gönderilecektir — arama gerekmez.',
+                sos_overlay_note: '⚠️ Bunu, hastaneye giderken durumunuz kötüleştiğinde kullanın.',
+                sos_overlay_confirm: '🆘 Şimdi SOS Gönder',
                 sos_overlay_cancel: 'İptal',
-                panic_sent_msg: '✅ SOS Uyarısı Gönderildi — Acil ekipler bilgilendirildi',
-                panic_fail_msg: 'Uyarı gönderildi — gerekirse 112\'yi arayın',
-                dial_112_label: '📞 112 Ara',
-                dial_112_sub: 'Acil',
-                dial_116117_label: '📞 116117 Ara',
-                dial_116117_sub: 'Sağlık Hattı',
-                ass_ec_btn: '📞 Acil Kişiyi Bilgilendir',
-                ass_ec_sending: 'Gönderiliyor…',
-                ass_ec_sent: '✅ Acil Kişi Bilgilendirildi',
+                panic_sent_msg: '✅ SOS Alarmı Gönderildi — Acil servisler bilgilendirildi',
+                panic_fail_msg: 'Alarm gönderildi — gerekirse 112\'yi arayın',
+                dial_112_label: '📞 112\'yi Ara',
+                dial_112_sub: 'Acil Durum',
+                dial_116117_label: '📞 116117\'yi Ara',
+                dial_116117_sub: 'Tıbbi Tavsiye',
+                ass_ec_btn: '📞 Acil Durum Kişisini Bilgilendir',
+                ass_ec_sending: 'Bilgilendiriliyor…',
+                ass_ec_sent: '✅ Acil Durum Kişisi Bilgilendirildi',
                 you: 'Siz',
                 // Dashboard
                 rs_dash_emergency_panel: 'Acil Durum Kontrol Paneli',
-                rs_dash_dos: 'Yap / Yapmalar',
-                rs_dash_dos_sub: 'İlkyardım ve Güvenlik',
+                rs_dash_dos: 'Yap / Yapma',
+                rs_dash_dos_sub: 'Güvenlik ve İlk Yardım',
                 rs_dash_contact: 'Acil Durum Kişisi',
-                rs_dash_contact_sub: 'Yakınını Bilgilendir',
+                rs_dash_contact_sub: 'Sevdiklerini Bilgilendir',
                 rs_dash_qr: 'Giriş Kartı',
-                rs_dash_qr_sub: 'QR Kodlu Hızlı Giriş',
-                rs_dash_report: 'AI Değerlendirme Özeti',
-                rs_dash_report_sub: 'Klinik Bilgilendirme',
-                rs_dash_chat: 'Hekim Görüşmesi',
-                rs_dash_chat_sub: 'Sohbet Başlat',
+                rs_dash_qr_sub: 'Hızlı Hastane Girişi',
+                rs_dash_report: 'Tıbbi Özet',
+                rs_dash_report_sub: 'Doktorlar İçin Özet',
+                rs_dash_chat: 'Doktor Sohbeti',
+                rs_dash_chat_sub: 'Sohbeti başlat',
                 rs_dash_close: 'Kapat',
-                rs_dash_directive_waiting: 'Hekim onayı bekleniyor...',
-                rs_dash_directive_navigate: 'Hastaneye yol tarifi al',
-                rs_dash_directive_ambulance: 'Ambulans yolda',
-                rs_dash_contact_notified: 'Acil Durum Kişisi Bilgilendirildi',
-                ass_insight_title: 'AiVoN Klinik Değerlendirmesi',
-                rs_timeline_title: 'Canlı İşlem Akışı',
-                rs_timeline_sent: 'Değerlendirme hastaneye iletildi',
-                rs_timeline_shared: 'Bilgileriniz ve konumunuz paylaşıldı',
-                rs_timeline_amb_req: 'Ambulans talebi yapıldı',
-                rs_timeline_amb_disp: 'Ambulans yola çıktı',
-                rs_timeline_track_btn: 'Canlı Takip',
+                rs_dash_directive_waiting: 'Doktor Onayı Bekleniyor...',
+                rs_dash_directive_navigate: 'Hastaneye Git',
+                rs_dash_directive_ambulance: 'Ambulans Yolda',
+                rs_dash_contact_notified: 'İlgili Kişi Bilgilendirildi',
+                ass_insight_title: 'AiVoN Klinik Görüşü',
+                rs_timeline_title: 'Canlı Zaman Çizelgesi',
+                rs_timeline_sent: 'Değerlendirme hastaneye gönderildi',
                 rs_timeline_assigned: 'Doktor atandı',
-                rs_timeline_action: 'Hekim işlemi',
+                rs_timeline_action: 'Doktor eylemi',
                 rs_timeline_triaged: 'Doktor triaj değerlendirmesi',
                 rs_timeline_confirmed: 'Değerlendirme onaylandı',
-                rs_timeline_upgraded: 'Triaj seviyesi yükseltildi',
-                rs_timeline_downgraded: 'Triaj seviyesi düşürüldü',
-                rs_timeline_adjusted: 'Triaj seviyesi güncellendi',
-                rec_title: 'AiVoN\'un Tavsiyesi',
-                rec_l1: 'Bilgilerinizi en yakın hastane ile paylaşıyorum ve ambulans talep ediyorum.',
-                rec_l2: 'Acilen hastaneye gitmeniz gerekiyor. Nasıl ulaşım sağlayacaksınız?',
-                rec_l3: 'Acilen hastaneye gitmeniz gerekiyor. Bilgilerinizi ve sizi takip etmeleri için konumunuzu en yakın hastane ile paylaşıyorum.',
-                rec_l4: 'Şu anki durumunuz stabil gözüküyor, aile hekiminizden randevu alın. Yine de bilgilerinizin bir doktor incelemesi için en yakın hastaneye gönderilmesini ister misiniz? Hekim durumunuzu ciddi görürse size bilgi verilecektir.',
-                rec_l5: 'Şu anki durumunuz stabil gözüküyor, aile hekiminizden randevu alın.',
+                rs_timeline_upgraded: 'Öncelik yükseltildi',
+                rs_timeline_downgraded: 'Öncelik düşürüldü',
+                rs_timeline_adjusted: 'Öncelik ayarlandı',
+                rs_timeline_shared: 'Bilgileriniz ve konumunuz paylaşıldı',
+                rs_timeline_amb_req: 'Ambulans talep edildi',
+                rs_timeline_amb_disp: 'Ambulans yolda',
+                rs_timeline_track_btn: 'Canlı Takip',
+                rec_title: "AiVoN Önerisi",
+                rec_l1: 'Bilgilerinizi en yakın hastaneyle paylaşıyorum ve ambulans talep ediyorum.',
+                rec_l2: 'Hastaneye acilen gitmeniz gerekiyor. Oraya nasıl gideceksiniz?',
+                rec_l3: 'Hastaneye acilen gitmeniz gerekiyor. Bilgilerinizi ve konumunuzu en yakın hastaneyle paylaşıyorum.',
+                rec_l4: 'Durumunuz stabil görünüyor — lütfen aile hekiminizden randevu alın. Bilgilerinizin yine de doktor incelemesi için en yakın hastaneye gönderilmesini ister misiniz? Doktor vakanızı daha acil bulursa size bildirilecektir.',
+                rec_l5: 'Durumunuz stabil görünüyor — lütfen aile hekiminizden randevu alın.',
                 rec_btn_confirm: 'ONAYLA',
                 rec_btn_ambulance: 'Ambulans',
-                rec_btn_self: 'Kendi İmkanlarımla',
+                rec_btn_self: 'Kendi İmkanım',
                 physician_decision_title: '👨‍⚕️ Doktor Kararı',
-                physician_decision_confirmed: 'Doktor tarafından bilgileriniz incelendi ve aciliyet seviyeniz onaylandı',
-                physician_decision_upgraded: 'Doktor tarafından bilgileriniz incelendi ve aciliyet seviyeniz yükseltildi',
-                physician_decision_downgraded: 'Doktor tarafından bilgileriniz incelendi ve aciliyet seviyeniz düşürüldü',
-                physician_decision_adjusted: 'Doktor tarafından bilgileriniz incelendi ve aciliyet seviyeniz güncellendi',
+                physician_decision_confirmed: 'Bir doktor bilgilerinizi inceledi ve öncelik seviyenizi onayladı',
+                physician_decision_upgraded: 'Bir doktor bilgilerinizi inceledi ve öncelik seviyenizi yükseltti',
+                physician_decision_downgraded: 'Bir doktor bilgilerinizi inceledi ve öncelik seviyenizi düşürdü',
+                physician_decision_adjusted: 'Bir doktor bilgilerinizi inceledi ve öncelik seviyenizi ayarladı',
             },
         };
 
@@ -5350,8 +5438,9 @@
         function tLevel(lvl) { return t('lvl_' + (lvl || 'URGENT')); }
 
         function applyLang() {
+            console.log('[VitalNav] applyLang started for:', S.lang);
             const lb = document.getElementById('topbarLangBadge');
-            lb.textContent = t('topbarLang'); lb.style.display = '';
+            if (lb) { lb.textContent = t('topbarLang'); lb.style.display = ''; }
 
             // innerHTML elements
             ['wl_whatLabel', 'wl_whatDesc', 'wl_b1', 'wl_b2', 'wl_b3', 'wl_howLabel', 'wl_s1', 'wl_s2', 'wl_s3', 'wl_demo',
@@ -5396,6 +5485,7 @@
             const map = { en: 'en-GB', de: 'de-DE', tr: 'tr-TR' };
             S.detectedLang = map[lang] || 'en-GB';
             S.selectedLang = S.detectedLang;
+            S.country = (lang === 'de') ? 'DE' : (lang === 'tr' ? 'TR' : 'UK');
 
             // Auto-assign a random demo patient for this language (silent — not shown to user)
             const patients = DEMO_PATIENTS[lang] || DEMO_PATIENTS.en;
@@ -5407,10 +5497,14 @@
                 if (btn) btn.classList.toggle('selected', l === lang);
             });
 
+            console.log('[VitalNav] State updated:', S.lang, S.detectedLang);
+
             applyLang();
 
             setTimeout(() => {
-                document.getElementById('page-lang').classList.remove('active');
+                console.log('[VitalNav] Navigating to welcome page...');
+                const pageLang = document.getElementById('page-lang');
+                if (pageLang) pageLang.classList.remove('active');
                 goToPage('welcome');
                 checkAIStatus();
             }, 200);
@@ -5509,7 +5603,8 @@
                 else if (i === idx) s.classList.add('active');
             }
             window.scrollTo(0, 0);
-            lucide.createIcons();
+            if (window.lucide) window.lucide.createIcons();
+            else if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function startApp() {
@@ -5521,8 +5616,7 @@
                 }
                 const warn = {
                     en: 'Please select your health record to continue.',
-                    de: 'Bitte wählen Sie Ihre Krankenakte aus, um fortzufahren.',
-                    tr: 'Devam etmek için lütfen sağlık kaydınızı seçin.'
+                    de: 'Bitte wählen Sie Ihre Krankenakte aus, um fortzufahren.'
                 };
                 toast(warn[S.lang] || warn.en, 'warn'); return;
             }
@@ -5656,7 +5750,7 @@
             const rec = new SR();
             webSpeechRec = rec;
             rec.continuous = true; rec.interimResults = true;
-            rec.lang = langCode || 'tr-TR';
+            rec.lang = langCode || 'en-GB';
 
             rec.onresult = e => {
                 let interim = '', final = '';
@@ -5680,7 +5774,7 @@
                 console.warn('Web Speech error:', e.error);
                 // Surface hard failures to the user (not normal no-speech/aborted pauses)
                 if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-                    const m = { en: 'Browser speech blocked — using server fallback.', de: 'Browser-Sprache blockiert — Serverfallback aktiv.', tr: 'Tarayıcı sesi engellendi — sunucu kullanılıyor.' };
+                    const m = { en: 'Browser speech blocked — using server fallback.', de: 'Browser-Sprache blockiert — Serverfallback aktiv.' };
                     toast(m[S.lang] || m.en, 'warn');
                 } else if (e.error === 'network') {
                     console.info('Web Speech: network error (needs internet/HTTPS) — server fallback active.');
@@ -5826,7 +5920,7 @@
             }
         }
 
-        const LANG_NAMES = { 'en-US': 'English', 'en-GB': 'English', 'de-DE': 'Deutsch', 'tr-TR': 'Türkçe', 'ar-SA': 'العربية', 'fr-FR': 'Français', 'es-ES': 'Español', 'it-IT': 'Italiano' };
+        const LANG_NAMES = { 'en-US': 'English', 'en-GB': 'English', 'de-DE': 'Deutsch', 'ar-SA': 'العربية', 'fr-FR': 'Français', 'es-ES': 'Español', 'it-IT': 'Italiano' };
 
         function setComplaintFromAudio(text, langCode) {
             if (!text || text.trim().length === 0) return;
@@ -5986,12 +6080,12 @@
         async function _fetchAdaptiveQuestion(previousAnswers) {
             // Fix 2: if complaint_en translation failed, fall back to original complaint
             const body = {
-                complaint:          S.complaint,
-                complaint_en:       S.complaintEN || S.complaint || null,
-                detected_language:  S.detectedLang || S.selectedLang || 'en-US',
-                previous_answers:   previousAnswers,
-                demographics:       S.demographics || null,
-                health_number:      S.healthNumber || null,
+                complaint: S.complaint,
+                complaint_en: S.complaintEN || S.complaint || null,
+                detected_language: S.detectedLang || S.selectedLang || 'en-US',
+                previous_answers: previousAnswers,
+                demographics: S.demographics || null,
+                health_number: S.healthNumber || null,
             };
             const r = await fetch(API + '/api/patient/questions/next', {
                 method: 'POST',
@@ -6018,7 +6112,7 @@
             }
 
             S._fetchingNext = true;
-            S._prefetchedQ  = null;
+            S._prefetchedQ = null;
 
             // Snapshot of answers INCLUDING the current question's latest answer
             // Fix 1: properly filter — exclude empty/null answers (not just falsy objects)
@@ -6030,12 +6124,12 @@
             S._prefetchAbortCtrl = ctrl;
 
             const body = {
-                complaint:         S.complaint,
-                complaint_en:      S.complaintEN || S.complaint || null,  // Fix 2: fallback to original
+                complaint: S.complaint,
+                complaint_en: S.complaintEN || S.complaint || null,  // Fix 2: fallback to original
                 detected_language: S.detectedLang || S.selectedLang || 'en-US',
-                previous_answers:  answersForServer,
-                demographics:      S.demographics || null,
-                health_number:     S.healthNumber || null,
+                previous_answers: answersForServer,
+                demographics: S.demographics || null,
+                health_number: S.healthNumber || null,
             };
 
             fetch(API + '/api/patient/questions/next', {
@@ -6044,37 +6138,37 @@
                 body: JSON.stringify(body),
                 signal: ctrl.signal,
             })
-            .then(r => {
-                if (!r.ok) throw new Error('prefetch ' + r.status);
-                return r.json();
-            })
-            .then(d => {
-                // Check if the patient changed their answer while we were fetching
-                const currentSnapshot = JSON.stringify(
-                    S.answers.filter(Boolean).slice(0, S.qIdx + 1)
-                );
-                if (currentSnapshot !== answerSnapshot) {
-                    // Answer changed — this result is stale, discard and re-fetch
-                    console.info('Prefetch stale (answer changed), re-fetching...');
+                .then(r => {
+                    if (!r.ok) throw new Error('prefetch ' + r.status);
+                    return r.json();
+                })
+                .then(d => {
+                    // Check if the patient changed their answer while we were fetching
+                    const currentSnapshot = JSON.stringify(
+                        S.answers.filter(Boolean).slice(0, S.qIdx + 1)
+                    );
+                    if (currentSnapshot !== answerSnapshot) {
+                        // Answer changed — this result is stale, discard and re-fetch
+                        console.info('Prefetch stale (answer changed), re-fetching...');
+                        S._fetchingNext = false;
+                        _startPrefetch();
+                        return;
+                    }
+                    if (d.complaint_en) S.complaintEN = d.complaint_en;
+                    if (d.done) S._adaptiveDone = true;
+                    S._prefetchedQ = d.done ? null : (d.question || null);
                     S._fetchingNext = false;
-                    _startPrefetch();
-                    return;
-                }
-                if (d.complaint_en) S.complaintEN = d.complaint_en;
-                if (d.done) S._adaptiveDone = true;
-                S._prefetchedQ  = d.done ? null : (d.question || null);
-                S._fetchingNext = false;
-                S._prefetchAbortCtrl = null;
-            })
-            .catch(err => {
-                if (err.name === 'AbortError') {
-                    // Expected — we cancelled it ourselves, _startPrefetch will re-run
-                    return;
-                }
-                console.warn('Prefetch failed:', err);
-                S._fetchingNext = false;
-                S._prefetchAbortCtrl = null;
-            });
+                    S._prefetchAbortCtrl = null;
+                })
+                .catch(err => {
+                    if (err.name === 'AbortError') {
+                        // Expected — we cancelled it ourselves, _startPrefetch will re-run
+                        return;
+                    }
+                    console.warn('Prefetch failed:', err);
+                    S._fetchingNext = false;
+                    S._prefetchAbortCtrl = null;
+                });
         }
 
         async function fetchAllQuestions() {
@@ -6113,13 +6207,63 @@
         // ═══════════════════════════════════════════════════════════
         // OPTION TRANSLATIONS
         // ═══════════════════════════════════════════════════════════
-        const OPTION_TRANS = { 'none of the above': { tr: 'Hiçbiri', de: 'Nichts davon' }, 'none of these': { tr: 'Hiçbiri', de: 'Nichts davon' }, 'heart disease': { tr: 'Kalp hastalığı', de: 'Herzerkrankung' }, 'diabetes': { tr: 'Diyabet', de: 'Diabetes' }, 'high blood pressure': { tr: 'Yüksek tansiyon', de: 'Bluthochdruck' }, 'severe allergies': { tr: 'Ciddi alerji', de: 'Schwere Allergien' }, 'previous heart attack or stroke': { tr: 'Daha önce kalp krizi veya felç geçirdim', de: 'Früherer Herzinfarkt oder Schlaganfall' }, 'sweating': { tr: 'Terleme', de: 'Schwitzen' }, 'shortness of breath': { tr: 'Nefes darlığı', de: 'Kurzatmigkeit' }, 'nausea': { tr: 'Bulantı', de: 'Übelkeit' }, 'dizziness': { tr: 'Baş dönmesi', de: 'Schwindel' }, 'none of the above': { tr: 'Hiçbiri', de: 'Nichts davon' }, 'normal and clear': { tr: 'Normal ve net', de: 'Normal und klar' }, 'slightly slurred': { tr: 'Hafifçe peltekleşmiş', de: 'Leicht undeutlich' }, 'very slurred or hard to understand': { tr: 'Çok peltekleşmiş, anlaşılması güç', de: 'Sehr undeutlich, schwer verständlich' }, 'unable to speak': { tr: 'Konuşamıyorum', de: 'Kann nicht sprechen' }, 'high fever': { tr: 'Yüksek ateş', de: 'Hohes Fieber' }, 'severe pain': { tr: 'Şiddetli ağrı', de: 'Starke Schmerzen' }, 'difficulty breathing': { tr: 'Nefes almakta güçlük', de: 'Atembeschwerden' }, 'loss of consciousness': { tr: 'Bilinç kaybı', de: 'Bewusstlosigkeit' }, 'just now': { tr: 'Az önce', de: 'Gerade eben' }, '< 1 hour ago': { tr: '< 1 saat önce', de: 'Vor < 1 Stunde' }, '1–6 hours ago': { tr: '1–6 saat önce', de: 'Vor 1–6 Stunden' }, '6–24 hours ago': { tr: '6–24 saat önce', de: 'Vor 6–24 Stunden' }, '> 1 day': { tr: '1 günden fazla', de: 'Mehr als 1 Tag' }, 'suddenly': { tr: 'Aniden', de: 'Plötzlich' }, 'gradually over minutes': { tr: 'Dakikalar içinde yavaşça', de: 'Langsam über Minuten' }, 'gradually over hours': { tr: 'Saatler içinde yavaşça', de: 'Langsam über Stunden' }, 'gradually over days': { tr: 'Günler içinde yavaşça', de: 'Langsam über Tage' }, 'yes': { tr: 'Evet', de: 'Ja' }, 'no': { tr: 'Hayır', de: 'Nein' }, 'not sure': { tr: 'Emin değilim', de: 'Nicht sicher' }, 'unsure': { tr: 'Emin değilim', de: 'Nicht sicher' }, 'maybe': { tr: 'Belki', de: 'Vielleicht' }, 'mild': { tr: 'Hafif', de: 'Leicht' }, 'moderate': { tr: 'Orta', de: 'Mäßig' }, 'severe': { tr: 'Şiddetli', de: 'Schwer' }, 'head/neck': { tr: 'Baş/boyun', de: 'Kopf/Hals' }, 'chest': { tr: 'Göğüs', de: 'Brust' }, 'abdomen': { tr: 'Karın', de: 'Bauch' }, 'back': { tr: 'Sırt', de: 'Rücken' }, 'arms': { tr: 'Kollar', de: 'Arme' }, 'legs': { tr: 'Bacaklar', de: 'Beine' }, 'whole body': { tr: 'Tüm vücut', de: 'Ganzer Körper' }, 'none': { tr: 'Hiçbiri', de: 'Keines' }, 'none of the above': { tr: 'Hiçbiri', de: 'Nichts davon' }, 'within the last hour': { tr: 'Son bir saat içinde', de: 'In der letzten Stunde' }, 'a few hours ago': { tr: 'Birkaç saat önce', de: 'Vor einigen Stunden' }, 'yesterday': { tr: 'Dün', de: 'Gestern' }, 'several days ago': { tr: 'Birkaç gün önce', de: 'Vor mehreren Tagen' }, 'understood. i will upload a photo.': { tr: 'Anladım. Fotoğraf çekeceğim.', de: 'Verstanden. Ich werde ein Foto hochladen.' },
-                'both': { tr: 'Her ikisi de', de: 'Beides' },
-                'neither of these': { tr: 'Hiçbiri', de: 'Keines davon' },
-                'neither': { tr: 'Hiçbiri', de: 'Keines' },
-                'getting worse': { tr: 'Kötüleşiyor', de: 'Wird schlimmer' },
-                'getting better': { tr: 'İyileşiyor', de: 'Wird besser' },
-                'staying the same': { tr: 'Aynı kalıyor', de: 'Bleibt gleich' } };
+        const OPTION_TRANS = {
+            'none of the above': { de: 'Nichts davon', tr: 'Hiçbiri' },
+            'none of these': { de: 'Nichts davon', tr: 'Hiçbiri' },
+            'heart disease': { de: 'Herzerkrankung', tr: 'Kalp hastalığı' },
+            'diabetes': { de: 'Diabetes', tr: 'Diyabet' },
+            'high blood pressure': { de: 'Bluthochdruck', tr: 'Yüksek tansiyon' },
+            'severe allergies': { de: 'Schwere Allergien', tr: 'Şiddetli alerji' },
+            'previous heart attack or stroke': { de: 'Früherer Herzinfarkt oder Schlaganfall', tr: 'Geçmiş kalp krizi veya inme' },
+            'sweating': { de: 'Schwitzen', tr: 'Terleme' },
+            'shortness of breath': { de: 'Atemnot', tr: 'Nefes darlığı' },
+            'nausea': { de: 'Übelkeit', tr: 'Bulantı' },
+            'dizziness': { de: 'Schwindel', tr: 'Baş dönmesi' },
+            'normal and clear': { de: 'Normal und klar', tr: 'Normal ve net' },
+            'slightly slurred': { de: 'Leicht undeutlich', tr: 'Hafif peltek' },
+            'very slurred or hard to understand': { de: 'Sehr undeutlich, schwer verständlich', tr: 'Çok peltek veya anlaşılması zor' },
+            'unable to speak': { de: 'Kann nicht sprechen', tr: 'Konuşamıyor' },
+            'high fever': { de: 'Hohes Fieber', tr: 'Yüksek ateş' },
+            'severe pain': { de: 'Starke Schmerzen', tr: 'Şiddetli ağrı' },
+            'difficulty breathing': { de: 'Atembeschwerden', tr: 'Nefes alma zorluğu' },
+            'loss of consciousness': { de: 'Bewusstlosigkeit', tr: 'Bilinç kaybı' },
+            'just now': { de: 'Gerade eben', tr: 'Az önce' },
+            '< 1 hour ago': { de: 'Vor < 1 Stunde', tr: '< 1 saat önce' },
+            '1–6 hours ago': { de: 'Vor 1–6 Stunden', tr: '1–6 saat önce' },
+            '6–24 hours ago': { de: 'Vor 6–24 Stunden', tr: '6–24 saat önce' },
+            '> 1 day': { de: 'Mehr als 1 Tag', tr: '> 1 gün' },
+            'suddenly': { de: 'Plötzlich', tr: 'Aniden' },
+            'gradually over minutes': { de: 'Langsam über Minuten', tr: 'Dakikalar içinde yavaşça' },
+            'gradually over hours': { de: 'Langsam über Stunden', tr: 'Saatler içinde yavaşça' },
+            'gradually over days': { de: 'Langsam über Tage', tr: 'Günler içinde yavaşça' },
+            'yes': { de: 'Ja', tr: 'Evet' },
+            'no': { de: 'Nein', tr: 'Hayır' },
+            'not sure': { de: 'Nicht sicher', tr: 'Emin değilim' },
+            'unsure': { de: 'Nicht sicher', tr: 'Emin değilim' },
+            'maybe': { de: 'Vielleicht', tr: 'Belki' },
+            'mild': { de: 'Leicht', tr: 'Hafif' },
+            'moderate': { de: 'Mäßig', tr: 'Orta' },
+            'severe': { de: 'Schwer', tr: 'Şiddetli' },
+            'head/neck': { de: 'Kopf/Hals', tr: 'Baş/Boyun' },
+            'chest': { de: 'Brust', tr: 'Göğüs' },
+            'abdomen': { de: 'Bauch', tr: 'Karın' },
+            'back': { de: 'Rücken', tr: 'Sırt' },
+            'arms': { de: 'Arme', tr: 'Kollar' },
+            'legs': { de: 'Beine', tr: 'Bacaklar' },
+            'whole body': { de: 'Ganzer Körper', tr: 'Tüm vücut' },
+            'none': { de: 'Keine', tr: 'Hiçbiri' },
+            'within the last hour': { de: 'In der letzten Stunde', tr: 'Son bir saat içinde' },
+            'a few hours ago': { de: 'Vor einigen Stunden', tr: 'Birkaç saat önce' },
+            'yesterday': { de: 'Gestern', tr: 'Dün' },
+            'several days ago': { de: 'Vor mehreren Tagen', tr: 'Birkaç gün önce' },
+            'understood. i will upload a photo.': { de: 'Verstanden. Ich werde ein Foto hochladen.', tr: 'Anlaşıldı. Fotoğraf yükleyeceğim.' },
+            'both': { de: 'Beides', tr: 'Her ikisi' },
+            'neither of these': { de: 'Keines davon', tr: 'Hiçbiri' },
+            'neither': { de: 'Keines', tr: 'Hiçbiri' },
+            'getting worse': { de: 'Wird schlimmer', tr: 'Kötüleşiyor' },
+            'getting better': { de: 'Wird besser', tr: 'İyileşiyor' },
+            'staying the same': { de: 'Bleibt gleich', tr: 'Aynı kalıyor' }
+        };
 
         function translateOption(opt, langCode) {
             if (!langCode || langCode.startsWith('en')) return opt;
@@ -6145,20 +6289,18 @@
             // convert it to multiple_choice so the patient can select what applies.
             if (type === 'yes_no') {
                 // Prefer the English source text for reliable splitting
-                const enText    = q.question_en || question || '';
+                const enText = q.question_en || question || '';
                 const localText = question || '';
 
                 // OR-connector patterns per language
                 const _orRe = {
                     en: /\s+or\s+/i,
                     de: /\s+oder\s+/i,
-                    tr: /\s+(?:veya|ya da|yoksa)\s+/i,  // yoksa = "or else/otherwise" in Turkish
                 };
                 // Question-prefix stripping per language
                 const _prefRe = {
                     en: /^(?:do you (?:also |currently |still |now )?(?:have|feel|notice|experience|suffer from|get)|are you (?:also |currently |still )?(?:experiencing|having|feeling)|have you (?:been )?(?:experiencing|had|having)|is (?:the |your |there (?:any |also )?)?\w+(?:\s+\w+)? |does (?:the |your )?\w+(?:\s+\w+)? )\s*/i,
                     de: /^(?:haben sie (?:auch |zusätzlich |derzeit )?|spüren sie (?:auch )?|fühlen sie (?:sich )?(?:auch )?|gibt es (?:auch )?|bemerken sie (?:auch )?)\s*/i,
-                    tr: /^(?:ayrıca |ek olarak |bastığınızda |yürürken )?/i,
                 };
 
                 const _stripClean = (s, prefRe) =>
@@ -6172,12 +6314,11 @@
                 for (const [txt, prefRe, orRe] of [
                     [enText, _prefRe.en, _orRe.en],
                     [localText, _prefRe.de, _orRe.de],
-                    [localText, _prefRe.tr, _orRe.tr],
                 ]) {
                     if (!txt || (!txt.includes(',') && !orRe.test(txt))) continue;
                     if (!txt.includes(',') || !orRe.test(txt)) continue;
 
-                    const rawParts = txt.split(/\s*,\s*|\s+(?:or|oder|veya|ya da|yoksa)\s+/i);
+                    const rawParts = txt.split(/\s*,\s*|\s+(?:or|oder)\s+/i);
                     const frags = rawParts
                         .map(p => _cap(_stripClean(p, prefRe)))
                         .filter(p => p.length >= 2);
@@ -6194,10 +6335,10 @@
 
                 // ── Case B: simple 2-finding OR (no commas) ────────────────────
                 if (!fixApplied) {
-                    const _lang2 = S.lang && S.lang.startsWith('de') ? 'de' : S.lang && S.lang.startsWith('tr') ? 'tr' : 'en';
+                    const _lang2 = S.lang && S.lang.startsWith('de') ? 'de' : 'en';
                     // For non-English, try localised text; for English, use enText
-                    const txt2    = (_lang2 === 'en') ? enText : (localText || enText);
-                    const orRe2   = _orRe[_lang2] || _orRe.en;
+                    const txt2 = (_lang2 === 'en') ? enText : (localText || enText);
+                    const orRe2 = _orRe[_lang2] || _orRe.en;
                     const prefRe2 = _prefRe[_lang2] || _prefRe.en;
 
                     if (orRe2.test(txt2)) {
@@ -6238,17 +6379,18 @@
             const currentQ = S.qIdx + 1;
             const isMulti = !!q.allow_multi;
 
-            // Fixed 5-question protocol — always show exactly 5 dots
-            const DOTS_MAX = 5;
-            const dotsHtml = Array.from({ length: DOTS_MAX }, (_, i) => {
+            // Use actual question count; cap dots display at 7 for readability
+            const DOTS_MAX = Math.max(S.questions ? S.questions.length : currentQ, currentQ);
+            const DOTS_SHOW = Math.min(DOTS_MAX, 7);
+            const dotsHtml = Array.from({ length: DOTS_SHOW }, (_, i) => {
                 if (i < S.qIdx) return '<div class="q-dot q-dot-done"></div>';
                 if (i === S.qIdx) return '<div class="q-dot q-dot-active"></div>';
                 return '<div class="q-dot" style="opacity:0.3"></div>';
             }).join('');
-            // Label: "Son soru" on question 5, otherwise "Soru N / Question N / Frage N"
-            const remainingLbl = (currentQ >= DOTS_MAX)
+            const isLast = currentQ >= DOTS_MAX;
+            const remainingLbl = isLast
                 ? (S.lang === 'tr' ? 'Son soru' : S.lang === 'de' ? 'Letzte Frage' : 'Last question')
-                : (S.lang === 'tr' ? `Soru ${currentQ} / 5` : S.lang === 'de' ? `Frage ${currentQ} / 5` : `Question ${currentQ} / 5`);
+                : (S.lang === 'tr' ? `Soru ${currentQ} / ${DOTS_MAX}` : S.lang === 'de' ? `Frage ${currentQ} / ${DOTS_MAX}` : `Question ${currentQ} / ${DOTS_MAX}`);
 
             const container = document.getElementById('questionsContainer');
             container.style.display = 'block';
@@ -6412,7 +6554,7 @@
             if (S._prefetchAbortCtrl) { S._prefetchAbortCtrl.abort(); S._prefetchAbortCtrl = null; }
             S._adaptiveDone = true;
             S._fetchingNext = false;
-            S._prefetchedQ  = null;
+            S._prefetchedQ = null;
             // Go to AI assessment immediately (same path as server done:true)
             startAssessment();
         }
@@ -7321,7 +7463,7 @@
         function toggleTheme() { const cur = document.documentElement.getAttribute('data-theme') || 'light'; const next = cur === 'dark' ? 'light' : 'dark'; localStorage.setItem(_THEME_KEY, next); applyTheme(next); }
         (function initTheme() { const saved = localStorage.getItem(_THEME_KEY); const sys = window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'; applyTheme(saved || sys); })();
         const PAGE_STEPS = { 'page-lang': 0, 'page-welcome': 1, 'page-input': 2, 'page-photos': 2, 'page-questions': 3, 'page-consent': 4, 'page-triage': 5, 'page-result': 5, 'page-assessment': 5, 'page-ambulance': 5, 'page-outcome-emg': 5, 'page-outcome-std': 5, 'page-outcome-nurg': 5 };
-        const STEP_LBL = { en: ['', '', 'Step 2 of 5', 'Step 2 of 5', 'Step 3 of 5', 'Step 4 of 5', 'Step 5 of 5', 'Complete'], de: ['', '', 'Schritt 2/5', 'Schritt 2/5', 'Schritt 3/5', 'Schritt 4/5', 'Schritt 5/5', 'Fertig'], tr: ['', '', 'Adim 2/5', 'Adim 2/5', 'Adim 3/5', 'Adim 4/5', 'Adim 5/5', 'Tamam'] };
+        const STEP_LBL = { en: ['', '', 'Step 2 of 5', 'Step 2 of 5', 'Step 3 of 5', 'Step 4 of 5', 'Step 5 of 5', 'Complete'], de: ['', '', 'Schritt 2/5', 'Schritt 2/5', 'Schritt 3/5', 'Schritt 4/5', 'Schritt 5/5', 'Fertig'] };
         // goToPage wrapper — uses IIFE to capture original before override (avoids hoisting conflict)
         window.goToPage = (function () { var _o = goToPage; return function (p) { _o(p); var st = PAGE_STEPS[p] || 0, f = document.getElementById('progressFill'), l = document.getElementById('progressLabel'), w = document.getElementById('progressBarWrap'); if (f) f.style.width = Math.round(st / 5 * 100) + '%'; var lk = (S.selectedLang || 'en').startsWith('tr') ? 'tr' : (S.selectedLang || 'en').startsWith('de') ? 'de' : 'en'; var si = { 'page-lang': 0, 'page-welcome': 1, 'page-input': 2, 'page-photos': 2, 'page-questions': 3, 'page-consent': 4, 'page-triage': 6, 'page-result': 7 }[p] || 0; if (l) l.textContent = (STEP_LBL[lk] || STEP_LBL.en)[si] || ''; if (w) w.style.display = st === 0 ? 'none' : 'block'; }; })();
         document.getElementById('progressBarWrap') && (document.getElementById('progressBarWrap').style.display = 'none');
@@ -7349,11 +7491,11 @@
         async function triggerSilentPanic() {
             // Find whichever panic button is visible (Res / Ass / Amb page)
             const btn = document.getElementById('panicSosBtnRes') ||
-                        document.getElementById('panicSosBtnAss') ||
-                        document.getElementById('panicSosBtnAmb');
+                document.getElementById('panicSosBtnAss') ||
+                document.getElementById('panicSosBtnAmb');
             const lbl = document.getElementById('panicSosBtnResLabel') ||
-                        document.getElementById('panicSosBtnAssLabel') ||
-                        document.getElementById('panicSosBtnAmbLabel');
+                document.getElementById('panicSosBtnAssLabel') ||
+                document.getElementById('panicSosBtnAmbLabel');
             if (!btn || btn.dataset.sent === '1') return;
 
             // Visual feedback — pulsing red
@@ -7374,7 +7516,7 @@
                         );
                     });
                 }
-            } catch(e) {}
+            } catch (e) { }
 
             // POST panic alert to backend
             let sent = false;
@@ -7391,7 +7533,7 @@
                     body: JSON.stringify(payload)
                 });
                 sent = res.ok;
-            } catch(e) { sent = false; }
+            } catch (e) { sent = false; }
 
             // Update button state
             btn.style.animation = '';
@@ -7727,20 +7869,20 @@
                 _requestGPSSilent(() => { _patchLocationWithRetry(S.lat, S.lon, 0); });
                 try {
                     await _ensureHospitalsLoaded();
-                } catch (_) {}
+                } catch (_) { }
                 const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
                 S.selectedHospital = hosp;
                 const infoDiv = document.getElementById('emgSelfHospInfo');
                 if (infoDiv && hosp) {
                     const distTxt = hosp.distance_km ? `${parseFloat(hosp.distance_km).toFixed(1)} km` : '';
-                    const etaTxt  = hosp.eta_minutes  ? `~${hosp.eta_minutes} min`                   : '';
+                    const etaTxt = hosp.eta_minutes ? `~${hosp.eta_minutes} min` : '';
                     infoDiv.innerHTML = `
                     <div style="background:var(--card-alt);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:left;">
                         <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-3);margin-bottom:4px;">🏥 ${escHtml(hosp.name)}</div>
                         <div style="font-size:0.8rem;color:var(--text-2);margin-bottom:10px;">📍 ${escHtml(hosp.address || '')}</div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             ${distTxt ? `<span style="padding:3px 10px;border-radius:99px;background:var(--card);border:1px solid var(--border);font-size:0.73rem;font-weight:700;color:var(--text);">📏 ${distTxt}</span>` : ''}
-                            ${etaTxt  ? `<span style="padding:3px 10px;border-radius:99px;background:var(--card);border:1px solid rgba(0,122,255,0.3);font-size:0.73rem;font-weight:700;color:#007AFF;">⏱ ${etaTxt}</span>` : ''}
+                            ${etaTxt ? `<span style="padding:3px 10px;border-radius:99px;background:var(--card);border:1px solid rgba(0,122,255,0.3);font-size:0.73rem;font-weight:700;color:#007AFF;">⏱ ${etaTxt}</span>` : ''}
                         </div>
                     </div>
                     ${_inlineNavAccordionHTML('SelfA')}`;
@@ -7813,7 +7955,7 @@
         function _initAmbModalMap() {
             const el = document.getElementById('ambModalMapContainer');
             if (!el || typeof L === 'undefined') return;
-            if (_ambModalMap) { try { _ambModalMap.remove(); } catch(e){} _ambModalMap = null; _ambModalMarker = null; }
+            if (_ambModalMap) { try { _ambModalMap.remove(); } catch (e) { } _ambModalMap = null; _ambModalMarker = null; }
             const patLat = parseFloat(S.lat) || null;
             const patLon = parseFloat(S.lon) || null;
             const hasPos = !!(patLat && patLon);
@@ -8083,6 +8225,11 @@
             window.open(`https://www.google.com/maps/dir/?api=1${origin}&destination=${dest}&travelmode=driving`, '_blank');
         }
 
+        function openGoogleMapsNavUlm() {
+            const origin = (S.lat && S.lon) ? `&origin=${S.lat},${S.lon}` : '';
+            window.open(`https://www.google.com/maps/dir/?api=1${origin}&destination=Universit%C3%A4tsklinikum+Ulm+Notaufnahme&travelmode=driving`, '_blank');
+        }
+
         function closeNavMap() {
             if (_navMapPanel) _navMapPanel.style.transform = 'translateX(-50%) translateY(100%)';
         }
@@ -8099,7 +8246,7 @@
             }
             const hosp = S.selectedHospital;
             const distTxt = hosp.distance_km ? `${parseFloat(hosp.distance_km).toFixed(1)} km · ` : '';
-            const etaTxt  = hosp.eta_minutes  ? `~${hosp.eta_minutes} min`                        : '';
+            const etaTxt = hosp.eta_minutes ? `~${hosp.eta_minutes} min` : '';
             const wrap = document.createElement('div');
             wrap.id = '_floatingNavBtn';
             wrap.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);width:calc(min(480px,100vw) - 32px);z-index:99999;border-radius:18px;background:linear-gradient(135deg,#0D9488,#0F766E);box-shadow:0 6px 28px rgba(13,148,136,0.5);';
@@ -8110,7 +8257,7 @@
                         <button onclick="document.getElementById('_floatingNavBtn').remove()" style="background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:26px;height:26px;color:rgba(255,255,255,0.85);font-size:0.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
                     </div>
                     ${(distTxt || etaTxt) ? `<div style="font-size:0.78rem;color:rgba(255,255,255,0.65);margin-bottom:12px;">${distTxt}${etaTxt}</div>` : ''}
-                    <button onclick="openNavigationToHospital()" style="width:100%;height:50px;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.45);border-radius:12px;color:#fff;font-size:1rem;font-weight:900;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:10px;">
+                    <button onclick="openGoogleMapsNavUlm()" style="width:100%;height:50px;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.45);border-radius:12px;color:#fff;font-size:1rem;font-weight:900;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:10px;">
                         🧭 ${t('rs_openNav') || 'Navigasyonu Aç'}
                     </button>
                 </div>`;
@@ -8147,14 +8294,14 @@
         const _inlineNavInitedMap = {};
 
         function toggleInlineNavMap(suffix) {
-            const s   = suffix || '';
+            const s = suffix || '';
             const acc = document.getElementById('inlineNavAccordion' + s);
             const btn = document.getElementById('inlineNavToggleBtn' + s);
-            const chev= document.getElementById('inlineNavChevron' + s);
+            const chev = document.getElementById('inlineNavChevron' + s);
             if (!acc) { openNavigationToHospital(); return; }
 
             const open = acc.style.display !== 'none';
-            const r16  = s ? '14px' : '16px';
+            const r16 = s ? '14px' : '16px';
             if (open) {
                 acc.style.display = 'none';
                 if (btn) btn.style.borderRadius = r16;
@@ -8179,14 +8326,14 @@
 
             // Destroy any previous map on this element
             if (_inlineNavInitedMap['_map_' + s]) {
-                try { _inlineNavInitedMap['_map_' + s].remove(); } catch(e){}
+                try { _inlineNavInitedMap['_map_' + s].remove(); } catch (e) { }
             }
 
-            const patLat  = parseFloat(S.lat)   || null;
-            const patLon  = parseFloat(S.lon)   || null;
+            const patLat = parseFloat(S.lat) || null;
+            const patLon = parseFloat(S.lon) || null;
             const hospLat = parseFloat(hosp.lat);
             const hospLon = parseFloat(hosp.lon);
-            const hasGPS  = !!(patLat && patLon);
+            const hasGPS = !!(patLat && patLon);
 
             const map = L.map(mapEl, { zoomControl: false, attributionControl: false });
             _inlineNavInitedMap['_map_' + s] = map;
@@ -8195,7 +8342,7 @@
             // Hospital marker
             L.marker([hospLat, hospLon], {
                 icon: L.divIcon({
-                    html: `<div style="background:#0D9488;color:#fff;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:800;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.3);">🏥 ${escHtml(hosp.name||'Hospital')}</div>`,
+                    html: `<div style="background:#0D9488;color:#fff;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:800;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.3);">🏥 ${escHtml(hosp.name || 'Hospital')}</div>`,
                     className: '', iconAnchor: [50, 14]
                 })
             }).addTo(map);
@@ -8204,24 +8351,24 @@
                 L.circleMarker([patLat, patLon], {
                     radius: 9, fillColor: '#3B82F6', fillOpacity: 1, color: '#fff', weight: 3
                 }).addTo(map).bindTooltip('📍 Konumunuz', { permanent: false });
-                map.fitBounds([[patLat, patLon],[hospLat, hospLon]], { padding:[32,32] });
+                map.fitBounds([[patLat, patLon], [hospLat, hospLon]], { padding: [32, 32] });
 
                 // Draw OSRM route
                 const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${patLon},${patLat};${hospLon},${hospLat}?overview=full&geometries=geojson`;
-                fetch(osrmUrl).then(r=>r.ok?r.json():null).then(data=>{
+                fetch(osrmUrl).then(r => r.ok ? r.json() : null).then(data => {
                     if (data?.routes?.[0]) {
-                        const coords = data.routes[0].geometry.coordinates.map(([ln,lt])=>[lt,ln]);
-                        L.polyline(coords,{color:'#0D9488',weight:5,opacity:0.85}).addTo(map);
-                        map.fitBounds(L.polyline(coords).getBounds(),{padding:[32,32]});
-                        const dist = (data.routes[0].distance/1000).toFixed(1);
-                        const dur  = Math.ceil(data.routes[0].duration/60);
+                        const coords = data.routes[0].geometry.coordinates.map(([ln, lt]) => [lt, ln]);
+                        L.polyline(coords, { color: '#0D9488', weight: 5, opacity: 0.85 }).addTo(map);
+                        map.fitBounds(L.polyline(coords).getBounds(), { padding: [32, 32] });
+                        const dist = (data.routes[0].distance / 1000).toFixed(1);
+                        const dur = Math.ceil(data.routes[0].duration / 60);
                         const ri = document.getElementById('inlineNavRouteInfo' + s);
-                        if (ri) ri.innerHTML = `<span>📏 ${dist} km</span><span style="margin:0 4px;opacity:0.4">·</span><span>⏱ ~${dur} dk</span><span style="margin:0 4px;opacity:0.4">·</span><span>🏥 ${escHtml(hosp.name||'')}</span>`;
+                        if (ri) ri.innerHTML = `<span>📏 ${dist} km</span><span style="margin:0 4px;opacity:0.4">·</span><span>⏱ ~${dur} dk</span><span style="margin:0 4px;opacity:0.4">·</span><span>🏥 ${escHtml(hosp.name || '')}</span>`;
                     } else {
-                        L.polyline([[patLat,patLon],[hospLat,hospLon]],{color:'#0D9488',weight:4,dashArray:'10 7',opacity:0.7}).addTo(map);
+                        L.polyline([[patLat, patLon], [hospLat, hospLon]], { color: '#0D9488', weight: 4, dashArray: '10 7', opacity: 0.7 }).addTo(map);
                     }
-                }).catch(()=>{
-                    L.polyline([[patLat,patLon],[hospLat,hospLon]],{color:'#0D9488',weight:4,dashArray:'10 7',opacity:0.7}).addTo(map);
+                }).catch(() => {
+                    L.polyline([[patLat, patLon], [hospLat, hospLon]], { color: '#0D9488', weight: 4, dashArray: '10 7', opacity: 0.7 }).addTo(map);
                 });
             } else {
                 map.setView([hospLat, hospLon], 14);
@@ -8231,8 +8378,8 @@
             const ri = document.getElementById('inlineNavRouteInfo' + s);
             if (ri && !ri.innerHTML) {
                 const dist = hosp.distance_km ? `📏 ${parseFloat(hosp.distance_km).toFixed(1)} km` : '';
-                const eta  = hosp.eta_minutes  ? `⏱ ~${hosp.eta_minutes} dk` : '';
-                ri.innerHTML = [dist, eta, `🏥 ${escHtml(hosp.name||'')}`].filter(Boolean).join('<span style="margin:0 4px;opacity:0.4">·</span>');
+                const eta = hosp.eta_minutes ? `⏱ ~${hosp.eta_minutes} dk` : '';
+                ri.innerHTML = [dist, eta, `🏥 ${escHtml(hosp.name || '')}`].filter(Boolean).join('<span style="margin:0 4px;opacity:0.4">·</span>');
             }
 
             setTimeout(() => { if (map) map.invalidateSize(); }, 100);
@@ -8243,7 +8390,7 @@
             if (!hosp) { toast('Hospital location not available', 'warn'); return; }
 
             // Rebuild panel every time so map reinitialises fresh
-            if (_navMap) { try { _navMap.remove(); } catch(e){} _navMap = null; }
+            if (_navMap) { try { _navMap.remove(); } catch (e) { } _navMap = null; }
             if (_navMapPanel) { _navMapPanel.remove(); _navMapPanel = null; }
 
             _navMapPanel = document.createElement('div');
@@ -8260,7 +8407,7 @@
             });
 
             const distTxt = hosp.distance_km ? `📏 ${parseFloat(hosp.distance_km).toFixed(1)} km` : '';
-            const etaTxt  = hosp.eta_minutes  ? `⏱ ~${hosp.eta_minutes} min`                       : '';
+            const etaTxt = hosp.eta_minutes ? `⏱ ~${hosp.eta_minutes} min` : '';
 
             _navMapPanel.innerHTML = `
             <div style="flex-shrink:0;padding:14px 18px 12px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--border);">
@@ -8356,16 +8503,16 @@
             const meta = MTS_META[lvl] || MTS_META.URGENT;
 
             // Pre-load hospitals for navigation tiles
-            _ensureHospitalsLoaded().catch(() => {});
+            _ensureHospitalsLoaded().catch(() => { });
 
             // IMMEDIATE: handle setup but don't redirect to a different page logic here
             // (ambulance dispatching logic moved inside showAssessmentResult below)
 
             const condSummary = a.condition_summary || (a.patient_summary ? stripAiCTA(a.patient_summary) : '');
-            const doList  = (a.do_instructions   || a.do_list   || MTS_DEFAULT_DO[lvl]   || []).slice(0, 4);
+            const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO[lvl] || []).slice(0, 4);
             const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT[lvl] || []).slice(0, 3);
             const isHospGoer = (lvl === 'URGENT' || lvl === 'EMERGENCY');
-            const isGPLevel  = (lvl === 'STANDARD' || lvl === 'NON_URGENT');
+            const isGPLevel = (lvl === 'STANDARD' || lvl === 'NON_URGENT');
 
             const content = document.getElementById('assessmentContent');
             if (!content) return;
@@ -8397,13 +8544,12 @@
                 submitToBackend().then(() => {
                     startPhysicianPolling(15, 'ass_expertLoop');
                     _pushTimelineEvent('shared', t('rs_timeline_shared'));
-                }).catch(() => {});
+                }).catch(() => { });
             }
 
-            // URGENT: pre-load hospital info in the recommendation block preview
+            // URGENT: GPS pre-warm only; hospital card shown after user confirms
             if (lvl === 'URGENT') {
-                _requestGPSSilent(() => {});
-                _ass_fetchAndShowHospital('ass_urgHospPreview');
+                _requestGPSSilent(() => { });
             }
 
             // For other levels, we wait for user "ONAYLA" click.
@@ -8411,7 +8557,7 @@
 
         function _pushTimelineEvent(type, title, sub = '', status = 'completed', meta = null) {
             if (!S._timelineEvents) S._timelineEvents = [];
-            const time = new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'});
+            const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
             S._timelineEvents.push({ type, title, sub, time, status, meta });
             _renderAssTimeline('ass_expertLoop');
         }
@@ -8439,10 +8585,10 @@
             const lvl = normalizeTriage(a.triage_level);
 
             overlay.classList.add('active');
-            
+
             let html = '';
             if (id === 'dos') {
-                const doList  = (a.do_instructions || a.do_list || MTS_DEFAULT_DO[lvl] || []).slice(0, 4);
+                const doList = (a.do_instructions || a.do_list || MTS_DEFAULT_DO[lvl] || []).slice(0, 4);
                 const dontList = (a.dont_instructions || a.dont_list || MTS_DEFAULT_DONT[lvl] || []).slice(0, 3);
                 html = `
                     <h3 style="margin-bottom:20px; font-weight:900;">${t('rs_dash_dos')}</h3>
@@ -8526,7 +8672,7 @@
                 btn.innerHTML = `<span class="spinner" style="width:18px; height:18px; border-width:2px; border-top-color:#fff;"></span> ` + t('ass_ec_sending');
                 btn.disabled = true;
             }
-            
+
             setTimeout(() => {
                 S._notifiedContact = true;
                 if (btn) btn.style.display = 'none';
@@ -8606,7 +8752,7 @@
             else if (lvl === 'EMERGENCY') recType = 'l2';
             else if (lvl === 'URGENT') recType = 'l3';
             else if (lvl === 'STANDARD') recType = 'l4';
-            
+
             let btnHtml = '';
             if (recType === 'l1') {
                 btnHtml = `<button id="ass_l1_btn" onclick="ass_emgChoice('ambulance')" class="btn btn-primary" style="margin-top:14px; height:54px; font-weight:900;">${t('rec_btn_confirm')}</button>`;
@@ -8618,10 +8764,8 @@
                 </div>`;
             } else if (recType === 'l3') {
                 btnHtml = `
-                <div id="ass_urgHospPreview" style="margin-top:14px; padding:10px 14px; background:var(--card-alt); border:1px solid var(--border); border-radius:12px; font-size:0.82rem; color:var(--text-3); text-align:center;">
-                    ⏳ ${t('ass_loading') || 'Hastane bilgisi alınıyor…'}
-                </div>
-                <button id="ass_urgShareBtn" onclick="ass_urgShare()" class="btn btn-primary" style="margin-top:12px; height:54px; font-weight:900;">${t('rec_btn_confirm')}</button>`;
+                <div id="ass_urgHospPreview" style="display:none; margin-top:14px;"></div>
+                <button id="ass_urgShareBtn" onclick="ass_urgConfirmLocation()" class="btn btn-primary" style="margin-top:12px; height:54px; font-weight:900;">📍 ${t('ass_confirm_location_btn')}</button>`;
             } else if (recType === 'l4') {
                 btnHtml = `<button id="ass_stdShareBtn" onclick="ass_stdShare()" class="btn btn-primary" style="margin-top:14px; height:54px; font-weight:900;">${t('rec_btn_confirm')}</button>`;
             }
@@ -8742,11 +8886,11 @@
             const pid = S.patientId || a.patient_id || '';
             if (pid) {
                 fetch(`${API}/api/patient/${encodeURIComponent(pid)}/notify-contact`, { method: 'POST' })
-                    .catch(() => {});
+                    .catch(() => { });
             }
             // Also trigger local sendEmergencyContact if available
             if (typeof sendEmergencyContact === 'function') {
-                try { sendEmergencyContact(); } catch (_) {}
+                try { sendEmergencyContact(); } catch (_) { }
             }
             setTimeout(() => {
                 if (btn) { btn.textContent = t('ass_ec_sent'); btn.style.background = '#E8F5E9'; btn.style.color = '#2E7D32'; }
@@ -8762,10 +8906,25 @@
                 _pushTimelineEvent('shared', t('rs_timeline_shared'));
                 _hideRecommendationBlock();
                 _ass_showBarcodeWhenReady();
-            }).catch(() => { if(btn){btn.disabled=false; btn.textContent=t('rec_btn_confirm');} });
+            }).catch(() => { if (btn) { btn.disabled = false; btn.textContent = t('rec_btn_confirm'); } });
         }
 
         // ── Action: URGENT "Share & Notify" ─────────────────────────────────
+        async function ass_urgConfirmLocation() {
+            const btn = document.getElementById('ass_urgShareBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '⏳'; }
+            _requestGPSSilent(() => { startLiveTracking(); _patchLocationWithRetry(S.lat, S.lon, 0); });
+            try { await submitToBackend(); } catch (_) { }
+            startPhysicianPolling(5, 'ass_expertLoop');
+            _pushTimelineEvent('shared', t('rs_timeline_shared'));
+            _ass_showBarcodeWhenReady();
+            // Show hospital card inline, then remove the confirm button
+            const preview = document.getElementById('ass_urgHospPreview');
+            if (preview) preview.style.display = 'block';
+            await _ass_fetchAndShowHospital('ass_urgHospPreview');
+            if (btn) btn.remove();
+        }
+
         function ass_urgShare() {
             const btn = document.getElementById('ass_urgShareBtn');
             if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
@@ -8776,7 +8935,7 @@
                 _hideRecommendationBlock();
                 _ass_showBarcodeWhenReady();
                 _showFloatingNavBtn();
-            }).catch(() => { if(btn){btn.disabled=false; btn.textContent=t('rec_btn_confirm');} });
+            }).catch(() => { if (btn) { btn.disabled = false; btn.textContent = t('rec_btn_confirm'); } });
         }
 
         // ── Action: EMERGENCY transport choice ───────────────────────────────
@@ -8786,16 +8945,16 @@
                 await _ensureHospitalsLoaded();
                 const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
                 S.ambEtaMinutes = hosp ? Math.max(3, hosp.eta_minutes || 12) : 12;
-                S.ambHospName   = hosp ? hosp.name    : 'Universitätsklinikum Ulm';
-                S.ambHospAddr   = hosp ? hosp.address : '';
+                S.ambHospName = hosp ? hosp.name : 'Universitätsklinikum Ulm';
+                S.ambHospAddr = hosp ? hosp.address : '';
                 S.ambIsImmediate = (lvl === 'IMMEDIATE');
-                const hospEta   = hosp ? (hosp.eta_minutes || S.ambEtaMinutes) : S.ambEtaMinutes;
-                S.ambTotalEta   = S.ambEtaMinutes + 5 + hospEta;
+                const hospEta = hosp ? (hosp.eta_minutes || S.ambEtaMinutes) : S.ambEtaMinutes;
+                S.ambTotalEta = S.ambEtaMinutes + 5 + hospEta;
                 S._ambulanceNote = `🚑 ${t('amb_dispatched_note')} ${S.ambHospName} — ${t('amb_est_arrival')} ~${S.ambTotalEta} min`;
-                
+
                 const sendReq = () => {
-                   if (S._submitted) { return _sendAmbulanceRequestToServer(); }
-                   else              { return submitToBackend(); }
+                    if (S._submitted) { return _sendAmbulanceRequestToServer(); }
+                    else { return submitToBackend(); }
                 };
 
                 sendReq().then(() => {
@@ -8804,7 +8963,7 @@
                     _pushTimelineEvent('amb_req', t('rs_timeline_amb_req'));
                     _hideRecommendationBlock();
                     // NO redirect — stay on dashboard
-                }).catch(() => {});
+                }).catch(() => { });
             } else {
                 // EMERGENCY "Self-transport"
                 const choiceDiv = document.getElementById('ass_l2_choice');
@@ -8812,14 +8971,14 @@
                     choiceDiv.innerHTML = `<div style="text-align:center;padding:6px 0;font-size:0.88rem;font-weight:700;color:var(--text-2);">🚗 ${t('emg_self_title')}</div>`;
                 }
                 _requestGPSSilent(() => { _patchLocationWithRetry(S.lat, S.lon, 0); });
-                try { await _ensureHospitalsLoaded(); } catch (_) {}
+                try { await _ensureHospitalsLoaded(); } catch (_) { }
                 const hosp = S.hospitals && S.hospitals[0] ? S.hospitals[0] : null;
                 S.selectedHospital = hosp;
                 submitToBackend().then(() => {
                     startPhysicianPolling(5, 'ass_expertLoop');
                     _pushTimelineEvent('shared', t('rs_timeline_shared'));
                     _ass_showBarcodeWhenReady();
-                }).catch(() => {});
+                }).catch(() => { });
                 startLiveTracking();
                 _hideRecommendationBlock();
                 _showFloatingNavBtn();
@@ -8860,9 +9019,9 @@
 
             // Remove any loading placeholder
             const loader = container.querySelector('[id$="HospInfo"]');
-            const distTxt  = hosp.distance_km  ? `${parseFloat(hosp.distance_km).toFixed(1)} km` : '—';
-            const etaTxt   = hosp.eta_minutes   ? `~${hosp.eta_minutes} min` : '—';
-            const occTxt   = hosp.occupancy_label || '';
+            const distTxt = hosp.distance_km ? `${parseFloat(hosp.distance_km).toFixed(1)} km` : '—';
+            const etaTxt = hosp.eta_minutes ? `~${hosp.eta_minutes} min` : '—';
+            const occTxt = hosp.occupancy_label || '';
 
             const html = `
             <div style="background:var(--card-alt,rgba(241,245,249,1));border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
@@ -8873,7 +9032,7 @@
                     <span style="padding:4px 10px;border-radius:99px;background:var(--card);border:1px solid rgba(0,122,255,0.3);font-size:0.75rem;font-weight:700;color:#007AFF;">⏱ ${etaTxt}</span>
                     ${occTxt ? `<span style="padding:4px 10px;border-radius:99px;background:var(--card);border:1px solid var(--border);font-size:0.75rem;font-weight:700;color:var(--text);">🏥 ${escHtml(occTxt)}</span>` : ''}
                 </div>
-                <button onclick="openNavigationToHospital()" style="width:100%;height:50px;background:linear-gradient(135deg,#0D9488,#0F766E);color:white;border:none;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(13,148,136,0.3);font-family:var(--font);">
+                <button onclick="openGoogleMapsNavUlm()" style="width:100%;height:50px;background:linear-gradient(135deg,#0D9488,#0F766E);color:white;border:none;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(13,148,136,0.3);font-family:var(--font);">
                     🧭 ${t('ass_nav_btn')}
                 </button>
             </div>
@@ -9090,17 +9249,17 @@
 
             const container = document.getElementById(containerId);
             if (!container) return;
-            
+
             // Initial Timeline State
             if (!S._timelineEvents || S._timelineEvents.length === 0) {
                 S._timelineEvents = [{
                     type: 'sent',
                     title: t('rs_timeline_sent'),
-                    time: new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'}),
+                    time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' }),
                     status: 'completed'
                 }];
             }
-            
+
             _renderAssTimeline(containerId);
 
             let polls = 0;
@@ -9126,12 +9285,12 @@
                         if (docName && docName !== _lastDoctorAssigned) {
                             _lastDoctorAssigned = docName;
                             const assignedAt = data.doctor_assigned_at || new Date().toISOString();
-                            const timeStr = (() => { try { let s = String(assignedAt).replace(' ', 'T'); if (!/Z$/.test(s)) s+='Z'; return new Date(s).toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'}); } catch { return ''; } })();
-                            
+                            const timeStr = (() => { try { let s = String(assignedAt).replace(' ', 'T'); if (!/Z$/.test(s)) s += 'Z'; return new Date(s).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' }); } catch { return ''; } })();
+
                             const safeName = docName.startsWith('Dr.') ? docName : 'Dr. ' + docName;
                             const photoFilename = safeName.replace(/Dr\.\s*/i, 'Dr.').replace(/\s+/g, '_') + '.png';
                             const photoUrl = `/doctor_photos/${photoFilename}`;
-                            
+
                             // Add to timeline
                             S._timelineEvents.push({
                                 type: 'assigned',
@@ -9197,7 +9356,7 @@
             showPhysicianDecisionCard(data, containerId);
         }
 
-                function showPhysicianDecisionCard(data, containerId) {
+        function showPhysicianDecisionCard(data, containerId) {
             const decision = (data.physician_decision || '').toUpperCase();
             const newLvl = data.new_triage_level ? normalizeTriage(data.new_triage_level) : normalizeTriage(data.ai_triage_level);
             let note = data.physician_note_translated || null;
@@ -9208,7 +9367,7 @@
                 note = (_noteMatch ? _noteMatch[1].trim() : _latestEntry) || null;
             }
             const meta = MTS_META[newLvl] || MTS_META.URGENT;
-            const timeStr = new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'});
+            const timeStr = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
 
             if (newLvl) {
                 S.assessment = S.assessment || {};
@@ -9218,9 +9377,9 @@
             // Push to Timeline
             const iconText = t('physician_decision_title');
             let subText = t('physician_decision_confirmed');
-            if (decision === 'UPGRADE')   subText = t('physician_decision_upgraded');
+            if (decision === 'UPGRADE') subText = t('physician_decision_upgraded');
             if (decision === 'DOWNGRADE') subText = t('physician_decision_downgraded');
-            if (decision === 'ADJUST')    subText = t('physician_decision_adjusted');
+            if (decision === 'ADJUST') subText = t('physician_decision_adjusted');
             const dupe = (S._timelineEvents || []).find(e => e.type === 'decision' && e.sub === subText);
             if (!dupe) {
                 S._timelineEvents.push({
@@ -9244,14 +9403,14 @@
                 <div class="stepper-wrap" style="position:relative; padding-left:26px;">
                     <div style="position:absolute; left:5px; top:5px; bottom:5px; width:2px; background:var(--border);"></div>
                     ${(S._timelineEvents || []).map((ev, idx) => {
-                        const isLast = idx === S._timelineEvents.length - 1;
-                        let dotColor = 'var(--primary)';
-                        let bg = 'var(--card-alt)';
-                        if (ev.type === 'decision') {
-                            dotColor = ev.meta ? ev.meta.color : 'var(--success)';
-                            bg = ev.isUpgrade ? `${dotColor}25` : 'var(--card-alt)';
-                        }
-                        return `
+                const isLast = idx === S._timelineEvents.length - 1;
+                let dotColor = 'var(--primary)';
+                let bg = 'var(--card-alt)';
+                if (ev.type === 'decision') {
+                    dotColor = ev.meta ? ev.meta.color : 'var(--success)';
+                    bg = ev.isUpgrade ? `${dotColor}25` : 'var(--card-alt)';
+                }
+                return `
                         <div class="step-item ${isLast ? 'active' : ''}" style="position:relative; margin-bottom:22px;">
                             <div style="position:absolute; left:-26px; top:4px; width:12px; height:12px; border-radius:50%; background:${dotColor}; border:3px solid var(--card); z-index:2; ${isLast ? 'box-shadow:0 0 8px ' + dotColor : ''}"></div>
                             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
@@ -9290,7 +9449,7 @@
                             <div style="font-size:0.82rem; color:var(--text-2); line-height:1.4; margin-top:4px;">&#x23F3; ${t('phys_review_sub')}</div>
                             ` : ''}
                         </div>`;
-                    }).join('')}
+            }).join('')}
                 </div>
             </div>`;
             container.innerHTML = html;
@@ -9336,6 +9495,7 @@
         // ── Global doctor chat panel (single floating instance) ──────────────
         let _docChatOpen = false;
         let _chatMediaRec = null, _chatAudioChunks = [], _chatIsRecording = false;
+        let _chatWebSpeech = null, _chatWebSpeechResult = '';
 
         function _ensureDocChatPanel() {
             if (document.getElementById('docChatPanel')) return;
@@ -9453,13 +9613,13 @@
             const panel = document.getElementById('docChatPanel');
             if (!panel) return;
             _docChatOpen = !_docChatOpen;
-            
+
             if (_docChatOpen) {
                 panel.style.display = 'flex';
                 // Force reflow
                 void panel.offsetWidth;
                 panel.style.transform = 'translateY(0)';
-                
+
                 const badge = document.querySelector('.chat-badge');
                 if (badge) badge.remove();
 
@@ -9487,10 +9647,8 @@
             if (!btn || !input) return;
 
             if (_chatIsRecording) {
-                // Stop recording
-                if (_chatMediaRec && _chatMediaRec.state !== 'inactive') {
-                    _chatMediaRec.stop();
-                }
+                if (_chatMediaRec && _chatMediaRec.state !== 'inactive') _chatMediaRec.stop();
+                if (_chatWebSpeech) { try { _chatWebSpeech.stop(); } catch(_) {} _chatWebSpeech = null; }
                 _chatIsRecording = false;
                 btn.textContent = '🎤';
                 btn.style.background = 'rgba(148,163,184,0.15)';
@@ -9499,57 +9657,77 @@
                 return;
             }
 
-            // Start recording
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const mime = ['audio/webm','audio/ogg','audio/mp4'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+                const mime = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm', 'audio/mp4']
+                    .find(t => MediaRecorder.isTypeSupported(t)) || '';
                 _chatMediaRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
                 _chatAudioChunks = [];
+                _chatWebSpeechResult = '';
                 _chatIsRecording = true;
 
                 _chatMediaRec.ondataavailable = e => { if (e.data.size > 0) _chatAudioChunks.push(e.data); };
                 _chatMediaRec.onstop = async () => {
-                    // Small delay to ensure last chunks are in list
-                    await new Promise(r => setTimeout(r, 100));
-                    const blob = new Blob(_chatAudioChunks, { type: 'audio/webm;codecs=opus' });
-                    // Visual feedback during processing
+                    stream.getTracks().forEach(t => t.stop());
                     btn.textContent = '⌛';
-                    
-                    try {
-                        const form = new FormData();
-                        form.append('audio', blob, 'chat_reply.webm');
-                        if (S.selectedLang || S.detectedLang) {
-                            form.append('lang', S.selectedLang || S.detectedLang);
-                        }
-                        const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
-                        const d = await r.json();
-                        if (d.text && d.text.trim()) {
-                            // Clear or append text? User said "transkript edilecek ve normal mesaja donusturulecek"
-                            // If they already have some text, we append.
-                            const old = input.value.trim();
-                            input.value = (old ? old + ' ' : '') + d.text.trim();
-                            input.focus();
-                        } else {
-                            toast(t('chat_mic_not_understood') || 'Could not understand audio', 'warn');
-                        }
-                    } catch (err) {
-                        console.error('Chat transcription error:', err);
-                        toast('Transcription failed', 'warn');
-                    } finally {
+                    // Wait briefly for Web Speech final result
+                    await new Promise(r => setTimeout(r, 600));
+                    const wsr = _chatWebSpeechResult.trim();
+                    if (wsr) {
+                        input.value = wsr;
+                        input.focus();
                         btn.textContent = '🎤';
-                        stream.getTracks().forEach(t => t.stop());
+                        return;
                     }
+                    // Fallback: Azure Speech via server
+                    try {
+                        const blob = new Blob(_chatAudioChunks, { type: mime || 'audio/webm' });
+                        if (blob.size > 500) {
+                            const form = new FormData();
+                            form.append('audio', blob, 'chat_reply.webm');
+                            if (S.selectedLang || S.detectedLang) form.append('lang', S.selectedLang || S.detectedLang);
+                            const r = await fetch(API + '/api/patient/transcribe', { method: 'POST', body: form });
+                            const d = await r.json();
+                            if (d.text && d.text.trim()) {
+                                input.value = d.text.trim();
+                                input.focus();
+                                btn.textContent = '🎤';
+                                return;
+                            }
+                        }
+                    } catch (_) {}
+                    toast(t('chat_mic_not_understood') || 'Could not understand — type instead', 'warn');
+                    btn.textContent = '🎤';
                 };
 
-                // Added small timeslice to get chunks more frequently
-                _chatMediaRec.start(200); 
+                _chatMediaRec.start(100);
                 btn.textContent = '🛑';
                 btn.style.background = '#ef4444';
                 btn.style.color = 'white';
-                // Inline pulse animation
                 btn.style.animation = 'pulse 1.5s infinite';
+
+                // Web Speech in parallel for instant results
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SR) {
+                    _chatWebSpeech = new SR();
+                    _chatWebSpeech.lang = S.selectedLang || navigator.language || 'de-DE';
+                    _chatWebSpeech.continuous = true;
+                    _chatWebSpeech.interimResults = true;
+                    _chatWebSpeech.onresult = ev => {
+                        let final = '', interim = '';
+                        for (let i = 0; i < ev.results.length; i++) {
+                            if (ev.results[i].isFinal) final += ev.results[i][0].transcript;
+                            else interim += ev.results[i][0].transcript;
+                        }
+                        const display = (final || interim).trim();
+                        if (display) { _chatWebSpeechResult = display; input.value = display; }
+                    };
+                    _chatWebSpeech.onerror = () => {};
+                    _chatWebSpeech.onend = () => { _chatWebSpeech = null; };
+                    try { _chatWebSpeech.start(); } catch(_) { _chatWebSpeech = null; }
+                }
             } catch (err) {
-                console.error('Chat mic access error:', err);
+                console.error('Chat mic error:', err);
                 toast('Microphone access denied', 'warn');
             }
         }
@@ -9578,7 +9756,7 @@
                 if (r.ok) {
                     _addDocChatMsg('patient', text, new Date().toISOString());
                 }
-            } catch (_) {}
+            } catch (_) { }
             if (input) input.disabled = false;
         }
 
@@ -9644,8 +9822,8 @@
                     gain.connect(ctx.destination);
                     osc.start();
                     osc.stop(ctx.currentTime + 0.15);
-                } catch(e) {}
-                
+                } catch (e) { }
+
                 const tile = document.querySelector('.ass-tile.report');
                 if (tile) {
                     let badge = tile.querySelector('.chat-badge');
@@ -9657,7 +9835,7 @@
                         if (getComputedStyle(tile).position === 'static') tile.style.position = 'relative';
                         tile.appendChild(badge);
                     } else {
-                        badge.textContent = parseInt(badge.textContent||'1') + 1;
+                        badge.textContent = parseInt(badge.textContent || '1') + 1;
                     }
                 }
             }

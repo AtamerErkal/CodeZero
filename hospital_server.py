@@ -635,14 +635,30 @@ def patient_submit(body: SubmitRequest):
       - Enriches with Q&A transcript, photo metadata, language, consent
       - Adds to HospitalQueue
     """
-    triage, _ = _get_triage_engine()
+    triage, submit_translator = _get_triage_engine()
 
     hospital  = body.hospital or {}
     eta       = hospital.get("eta_minutes")
     location  = {"lat": body.lat, "lon": body.lon} if body.lat else None
 
+    # Ensure chief_complaint is always in English for the dashboard
+    lang_hint_submit = (body.detected_language or "en").split("-")[0].lower()
+    complaint_en_submit = body.complaint_en or body.complaint
+    # If complaint_en equals the original (i.e. wasn't translated yet) and patient isn't English
+    if (complaint_en_submit == body.complaint and
+            body.complaint and
+            not lang_hint_submit.startswith("en")):
+        try:
+            if submit_translator and getattr(submit_translator, "_initialized", False):
+                _t = submit_translator.translate_to_english(body.complaint, source_language=body.detected_language)
+                if _t and _t != body.complaint:
+                    complaint_en_submit = _t
+                    logger.info("Submit: complaint translated to EN: '%s...'", complaint_en_submit[:60])
+        except Exception as _submit_exc:
+            logger.warning("Submit complaint translation failed: %s", _submit_exc)
+
     record = triage.create_patient_record(
-        chief_complaint=body.complaint_en or body.complaint,
+        chief_complaint=complaint_en_submit,
         assessment=body.assessment,
         language=body.detected_language or "en-US",
         eta_minutes=eta,
@@ -1444,7 +1460,7 @@ def api_assign_doctor(patient_id: str, body: dict):
 
 @app.post("/api/patient/{patient_id}/reply")
 def api_patient_reply(patient_id: str, body: dict):
-    """Store a patient reply and translate it to German for the doctor."""
+    """Store a patient reply and translate it to English for the doctor."""
     import json as _json2, sqlite3 as _sq3
     text = (body.get("text") or "").strip()
     if not text:
@@ -1458,39 +1474,40 @@ def api_patient_reply(patient_id: str, body: dict):
     patient_lang = match2.get("language") or "en-US"
     patient_code = patient_lang.split("-")[0].lower()
 
-    # Translate patient message → German for doctor
-    translated_de = None
-    try:
-        _, _tr2 = _get_triage_engine()
-        if _tr2 and getattr(_tr2, "_initialized", False):
-            _az2 = _tr2.translate(text, target_language="de")
-            if _az2 and _az2 != text:
-                translated_de = _az2
-    except Exception:
-        pass
+    # Translate patient message → English for the doctor
+    translated_en = None
+    if not patient_code.startswith("en"):
+        try:
+            _, _tr2 = _get_triage_engine()
+            if _tr2 and getattr(_tr2, "_initialized", False):
+                _az2 = _tr2.translate(text, target_language="en", source_language=patient_lang)
+                if _az2 and _az2 != text:
+                    translated_en = _az2
+        except Exception:
+            pass
 
-    if not translated_de:
-        _openai_key2 = __import__("os").getenv("OPENAI_API_KEY", "")
-        if _openai_key2:
-            try:
-                import openai as _oai2
-                _c2 = _oai2.OpenAI(api_key=_openai_key2)
-                _r2 = _c2.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "You are a medical translator. Translate the following patient message to German. Reply with ONLY the translated text."},
-                        {"role": "user", "content": text},
-                    ],
-                    max_tokens=300, temperature=0,
-                )
-                translated_de = _r2.choices[0].message.content.strip()
-            except Exception:
-                pass
+        if not translated_en:
+            _openai_key2 = __import__("os").getenv("OPENAI_API_KEY", "")
+            if _openai_key2:
+                try:
+                    import openai as _oai2
+                    _c2 = _oai2.OpenAI(api_key=_openai_key2)
+                    _r2 = _c2.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": "You are a medical translator. Translate the following patient message to English. Reply with ONLY the translated text."},
+                            {"role": "user", "content": text},
+                        ],
+                        max_tokens=300, temperature=0,
+                    )
+                    translated_en = _r2.choices[0].message.content.strip()
+                except Exception:
+                    pass
 
     import datetime as _dt
     entry = {
         "text": text,
-        "text_de": translated_de or text,
+        "text_en": translated_en or text,
         "lang": patient_code,
         "ts": _dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
     }

@@ -1325,6 +1325,7 @@ class TriageEngine:
             return False, f"unknown type '{qtype}'"
 
         text_lower = text.lower()
+        text_en_check = (q.get("question_en") or text).lower()
 
         if qtype == "yes_no":
             # OR-finding rule — check both the displayed question AND question_en
@@ -1764,7 +1765,11 @@ Respond ONLY with valid JSON — no prose, no code fences:
                 "  ❌ WRONG: options: ['Did you faint', 'Have a seizure', 'Her ikisi de', 'Hiçbiri']\n"
                 "  ✅ CORRECT: options: ['Bayıldım', 'Nöbet geçirdim', 'Her ikisi de', 'Hiçbiri']\n\n"
                 "  ❌ WRONG: options: ['Weakness in your arms', 'In your legs', 'Both', 'Neither']\n"
-                "  ✅ CORRECT: options: ['Kollarımda', 'Bacaklarımda', 'Her ikisinde de', 'Hiçbirinde']"
+                "  ✅ CORRECT: options: ['Kollarımda', 'Bacaklarımda', 'Her ikisinde de', 'Hiçbirinde']\n\n"
+                "  ❌ WRONG: options: ['A heart attack', 'Stent', 'Angiography before', 'Hiçbiri']\n"
+                "  ✅ CORRECT: options: ['Kalp krizi', 'Stent', 'Anjiyografi', 'Hiçbiri']\n\n"
+                "  ❌ WRONG: options: ['Chest tightness', 'Shortness of breath', 'Nausea', 'None']\n"
+                "  ✅ CORRECT: options: ['Göğüste sıkışma', 'Nefes darlığı', 'Bulantı', 'Hiçbiri']"
             ),
             "de": (
                 "German",
@@ -1785,7 +1790,9 @@ Respond ONLY with valid JSON — no prose, no code fences:
                 "  ❌ WRONG: options: ['Swelling of your lips', 'Tongue', 'Throat', 'Keines davon']\n"
                 "  ✅ CORRECT: options: ['Lippen', 'Zunge', 'Rachen', 'Keines davon']\n\n"
                 "  ❌ WRONG: options: ['Did you faint', 'Have a seizure', 'Beides', 'Keines davon']\n"
-                "  ✅ CORRECT: options: ['Ohnmacht', 'Krampfanfall', 'Beides', 'Keines davon']"
+                "  ✅ CORRECT: options: ['Ohnmacht', 'Krampfanfall', 'Beides', 'Keines davon']\n\n"
+                "  ❌ WRONG: options: ['A heart attack', 'Stent', 'Angiography before', 'Keines davon']\n"
+                "  ✅ CORRECT: options: ['Herzinfarkt', 'Stent', 'Angiographie', 'Keines davon']"
             ),
         }
 
@@ -2782,7 +2789,7 @@ OUTPUT FORMAT (strict JSON):
                 ],
                 max_tokens=400,
             )
-            usage = getattr(response, "usage", None)
+            usage = getattr(response_content, "usage", None)
             if usage:
                 logger.info(
                     "generate_hospital_prep — tokens: prompt=%d completion=%d total=%d",

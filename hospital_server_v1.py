@@ -370,6 +370,34 @@ def _apply_translated_payload(questions: list, translated: list) -> None:
 
 def _enrich_patient(p: dict) -> dict:
     """Merge queue record with health-DB demographics and medical records."""
+    # Ensure complaint_en is always populated for the dashboard
+    if not p.get("complaint_en"):
+        p["complaint_en"] = p.get("chief_complaint", "")
+
+    # Re-translate complaint_en if it still equals the original (translation failed at submit)
+    _lang = (p.get("language") or "en").split("-")[0].lower()
+    if (p.get("complaint_en") and
+            p.get("complaint_en") == p.get("chief_complaint") and
+            not _lang.startswith("en")):
+        try:
+            _, _tr_enrich = _get_triage_engine()
+            if _tr_enrich and getattr(_tr_enrich, "_initialized", False):
+                _eng = _tr_enrich.translate(p["complaint_en"], target_language="en", source_language=_lang)
+                if _eng and _eng != p["complaint_en"]:
+                    p["complaint_en"] = _eng
+                    # Persist so we don't re-translate next time
+                    import sqlite3 as _sq3e
+                    try:
+                        _ce = _sq3e.connect(str(hq.db_path))
+                        _ce.execute("UPDATE patient_queue SET complaint_en=? WHERE patient_id=?",
+                                    (_eng, p.get("patient_id", "")))
+                        _ce.commit()
+                        _ce.close()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     hn = p.get("health_number") or p.get("hn", "")
 
     # Extra fields stored by patient_app but not in DB schema
@@ -726,14 +754,30 @@ def patient_submit(body: SubmitRequest):
       - Enriches with Q&A transcript, photo metadata, language, consent
       - Adds to HospitalQueue
     """
-    triage, _ = _get_triage_engine()
+    triage, submit_translator = _get_triage_engine()
 
     hospital  = body.hospital or {}
     eta       = hospital.get("eta_minutes")
     location  = {"lat": body.lat, "lon": body.lon} if body.lat else None
 
+    # Ensure chief_complaint is always in English for the dashboard
+    lang_hint_submit = (body.detected_language or "en").split("-")[0].lower()
+    complaint_en_submit = body.complaint_en or body.complaint
+    # If complaint_en equals the original (i.e. wasn't translated yet) and patient isn't English
+    if (complaint_en_submit == body.complaint and
+            body.complaint and
+            not lang_hint_submit.startswith("en")):
+        try:
+            if submit_translator and getattr(submit_translator, "_initialized", False):
+                _t = submit_translator.translate_to_english(body.complaint, source_language=body.detected_language)
+                if _t and _t != body.complaint:
+                    complaint_en_submit = _t
+                    logger.info("Submit: complaint translated to EN: '%s...'", complaint_en_submit[:60])
+        except Exception as _submit_exc:
+            logger.warning("Submit complaint translation failed: %s", _submit_exc)
+
     record = triage.create_patient_record(
-        chief_complaint=body.complaint_en or body.complaint,
+        chief_complaint=complaint_en_submit,
         assessment=body.assessment,
         language=body.detected_language or "en-US",
         eta_minutes=eta,
@@ -774,8 +818,8 @@ def patient_submit(body: SubmitRequest):
             })
 
     record["qa_transcript"]        = qa
-    record["complaint_text"]       = body.complaint                       # original-language text
-    record["complaint_en"]         = body.complaint_en or body.complaint  # always English
+    record["complaint_text"]       = body.complaint          # original-language text
+    record["complaint_en"]         = complaint_en_submit    # always English
     record["has_photo"]            = body.has_photo
     record["photo_count"]          = body.photo_count
     record["data_consent"]         = body.data_consent
@@ -1070,14 +1114,12 @@ def patient_questions(body: QuestionsRequest):
             except Exception as exc:
                 logger.warning("Translation failed (%s) - using original text.", exc)
         else:
-            # Fallback: use GPT to translate the complaint to English
-            openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
-            if openai_key and body.complaint.strip():
+            # Fallback: use Azure OpenAI to translate the complaint to English
+            _gpt_c, _gpt_m = _get_gpt_client()
+            if _gpt_c and body.complaint.strip():
                 try:
-                    import openai as _oai
-                    _client = _oai.OpenAI(api_key=openai_key)
-                    _resp = _client.chat.completions.create(
-                        model="gpt-4o-mini",
+                    _resp = _gpt_c.chat.completions.create(
+                        model=_gpt_m,
                         messages=[{
                             "role": "system",
                             "content": "Translate the user's text to English. Reply with ONLY the translated text, nothing else."
@@ -1085,7 +1127,7 @@ def patient_questions(body: QuestionsRequest):
                             "role": "user",
                             "content": body.complaint
                         }],
-                        max_tokens=250,
+                        max_completion_tokens=250,
                         temperature=0,
                     )
                     _translated = _resp.choices[0].message.content.strip()
@@ -1138,7 +1180,7 @@ def patient_questions(body: QuestionsRequest):
                         {"role": "system", "content": system_msg},
                         {"role": "user", "content": _json.dumps(payload, ensure_ascii=False)},
                     ],
-                    max_tokens=2000,
+                    max_completion_tokens=2000,
                     temperature=0.1,
                 )
                 raw = _r.choices[0].message.content.strip()
@@ -1186,20 +1228,18 @@ def patient_questions_next(body: NextQuestionRequest):
             except Exception as _exc:
                 logger.warning("/next Azure complaint translation failed (%s) — trying GPT.", _exc)
 
-        # GPT-4o-mini fallback if Azure failed or is unavailable
+        # Azure OpenAI fallback if Azure Translator failed or is unavailable
         if not _complaint_translated:
-            _oai_key = __import__("os").getenv("OPENAI_API_KEY", "")
-            if _oai_key:
+            _gpt_c2, _gpt_m2 = _get_gpt_client()
+            if _gpt_c2:
                 try:
-                    import openai as _oai_mod
-                    _oai_client = _oai_mod.OpenAI(api_key=_oai_key)
-                    _oai_resp = _oai_client.chat.completions.create(
-                        model="gpt-4o-mini",
+                    _oai_resp = _gpt_c2.chat.completions.create(
+                        model=_gpt_m2,
                         messages=[
                             {"role": "system", "content": "Translate the user's text to English. Reply with ONLY the translated text, nothing else."},
                             {"role": "user",   "content": body.complaint},
                         ],
-                        max_tokens=250, temperature=0,
+                        max_completion_tokens=250, temperature=0,
                     )
                     _g = _oai_resp.choices[0].message.content.strip()
                     if _g:
@@ -1323,17 +1363,15 @@ def patient_assess(body: AssessRequest):
                 except Exception as exc:
                     logger.warning("Azure answer translation failed (%s). Falling back.", exc)
 
-            if translated:
+            if translated and translated != str(ans):
                 ans_en = translated
             else:
-                # Fallback: use GPT to translate short answer to English
-                openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
-                if openai_key and str(ans).strip():
+                # Fallback: use Azure OpenAI to translate short answer to English
+                _gpt_c3, _gpt_m3 = _get_gpt_client()
+                if _gpt_c3 and str(ans).strip():
                     try:
-                        import openai as _oai
-                        _client = _oai.OpenAI(api_key=openai_key)
-                        _resp = _client.chat.completions.create(
-                            model="gpt-4o-mini",
+                        _resp = _gpt_c3.chat.completions.create(
+                            model=_gpt_m3,
                             messages=[{
                                 "role": "system",
                                 "content": "Translate the user's text to English. Respond with ONLY the English translation, absolutely nothing else."
@@ -1341,7 +1379,7 @@ def patient_assess(body: AssessRequest):
                                 "role": "user",
                                 "content": str(ans)
                             }],
-                            max_tokens=60,
+                            max_completion_tokens=60,
                             temperature=0,
                         )
                         _translated = _resp.choices[0].message.content.strip()
@@ -1432,8 +1470,8 @@ def api_patient_status(patient_id: str):
     translated_note = None
     if raw_note:
         latest_entry = raw_note.split("\n---\n")[0].strip()
-        _m = _re.match(r"^\[.*?\]\s*\[.*?\]\s*([\s\S]+)$", latest_entry)
-        clean_note = (_m.group(1).strip() if _m else latest_entry) or None
+        # Strip ALL leading [bracket] groups: [timestamp] [action→level] [DoctorName]
+        clean_note = _re.sub(r"^(?:\[.*?\]\s*)+", "", latest_entry).strip() or None
         if clean_note:
             patient_lang  = match.get("language") or "en-US"
             patient_code  = patient_lang.split("-")[0].lower()  # "en-GB" → "en"
@@ -1450,15 +1488,13 @@ def api_patient_status(patient_id: str):
             except Exception as _te:
                 logger.warning("Azure note translation failed: %s", _te)
 
-            # ── 2. Fallback: GPT translation (same pattern used elsewhere in codebase) ──
+            # ── 2. Fallback: Azure OpenAI translation ──
             if not translated_note:
-                _openai_key = __import__("os").getenv("OPENAI_API_KEY", "")
-                if _openai_key:
+                _gpt_c4, _gpt_m4 = _get_gpt_client()
+                if _gpt_c4:
                     try:
-                        import openai as _oai
-                        _client = _oai.OpenAI(api_key=_openai_key)
-                        _resp = _client.chat.completions.create(
-                            model="gpt-4o-mini",
+                        _resp = _gpt_c4.chat.completions.create(
+                            model=_gpt_m4,
                             messages=[
                                 {
                                     "role": "system",
@@ -1470,7 +1506,7 @@ def api_patient_status(patient_id: str):
                                 },
                                 {"role": "user", "content": clean_note},
                             ],
-                            max_tokens=500,
+                            max_completion_tokens=500,
                             temperature=0,
                         )
                         _gpt = _resp.choices[0].message.content.strip()
@@ -1480,6 +1516,10 @@ def api_patient_status(patient_id: str):
                     except Exception as exc:
                         logger.warning("GPT note translation failed: %s", exc)
 
+            # Fallback: show clean note without raw timestamp/action prefix
+            if not translated_note:
+                translated_note = clean_note
+
     # ── Patient messages (replies to doctor) ────────────────────────────────
     import json as _json
     raw_msgs = match.get("patient_messages") or "[]"
@@ -1487,6 +1527,33 @@ def api_patient_status(patient_id: str):
         patient_messages = _json.loads(raw_msgs)
     except Exception:
         patient_messages = []
+
+    # Re-translate any message where text_en == text (translation failed at submit time)
+    _msgs_updated = False
+    for _msg in patient_messages:
+        _orig = _msg.get("text", "")
+        _en = _msg.get("text_en", "")
+        _msg_lang = (_msg.get("lang") or "en").lower().split("-")[0]
+        if _orig and _en == _orig and not _msg_lang.startswith("en"):
+            try:
+                _, _tr_msg = _get_triage_engine()
+                if _tr_msg and getattr(_tr_msg, "_initialized", False):
+                    _retrans = _tr_msg.translate(_orig, target_language="en", source_language=_msg_lang)
+                    if _retrans and _retrans != _orig:
+                        _msg["text_en"] = _retrans
+                        _msgs_updated = True
+            except Exception:
+                pass
+    if _msgs_updated:
+        import sqlite3 as _sq3r
+        try:
+            _c = _sq3r.connect(str(hq.db_path))
+            _c.execute("UPDATE patient_queue SET patient_messages=? WHERE patient_id=?",
+                       (_json.dumps(patient_messages, ensure_ascii=False), patient_id))
+            _c.commit()
+            _c.close()
+        except Exception:
+            pass
 
     # ── Doctor Metadata (Photo mapping) ──────────────────────────────────
     # Keys support both with and without "Dr." prefix for maximum resilience
@@ -1611,7 +1678,7 @@ def api_assign_doctor(patient_id: str, body: dict):
 
 @app.post("/api/patient/{patient_id}/reply")
 def api_patient_reply(patient_id: str, body: dict):
-    """Store a patient reply and translate it to German for the doctor."""
+    """Store a patient reply and translate it to English for the doctor."""
     import json as _json2, sqlite3 as _sq3
     text = (body.get("text") or "").strip()
     if not text:
@@ -1625,30 +1692,29 @@ def api_patient_reply(patient_id: str, body: dict):
     patient_lang = match2.get("language") or "en-US"
     patient_code = patient_lang.split("-")[0].lower()
 
-    # Translate patient message → English for doctor
+    # Translate patient message → English for doctor (skip if already English)
     translated_en = None
-    try:
-        _, _tr2 = _get_triage_engine()
-        if _tr2 and getattr(_tr2, "_initialized", False):
-            _az2 = _tr2.translate(text, target_language="en")
-            if _az2 and _az2 != text:
-                translated_en = _az2
-    except Exception:
-        pass
+    if not patient_code.startswith("en"):
+        try:
+            _, _tr2 = _get_triage_engine()
+            if _tr2 and getattr(_tr2, "_initialized", False):
+                _az2 = _tr2.translate(text, target_language="en", source_language=patient_lang)
+                if _az2 and _az2 != text:
+                    translated_en = _az2
+        except Exception:
+            pass
 
-    if not translated_en:
-        _openai_key2 = __import__("os").getenv("OPENAI_API_KEY", "")
-        if _openai_key2:
+    if not translated_en and not patient_code.startswith("en"):
+        _gpt_c5, _gpt_m5 = _get_gpt_client()
+        if _gpt_c5:
             try:
-                import openai as _oai2
-                _c2 = _oai2.OpenAI(api_key=_openai_key2)
-                _r2 = _c2.chat.completions.create(
-                    model="gpt-4o-mini",
+                _r2 = _gpt_c5.chat.completions.create(
+                    model=_gpt_m5,
                     messages=[
                         {"role": "system", "content": "You are a medical translator. Translate the following patient message to English. Reply with ONLY the translated text."},
                         {"role": "user", "content": text},
                     ],
-                    max_tokens=300, temperature=0,
+                    max_completion_tokens=300, temperature=0,
                 )
                 translated_en = _r2.choices[0].message.content.strip()
             except Exception:
@@ -1659,7 +1725,7 @@ def api_patient_reply(patient_id: str, body: dict):
         "text": text,
         "text_en": translated_en or text,
         "lang": patient_code,
-        "ts": _dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+        "ts": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
     }
 
     try:
@@ -2148,6 +2214,14 @@ def _get_triage_engine():
         _patient_services["triage"]     = TriageEngine(knowledge_indexer=ki, translator=tr)
         _patient_services["translator"] = tr
     return _patient_services["triage"], _patient_services.get("translator")
+
+
+def _get_gpt_client():
+    """Return (gpt_client, deployment_name) using the already-configured Azure OpenAI client."""
+    triage, _ = _get_triage_engine()
+    client = getattr(triage, "openai_client", None)
+    deployment = getattr(triage, "deployment", None) or __import__("os").getenv("GPT_DEPLOYMENT", "gpt-5.4-mini")
+    return client, deployment
 
 
 def _get_speech():
