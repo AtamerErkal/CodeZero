@@ -235,17 +235,24 @@ class SpeechHandler:
             except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as ffmpeg_err:
                 logger.warning("ffmpeg not available or failed (%s), trying pydub.", ffmpeg_err)
 
-            # Strategy 2: pydub (requires ffmpeg internally but may be on PATH differently)
+            # Strategy 2: pydub (locates ffmpeg differently than subprocess PATH)
             try:
                 from pydub import AudioSegment
-                audio = AudioSegment.from_file(src_path)
-                audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
-                audio.export(wav_path, format="wav")
-                os.unlink(src_path)
-                logger.info("pydub converted browser audio to WAV: %s", wav_path)
-                return wav_path
-            except Exception as pydub_err:
-                logger.warning("pydub conversion failed: %s", pydub_err)
+            except ImportError:
+                logger.warning(
+                    "pydub not installed — run: pip install pydub  "
+                    "(also requires the ffmpeg binary on your system PATH)"
+                )
+            else:
+                try:
+                    audio = AudioSegment.from_file(src_path)
+                    audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+                    audio.export(wav_path, format="wav")
+                    os.unlink(src_path)
+                    logger.info("pydub converted browser audio to WAV: %s", wav_path)
+                    return wav_path
+                except Exception as pydub_err:
+                    logger.warning("pydub conversion failed: %s", pydub_err)
 
             os.unlink(src_path)
             return None

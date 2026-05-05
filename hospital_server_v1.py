@@ -333,7 +333,9 @@ _LANG_GUIDES = {
         "  • 'Bewusstlosigkeit' or 'Ohnmacht' (not Synkope)\n"
         "  • 'Ausschlag' (not Exanthem), 'Zittern' (not Rigor)\n"
         "- Answer options in simple, natural German: 'Ja', 'Nein', 'Nicht sicher',\n"
-        "  'Gerade eben', 'Vor weniger als 1 Stunde', 'Leicht', 'Mittel', 'Stark'\n\n"
+        "  'Gerade eben', 'Vor weniger als 1 Stunde', 'Leicht', 'Mittel', 'Stark'\n"
+        "- For pain CHARACTER questions: use 'Wie würden Sie den Schmerz beschreiben?' — NEVER 'Welche Farbe hat der Schmerz?' ('Farbe' means color, not character).\n"
+        "  Correct pain character options: 'Drückend', 'Stechend', 'Brennend', 'Pulsierend', 'Dumpf', 'Keines davon'\n\n"
         "EXAMPLE:\n"
         "Input:  {\"q\": \"Does the pain radiate to your arm or jaw?\", \"opts\": [\"Yes\", \"No\"]}\n"
         "Output: {\"q\": \"Strahlt der Schmerz in Ihren Arm oder Kiefer aus?\", \"opts\": [\"Ja\", \"Nein\"]}"
@@ -379,24 +381,54 @@ def _enrich_patient(p: dict) -> dict:
     if (p.get("complaint_en") and
             p.get("complaint_en") == p.get("chief_complaint") and
             not _lang.startswith("en")):
+        _translated_en: str | None = None
+
+        # Strategy 1: Azure Translator
         try:
             _, _tr_enrich = _get_triage_engine()
             if _tr_enrich and getattr(_tr_enrich, "_initialized", False):
-                _eng = _tr_enrich.translate(p["complaint_en"], target_language="en", source_language=_lang)
-                if _eng and _eng != p["complaint_en"]:
-                    p["complaint_en"] = _eng
-                    # Persist so we don't re-translate next time
-                    import sqlite3 as _sq3e
-                    try:
-                        _ce = _sq3e.connect(str(hq.db_path))
-                        _ce.execute("UPDATE patient_queue SET complaint_en=? WHERE patient_id=?",
-                                    (_eng, p.get("patient_id", "")))
-                        _ce.commit()
-                        _ce.close()
-                    except Exception:
-                        pass
+                _t = _tr_enrich.translate(p["complaint_en"], target_language="en", source_language=_lang)
+                if _t and _t != p["complaint_en"]:
+                    _translated_en = _t
         except Exception:
             pass
+
+        # Strategy 2: GPT fallback (always available when OPENAI_API_KEY is set)
+        if not _translated_en:
+            try:
+                _te, _ = _get_triage_engine()
+                if _te and getattr(_te, "openai_client", None):
+                    _resp = _te.openai_client.chat.completions.create(
+                        model=getattr(_te, "deployment", "gpt-4o"),
+                        messages=[{
+                            "role": "user",
+                            "content": (
+                                "Translate the following patient complaint to English. "
+                                "Reply with ONLY the translated text, no explanations.\n\n"
+                                f"{p['complaint_en']}"
+                            )
+                        }],
+                        max_tokens=120,
+                        temperature=0,
+                    )
+                    _t = (_resp.choices[0].message.content or "").strip()
+                    if _t and _t != p["complaint_en"]:
+                        _translated_en = _t
+            except Exception:
+                pass
+
+        if _translated_en:
+            p["complaint_en"] = _translated_en
+            # Persist so we don't re-translate next time
+            import sqlite3 as _sq3e
+            try:
+                _ce = _sq3e.connect(str(hq.db_path))
+                _ce.execute("UPDATE patient_queue SET complaint_en=? WHERE patient_id=?",
+                            (_translated_en, p.get("patient_id", "")))
+                _ce.commit()
+                _ce.close()
+            except Exception:
+                pass
 
     hn = p.get("health_number") or p.get("hn", "")
 
@@ -767,14 +799,39 @@ def patient_submit(body: SubmitRequest):
     if (complaint_en_submit == body.complaint and
             body.complaint and
             not lang_hint_submit.startswith("en")):
+        # Strategy 1: Azure Translator
         try:
             if submit_translator and getattr(submit_translator, "_initialized", False):
                 _t = submit_translator.translate_to_english(body.complaint, source_language=body.detected_language)
                 if _t and _t != body.complaint:
                     complaint_en_submit = _t
-                    logger.info("Submit: complaint translated to EN: '%s...'", complaint_en_submit[:60])
+                    logger.info("Submit: complaint translated via Azure: '%s...'", complaint_en_submit[:60])
         except Exception as _submit_exc:
-            logger.warning("Submit complaint translation failed: %s", _submit_exc)
+            logger.warning("Submit Azure translation failed: %s", _submit_exc)
+        # Strategy 2: GPT fallback (if Azure Translator didn't translate)
+        if complaint_en_submit == body.complaint:
+            try:
+                _gpt_client = getattr(triage, "openai_client", None)
+                if _gpt_client:
+                    _resp = _gpt_client.chat.completions.create(
+                        model=getattr(triage, "deployment", "gpt-4o"),
+                        messages=[{
+                            "role": "user",
+                            "content": (
+                                "Translate the following patient complaint to English. "
+                                "Reply with ONLY the translated text, no explanations.\n\n"
+                                f"{body.complaint}"
+                            )
+                        }],
+                        max_tokens=120,
+                        temperature=0,
+                    )
+                    _t = (_resp.choices[0].message.content or "").strip()
+                    if _t and _t != body.complaint:
+                        complaint_en_submit = _t
+                        logger.info("Submit: complaint translated via GPT: '%s...'", complaint_en_submit[:60])
+            except Exception as _gpt_exc:
+                logger.warning("Submit GPT translation failed: %s", _gpt_exc)
 
     record = triage.create_patient_record(
         chief_complaint=complaint_en_submit,

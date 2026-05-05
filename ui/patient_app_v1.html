@@ -7152,14 +7152,14 @@
                 </div>
 
                 <!-- ── Inline Navigation Accordion ──────────────────── -->
-                <div style="margin-bottom:20px;">
+                <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden;border-left:4px solid #0D9488 !important;">
                     <button id="inlineNavToggleBtn" onclick="toggleInlineNavMap()"
-                        style="width:100%;height:60px;border-radius:16px;background:linear-gradient(135deg,#0D9488,#0F766E);border:none;color:#fff;font-size:1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0 18px;box-shadow:0 4px 20px rgba(13,148,136,0.4);font-family:var(--font);transition:border-radius 0.3s;">
-                        <i data-lucide="navigation" style="width:20px;height:20px;flex-shrink:0;"></i>
+                        style="width:100%;height:56px;background:transparent;border:none;color:var(--text);font-size:0.95rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0 18px;font-family:var(--font);">
+                        <i data-lucide="navigation" style="width:20px;height:20px;flex-shrink:0;color:#0D9488;"></i>
                         <span style="flex:1;text-align:left;">${t('rs_openNav')}</span>
-                        <svg id="inlineNavChevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform 0.3s;"><polyline points="6 9 12 15 18 9"/></svg>
+                        <svg id="inlineNavChevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform 0.3s;color:#0D9488;"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
-                    <div id="inlineNavAccordion" style="display:none;background:var(--card);border:1.5px solid rgba(13,148,136,0.25);border-top:none;border-radius:0 0 16px 16px;overflow:hidden;">
+                    <div id="inlineNavAccordion" style="display:none;border-top:1px solid var(--border);">
                         <div id="inlineNavMapEl" style="height:260px;width:100%;background:var(--card-alt);"></div>
                         <div style="padding:14px 16px;border-top:1px solid var(--border);">
                             <div id="inlineNavRouteInfo" style="font-size:0.8rem;color:var(--text-2);margin-bottom:12px;display:flex;gap:16px;"></div>
@@ -8249,16 +8249,17 @@
             const etaTxt = hosp.eta_minutes ? `~${hosp.eta_minutes} min` : '';
             const wrap = document.createElement('div');
             wrap.id = '_floatingNavBtn';
-            wrap.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);width:calc(min(480px,100vw) - 32px);z-index:99999;border-radius:18px;background:linear-gradient(135deg,#0D9488,#0F766E);box-shadow:0 6px 28px rgba(13,148,136,0.5);';
+            wrap.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);width:calc(min(480px,100vw) - 32px);z-index:99999;border-radius:18px;background:var(--card);border-left:4px solid #0D9488;box-shadow:0 6px 28px rgba(0,0,0,0.35);overflow:hidden;';
             wrap.innerHTML = `
                 <div style="padding:14px 18px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                        <div style="font-size:0.73rem;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:rgba(255,255,255,0.85);">🏥 ${escHtml(hosp.name)}</div>
-                        <button onclick="document.getElementById('_floatingNavBtn').remove()" style="background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:26px;height:26px;color:rgba(255,255,255,0.85);font-size:0.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                        <div style="font-size:0.73rem;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:#0D9488;">🏥 ${escHtml(hosp.name)}</div>
+                        <button onclick="document.getElementById('_floatingNavBtn').remove()" style="background:var(--card-alt);border:1px solid var(--border);border-radius:50%;width:26px;height:26px;color:var(--text-2);font-size:0.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
                     </div>
-                    ${(distTxt || etaTxt) ? `<div style="font-size:0.78rem;color:rgba(255,255,255,0.65);margin-bottom:12px;">${distTxt}${etaTxt}</div>` : ''}
-                    <button onclick="openGoogleMapsNavUlm()" style="width:100%;height:50px;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.45);border-radius:12px;color:#fff;font-size:1rem;font-weight:900;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:10px;">
-                        🧭 ${t('rs_openNav') || 'Navigasyonu Aç'}
+                    ${(distTxt || etaTxt) ? `<div style="font-size:0.78rem;color:var(--text-2);margin-bottom:12px;">${distTxt}${etaTxt}</div>` : ''}
+                    <button onclick="openGoogleMapsNavUlm()" style="width:100%;height:48px;background:var(--card-alt);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:0.95rem;font-weight:800;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                        ${t('rs_openNav') || 'Navigasyonu Aç'}
                     </button>
                 </div>`;
             document.body.appendChild(wrap);
@@ -8268,14 +8269,14 @@
         function _inlineNavAccordionHTML(suffix) {
             const s = suffix || 'X';
             return `
-            <div>
+            <div style="background:var(--card);border-left:4px solid #0D9488;border-radius:16px;overflow:hidden;">
                 <button id="inlineNavToggleBtn${s}" onclick="toggleInlineNavMap('${s}')"
-                    style="width:100%;height:52px;border-radius:14px;background:linear-gradient(135deg,#0D9488,#0F766E);color:#fff;border:none;font-size:0.92rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0 16px;box-shadow:0 4px 16px rgba(13,148,136,0.35);font-family:var(--font);transition:border-radius 0.25s;">
-                    <span style="font-size:1.1rem;">🧭</span>
+                    style="width:100%;height:52px;background:transparent;border:none;color:var(--text);font-size:0.92rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0 16px;font-family:var(--font);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                     <span style="flex:1;text-align:left;">${t('rs_openNav') || 'Open Navigation'}</span>
-                    <svg id="inlineNavChevron${s}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform 0.25s;"><polyline points="6 9 12 15 18 9"/></svg>
+                    <svg id="inlineNavChevron${s}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform 0.25s;"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
-                <div id="inlineNavAccordion${s}" style="display:none;border:1.5px solid rgba(13,148,136,0.25);border-top:none;border-radius:0 0 14px 14px;overflow:hidden;background:var(--card);">
+                <div id="inlineNavAccordion${s}" style="display:none;border-top:1px solid var(--border);overflow:hidden;background:var(--card);">
                     <div id="inlineNavMapEl${s}" style="height:240px;width:100%;"></div>
                     <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
                         <div id="inlineNavRouteInfo${s}" style="font-size:0.78rem;color:var(--text-2);display:flex;flex-wrap:wrap;gap:12px;"></div>
@@ -8788,11 +8789,11 @@
         function _emergencyCallsHTML(suffix) {
             const id = suffix || '';
             return `
-            <div style="background:linear-gradient(135deg,rgba(220,38,38,0.06),rgba(153,27,27,0.04));border:1.5px solid rgba(220,38,38,0.18);border-radius:20px;padding:16px;margin-top:8px;">
-                <div style="font-size:0.62rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:rgba(220,38,38,0.6);margin-bottom:12px;display:flex;align-items:center;gap:5px;">
-                    <span style="width:14px;height:1px;background:rgba(220,38,38,0.3);display:inline-block;"></span>
+            <div class="card" style="margin-top:8px;padding:16px;border-left:4px solid #DC2626 !important;">
+                <div style="font-size:0.62rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:rgba(220,38,38,0.7);margin-bottom:12px;display:flex;align-items:center;gap:5px;">
+                    <span style="width:14px;height:1px;background:rgba(220,38,38,0.4);display:inline-block;"></span>
                     ${t('sos_section_label')}
-                    <span style="flex:1;height:1px;background:rgba(220,38,38,0.3);display:inline-block;"></span>
+                    <span style="flex:1;height:1px;background:rgba(220,38,38,0.4);display:inline-block;"></span>
                 </div>
                 <!-- SOS Panic Button -->
                 <button id="panicSosBtn${id}" onclick="showSosOverlay()"
