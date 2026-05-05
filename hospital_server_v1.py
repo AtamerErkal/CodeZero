@@ -408,7 +408,7 @@ def _enrich_patient(p: dict) -> dict:
                                 f"{p['complaint_en']}"
                             )
                         }],
-                        max_tokens=120,
+                        max_completion_tokens=120,
                         temperature=0,
                     )
                     _t = (_resp.choices[0].message.content or "").strip()
@@ -823,7 +823,7 @@ def patient_submit(body: SubmitRequest):
                                 f"{body.complaint}"
                             )
                         }],
-                        max_tokens=120,
+                        max_completion_tokens=120,
                         temperature=0,
                     )
                     _t = (_resp.choices[0].message.content or "").strip()
@@ -1157,7 +1157,13 @@ def patient_questions(body: QuestionsRequest):
     complaint_en = body.complaint_en or body.complaint
     lang_hint = body.detected_language or "en-US"
 
-    if not body.complaint_en and not lang_hint.lower().startswith("en"):
+    # Translate when: no English translation yet, OR complaint_en equals the original
+    # (patient app sends S.complaint as fallback, meaning no real translation happened yet)
+    _needs_translation = (
+        not lang_hint.lower().startswith("en") and
+        (not body.complaint_en or body.complaint_en == body.complaint)
+    )
+    if _needs_translation:
         if translator:
             try:
                 # Pass detected language as source to improve translation accuracy

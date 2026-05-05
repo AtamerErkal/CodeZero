@@ -3811,6 +3811,7 @@
                 <p id="ql_topBannerText" style="margin:0;"></p>
             </div>
 
+
             <div class="spinner-wrap visible" id="questionsSpinner">
                 <div class="ql-loader">
 
@@ -5076,8 +5077,11 @@
                 rs_timeline_track_btn: 'Live-Tracking',
                 rs_timeline_amb_req: 'Krankenwagen angefordert',
                 rs_timeline_amb_disp: 'Krankenwagen ist unterwegs',
+                ass_insight_title: 'AiVoN Klinische Einschätzung',
+                rec_title: 'AiVoN-Empfehlung',
                 rec_l1: 'Ich teile Ihre Daten mit dem nächsten Krankenhaus und fordere einen Krankenwagen an.',
                 rec_l2: 'Sie müssen dringend ins Krankenhaus. Wie kommen Sie dorthin?',
+                rec_l3: 'Sie müssen dringend ins Krankenhaus. Ich teile Ihre Daten und Ihren Standort mit dem nächsten Krankenhaus.',
                 rec_btn_confirm: 'BESTÄTIGEN',
                 rec_btn_ambulance: 'Krankenwagen',
                 rec_btn_self: 'Selbst fahren',
@@ -5409,6 +5413,8 @@
         };
 
         // ═══════════════════════════════════════════════════════════
+        const MAX_QUESTIONS = 5;
+
         // STATE
         // ═══════════════════════════════════════════════════════════
         const S = {
@@ -6104,6 +6110,7 @@
         // the in-flight request (AbortController) and restart with the new answer.
         function _startPrefetch() {
             if (S._adaptiveDone) return;
+            if (S.qIdx >= MAX_QUESTIONS - 1) return; // already on last question, no prefetch needed
 
             // Cancel any in-flight prefetch for a stale answer
             if (S._prefetchAbortCtrl) {
@@ -6176,6 +6183,7 @@
             document.getElementById('questionsSpinner').style.display = 'flex';
             document.getElementById('questionsContainer').style.display = 'none';
             document.getElementById('questionNav').style.display = 'none';
+
             document.getElementById('qIntroCard').style.display = 'block';
             const qi = document.getElementById('qIntroText');
             if (qi) qi.innerHTML = t('questionsIntro');
@@ -6379,18 +6387,18 @@
             const currentQ = S.qIdx + 1;
             const isMulti = !!q.allow_multi;
 
-            // Use actual question count; cap dots display at 7 for readability
-            const DOTS_MAX = Math.max(S.questions ? S.questions.length : currentQ, currentQ);
-            const DOTS_SHOW = Math.min(DOTS_MAX, 7);
-            const dotsHtml = Array.from({ length: DOTS_SHOW }, (_, i) => {
+            // Always show exactly MAX_QUESTIONS dots
+            const dotsHtml = Array.from({ length: MAX_QUESTIONS }, (_, i) => {
                 if (i < S.qIdx) return '<div class="q-dot q-dot-done"></div>';
                 if (i === S.qIdx) return '<div class="q-dot q-dot-active"></div>';
                 return '<div class="q-dot" style="opacity:0.3"></div>';
             }).join('');
-            const isLast = currentQ >= DOTS_MAX;
+            const isLast = currentQ >= MAX_QUESTIONS;
             const remainingLbl = isLast
                 ? (S.lang === 'tr' ? 'Son soru' : S.lang === 'de' ? 'Letzte Frage' : 'Last question')
-                : (S.lang === 'tr' ? `Soru ${currentQ} / ${DOTS_MAX}` : S.lang === 'de' ? `Frage ${currentQ} / ${DOTS_MAX}` : `Question ${currentQ} / ${DOTS_MAX}`);
+                : (S.lang === 'tr' ? `Soru ${currentQ} / ${MAX_QUESTIONS}` : S.lang === 'de' ? `Frage ${currentQ} / ${MAX_QUESTIONS}` : `Question ${currentQ} / ${MAX_QUESTIONS}`);
+
+            // Update top progress bar
 
             const container = document.getElementById('questionsContainer');
             container.style.display = 'block';
@@ -6561,6 +6569,12 @@
 
         function nextQuestion() {
             if (!S.answers[S.qIdx]) return;
+
+            // Hard cap: 5th question answered → go straight to assessment
+            if (S.qIdx >= MAX_QUESTIONS - 1) {
+                startAssessment();
+                return;
+            }
 
             // ── Adaptive mode: use prefetched question or wait ───────────────
             function _advance(nextQ) {
