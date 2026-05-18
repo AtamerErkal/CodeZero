@@ -4719,6 +4719,8 @@
                 level_word: 'Level',
                 contact_sending: 'Sending…', contact_notified: 'Contact Notified',
                 contact_forwarded: 'Your location, the hospital you are being taken to, and your health status have been forwarded to',
+                ec_notified_prefix: 'Your emergency contact',
+                ec_notified_suffix: 'has been informed about your location, health status, and the hospital you are going to.',
                 // ── Assessment result page (v1) ──
                 ass_rec_title: "AiVoN's Recommendation",
                 ass_gp_title: 'Consult Your GP (Family Doctor)',
@@ -5034,6 +5036,8 @@
                 level_word: 'Stufe',
                 contact_sending: 'Wird gesendet…', contact_notified: 'Kontakt benachrichtigt',
                 contact_forwarded: 'Ihr Standort, das Krankenhaus, in das Sie gebracht werden, und Ihr Gesundheitszustand wurden weitergeleitet an',
+                ec_notified_prefix: 'Ihr Notfallkontakt',
+                ec_notified_suffix: 'wurde über Ihren Standort, Ihren Gesundheitszustand und das Krankenhaus, in das Sie gebracht werden, informiert.',
                 // ── Assessment result page (v1) ──
                 ass_rec_title: 'AiVoN-Empfehlung',
                 ass_gp_title: 'Hausarztbesuch empfohlen',
@@ -5356,6 +5360,8 @@
                 level_word: 'Seviye',
                 contact_sending: 'Gönderiliyor…', contact_notified: 'Kişi Bilgilendirildi',
                 contact_forwarded: 'Konumunuz, götürüleceğiniz hastane ve sağlık durumunuz şu kişiye iletildi:',
+                ec_notified_prefix: 'Acil kişiniz',
+                ec_notified_suffix: 'konumunuz, sağlık durumunuz ve gitmekte olduğunuz hastane hakkında bilgilendirildi.',
                 ass_rec_title: "AiVoN Önerisi",
                 ass_gp_title: 'Aile Hekiminize Danışın',
                 ass_gp_desc: 'Değerlendirmenize göre bu durum acil değildir. Lütfen aile hekiminizden bir randevu alın.',
@@ -7647,7 +7653,7 @@
                 const ecStr = ecPhone ? `${ecName} (${ecPhone})` : ecName;
                 const note = document.createElement('p');
                 note.style.cssText = 'margin-top:10px;font-size:0.82rem;color:var(--success-text);background:var(--success-l);padding:10px 14px;border-radius:10px;line-height:1.5;';
-                note.textContent = `${t('contact_forwarded')} ${ecStr}.`;
+                note.innerHTML = `✅ ${t('ec_notified_prefix')} <strong>${ecStr}</strong> ${t('ec_notified_suffix')}`;
                 btn.parentNode.insertBefore(note, btn.nextSibling);
             }
         }
@@ -8860,7 +8866,7 @@
             if (status) {
                 const ecStr = ecName ? (ecPhone ? `${ecName} (${ecPhone})` : ecName) : '';
                 status.innerHTML = ecStr
-                    ? `✅ ${t('contact_forwarded')} <strong>${ecStr}</strong>.`
+                    ? `✅ ${t('ec_notified_prefix')} <strong>${ecStr}</strong> ${t('ec_notified_suffix')}`
                     : t('ass_ec_sent');
                 status.style.display = 'block';
             }
