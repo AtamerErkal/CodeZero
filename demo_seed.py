@@ -3,11 +3,13 @@ Demo Seed — University Clinic Ulm
 ===================================
 Populates the hospital queue with a realistic snapshot for demo/recording purposes.
 
-Scenario:  A busy morning shift at Universitätsklinikum Ulm.
-  • 6  patients en route  (IMMEDIATE × 2, EMERGENCY × 1, URGENT × 2, STANDARD × 1)
-       — 4 by ambulance, 2 own transport
-  • 7  patients in treatment (mix of triage levels, doctors + beds assigned)
-  • 5  patients discharged earlier today
+Scenario:  A busy morning shift at Universitätsklinikum Ulm — 7 patients total.
+  • 3  patients en route  (IMMEDIATE × 1, EMERGENCY × 1, URGENT × 1)
+       — 2 by ambulance, 1 own transport  |  ETA 10–15 min each
+  • 3  patients in treatment (all have doctors + beds assigned — no awaiting-count drift)
+  • 1  patient discharged earlier today
+
+Language mix: 2 Turkish · 2 German · 3 British
 
 Run standalone:   python demo_seed.py
 Or call via API:  POST /api/admin/demo
@@ -118,9 +120,9 @@ BEDS = [
 
 DEMO_PATIENTS = [
 
-    # ━━━━━━━━ EN ROUTE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # ━━━━━━━━ EN ROUTE — 3 patients (2 ambulance · 1 own transport · ETA 10-15 min) ━━━
 
-    {   # P01 — Massive MI, very close
+    {   # P01 — STEMI [DE] · ambulance · ETA 14 min
         "patient_id": "DEMO-P01-ULM",
         "health_number": "DEMO-DE-001",  # Karl Becker, 68, CAD
         "status": "incoming",
@@ -135,42 +137,18 @@ DEMO_PATIENTS = [
         "recommended_action": "Immediate cath lab activation. Aspirin 300mg + Clopidogrel 600mg. IV access ×2. Heparin bolus en route.",
         "time_sensitivity": "Within 5 minutes",
         "language": "de-DE",
-        "eta_override": 4,
+        "eta_override": 14,
         "lat": 48.438, "lon": 9.941,
         "qa_transcript": [
-            {"question_en": "When did the pain start?",      "question": "Wann hat der Schmerz begonnen?",     "answer": "About 20 minutes ago", "original_answer": "Vor etwa 20 Minuten"},
-            {"question_en": "Rate pain 1-10?",               "question": "Schmerz auf einer Skala 1-10?",      "answer": "10",                   "original_answer": "10"},
-            {"question_en": "Any shortness of breath?",      "question": "Haben Sie Kurzatmigkeit?",           "answer": "Yes, severe",          "original_answer": "Ja, stark"},
-            {"question_en": "History of heart disease?",     "question": "Herzerkrankung bekannt?",            "answer": "Yes, stents",          "original_answer": "Ja, Stents"},
+            {"question_en": "When did the pain start?",   "question": "Wann hat der Schmerz begonnen?", "answer": "About 20 minutes ago", "original_answer": "Vor etwa 20 Minuten"},
+            {"question_en": "Rate pain 1-10?",            "question": "Schmerz auf einer Skala 1-10?",  "answer": "10",                   "original_answer": "10"},
+            {"question_en": "Any shortness of breath?",   "question": "Haben Sie Kurzatmigkeit?",      "answer": "Yes, severe",          "original_answer": "Ja, stark"},
+            {"question_en": "History of heart disease?",  "question": "Herzerkrankung bekannt?",       "answer": "Yes, stents",          "original_answer": "Ja, Stents"},
         ],
     },
 
-    {   # P02 — Stroke
+    {   # P02 — Acute severe asthma [UK] · ambulance · ETA 12 min
         "patient_id": "DEMO-P02-ULM",
-        "health_number": "DEMO-DE-007",  # Thomas Becker, 60, T2DM obese
-        "status": "incoming",
-        "has_ambulance": True,
-        "triage_level": "IMMEDIATE",
-        "chief_complaint": "Sudden facial droop, arm weakness, slurred speech — possible stroke",
-        "complaint_text": "Plötzliche Gesichtslähmung rechts, Armlähmung, undeutliche Sprache",
-        "assessment": "High probability ischaemic stroke. FAST positive. Last seen well 35 min ago. Thrombolysis window open.",
-        "red_flags": ["facial_droop","arm_weakness","speech_slurred","sudden_onset"],
-        "suspected_conditions": ["Ischaemic Stroke","TIA"],
-        "risk_score": 9,
-        "recommended_action": "Stroke team activation. CT head + CT angio. NIHSS. tPA if eligible.",
-        "time_sensitivity": "Within 5 minutes",
-        "language": "de-DE",
-        "eta_override": 8,
-        "lat": 48.395, "lon": 9.871,
-        "qa_transcript": [
-            {"question_en": "When did symptoms start?",       "question": "Wann begannen die Symptome?",       "answer": "Approximately 35 minutes ago", "original_answer": "Vor ca. 35 Minuten"},
-            {"question_en": "Can you lift both arms?",        "question": "Können Sie beide Arme heben?",      "answer": "No, right arm very weak",      "original_answer": "Nein, rechter Arm sehr schwach"},
-            {"question_en": "Blood thinners?",                "question": "Blutverdünner?",                    "answer": "No",                           "original_answer": "Nein"},
-        ],
-    },
-
-    {   # P03 — Severe asthma
-        "patient_id": "DEMO-P03-ULM",
         "health_number": "DEMO-UK-002",  # Emily Clarke, 35, asthma
         "status": "incoming",
         "has_ambulance": True,
@@ -187,17 +165,17 @@ DEMO_PATIENTS = [
         "eta_override": 12,
         "lat": 48.462, "lon": 9.998,
         "qa_transcript": [
-            {"question_en": "How long have you been struggling to breathe?", "question": "How long have you been struggling to breathe?", "answer": "About an hour, getting worse", "original_answer": "About an hour, getting worse"},
-            {"question_en": "Using your inhaler?",                           "question": "Using your inhaler?",                           "answer": "Yes, 10 puffs, not helping",   "original_answer": "Yes, 10 puffs, not helping"},
-            {"question_en": "Any previous ITU admissions?",                  "question": "Any previous ITU admissions?",                  "answer": "Once, 2 years ago",           "original_answer": "Once, 2 years ago"},
+            {"question_en": "How long struggling to breathe?", "question": "How long struggling to breathe?", "answer": "About an hour, getting worse", "original_answer": "About an hour, getting worse"},
+            {"question_en": "Using your inhaler?",             "question": "Using your inhaler?",             "answer": "Yes, 10 puffs, not helping",   "original_answer": "Yes, 10 puffs, not helping"},
+            {"question_en": "Any previous ITU admissions?",    "question": "Any previous ITU admissions?",    "answer": "Once, 2 years ago",           "original_answer": "Once, 2 years ago"},
         ],
     },
 
-    {   # P04 — Diabetic emergency (Turkish patient)
-        "patient_id": "DEMO-P04-ULM",
+    {   # P03 — Diabetic crisis [TR] · own transport · ETA 11 min
+        "patient_id": "DEMO-P03-ULM",
         "health_number": "DEMO-TR-001",  # Ahmet Yılmaz, 59, T2DM + hypertension
         "status": "incoming",
-        "has_ambulance": True,
+        "has_ambulance": False,
         "triage_level": "URGENT",
         "chief_complaint": "Confusion, extreme thirst, rapid breathing — possible hyperglycaemic crisis",
         "complaint_text": "Çok susadım, kafam karışık, nefes almak zor",
@@ -208,66 +186,19 @@ DEMO_PATIENTS = [
         "recommended_action": "IV fluid resuscitation (0.9% NaCl 1L bolus). Insulin infusion protocol. Urine catheter. Hourly glucose.",
         "time_sensitivity": "Within 20 minutes",
         "language": "tr-TR",
-        "eta_override": 17,
+        "eta_override": 11,
         "lat": 48.378, "lon": 10.012,
         "qa_transcript": [
-            {"question_en": "When did confusion start?",        "question": "Kafa karışıklığı ne zaman başladı?", "answer": "This morning",              "original_answer": "Bu sabah"},
-            {"question_en": "Last blood sugar reading?",        "question": "Son kan şekeri değeriniz?",          "answer": "Didn't check, no meter",    "original_answer": "Ölçmedim, cihazım yok"},
-            {"question_en": "On insulin?",                      "question": "İnsülin kullanıyor musunuz?",        "answer": "No, only metformin",        "original_answer": "Hayır, sadece metformin"},
+            {"question_en": "When did confusion start?",   "question": "Kafa karışıklığı ne zaman başladı?", "answer": "This morning",           "original_answer": "Bu sabah"},
+            {"question_en": "Last blood sugar reading?",   "question": "Son kan şekeri değeriniz?",          "answer": "Didn't check, no meter", "original_answer": "Ölçmedim, cihazım yok"},
+            {"question_en": "On insulin?",                 "question": "İnsülin kullanıyor musunuz?",        "answer": "No, only metformin",     "original_answer": "Hayır, sadece metformin"},
         ],
     },
 
-    {   # P05 — Hypertensive emergency (self-referred from GP, own transport)
-        "patient_id": "DEMO-P05-ULM",
-        "health_number": "DEMO-DE-010",  # Emma Zimmermann, 49, hypothyroidism
-        "status": "incoming",
-        "has_ambulance": False,
-        "triage_level": "URGENT",
-        "chief_complaint": "Severe headache, BP 218/124, visual disturbance",
-        "complaint_text": "Starke Kopfschmerzen, Sehstörungen, mein Blutdruck war 218/124",
-        "assessment": "Hypertensive emergency. BP 218/124. Papilloedema on fundoscopy by GP. Grade IV retinopathy.",
-        "red_flags": ["hypertensive_crisis","visual_disturbance","headache_severe"],
-        "suspected_conditions": ["Hypertensive Emergency","Malignant Hypertension"],
-        "risk_score": 7,
-        "recommended_action": "IV labetalol. Target 10-15% BP reduction in first hour. ECG, U&E, urinalysis. Ophthalmology review.",
-        "time_sensitivity": "Within 30 minutes",
-        "language": "de-DE",
-        "eta_override": 22,
-        "lat": 48.403, "lon": 10.031,
-        "qa_transcript": [
-            {"question_en": "How long has BP been elevated?",  "question": "Wie lange ist der Blutdruck erhöht?", "answer": "Found high at GP this morning", "original_answer": "Heute Morgen beim Arzt festgestellt"},
-            {"question_en": "Any chest pain?",                 "question": "Brustschmerzen?",                   "answer": "No",                           "original_answer": "Nein"},
-            {"question_en": "On BP medication?",              "question": "Blutdruckmittel?",                  "answer": "Amlodipine, sometimes forget",  "original_answer": "Amlodipin, vergesse es manchmal"},
-        ],
-    },
+    # ━━━━━━━━ IN TREATMENT — 3 patients (all have doctor + bed assigned) ━━━━━━━━━━━━
 
-    {   # P06 — Wrist fracture, low acuity (own transport)
-        "patient_id": "DEMO-P06-ULM",
-        "health_number": "DEMO-UK-006",  # Olivia Martin, 22, T1DM
-        "status": "incoming",
-        "has_ambulance": False,
-        "triage_level": "STANDARD",
-        "chief_complaint": "Fallen off bicycle, wrist deformity, suspected fracture",
-        "complaint_text": "Fell off my bike 30 minutes ago, wrist looks bent, can't move it",
-        "assessment": "Suspected distal radius fracture. Deformity visible. Neurovascularly intact. Colles pattern.",
-        "red_flags": ["deformity","mechanism_injury"],
-        "suspected_conditions": ["Colles Fracture","Distal Radius Fracture"],
-        "risk_score": 4,
-        "recommended_action": "Wrist X-ray (AP + lateral). Analgesia (ibuprofen + paracetamol). Backslab if confirmed. Ortho referral.",
-        "time_sensitivity": "Within 1 hour",
-        "language": "en-GB",
-        "eta_override": 28,
-        "lat": 48.447, "lon": 9.907,
-        "qa_transcript": [
-            {"question_en": "How did it happen?",           "question": "How did it happen?",           "answer": "Hit a pothole, landed on outstretched hand", "original_answer": "Hit a pothole, landed on outstretched hand"},
-            {"question_en": "Any numbness in fingers?",    "question": "Any numbness in fingers?",     "answer": "Slight tingling in thumb",                   "original_answer": "Slight tingling in thumb"},
-        ],
-    },
-
-    # ━━━━━━━━ IN TREATMENT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    {   # P07 — Polytrauma (head + chest), ICU
-        "patient_id": "DEMO-P07-ULM",
+    {   # P04 — Polytrauma [UK] · ICU · DR001
+        "patient_id": "DEMO-P04-ULM",
         "health_number": "DEMO-UK-003",  # Robert Johnson, 79, COPD T2DM
         "status": "in_treatment",
         "triage_level": "IMMEDIATE",
@@ -287,11 +218,11 @@ DEMO_PATIENTS = [
         "bed_id": "ICU-101",
         "override_action": "UPGRADE",
         "override_note": "Upgraded to IMMEDIATE post CT findings. Extradural haematoma confirmed.",
-        "qa_transcript": [{"question_en": "Were you conscious after the accident?", "question": "Were you conscious after?", "answer": "Briefly, then not", "original_answer": "Briefly, then not"}],
+        "qa_transcript": [{"question_en": "Conscious after accident?", "question": "Conscious after accident?", "answer": "Briefly, then not", "original_answer": "Briefly, then not"}],
     },
 
-    {   # P08 — GI bleed, ICU
-        "patient_id": "DEMO-P08-ULM",
+    {   # P05 — GI bleed [DE] · ICU · DR002
+        "patient_id": "DEMO-P05-ULM",
         "health_number": "DEMO-DE-003",  # Hans Hoffmann, 67, COPD T2DM
         "status": "in_treatment",
         "triage_level": "EMERGENCY",
@@ -307,86 +238,15 @@ DEMO_PATIENTS = [
         "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
         "arrival_h": 1.8,
         "treatment_h": 1.6,
-        "assigned_doctor_id": "DR001",
+        "assigned_doctor_id": "DR002",
         "bed_id": "ICU-102",
         "override_action": "APPROVE",
         "override_note": "EMERGENCY confirmed. OGD team mobilised. Blood bank alerted.",
         "qa_transcript": [{"question_en": "Any previous GI bleeding?", "question": "Früher schon Magenblutungen?", "answer": "Yes, 3 years ago", "original_answer": "Ja, vor 3 Jahren"}],
     },
 
-    {   # P09 — Sepsis (Turkish)
-        "patient_id": "DEMO-P09-ULM",
-        "health_number": "DEMO-TR-003",  # Mustafa Demir, 74, IHD post-CABG
-        "status": "in_treatment",
-        "triage_level": "EMERGENCY",
-        "chief_complaint": "High fever, confusion, rapid breathing — suspected sepsis",
-        "complaint_text": "Yüksek ateş, nefes darlığı, bilinç bulanıklığı",
-        "assessment": "Sepsis (likely urinary source). Lactate 4.2. BP 88/58. Started sepsis bundle: cultures, IV piperacillin-tazobactam, fluids.",
-        "red_flags": ["sepsis","hypotension","confusion","high_lactate"],
-        "suspected_conditions": ["Urosepsis","Septic Shock"],
-        "risk_score": 9,
-        "recommended_action": "Sepsis 6 bundle. ICU review. Haematology. Urology consult.",
-        "time_sensitivity": "Immediate",
-        "language": "tr-TR",
-        "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
-        "arrival_h": 1.2,
-        "treatment_h": 1.0,
-        "assigned_doctor_id": "DR002",
-        "bed_id": "ICU-103",
-        "override_action": "UPGRADE",
-        "override_note": "Upgraded to EMERGENCY. Septic shock criteria met. ICU transfer.",
-        "qa_transcript": [{"question_en": "How long have you had a fever?", "question": "Ateşiniz ne zamandan beri var?", "answer": "Since yesterday evening", "original_answer": "Dün akşamdan beri"}],
-    },
-
-    {   # P10 — Atrial fibrillation with rapid ventricular rate
-        "patient_id": "DEMO-P10-ULM",
-        "health_number": "DEMO-DE-005",  # Wolfgang Bauer, 79, AFib + pacemaker
-        "status": "in_treatment",
-        "triage_level": "URGENT",
-        "chief_complaint": "Palpitations, dizziness, HR 148 — known AF on anticoagulation",
-        "complaint_text": "Herzrasen, Schwindel, mein Puls ist sehr hoch",
-        "assessment": "AF with RVR 148 bpm. BP 104/68. Rate control started: IV metoprolol. Cardiology managing.",
-        "red_flags": ["tachycardia","dizziness","known_af","pacemaker"],
-        "suspected_conditions": ["AF with RVR","Pacemaker Malfunction"],
-        "risk_score": 7,
-        "recommended_action": "Rate control. Pacemaker check. Echo. Review anticoagulation.",
-        "time_sensitivity": "Within 30 minutes",
-        "language": "de-DE",
-        "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
-        "arrival_h": 3.0,
-        "treatment_h": 2.8,
-        "assigned_doctor_id": "DR002",
-        "bed_id": "CARD-201",
-        "override_action": "APPROVE",
-        "override_note": "URGENT confirmed. Rate control in progress. Pacemaker clinic informed.",
-        "qa_transcript": [{"question_en": "When did palpitations start?", "question": "Wann begann das Herzrasen?", "answer": "This morning 8am", "original_answer": "Heute Morgen um 8 Uhr"}],
-    },
-
-    {   # P11 — DVT / suspected PE
-        "patient_id": "DEMO-P11-ULM",
-        "health_number": "DEMO-UK-005",  # William Taylor, 64, hypertension gout
-        "status": "in_treatment",
-        "triage_level": "URGENT",
-        "chief_complaint": "Calf pain + swelling, sudden pleuritic chest pain, SpO2 92%",
-        "complaint_text": "Left calf very swollen for 3 days, now sudden sharp chest pain when breathing",
-        "assessment": "High probability DVT + PE. D-dimer 4.2. CT-PA requested. Therapeutic LMWH started.",
-        "red_flags": ["low_spo2","pleuritic_chest_pain","calf_swelling","dvt_suspected"],
-        "suspected_conditions": ["Pulmonary Embolism","DVT"],
-        "risk_score": 7,
-        "recommended_action": "CT pulmonary angiogram. LMWH 1.5mg/kg. Haematology referral.",
-        "time_sensitivity": "Within 30 minutes",
-        "language": "en-GB",
-        "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
-        "arrival_h": 2.0,
-        "treatment_h": 1.8,
-        "bed_id": "ER-201",
-        "override_action": "APPROVE",
-        "override_note": "CT-PA booked. Heparin infusion commenced.",
-        "qa_transcript": [{"question_en": "Any recent long-haul travel?", "question": "Any recent long-haul travel?", "answer": "Flew back from Australia 10 days ago", "original_answer": "Flew back from Australia 10 days ago"}],
-    },
-
-    {   # P12 — Epileptic seizure (Turkish)
-        "patient_id": "DEMO-P12-ULM",
+    {   # P06 — Epileptic seizure [TR] · Neurology · DR004
+        "patient_id": "DEMO-P06-ULM",
         "health_number": "DEMO-TR-004",  # Zeynep Şahin, 34, epilepsy
         "status": "in_treatment",
         "triage_level": "URGENT",
@@ -409,75 +269,10 @@ DEMO_PATIENTS = [
         "qa_transcript": [{"question_en": "When was your last seizure?", "question": "Son nöbetiniz ne zaman oldu?", "answer": "18 months ago", "original_answer": "18 ay önce"}],
     },
 
-    {   # P13 — Migraine
-        "patient_id": "DEMO-P13-ULM",
-        "health_number": "DEMO-DE-004",  # Sandra Fischer, 32, migraine with aura
-        "status": "in_treatment",
-        "triage_level": "STANDARD",
-        "chief_complaint": "Migraine with aura — visual zig-zag, severe hemicranial pain, vomiting",
-        "complaint_text": "Typische Migräne mit Aura, Zickzack-Sehen, starke Kopfschmerzen rechts, Erbrechen",
-        "assessment": "Acute migraine with visual aura. Responding to IV sumatriptan + metoclopramide. Pain 4/10 now.",
-        "red_flags": ["vomiting","visual_aura","severe_pain"],
-        "suspected_conditions": ["Migraine with Aura"],
-        "risk_score": 4,
-        "recommended_action": "Dark quiet room. IV sumatriptan. Antiemetics. Oral prophylaxis review.",
-        "time_sensitivity": "Within 1 hour",
-        "language": "de-DE",
-        "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
-        "arrival_h": 2.2,
-        "treatment_h": 2.0,
-        "bed_id": "ER-202",
-        "override_action": "APPROVE",
-        "override_note": "Migraine confirmed, treatment effective. Plan discharge in 2h if pain controlled.",
-        "qa_transcript": [{"question_en": "Known migraine sufferer?", "question": "Bekannte Migräne?", "answer": "Yes, 2-3 per month", "original_answer": "Ja, 2-3 pro Monat"}],
-    },
+    # ━━━━━━━━ DISCHARGED — 1 patient ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    # ━━━━━━━━ DISCHARGED ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    {   # P14 — Kidney stones
-        "patient_id": "DEMO-P14-ULM",
-        "health_number": "DEMO-DE-009",  # Franz Kraus, 72, CKD gout
-        "status": "discharged",
-        "triage_level": "URGENT",
-        "chief_complaint": "Severe loin-to-groin pain — renal colic",
-        "complaint_text": "Starke Schmerzen von der Flanke in die Leiste, Übelkeit",
-        "assessment": "Renal colic. CT KUB: 5mm right UVJ calculus. Pain controlled with IV diclofenac + morphine. Passed stone.",
-        "red_flags": ["severe_pain","loin_pain"],
-        "suspected_conditions": ["Ureteric Calculus","Renal Colic"],
-        "risk_score": 6,
-        "recommended_action": "Discharged with tamsulosin + diclofenac. Urology outpatient in 2 weeks.",
-        "time_sensitivity": "Within 30 minutes",
-        "language": "de-DE",
-        "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
-        "arrival_h": 5.5,
-        "treatment_h": 5.2,
-        "discharged_h": 1.5,
-        "qa_transcript": [{"question_en": "Previous kidney stones?", "question": "Früher schon Nierensteine?", "answer": "Yes, 2016", "original_answer": "Ja, 2016"}],
-    },
-
-    {   # P15 — COPD exacerbation discharged
-        "patient_id": "DEMO-P15-ULM",
-        "health_number": "DEMO-TR-005",  # Mehmet Çelik, 52, COPD
-        "status": "discharged",
-        "triage_level": "URGENT",
-        "chief_complaint": "COPD exacerbation — increased dyspnoea, purulent sputum, wheeze",
-        "complaint_text": "Nefes darlığı arttı, yeşil balgam, hırıltı",
-        "assessment": "Moderate COPD exacerbation. SpO2 improved to 94% with controlled O2. Doxycycline + prednisolone.",
-        "red_flags": ["low_spo2","respiratory_distress","wheeze"],
-        "suspected_conditions": ["COPD Exacerbation"],
-        "risk_score": 6,
-        "recommended_action": "Discharged with 5-day prednisolone + antibiotic course. GP follow-up 48h. Smoking cessation referral.",
-        "time_sensitivity": "Within 20 minutes",
-        "language": "tr-TR",
-        "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
-        "arrival_h": 6.0,
-        "treatment_h": 5.8,
-        "discharged_h": 2.5,
-        "qa_transcript": [{"question_en": "How many COPD exacerbations this year?", "question": "Bu yıl kaç KOAH atağı geçirdiniz?", "answer": "Third one", "original_answer": "Bu üçüncüsü"}],
-    },
-
-    {   # P16 — Soft tissue injury
-        "patient_id": "DEMO-P16-ULM",
+    {   # P07 — Scalp laceration [UK] · discharged
+        "patient_id": "DEMO-P07-ULM",
         "health_number": "DEMO-UK-009",  # Henry Moore, 85
         "status": "discharged",
         "triage_level": "STANDARD",
@@ -495,48 +290,6 @@ DEMO_PATIENTS = [
         "treatment_h": 4.2,
         "discharged_h": 2.0,
         "qa_transcript": [{"question_en": "Did you lose consciousness?", "question": "Did you lose consciousness?", "answer": "No, was alert throughout", "original_answer": "No, was alert throughout"}],
-    },
-
-    {   # P17 — Urinary tract infection
-        "patient_id": "DEMO-P17-ULM",
-        "health_number": "DEMO-UK-008",  # Isabella Davies, 40
-        "status": "discharged",
-        "triage_level": "STANDARD",
-        "chief_complaint": "Burning urination, frequency, suprapubic pain, low-grade fever 37.8°C",
-        "complaint_text": "Burning when passing urine, going very often, lower tummy pain",
-        "assessment": "Lower UTI. MSU sent. Discharged with nitrofurantoin 100mg BD × 5 days.",
-        "red_flags": ["fever","urinary_symptoms"],
-        "suspected_conditions": ["Urinary Tract Infection"],
-        "risk_score": 2,
-        "recommended_action": "Nitrofurantoin. Increase fluid intake. Return if fever >38.5 or loin pain.",
-        "time_sensitivity": "Within 2 hours",
-        "language": "en-GB",
-        "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
-        "arrival_h": 3.5,
-        "treatment_h": 3.3,
-        "discharged_h": 1.0,
-        "qa_transcript": [{"question_en": "Any back/loin pain?", "question": "Any back pain?", "answer": "No, just tummy", "original_answer": "No, just tummy"}],
-    },
-
-    {   # P18 — Minor asthma, self-discharge
-        "patient_id": "DEMO-P18-ULM",
-        "health_number": "DEMO-DE-008",  # Mia Schmitt, 26, asthma student nurse
-        "status": "discharged",
-        "triage_level": "STANDARD",
-        "chief_complaint": "Mild asthma wheeze after cleaning with bleach",
-        "complaint_text": "Leichtes Pfeifen beim Atmen nach Putzen mit Bleichmittel",
-        "assessment": "Mild irritant-induced bronchospasm. SpO2 97%. Responded to 4 puffs salbutamol MDI. Discharged.",
-        "red_flags": ["wheeze","irritant_exposure"],
-        "suspected_conditions": ["Mild Asthma Exacerbation"],
-        "risk_score": 3,
-        "recommended_action": "Salbutamol PRN. Avoid bleach/irritants. No systemic steroids needed.",
-        "time_sensitivity": "Within 2 hours",
-        "language": "de-DE",
-        "lat": HOSPITAL_LAT, "lon": HOSPITAL_LON,
-        "arrival_h": 4.0,
-        "treatment_h": 3.8,
-        "discharged_h": 0.5,
-        "qa_transcript": [{"question_en": "Any allergies?", "question": "Allergien bekannt?", "answer": "Cats and dust mites", "original_answer": "Katzen und Hausstaub"}],
     },
 ]
 
@@ -582,7 +335,7 @@ def _build_local_storage(patients: list[dict]) -> dict:
             bed_assignments.append({
                 "patientId":      pid,
                 "bedId":          p["bed_id"],
-                "bedAssignedAt":  bed_iso,
+                "bed_assigned_at":  bed_iso,
                 "status":         p.get("status", "in_treatment"),
             })
             actions.append({"id": 4, "type": "bed_assigned", "timestamp": bed_iso,

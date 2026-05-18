@@ -417,10 +417,8 @@
         }
 
         /* KPI active highlight */
-        .kpi-active {
-            outline: 2px solid rgba(34, 211, 238, .6) !important;
-            box-shadow: 0 0 20px rgba(34, 211, 238, .2) !important;
-        }
+        /* kpi-active visual styles are applied inline per-filter in _applyKpiColors() */
+        .kpi-active { /* marker class only — no hard-coded color here */ }
 
         .theme-toggle-btn {
             position: relative;
@@ -713,16 +711,16 @@
         }
 
         html.light-mode #kpi-treatment {
-            background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%);
-            border-color: rgba(16, 185, 129, 0.3);
+            background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+            border-color: rgba(167, 139, 250, 0.3);
         }
 
         html.light-mode #kpi-treatment .text-text2 {
-            color: #10b981;
+            color: #7c3aed;
         }
 
         html.light-mode #kpi-treatment .mono {
-            color: #047857;
+            color: #6d28d9;
         }
 
         html.light-mode #kpi-treated {
@@ -1433,7 +1431,7 @@
                                         <div class="min-w-0">
                                             <p class="text-[10px] font-semibold uppercase tracking-wider text-text3"
                                                 data-i18n="kpi_total">Total Patients</p>
-                                            <p id="k-total" class="mono text-5xl font-bold mt-1.5">—</p>
+                                            <p id="k-total" class="mono text-5xl font-bold mt-1.5 text-cyan">—</p>
                                         </div>
                                         <div
                                             class="shrink-0 rounded-xl bg-cyan/15 p-2.5 group-hover:bg-cyan/25 transition-colors">
@@ -1452,11 +1450,11 @@
                                         <div class="min-w-0">
                                             <p class="text-[10px] font-semibold uppercase tracking-wider text-text3"
                                                 data-i18n="kpi_queue">En Route</p>
-                                            <p id="k-queue" class="mono text-5xl font-bold mt-1.5 text-cyan">—</p>
+                                            <p id="k-queue" class="mono text-5xl font-bold mt-1.5 text-amber-400">—</p>
                                         </div>
                                         <div
-                                            class="shrink-0 rounded-xl bg-cyan/15 p-2.5 group-hover:bg-cyan/25 transition-colors">
-                                            <svg class="w-5 h-5 text-cyan" fill="none" stroke="currentColor"
+                                            class="shrink-0 rounded-xl bg-amber-400/15 p-2.5 group-hover:bg-amber-400/25 transition-colors">
+                                            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
@@ -1471,11 +1469,11 @@
                                         <div class="min-w-0">
                                             <p class="text-[10px] font-semibold uppercase tracking-wider text-text3"
                                                 data-i18n="kpi_treatment">Under Treatment</p>
-                                            <p id="k-treatment" class="mono text-5xl font-bold mt-1.5 text-teal">—</p>
+                                            <p id="k-treatment" class="mono text-5xl font-bold mt-1.5 text-violet-400">—</p>
                                         </div>
                                         <div
-                                            class="shrink-0 rounded-xl bg-teal/15 p-2.5 group-hover:bg-teal/25 transition-colors">
-                                            <svg class="w-5 h-5 text-teal" fill="none" stroke="currentColor"
+                                            class="shrink-0 rounded-xl bg-violet-400/15 p-2.5 group-hover:bg-violet-400/25 transition-colors">
+                                            <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -2357,6 +2355,34 @@
             }
         }
 
+        function _reapplyLocalAssignments(pid) {
+            // Re-stamp localStorage-only fields onto both _patientCache and state.patients
+            // after a server fetch that may have returned null for these fields.
+            try {
+                const da = JSON.parse(localStorage.getItem('doctorAssignments') || '[]');
+                const dam = da.find(a => a.patient_id === pid);
+                if (dam) {
+                    [_patientCache[pid], state.patients.find(x => x.patient_id === pid)].forEach(p => {
+                        if (!p) return;
+                        p.assigned_doctor    = dam.assigned_doctor;
+                        p.assigned_doctor_id = dam.assigned_doctor_id;
+                        p.doctor_assigned_at = dam.doctor_assigned_at;
+                    });
+                }
+            } catch (e) {}
+            try {
+                const ba = JSON.parse(localStorage.getItem('bedAssignments') || '[]');
+                const bam = ba.find(a => a.patientId === pid);
+                if (bam) {
+                    [_patientCache[pid], state.patients.find(x => x.patient_id === pid)].forEach(p => {
+                        if (!p) return;
+                        p.assigned_bed   = bam.bedId;
+                        p.bed_assigned_at = bam.bed_assigned_at;
+                    });
+                }
+            } catch (e) {}
+        }
+
         function loadDoctorAssignmentsFromStorage() {
             try {
                 const stored = localStorage.getItem('doctorAssignments');
@@ -2391,7 +2417,51 @@
         }
 
         function getPatientActions(patientId) {
-            return state.patientActions[patientId] || [];
+            const stored = state.patientActions[patientId] || [];
+            const p = state.patients.find(pt => pt.patient_id === patientId) || _patientCache[patientId];
+
+            // Build set of event types already in stored log so we don't duplicate
+            const storedTypes = new Set(stored.map(a => a.type));
+            const synthetic = [];
+
+            if (p) {
+                const hasArrived = ['arrived', 'in_treatment', 'discharged'].includes(p.status);
+
+                if (!storedTypes.has('patient_entry') && p.created_at)
+                    synthetic.push({ id: 's1', type: 'patient_entry', timestamp: p.created_at, message: 'Patient registered via AI triage system' });
+
+                if (!storedTypes.has('patient_arrived') && hasArrived && (p.arrival_time || p.treatment_started_at))
+                    synthetic.push({ id: 's2', type: 'patient_arrived', timestamp: p.arrival_time || p.treatment_started_at, message: 'Patient arrived at hospital' });
+
+                if (!storedTypes.has('doctor_assigned') && p.doctor_assigned_at) {
+                    const dname = (p.assigned_doctor || 'doctor').replace(/^Dr\.\s+Dr\.\s*/i, 'Dr. ');
+                    synthetic.push({ id: 's3', type: 'doctor_assigned', timestamp: p.doctor_assigned_at, message: `Assigned to ${dname}` });
+                }
+
+                const ambTs = p.ambulance_dispatched_at || p.amb_dispatch_at;
+                if (!storedTypes.has('ambulance_dispatched') && !storedTypes.has('ambulance_requested') && ambTs)
+                    synthetic.push({ id: 's4', type: 'ambulance_dispatched', timestamp: ambTs, message: 'Ambulance dispatched' });
+
+                if (!storedTypes.has('bed_assigned') && p.bed_assigned_at)
+                    synthetic.push({ id: 's5', type: 'bed_assigned', timestamp: p.bed_assigned_at, message: `Bed ${p.assigned_bed || ''} assigned`, bedId: p.assigned_bed });
+
+                const reviewTs = p.triage_reviewed_at || p.override_timestamp;
+                if (!storedTypes.has('triage_changed') && reviewTs && p.override_action)
+                    synthetic.push({ id: 's6', type: 'triage_changed', timestamp: reviewTs, message: `Physician ${(p.override_action || '').toLowerCase()} triage`, from: 'AI', to: p.triage_level });
+
+                if (!storedTypes.has('discharged') && p.discharged_at)
+                    synthetic.push({ id: 's7', type: 'discharged', timestamp: p.discharged_at, message: 'Patient discharged' });
+            }
+
+            // Include patient reply messages as timeline events
+            const replies = (patientReplies[patientId] || []).map((r, i) => ({
+                id: `reply_${i}`, type: 'patient_reply', timestamp: r.ts,
+                message: r.text_en || r.text || '(Patient reply)',
+            }));
+
+            return [...stored, ...synthetic, ...replies]
+                .filter(a => a.timestamp)
+                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         }
 
         // ── Patient-reply message history ────────────────────────────────────────
@@ -2648,6 +2718,28 @@
         window.toggleVoiceRecord = toggleVoiceRecord;
 
         let _lastCommCounts = {};
+
+        function _triggerNewMessageAlert(pid, patientName, newCount) {
+            toast(`💬 ${newCount > 1 ? newCount + ' new messages' : 'New message'} from ${patientName}`, 'ok');
+            // Soft ping sound
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                [[880, 0], [1100, 0.15]].forEach(([freq, delay]) => {
+                    const osc = ctx.createOscillator(), g = ctx.createGain();
+                    osc.connect(g); g.connect(ctx.destination);
+                    osc.frequency.value = freq; osc.type = 'sine';
+                    const t0 = ctx.currentTime + delay;
+                    g.gain.setValueAtTime(0, t0);
+                    g.gain.linearRampToValueAtTime(0.18, t0 + 0.01);
+                    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.35);
+                    osc.start(t0); osc.stop(t0 + 0.36);
+                });
+            } catch (e) {}
+            // Flash the badge
+            const badge = document.getElementById('comm-badge-' + pid);
+            if (badge) { badge.style.outline = '2px solid #f59e0b'; setTimeout(() => { badge.style.outline = ''; }, 3000); }
+        }
+
         function updateCommBadges() {
             Object.keys(patientReplies).forEach(pid => {
                 const badge = document.getElementById('comm-badge-' + pid);
@@ -2655,16 +2747,25 @@
                 const replies = patientReplies[pid] || [];
                 const patientMsgs = replies.filter(m => m.sender === 'patient');
                 const pCount = patientMsgs.length;
-                
+
                 const commTab = document.getElementById('dtab-' + pid + '-comm');
                 const commVisible = commTab && !commTab.classList.contains('hidden');
-                
+
                 if (commVisible) {
                     badge.classList.add('hidden');
                     _lastCommCounts[pid] = pCount;
-                } else if (pCount > (_lastCommCounts[pid] || 0)) {
-                    badge.classList.remove('hidden');
-                    badge.textContent = pCount - (_lastCommCounts[pid] || 0);
+                } else if (pCount > (_lastCommCounts[pid] ?? -1)) {
+                    const isFirstLoad = !(_lastCommCounts.hasOwnProperty(pid));
+                    const newCount = pCount - (_lastCommCounts[pid] || 0);
+                    if (newCount > 0) badge.classList.remove('hidden');
+                    badge.textContent = newCount > 0 ? newCount : '';
+                    // Alert only for genuinely new arrivals, not initial page load
+                    if (!isFirstLoad && newCount > 0) {
+                        const patient = state.patients.find(p => p.patient_id === pid);
+                        const name = patient?.full_name || pid.substring(0, 8);
+                        _triggerNewMessageAlert(pid, name, newCount);
+                    }
+                    _lastCommCounts[pid] = pCount;
                 }
             });
         }
@@ -2684,10 +2785,11 @@
             // Doctor assigned (matches "Dr. Assigned" step)
             const doctorAssignedTime = patient?.doctor_assigned_at || actOfType('doctor_assigned');
 
-            // Arrival (matches "Arrived" step: arrivedAct || arrival_time || treatment_started_at)
+            // Arrival — only count if patient has actually arrived (not still incoming)
+            const _hasArrived = ['arrived', 'in_treatment', 'discharged'].includes(patient?.status);
             const arrivalTime        = actOfType('patient_arrived')
-                                    || patient?.arrival_time
-                                    || patient?.treatment_started_at || null;
+                                    || (_hasArrived ? (patient?.arrival_time || patient?.treatment_started_at) : null)
+                                    || null;
 
             // Discharge (matches "Discharged" step)
             const dischargeTime      = patient?.discharged_at || actOfType('discharged');
@@ -2726,9 +2828,10 @@
                 timeToDischarge:    mins(entryTime, dischargeTime),
                 hospitalStayDuration: mins(arrivalTime, dischargeTime),
             };
-            // If patient still in hospital, measure stay until now
+            // If patient still in hospital, measure stay until now (never show negative)
             if (arrivalTime && !dischargeTime) {
-                stats.hospitalStayDuration = (Date.now() - new Date(arrivalTime)) / 60000;
+                const dur = (Date.now() - new Date(arrivalTime)) / 60000;
+                stats.hospitalStayDuration = dur > 0 ? dur : null;
             }
 
             return stats;
@@ -3187,14 +3290,15 @@
             // updateArrivalsChartV2(); // Arrivals section removed
             console.log('Arrivals chart update skipped (section removed)');
 
+            // Apply localStorage overrides before rendering so timestamps are present
+            loadDoctorAssignmentsFromStorage();
+            loadBedAssignmentsFromStorage();
+
             applyCurrentFilter();
             console.log('Current filter applied');
 
             renderTriageTable();
             console.log('Triage table rendered');
-
-            // Restore doctor assignments from localStorage before rendering
-            loadDoctorAssignmentsFromStorage();
 
             console.log('About to call renderDoctorPanel');
             renderDoctorPanel();
@@ -3585,12 +3689,24 @@
               class="flex items-center gap-1.5 rounded-lg bg-amber-500/20 border border-amber-500/50 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/35 hover:scale-105 transition-all active:scale-95">
               🚑 Dispatch
             </button>
-            <button onclick="toggleDet('${h(pid)}')"
+            <button onclick="openPatientFromAmb('${h(pid)}')"
               class="text-[10px] text-text3 hover:text-cyan transition-colors underline">
               Patient Details
             </button>
           </div>
         </div>`;
+        }
+
+        function openPatientFromAmb(pid) {
+            // Ensure en_route patients are visible in the list
+            if (activeTopFilter && activeTopFilter !== 'all' && activeTopFilter !== 'en_route') {
+                setTopFilter('en_route');
+            }
+            const card = document.getElementById('card-' + pid);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (!_openDetails.has(pid)) toggleDet(pid, card);
+            }
         }
 
         async function approveAmbulance(pid) {
@@ -4835,7 +4951,8 @@
 
             // Update patient
             patient.assigned_bed = null;
-            patient.bed_assigned_at = null;
+            // bed_assigned_at is preserved — historical record for the upper timeline
+            patient.discharged_at = new Date().toISOString();
             patient.status = 'discharged';
 
             // Log patient action
@@ -5513,6 +5630,7 @@
                 await Promise.all([loadStats(), loadPatients(), loadTracking()]);
                 loadDoctorAssignmentsFromStorage();
                 loadBedAssignmentsFromStorage();
+                applyCurrentFilter(); // re-render now that localStorage timestamps are applied
 
                 const syncEl = document.getElementById("sync-text");
                 if (syncEl) syncEl.textContent = `Synced ${new Date().toLocaleTimeString()}`;
@@ -6119,8 +6237,10 @@
                 const ambTime = ambDispatchAct?.timestamp || p.ambulance_dispatched_at || null;
                 const transportStep = isAmbulance
                     ? { label: t.step_ambulance, time: ambTime, icon: '🚑', color: '#f59e0b', note: null }
-                    : { label: t.step_self_transport, time: null, icon: '🚶', color: '#94a3b8',
-                        note: (['incoming','en_route','arrived','in_treatment','discharged'].includes(p.status)) ? t.step_en_route : null };
+                    : { label: t.step_self_transport,
+                        time: (['arrived','in_treatment','discharged'].includes(p.status)) ? (arrivedAct?.timestamp || p.arrival_time || p.treatment_started_at) : null,
+                        icon: '🚶', color: '#94a3b8',
+                        note: (['incoming','en_route'].includes(p.status)) ? t.step_en_route : null };
                 const reviewAction = (p.override_action && !['AMBULANCE','AMBULANCE_REQUEST'].includes(p.override_action))
                     ? p.override_action.toLowerCase() : null;
                 const reviewActLog = getPatientActions(pid).find(a => a.type === 'triage_changed');
@@ -6815,6 +6935,9 @@
                             _patientCache[pid] = Object.assign(_patientCache[pid] || {}, fresh);
                             const sp = state.patients.find(x => x.patient_id === pid);
                             if (sp) Object.assign(sp, fresh);
+                            // Server doesn't know about localStorage-only fields (doctor_assigned_at,
+                            // bed_assigned_at) — re-apply them so stats are always accurate
+                            _reapplyLocalAssignments(pid);
                         }
                     }).catch(() => {}).finally(() => loadActionHistory(pid, selected));
                     // Live refresh every 10s while tab is open
@@ -6826,6 +6949,7 @@
                                     _patientCache[pid] = Object.assign(_patientCache[pid] || {}, fresh);
                                     const sp = state.patients.find(x => x.patient_id === pid);
                                     if (sp) Object.assign(sp, fresh);
+                                    _reapplyLocalAssignments(pid);
                                 }
                             }).catch(() => {}).finally(() => loadActionHistory(pid, selected));
                         } else {
@@ -6868,7 +6992,9 @@
             // Update statistics — use Math.floor to match human-readable clock diff
             if (stats) {
                 const fmt = v => v !== null ? `${Math.floor(v)} min` : '—';
-                const el = id => document.getElementById(id + pid);
+                // Use container.querySelector so doctor-panel and main-dashboard don't collide
+                // (same patient can appear in both, making getElementById return the wrong element)
+                const el = id => container.querySelector(`[id="${id}${pid}"]`) || document.getElementById(id + pid);
                 const s = el('stats-time-to-doctor-');   if (s) s.textContent = fmt(stats.timeToDoctor);
                 const a = el('stats-amb-dispatch-');     if (a) a.textContent = fmt(stats.timeToAmbDispatch);
                 const r = el('stats-doctor-review-');    if (r) r.textContent = fmt(stats.timeToDoctorReview);
@@ -6879,8 +7005,8 @@
                 const ms = el('stats-messages-');        if (ms) ms.textContent = stats.messagesCount > 0 ? stats.messagesCount : '—';
             }
 
-            // Update timeline
-            const timelineEl = document.getElementById(`action-timeline-${pid}`);
+            // Update timeline — scope to container to avoid duplicate-ID collision
+            const timelineEl = container.querySelector(`[id="action-timeline-${pid}"]`) || document.getElementById(`action-timeline-${pid}`);
             if (timelineEl) {
                 if (actions.length > 0) {
                     timelineEl.innerHTML = actions.map(action => {
@@ -6891,7 +7017,10 @@
                             bed_assigned: 'text-purple-400',
                             message_sent: 'text-amber-400',
                             triage_changed: 'text-urgent',
-                            discharged: 'text-stable'
+                            discharged: 'text-stable',
+                            ambulance_dispatched: 'text-amber-400',
+                            ambulance_requested: 'text-amber-300',
+                            patient_reply: 'text-orange-300',
                         };
                         const actionTypeIcons = {
                             patient_entry: '📥',
@@ -6900,7 +7029,10 @@
                             bed_assigned: '🛏️',
                             message_sent: '💬',
                             triage_changed: '🔄',
-                            discharged: '✅'
+                            discharged: '✅',
+                            ambulance_dispatched: '🚑',
+                            ambulance_requested: '🚑',
+                            patient_reply: '🙋',
                         };
                         const color = actionTypeColors[action.type] || 'text-text2';
                         const icon = actionTypeIcons[action.type] || '📌';
@@ -7307,21 +7439,44 @@
 
         // ── KPI FILTERING ────────────────────────────────────────────
         // ── TOP KPI CARD CLICK ───────────────────────────────────────
+        const KPI_META = {
+            all:          { rgb: '34,211,238',  hex: '#22d3ee' },
+            en_route:     { rgb: '245,158,11',  hex: '#f59e0b' },
+            in_treatment: { rgb: '167,139,250', hex: '#a78bfa' },
+            discharged:   { rgb: '16,185,129',  hex: '#10b981' },
+        };
+        const KPI_CARD_MAP = { all: 'kpi-total', en_route: 'kpi-enroute', in_treatment: 'kpi-treatment', discharged: 'kpi-treated' };
+
+        function _applyKpiColors(filter) {
+            // Clear all card outlines
+            Object.values(KPI_CARD_MAP).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.style.outline = ''; el.style.boxShadow = ''; }
+            });
+            const breakdownCard = document.getElementById('kpi-queue');
+            const labelEl = document.getElementById('kpi-breakdown-label');
+            if (filter && KPI_META[filter]) {
+                const m = KPI_META[filter];
+                const card = document.getElementById(KPI_CARD_MAP[filter]);
+                if (card) { card.style.outline = `2px solid rgba(${m.rgb},.65)`; card.style.boxShadow = `0 0 24px rgba(${m.rgb},.2)`; }
+                if (breakdownCard) { breakdownCard.style.outline = `1.5px solid rgba(${m.rgb},.35)`; breakdownCard.style.boxShadow = `0 0 16px rgba(${m.rgb},.1)`; }
+                if (labelEl) { labelEl.style.background = `rgba(${m.rgb},.15)`; labelEl.style.borderColor = `rgba(${m.rgb},.4)`; labelEl.style.color = m.hex; }
+            } else {
+                if (breakdownCard) { breakdownCard.style.outline = ''; breakdownCard.style.boxShadow = ''; }
+                if (labelEl) { labelEl.style.background = ''; labelEl.style.borderColor = ''; labelEl.style.color = ''; }
+            }
+        }
+
         function setTopFilter(filter) {
             const same = activeTopFilter === filter;
             activeTopFilter = same ? null : filter;
             activeTriageFilter = null; // always reset sub-filter when top context changes
 
-            // Clear ALL highlights
-            document.querySelectorAll('.kpi-active').forEach(el => el.classList.remove('kpi-active'));
+            // Clear chip highlights, then apply per-color active state to cards + breakdown
             document.querySelectorAll('.triage-chip').forEach(c => { c.style.outline = ''; c.style.boxShadow = ''; });
+            _applyKpiColors(activeTopFilter);
 
-            // Highlight selected top card
-            if (activeTopFilter) {
-                const cardMap = { all: 'kpi-total', en_route: 'kpi-enroute', in_treatment: 'kpi-treatment', discharged: 'kpi-treated' };
-                document.getElementById(cardMap[activeTopFilter])?.classList.add('kpi-active');
-                if (state.activeTab !== 'dashboard') switchTab('dashboard');
-            }
+            if (activeTopFilter && state.activeTab !== 'dashboard') switchTab('dashboard');
 
             // Save selected KPI filter to localStorage
             localStorage.setItem('selectedKpiFilter', activeTopFilter || 'all');
@@ -7683,8 +7838,7 @@
             // Apply saved KPI filter after data is loaded
             if (savedKpiFilter && savedKpiFilter !== 'all') {
                 console.log('Applying saved KPI filter:', activeTopFilter);
-                const cardMap = { all: 'kpi-total', en_route: 'kpi-enroute', in_treatment: 'kpi-treatment', discharged: 'kpi-treated' };
-                document.getElementById(cardMap[activeTopFilter])?.classList.add('kpi-active');
+                _applyKpiColors(activeTopFilter);
                 updateTriageBreakdown(activeTopFilter);
                 applyCurrentFilter();
 

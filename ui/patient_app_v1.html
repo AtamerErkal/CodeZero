@@ -1524,6 +1524,35 @@
             background: #fff
         }
 
+        /* Checkbox style — used for multi-select questions */
+        .check-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid var(--border-h);
+            flex-shrink: 0;
+            transition: var(--tr);
+            position: relative
+        }
+
+        .radio-pill.selected .check-box {
+            border-color: var(--primary);
+            background: var(--primary)
+        }
+
+        .radio-pill.selected .check-box::after {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 1px;
+            width: 6px;
+            height: 10px;
+            border: 2.5px solid #fff;
+            border-top: none;
+            border-left: none;
+            transform: rotate(45deg)
+        }
+
         .scale-row {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -2620,20 +2649,18 @@
             background-color: var(--ios-bg);
             border: 1px solid var(--border);
             border-radius: 14px;
-            color: var(--medical-primary);
-            font-weight: 900;
-            font-size: 1.15rem;
-            font-family: var(--font-main);
-            letter-spacing: 0.5px;
             flex-shrink: 0;
+            font-size: 1.65rem;
+            line-height: 1;
         }
 
         .lang-choice-card:hover .lang-code-box,
         .lang-choice-card.selected .lang-code-box {
-            color: #FFFFFF;
-            background-color: var(--medical-primary);
+            background-color: rgba(13,148,136,0.12);
             border-color: var(--medical-primary);
         }
+
+        /* lang-code-box hover handled by the rule inside .lang-code-box block above */
 
         /* Language Text Area */
         .lang-texts {
@@ -3467,22 +3494,14 @@
 
                 <div class="robot-name-label">
                     <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>
+                    <div style="font-size:0.65rem; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-3); margin-top:4px;">AI ASSISTANT</div>
                 </div>
 
             </div>
 
             <div class="lang-list">
-                <div class="lang-choice-card" id="langBtn_en" onclick="selectLanguage('en')">
-                    <div class="lang-code-box">GB</div>
-                    <div class="lang-texts">
-                        <h4 class="lang-main-name">English</h4>
-                        <p class="lang-desc">Medical emergency assistant</p>
-                    </div>
-                    <i data-lucide="chevron-right"></i>
-                </div>
-
                 <div class="lang-choice-card" id="langBtn_de" onclick="selectLanguage('de')">
-                    <div class="lang-code-box">DE</div>
+                    <div class="lang-code-box"><img src="https://flagcdn.com/w40/de.png" alt="DE" style="width:30px;height:auto;border-radius:3px;display:block;"></div>
                     <div class="lang-texts">
                         <h4 class="lang-main-name">Deutsch</h4>
                         <p class="lang-desc">Medizinischer Notfallassistent</p>
@@ -3490,8 +3509,17 @@
                     <i data-lucide="chevron-right"></i>
                 </div>
 
+                <div class="lang-choice-card" id="langBtn_en" onclick="selectLanguage('en')">
+                    <div class="lang-code-box"><img src="https://flagcdn.com/w40/gb.png" alt="GB" style="width:30px;height:auto;border-radius:3px;display:block;"></div>
+                    <div class="lang-texts">
+                        <h4 class="lang-main-name">English</h4>
+                        <p class="lang-desc">Medical emergency assistant</p>
+                    </div>
+                    <i data-lucide="chevron-right"></i>
+                </div>
+
                 <div class="lang-choice-card" id="langBtn_tr" onclick="selectLanguage('tr')">
-                    <div class="lang-code-box">TR</div>
+                    <div class="lang-code-box"><img src="https://flagcdn.com/w40/tr.png" alt="TR" style="width:30px;height:auto;border-radius:3px;display:block;"></div>
                     <div class="lang-texts">
                         <h4 class="lang-main-name">Türkçe</h4>
                         <p class="lang-desc">Tıbbi acil durum asistanı</p>
@@ -3684,6 +3712,9 @@
                     <div id="transcriptText"
                         style="font-size:0.95rem; font-weight:600; font-style: italic; color:var(--text); margin-bottom:10px;">
                     </div>
+                    <textarea id="correctionInput"
+                        style="display:none; width:100%; min-height:80px; padding:10px; font-family:var(--font); font-size:0.95rem; font-weight:600; color:var(--text); background:var(--warning-l); border:2px solid var(--warning); border-radius:10px; resize:vertical; margin-bottom:10px; box-sizing:border-box; outline:none;"
+                        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
                     <div id="transcriptApproveRow" style="display:none; gap:8px; margin-top:8px;">
                         <button onclick="approveTranscript()" id="btnApproveTranscript"
                             style="flex:1; padding:10px 14px; background:var(--success); color:white; border:none; border-radius:10px; font-family:var(--font); font-size:0.85rem; font-weight:700; cursor:pointer;">&#x2705;
@@ -3691,6 +3722,9 @@
                         <button onclick="reRecordTranscript()" id="btnReRecordTranscript"
                             style="flex:1; padding:10px 14px; background:var(--card-alt); color:var(--text); border:1px solid var(--border); border-radius:10px; font-family:var(--font); font-size:0.85rem; font-weight:700; cursor:pointer;">&#x1F504;
                             <span id="lblReRecordTranscript">Re-record</span></button>
+                        <button onclick="correctTranscript()" id="btnCorrectTranscript"
+                            style="flex:1; padding:10px 14px; background:var(--warning-l); color:var(--warning-text); border:1px solid var(--warning-m); border-radius:10px; font-family:var(--font); font-size:0.85rem; font-weight:700; cursor:pointer;">&#x270F;&#xFE0F;
+                            <span id="lblCorrectTranscript">Correction</span></button>
                     </div>
                 </div>
             </div>
@@ -4393,7 +4427,7 @@
             { id: 'headache', icon: 'brain-circuit' },
             { id: 'fever', icon: 'thermometer' },
             { id: 'dizziness', icon: 'orbit' },
-            { id: 'abdominal_pain', icon: 'accessibility' },
+            { id: 'abdominal_pain', icon: 'circle-dot' },
             { id: 'fainting', icon: 'zap' },
             { id: 'severe_bleeding', icon: 'droplet' },
             { id: 'allergic_reaction', icon: 'bug' },
@@ -4495,8 +4529,8 @@
                 sym_altered_consciousness: 'Altered Consciousness',
                 micLabelIdle: 'Tap to speak',
                 micSubIdle: 'Tell us your symptoms',
-                micLabelRec: 'Listening...',
-                micSubRec: 'Tap to stop',
+                micLabelRec: 'Listening',
+                micSubRec: 'When you finish, tap to stop recording',
                 micLabelDone: 'Recorded',
                 micSubDone: 'Tap to record again',
                 transcriptLang: 'AI Transcript',
@@ -4565,7 +4599,7 @@
                 rs_tab_instructions: 'Instructions',
                 rs_tab_contact: 'Emergency Contact',
                 rs_openNav: 'Open Navigation', rs_liveTrackingTitle: 'LIVE TRACKING ACTIVE', rs_liveTrackingSub: 'The medical team is monitoring your GPS for arrival.', rs_passFooter: 'Show this pass to the triage nurse immediately upon arrival.',
-                wl_langHeroSub: 'AI Emergency Assistant — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Back', ph_backBtn: 'Back', gps_privacyText: 'Your location is only used to find the most suitable hospital. Your identity is kept confidential.', rs_contactTitle: 'Notify Contact Person', rs_contactDesc: 'The following will be sent to your emergency contact:', rs_contactItem1: 'Summary of your condition', rs_contactItem2: 'Assigned hospital name & address', rs_contactItem3: 'Your current location', rs_contactItem4: 'Hospital registration number', rs_contactSendBtn: 'Send notification now', rs_demo: '⚠️ Demo only. Call 112 for real emergencies.', aiChecking: 'Checking AI…', aiConnected: '🤖 AI connected — real-time analysis', aiDemo: '⚙️ Demo mode — AI not configured',
+                wl_langHeroSub: 'AI Emergency Assistant — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Back', ph_backBtn: 'Back', gps_privacyText: 'Your location is only used to find the most suitable hospital. Your identity is kept confidential.', rs_contactTitle: 'Notify Contact Person', rs_contactDesc: 'The following will be sent to your emergency contact:', rs_contactItem1: 'Summary of your condition', rs_contactItem2: 'Assigned hospital name & address', rs_contactItem3: 'Your current location', rs_contactItem4: 'Hospital registration number', rs_contactSendBtn: 'Send notification now', rs_demo: '⚠️ Demo only. Call 112 for real emergencies.', aiChecking: 'Checking AI…', aiConnected: 'AI connected — real-time analysis', aiDemo: '⚙️ Demo mode — AI not configured',
                 adv_call112: 'Call 112 immediately or have someone call for you', adv_sit_still: 'Sit or lie down and do not move', adv_stay_calm: 'Stay calm and breathe slowly', adv_rest: 'Rest and avoid physical exertion', adv_someone_with_you: 'Have someone accompany you to the hospital', adv_bring_meds: 'Bring all current medications with you', adv_bring_id: 'Bring your ID and insurance card', adv_no_drive: 'Do NOT drive yourself to the hospital', adv_no_eat: 'Do not eat or drink anything until examined', adv_chest_loose: 'Loosen tight clothing around your chest', adv_chest_no_stress: 'Avoid physical or emotional stress', adv_bleed_pressure: 'Apply firm pressure to the wound with a clean cloth', adv_bleed_no_remove: 'Do not remove any object embedded in a wound', adv_breath_upright: 'Sit upright — do not lie flat', adv_breath_no_lie: 'Do not lie flat — this worsens breathing', adv_head_dark: 'Rest in a quiet, dark room if possible', adv_head_no_screen: 'Avoid screens, bright lights and loud noise', adv_proceed_er: 'Go to the emergency room as soon as possible',
                 hnPlaceholder: 'Choose your health record…',
                 tr_aiVoNOverview: '<span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> Assessment',
@@ -4593,6 +4627,8 @@
                 an_step2: 'Calculating triage level...',
                 transcript_approve_hint: 'Is this what you said?',
                 transcript_approve: 'Use this',
+                transcript_correct: 'Correction',
+                transcript_correct_done: 'Save',
                 transcript_rerecord: 'Re-record',
                 amb_header_imm: '🚨 CRITICAL EMERGENCY — Ambulance Requested',
                 amb_nearest_er: 'Universitätsklinikum Ulm',
@@ -4682,6 +4718,7 @@
                 lvl_URGENT: 'Urgent', lvl_STANDARD: 'Standard', lvl_NON_URGENT: 'Non-urgent',
                 level_word: 'Level',
                 contact_sending: 'Sending…', contact_notified: 'Contact Notified',
+                contact_forwarded: 'Your location, the hospital you are being taken to, and your health status have been forwarded to',
                 // ── Assessment result page (v1) ──
                 ass_rec_title: "AiVoN's Recommendation",
                 ass_gp_title: 'Consult Your GP (Family Doctor)',
@@ -4815,8 +4852,8 @@
                 sym_altered_consciousness: 'Bewusstseinsveränderung',
                 micLabelIdle: 'Tippen zum Sprechen',
                 micSubIdle: 'Schildern Sie Ihre Beschwerden',
-                micLabelRec: 'Hören zu...',
-                micSubRec: 'Stoppen tippen',
+                micLabelRec: 'Zuhören',
+                micSubRec: 'Wenn Sie fertig sind, tippen Sie zum Stoppen',
                 micLabelDone: 'Aufgezeichnet',
                 micSubDone: 'Erneut aufnehmen tippen',
                 transcriptLang: 'KI-Transkript',
@@ -4877,7 +4914,7 @@
                 rs_tab_contact: 'Notfallkontakt',
                 rs_openNav: 'Navigation öffnen', rs_liveTrackingTitle: 'LIVE-TRACKING AKTIV', rs_liveTrackingSub: 'Das Team überwacht Ihre GPS-Position für die Ankunft.', rs_passFooter: 'Zeigen Sie diesen Pass sofort der Triage-Schwester bei Ankunft.',
                 wl_langHeroSub: 'KI-Notfallassistent — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Zurück', ph_backBtn: 'Zurück', gps_privacyText: 'Ihr Standort wird nur verwendet, um das geeignetste Krankenhaus zu finden. Ihre Identität bleibt vertraulich.', rs_contactTitle: 'Kontaktperson benachrichtigen', rs_contactDesc: 'Folgendes wird an Ihren Notfallkontakt gesendet:', rs_contactItem1: 'Zusammenfassung Ihres Zustands', rs_contactItem2: 'Name & Adresse des Krankenhauses', rs_contactItem3: 'Ihr aktueller Standort', rs_contactItem4: 'Krankenhausregistrierungsnummer', rs_contactSendBtn: 'Benachrichtigung senden', rs_demo: '⚠️ Nur Demo. Im Notfall 112 anrufen.',
-                aiChecking: 'KI-Status wird geprüft…', aiConnected: '🤖 KI verbunden — Echtzeit-Analyse', aiDemo: '⚙️ Demo-Modus — KI nicht konfiguriert',
+                aiChecking: 'KI-Status wird geprüft…', aiConnected: 'KI verbunden — Echtzeit-Analyse', aiDemo: '⚙️ Demo-Modus — KI nicht konfiguriert',
                 adv_call112: 'Rufen Sie sofort 112 an oder lassen Sie jemanden rufen', adv_sit_still: 'Setzen oder legen Sie sich hin und bewegen Sie sich nicht', adv_stay_calm: 'Bleiben Sie ruhig und atmen Sie langsam', adv_rest: 'Ruhen Sie sich aus und vermeiden Sie körperliche Anstrengung', adv_someone_with_you: 'Lassen Sie sich von jemandem ins Krankenhaus begleiten', adv_bring_meds: 'Bringen Sie alle aktuellen Medikamente mit', adv_bring_id: 'Bringen Sie Ausweis und Krankenversicherungskarte mit', adv_no_drive: 'Fahren Sie NICHT selbst ins Krankenhaus', adv_no_eat: 'Essen oder trinken Sie nichts bis zur Untersuchung', adv_chest_loose: 'Lockern Sie enge Kleidung um die Brust', adv_chest_no_stress: 'Vermeiden Sie körperlichen oder emotionalen Stress', adv_bleed_pressure: 'Drücken Sie mit einem sauberen Tuch fest auf die Wunde', adv_bleed_no_remove: 'Entfernen Sie keinen in der Wunde steckenden Gegenstand', adv_breath_upright: 'Sitzen Sie aufrecht — legen Sie sich nicht hin', adv_breath_no_lie: 'Legen Sie sich nicht flach hin — das verschlimmert die Atmung', adv_head_dark: 'Ruhen Sie sich in einem ruhigen, dunklen Raum aus', adv_head_no_screen: 'Vermeiden Sie Bildschirme, helles Licht und Lärm', adv_proceed_er: 'Gehen Sie so schnell wie möglich in die Notaufnahme',
                 hnPlaceholder: 'Krankenakte auswählen…',
                 tr_aiVoNOverview: '<span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> Bewertung',
@@ -4905,6 +4942,8 @@
                 an_step2: 'Dringlichkeitsstufe wird berechnet...',
                 transcript_approve_hint: 'Ist das das, was Sie gesagt haben?',
                 transcript_approve: 'Verwenden',
+                transcript_correct: 'Korrektur',
+                transcript_correct_done: 'Speichern',
                 transcript_rerecord: 'Erneut aufnehmen',
                 amb_header_imm: '🚨 KRITISCHER NOTFALL — Krankenwagen angefordert',
                 amb_nearest_er: 'Nächste Notaufnahme',
@@ -4994,6 +5033,7 @@
                 lvl_URGENT: 'Dringend', lvl_STANDARD: 'Normal', lvl_NON_URGENT: 'Nicht dringend',
                 level_word: 'Stufe',
                 contact_sending: 'Wird gesendet…', contact_notified: 'Kontakt benachrichtigt',
+                contact_forwarded: 'Ihr Standort, das Krankenhaus, in das Sie gebracht werden, und Ihr Gesundheitszustand wurden weitergeleitet an',
                 // ── Assessment result page (v1) ──
                 ass_rec_title: 'AiVoN-Empfehlung',
                 ass_gp_title: 'Hausarztbesuch empfohlen',
@@ -5082,6 +5122,8 @@
                 rec_l1: 'Ich teile Ihre Daten mit dem nächsten Krankenhaus und fordere einen Krankenwagen an.',
                 rec_l2: 'Sie müssen dringend ins Krankenhaus. Wie kommen Sie dorthin?',
                 rec_l3: 'Sie müssen dringend ins Krankenhaus. Ich teile Ihre Daten und Ihren Standort mit dem nächsten Krankenhaus.',
+                rec_l4: 'Ihr Zustand scheint stabil zu sein — bitte vereinbaren Sie einen Termin bei Ihrem Hausarzt. Möchten Sie Ihre Informationen trotzdem zur ärztlichen Überprüfung an das nächste Krankenhaus senden? Sie werden benachrichtigt, wenn ein Arzt Ihren Fall als dringlicher einschätzt.',
+                rec_l5: 'Ihr Zustand scheint stabil zu sein — bitte vereinbaren Sie einen Termin bei Ihrem Hausarzt.',
                 rec_btn_confirm: 'BESTÄTIGEN',
                 rec_btn_ambulance: 'Krankenwagen',
                 rec_btn_self: 'Selbst fahren',
@@ -5124,8 +5166,8 @@
                 sym_altered_consciousness: 'Bilinç Bulanıklığı',
                 micLabelIdle: 'Konuşmak için dokunun',
                 micSubIdle: 'Belirtilerinizi bize anlatın',
-                micLabelRec: 'Dinleniyor...',
-                micSubRec: 'Durdurmak için dokunun',
+                micLabelRec: 'Dinleniyor',
+                micSubRec: 'Bitirdiğinizde durdurmak için dokunun',
                 micLabelDone: 'Kaydedildi',
                 micSubDone: 'Tekrar kaydetmek için dokunun',
                 transcriptLang: 'YZ Transkripti',
@@ -5194,7 +5236,7 @@
                 rs_tab_instructions: 'Talimatlar',
                 rs_tab_contact: 'Acil Durum Kişisi',
                 rs_openNav: 'Navigasyonu Aç', rs_liveTrackingTitle: 'CANLI TAKİP AKTİF', rs_liveTrackingSub: 'Tıbbi ekip varış için GPS\'inizi izliyor.', rs_passFooter: 'Vardığınızda bu kartı derhal triaj hemşiresine gösterin.',
-                wl_langHeroSub: 'YZ Acil Durum Asistanı — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Geri', ph_backBtn: 'Geri', gps_privacyText: 'Konumunuz sadece en uygun hastaneyi bulmak için kullanılır. Kimliğiniz gizli tutulur.', rs_contactTitle: 'İlgili Kişiyi Bilgilendir', rs_contactDesc: 'Acil durum kişinize şunlar gönderilecek:', rs_contactItem1: 'Durumunuzun özeti', rs_contactItem2: 'Atanan hastane adı ve adresi', rs_contactItem3: 'Mevcut konumunuz', rs_contactItem4: 'Hastane kayıt numarası', rs_contactSendBtn: 'Şimdi bildirim gönder', rs_demo: '⚠️ Sadece demo. Gerçek acil durumlar için 112\'yi arayın.', aiChecking: 'YZ kontrol ediliyor…', aiConnected: '🤖 YZ bağlı — gerçek zamanlı analiz', aiDemo: '⚙️ Demo modu — YZ yapılandırılmamış',
+                wl_langHeroSub: 'YZ Acil Durum Asistanı — <span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span>', inp_backBtn: 'Geri', ph_backBtn: 'Geri', gps_privacyText: 'Konumunuz sadece en uygun hastaneyi bulmak için kullanılır. Kimliğiniz gizli tutulur.', rs_contactTitle: 'İlgili Kişiyi Bilgilendir', rs_contactDesc: 'Acil durum kişinize şunlar gönderilecek:', rs_contactItem1: 'Durumunuzun özeti', rs_contactItem2: 'Atanan hastane adı ve adresi', rs_contactItem3: 'Mevcut konumunuz', rs_contactItem4: 'Hastane kayıt numarası', rs_contactSendBtn: 'Şimdi bildirim gönder', rs_demo: '⚠️ Sadece demo. Gerçek acil durumlar için 112\'yi arayın.', aiChecking: 'YZ kontrol ediliyor…', aiConnected: 'YZ bağlı — gerçek zamanlı analiz', aiDemo: '⚙️ Demo modu — YZ yapılandırılmamış',
                 adv_call112: 'Derhal 112\'yi arayın veya birine arattırın', adv_sit_still: 'Oturun veya uzanın ve hareket etmeyin', adv_stay_calm: 'Sakin kalın ve yavaş nefes alın', adv_rest: 'Dinlenin ve fiziksel efordan kaçının', adv_someone_with_you: 'Hastaneye birinin size eşlik etmesini sağlayın', adv_bring_meds: 'Mevcut tüm ilaçlarınızı yanınızda getirin', adv_bring_id: 'Kimliğinizi ve sigorta kartınızı yanınızda getirin', adv_no_drive: 'Hastaneye kendiniz ARAÇ SÜRMEYİN', adv_no_eat: 'Muayene edilene kadar hiçbir şey yemeyin veya içmeyin', adv_chest_loose: 'Göğüs bölgenizdeki dar giysileri gevşetin', adv_chest_no_stress: 'Fiziksel veya duygusal stresten kaçının', adv_bleed_pressure: 'Temiz bir bezle yaraya sertçe bastırın', adv_bleed_no_remove: 'Yaraya saplanmış hiçbir nesneyi çıkarmayın', adv_breath_upright: 'Dik oturun — düz yatmayın', adv_breath_no_lie: 'Düz yatmayın — bu nefes almayı zorlaştırır', adv_head_dark: 'Mümkünse sessiz, karanlık bir odada dinlenin', adv_head_no_screen: 'Ekranlardan, parlak ışıklardan ve gürültüden kaçının', adv_proceed_er: 'En kısa sürede acil servise gidin',
                 hnPlaceholder: 'Sağlık kaydınızı seçin…',
                 tr_aiVoNOverview: '<span class="aivon-brand">Λ<span class="aivon-i">i</span>V<span class="aivon-o">o</span>N</span> Değerlendirmesi',
@@ -5222,6 +5264,8 @@
                 an_step2: 'Triaj seviyesi hesaplanıyor...',
                 transcript_approve_hint: 'Söylediğiniz bu mu?',
                 transcript_approve: 'Bunu kullan',
+                transcript_correct: 'Düzeltme',
+                transcript_correct_done: 'Kaydet',
                 transcript_rerecord: 'Tekrar kaydet',
                 amb_header_imm: '🚨 KRİTİK ACİL DURUM — Ambulans Talep Edildi',
                 amb_nearest_er: 'Acil Servis',
@@ -5311,6 +5355,7 @@
                 lvl_URGENT: 'Acil', lvl_STANDARD: 'Standart', lvl_NON_URGENT: 'Acil Değil',
                 level_word: 'Seviye',
                 contact_sending: 'Gönderiliyor…', contact_notified: 'Kişi Bilgilendirildi',
+                contact_forwarded: 'Konumunuz, götürüleceğiniz hastane ve sağlık durumunuz şu kişiye iletildi:',
                 ass_rec_title: "AiVoN Önerisi",
                 ass_gp_title: 'Aile Hekiminize Danışın',
                 ass_gp_desc: 'Değerlendirmenize göre bu durum acil değildir. Lütfen aile hekiminizden bir randevu alın.',
@@ -5703,6 +5748,7 @@
         // ═══════════════════════════════════════════════════════════
         let mediaRec = null, audioChunks = [], isRecording = false;
         let webSpeechRec = null, webSpeechResult = '';
+        let _recordingMime = '';
         // Real-time audio visualizer state
         let _vizCtx = null, _vizAnalyser = null, _vizFrame = null;
 
@@ -5806,9 +5852,10 @@
             webSpeechResult = '';  // clear any stale result from previous attempt
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                // Pick a MIME type the browser actually supports so the blob is valid
-                const mime = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm', 'audio/mp4']
+                // Pick a MIME type the browser actually supports — video/mp4 needed for iOS Safari
+                const mime = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm', 'audio/mp4', 'video/mp4']
                     .find(t => MediaRecorder.isTypeSupported(t)) || '';
+                _recordingMime = mime;
                 mediaRec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
                 audioChunks = [];
                 mediaRec.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
@@ -5831,23 +5878,27 @@
         function stopRecording() {
             stopAudioViz();  // ← stop real-time visualizer immediately
 
-            if (webSpeechRec) { try { webSpeechRec.stop(); } catch (e) { } webSpeechRec = null; }
+            // Do NOT stop webSpeechRec here — let it keep listening during processAudio's
+            // 1500 ms wait so mobile browsers have time to fire the final onresult event.
+            // processAudio() will stop it after reading the result.
+            isRecording = false;  // prevents onend from auto-restarting recognition
 
             if (mediaRec && mediaRec.state !== 'inactive') {
                 mediaRec.stop();
                 mediaRec.stream.getTracks().forEach(tr => tr.stop());
-            } else if (isRecording && !mediaRec) {
-                // Web Speech only mode (no MediaRecorder)
-                isRecording = false; setMicState('idle');
+            } else if (!mediaRec) {
+                // Web Speech only mode (no MediaRecorder) — give it 2s to fire final result
+                setMicState('idle');
                 setTimeout(() => {
+                    if (webSpeechRec) { try { webSpeechRec.stop(); } catch (e) {} webSpeechRec = null; }
                     const finalResult = (webSpeechResult || '').trim();
                     if (finalResult) { setComplaintFromAudio(finalResult, S.selectedLang || S.detectedLang); }
-                    else { const m = { en: 'No audio captured — please type.', de: 'Keine Aufnahme.', tr: 'Ses alınamadı — lütfen yazın.' }; toast(m[S.lang] || m.en, 'warn'); }
+                    else { showVoiceFallback(); }
                     webSpeechResult = '';
-                }, 1000);
+                }, 2000);
                 return;
             }
-            isRecording = false; setMicState('idle');
+            setMicState('idle');
         }
         function setMicState(state) {
             const wf = document.getElementById('waveformBars');
@@ -5868,11 +5919,15 @@
             }
         }
         async function processAudio() {
-            // Wait 1500ms — gives Web Speech API time to fire its final onresult
-            // before we snapshot webSpeechResult (race condition guard).
-            await new Promise(r => setTimeout(r, 1500));
+            // Wait 2000ms — gives mobile Web Speech API time to fire final onresult
+            // (mobile browsers fire it later than desktop after recognition.stop()).
+            await new Promise(r => setTimeout(r, 2000));
+            // Now stop Web Speech — it had its chance to produce a result
+            if (webSpeechRec) { try { webSpeechRec.stop(); } catch (e) {} webSpeechRec = null; }
             const wsr = (webSpeechResult || '').trim();
-            const blob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+            // Use the actual recorded MIME type — iOS records mp4, not webm
+            const blobMime = _recordingMime || 'audio/webm';
+            const blob = new Blob(audioChunks, { type: blobMime });
 
             const spinner = document.getElementById('inputSpinner');
             const spinnerText = document.getElementById('inputSpinnerText');
@@ -5894,7 +5949,8 @@
             try {
                 if (blob.size > 500) {
                     const form = new FormData();
-                    form.append('audio', blob, 'complaint.webm');
+                    const ext = blobMime.includes('mp4') ? 'mp4' : blobMime.includes('ogg') ? 'ogg' : 'webm';
+                    form.append('audio', blob, `complaint.${ext}`);
                     // Send the known language so Azure can skip auto-detection (more accurate)
                     if (S.selectedLang || S.detectedLang) {
                         form.append('lang', S.selectedLang || S.detectedLang);
@@ -5911,19 +5967,44 @@
                     }
                 }
 
-                // Both paths empty — ask user to type
-                const m = { en: 'Could not understand audio — please type.', de: 'Audio nicht verstanden — bitte tippen.', tr: 'Ses anlaşılamadı — lütfen yazın.' };
-                toast(m[S.lang] || m.en, 'warn');
-                setMicState('idle');
+                // Both paths empty — show persistent text input instead of just a toast
+                showVoiceFallback();
 
             } catch (e) {
                 console.error("Transcription Error:", e);
-                const m = { en: 'Network error — please type.', de: 'Netzwerkfehler — bitte tippen.', tr: 'Bağlantı hatası — lütfen yazın.' };
-                toast(m[S.lang] || m.en, 'warn');
-                setMicState('idle');
+                showVoiceFallback();
             } finally {
                 if (spinner) spinner.classList.remove('visible');
             }
+        }
+
+        function showVoiceFallback() {
+            // When both voice paths fail (mobile Web Speech + server), show a
+            // persistent text input so the user can type their complaint manually.
+            setMicState('idle');
+            const tBox = document.getElementById('transcriptBox');
+            const tText = document.getElementById('transcriptText');
+            const tLang = document.getElementById('transcriptLang');
+            const tApproveRow = document.getElementById('transcriptApproveRow');
+            const corrTA = document.getElementById('correctionInput');
+            const lblCorrect = document.getElementById('lblCorrectTranscript');
+            const msg = { en: 'Voice not recognized — please type below:', de: 'Sprache nicht erkannt — bitte unten tippen:', tr: 'Ses tanınamadı — lütfen aşağıya yazın:' };
+            if (tLang) { tLang.textContent = msg[S.lang] || msg.en; tLang.style.color = 'var(--warning-text, #b45309)'; }
+            if (tText) tText.style.display = 'none';
+            if (corrTA) {
+                corrTA.style.display = 'block';
+                corrTA.value = '';
+                corrTA.placeholder = { en: 'Describe your symptoms…', de: 'Beschreiben Sie Ihre Symptome…', tr: 'Şikayetinizi yazın…' }[S.lang] || 'Describe your symptoms…';
+                corrTA.oninput = function() {
+                    S.voiceTranscript = corrTA.value.trim();
+                    S._transcriptApproved = true;
+                    updateFinalComplaint();
+                    enableContinue(S.voiceTranscript.length > 0);
+                };
+                setTimeout(() => corrTA.focus(), 100);
+            }
+            if (tApproveRow) tApproveRow.style.display = 'none';
+            if (tBox) { tBox.style.display = 'block'; }
         }
 
         const LANG_NAMES = { 'en-US': 'English', 'en-GB': 'English', 'de-DE': 'Deutsch', 'ar-SA': 'العربية', 'fr-FR': 'Français', 'es-ES': 'Español', 'it-IT': 'Italiano' };
@@ -5949,13 +6030,25 @@
             if (tApproveRow) tApproveRow.style.display = 'flex';
             if (lblApprove) lblApprove.textContent = t('transcript_approve');
             if (lblReRecord) lblReRecord.textContent = t('transcript_rerecord');
+            const lblCorrect = document.getElementById('lblCorrectTranscript');
+            if (lblCorrect) lblCorrect.textContent = t('transcript_correct');
+            // Reset correction textarea state
+            const tTextEl = document.getElementById('transcriptText');
+            if (tTextEl) { tTextEl.style.display = ''; }
+            const corrTA = document.getElementById('correctionInput');
+            if (corrTA) { corrTA.style.display = 'none'; corrTA.value = ''; }
+            const corrBtn = document.getElementById('btnCorrectTranscript');
+            if (corrBtn) corrBtn.style.background = 'var(--warning-l)';
 
             enableContinue(false);
             setMicState('idle');
         }
 
         function approveTranscript() {
+            _commitCorrection();      // auto-save if user tapped "Use this" while textarea was open
             S._transcriptApproved = true;
+            updateFinalComplaint();   // ensure S.complaint reflects correction
+            S.complaintEN = null;     // force fresh English translation on next API call
             const tApproveRow = document.getElementById('transcriptApproveRow');
             const tLang = document.getElementById('transcriptLang');
             if (tApproveRow) tApproveRow.style.display = 'none';
@@ -5963,8 +6056,55 @@
             enableContinue(true);
         }
 
+        function _commitCorrection() {
+            // Reads the textarea, updates S.voiceTranscript + S.complaint, hides textarea.
+            // Safe to call even when textarea is not visible (no-op in that case).
+            const ta = document.getElementById('correctionInput');
+            const tText = document.getElementById('transcriptText');
+            if (!ta || ta.style.display === 'none') return;
+            const corrected = ta.value.trim();
+            if (!corrected) return;
+            S.voiceTranscript = corrected;
+            S.complaintEN = null;
+            updateFinalComplaint();
+            if (tText) tText.textContent = `"${corrected}"`;
+            ta.style.display = 'none';
+            if (tText) tText.style.display = '';
+            const btn = document.getElementById('btnCorrectTranscript');
+            const lbl = document.getElementById('lblCorrectTranscript');
+            if (lbl) lbl.textContent = t('transcript_correct');
+            if (btn) btn.style.background = 'var(--warning-l)';
+        }
+
+        function correctTranscript() {
+            const ta = document.getElementById('correctionInput');
+            const tText = document.getElementById('transcriptText');
+            const btn = document.getElementById('btnCorrectTranscript');
+            const lbl = document.getElementById('lblCorrectTranscript');
+            if (!ta) return;
+
+            if (ta.style.display !== 'none') {
+                // Save mode — commit what is in the textarea
+                _commitCorrection();
+            } else {
+                // Enter edit mode — show textarea pre-filled with current transcript
+                const raw = (S.voiceTranscript || '').replace(/^"|"$/g, '') ||
+                            (tText ? tText.textContent.replace(/^"|"$/g, '') : '');
+                ta.value = raw;
+                ta.style.display = 'block';
+                ta.style.height = 'auto';
+                ta.style.height = ta.scrollHeight + 'px';
+                if (tText) tText.style.display = 'none';
+                ta.focus();
+                ta.select();
+                if (lbl) lbl.textContent = t('transcript_correct_done');
+                if (btn) btn.style.background = 'var(--warning-m)';
+            }
+        }
+
         function reRecordTranscript() {
             S.voiceTranscript = '';
+            S.complaintEN = null;    // discard stale English translation
             S._transcriptApproved = false;
             const tBox = document.getElementById('transcriptBox');
             const tApproveRow = document.getElementById('transcriptApproveRow');
@@ -6385,7 +6525,7 @@
                 options = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
             }
             const currentQ = S.qIdx + 1;
-            const isMulti = !!q.allow_multi;
+            const isMulti = !!q.allow_multi || type === 'multiple_choice';
 
             // Always show exactly MAX_QUESTIONS dots
             const dotsHtml = Array.from({ length: MAX_QUESTIONS }, (_, i) => {
@@ -6407,8 +6547,8 @@
     <div class="q-dots-wrap">${dotsHtml}</div>
     <div class="q-remaining">${remainingLbl}</div>
     <div class="chat-ai" style="display:flex;align-items:flex-start;gap:12px;margin:20px 0;">
-        <div class="chat-ai-avatar" style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg, #14B8A6, #0F766E);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 12px rgba(13,148,136,0.3);flex-shrink:0;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+        <div class="chat-ai-avatar" style="width:48px;height:48px;border-radius:14px;overflow:hidden;box-shadow:0 6px 12px rgba(13,148,136,0.3);flex-shrink:0;background:linear-gradient(135deg,#14B8A6,#0F766E);">
+            <img src="/docs/images/Gemini_Generated_Image_e43c2be43c2be43c.png" alt="AiVoN" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
         </div>
         <div class="chat-ai-bubble" style="background:var(--card);border:1px solid var(--border);border-radius:4px 18px 18px 18px;padding:16px;box-shadow:var(--sh-sm);flex:1;">
             <p class="q-text" style="margin:0;font-size:1.15rem;line-height:1.4;">${escHtml(question)}</p>
@@ -6482,8 +6622,6 @@
                         document.querySelectorAll('.scale-pill').forEach(p => p.classList.remove('selected'));
                         pill.classList.add('selected');
                         const nxt = document.getElementById('btnQNext'); nxt.disabled = false; nxt.style.opacity = '1';
-                        // 🚀 Prefetch next question as soon as scale is selected
-                        if (!S._fetchingNext && !S._prefetchedQ && !S._adaptiveDone) _startPrefetch();
                     };
                     (idx < 5 ? grid1 : grid2).appendChild(pill);
                 });
@@ -6497,7 +6635,7 @@
                     const pill = document.createElement('label');
                     const isSelected = prevArr.includes(display) || prevArr.includes(value);
                     pill.className = 'radio-pill' + (isSelected ? ' selected' : '');
-                    pill.innerHTML = `<div class="radio-dot"></div><span>${escHtml(display)}</span>`;
+                    pill.innerHTML = `<div class="check-box"></div><span>${escHtml(display)}</span>`;
                     pill.onclick = (e) => {
                         e.stopPropagation();
                         const isNoneOption = NONE_VALUES.includes(display) || NONE_VALUES.includes(value);
@@ -6518,8 +6656,6 @@
                         S.answers[S.qIdx] = { question, question_en: q.question_en || q.question || question, answer: sel, originalAnswer: sel.join(', ') };
                         const nxt = document.getElementById('btnQNext');
                         nxt.disabled = sel.length === 0; nxt.style.opacity = sel.length ? '1' : '0.45';
-                        // 🚀 Prefetch when at least one option selected
-                        if (sel.length > 0 && !S._fetchingNext && !S._prefetchedQ && !S._adaptiveDone) _startPrefetch();
                     };
                     opts.appendChild(pill);
                 });
@@ -6537,8 +6673,6 @@
                         document.querySelectorAll('#qOptions .radio-pill').forEach(p => p.classList.remove('selected'));
                         pill.classList.add('selected');
                         const nxt = document.getElementById('btnQNext'); nxt.disabled = false; nxt.style.opacity = '1';
-                        // 🚀 Trigger prefetch the moment patient selects an answer
-                        if (!S._fetchingNext && !S._prefetchedQ && !S._adaptiveDone) _startPrefetch();
                     };
                     opts.appendChild(pill);
                 });
@@ -7485,17 +7619,37 @@
         window.setMicState = function (s) { if (_sms) _sms(s); const wf = document.getElementById('waveformBars'); if (wf) wf.classList.toggle('active', s === 'recording'); };
         document.addEventListener('click', function (e) { const pill = e.target.closest('.radio-pill') || e.target.closest('.scale-pill'); if (!pill) return; /* chatUserAnswer removed for linear flow */ }, true);
         if (typeof lucide !== 'undefined') lucide.createIcons();
-        function notifyContact() {
+        async function notifyContact() {
             const btn = document.getElementById("rs_contactBtn");
-            const orig = btn.innerHTML;
+            btn.disabled = true;
             btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${t('contact_sending')}`;
-            setTimeout(() => {
-                btn.classList.remove("btn-secondary");
-                btn.style.background = "var(--success)";
-                btn.style.color = "#fff";
-                btn.style.borderColor = "var(--success)";
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${t('contact_notified')}`;
-            }, 1500);
+
+            let ecName = '', ecPhone = '';
+            try {
+                const hn = S.healthNumber;
+                const pid = S.patientId;
+                const url = hn ? `${API}/api/health_record/${encodeURIComponent(hn)}`
+                              : pid ? `${API}/api/patient/${encodeURIComponent(pid)}` : null;
+                if (url) {
+                    const data = await fetch(url).then(r => r.json()).catch(() => ({}));
+                    ecName  = data.emergency_name  || data.record?.emergency_name  || '';
+                    ecPhone = data.emergency_phone || data.record?.emergency_phone || '';
+                }
+            } catch (_) {}
+
+            btn.classList.remove("btn-secondary");
+            btn.style.background = "var(--success)";
+            btn.style.color = "#fff";
+            btn.style.borderColor = "var(--success)";
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${t('contact_notified')}`;
+
+            if (ecName) {
+                const ecStr = ecPhone ? `${ecName} (${ecPhone})` : ecName;
+                const note = document.createElement('p');
+                note.style.cssText = 'margin-top:10px;font-size:0.82rem;color:var(--success-text);background:var(--success-l);padding:10px 14px;border-radius:10px;line-height:1.5;';
+                note.textContent = `${t('contact_forwarded')} ${ecStr}.`;
+                btn.parentNode.insertBefore(note, btn.nextSibling);
+            }
         }
 
         /**
@@ -8680,7 +8834,7 @@
             document.getElementById('assOverlay').classList.remove('active');
         }
 
-        function notifyAssContact() {
+        async function notifyAssContact() {
             const btn = document.getElementById('ass_contact_btn');
             const status = document.getElementById('ass_contact_status');
             if (btn) {
@@ -8688,12 +8842,33 @@
                 btn.disabled = true;
             }
 
-            setTimeout(() => {
-                S._notifiedContact = true;
-                if (btn) btn.style.display = 'none';
-                if (status) status.style.display = 'block';
-                toast(t('ass_ec_sent'), 'success');
-            }, 1200);
+            let ecName = '', ecPhone = '';
+            try {
+                const hn = S.healthNumber;
+                const pid = S.patientId || (S.assessment?.patient_id);
+                const url = hn ? `${API}/api/health_record/${encodeURIComponent(hn)}`
+                              : pid ? `${API}/api/patient/${encodeURIComponent(pid)}` : null;
+                if (url) {
+                    const data = await fetch(url).then(r => r.json()).catch(() => ({}));
+                    ecName  = data.emergency_name  || data.record?.emergency_name  || '';
+                    ecPhone = data.emergency_phone || data.record?.emergency_phone || '';
+                }
+            } catch (_) {}
+
+            S._notifiedContact = true;
+            if (btn) btn.style.display = 'none';
+            if (status) {
+                const ecStr = ecName ? (ecPhone ? `${ecName} (${ecPhone})` : ecName) : '';
+                status.innerHTML = ecStr
+                    ? `✅ ${t('contact_forwarded')} <strong>${ecStr}</strong>.`
+                    : t('ass_ec_sent');
+                status.style.display = 'block';
+            }
+            toast(t('ass_ec_sent'), 'success');
+
+            // Also call the backend notify endpoint
+            const pid2 = S.patientId || (S.assessment?.patient_id) || '';
+            if (pid2) fetch(`${API}/api/patient/${encodeURIComponent(pid2)}/notify-contact`, { method: 'POST' }).catch(() => {});
         }
 
         function _assHeader(lvl, meta, a) {
